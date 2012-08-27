@@ -26,6 +26,6 @@ class TestGeometry(unittest.TestCase):
     def test_bind_expression(self):
         from sqlalchemy.sql import select
         table = self._create_table()
-        s = select(['foo']).where(table.c.geom == 'POINT(1 2')
+        s = select(['foo']).where(table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE ' \
                   '"table".geom = ST_GeomFromText(:geom_1)')
