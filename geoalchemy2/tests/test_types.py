@@ -23,9 +23,17 @@ class TestGeometry(unittest.TestCase):
         s = select([table.c.geom])
         eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom_1 FROM "table"')
 
-    def test_bind_expression(self):
+    def test_select_bind_expression(self):
         from sqlalchemy.sql import select
         table = self._create_table()
         s = select(['foo']).where(table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE ' \
                   '"table".geom = ST_GeomFromText(:geom_1)')
+        eq_(s.compile().params, {'geom_1': 'POINT(1 2)'})
+
+    def test_insert_bind_expression(self):
+        from sqlalchemy.sql import insert
+        table = self._create_table()
+        i = insert(table).values(geom='POINT(1 2)')
+        eq_sql(i, 'INSERT INTO "table" (geom) VALUES (ST_GeomFromText(:geom))')
+        eq_(i.compile().params, {'geom': 'POINT(1 2)'})
