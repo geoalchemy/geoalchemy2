@@ -1,7 +1,8 @@
 from .types import (  # NOQA
-    Geometry,
     WKTElement,
-    WKBElement
+    WKBElement,
+    Geometry,
+    LineString
     )
 
 from .sql.functions import (  # NOQA

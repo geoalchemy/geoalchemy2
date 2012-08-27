@@ -101,3 +101,7 @@ class Geometry(UserDefinedType):
             if value is not None:
                 return WKBElement(value)
         return process
+
+
+class LineString(Geometry):
+    name = "LINESTRING"
