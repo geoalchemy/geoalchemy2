@@ -52,6 +52,8 @@ class InsertionTest(unittest.TestCase):
         session.flush()
         session.expire(l)
         ok_(isinstance(l.geom, WKBElement))
+        wkt = session.execute(l.geom.ST_AsText()).scalar()
+        eq_(wkt, 'LINESTRING(0 0,1 1)')
 
 
 class CallFunctionTest(unittest.TestCase):
