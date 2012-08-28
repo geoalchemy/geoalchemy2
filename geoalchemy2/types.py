@@ -116,14 +116,6 @@ class Geometry(UserDefinedType):
     def column_expression(self, col):
         return func.ST_AsBinary(col, type_=self)
 
-    def bind_processor(self, dialect):
-        def process(value):
-            if isinstance(value, WKTElement):
-                return value.desc
-            else:
-                return value
-        return process
-
     def result_processor(self, dialect, coltype):
         def process(value):
             if value is not None:
