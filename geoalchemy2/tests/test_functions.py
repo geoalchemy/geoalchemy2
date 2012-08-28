@@ -1,5 +1,10 @@
 from nose.tools import eq_
 
+#
+# Importing geoalchemy2 actually registers the GeoAlchemy generic
+# functions in SQLAlchemy's function registry.
+#
+
 import geoalchemy2  # NOQA
 
 
