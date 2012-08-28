@@ -16,8 +16,31 @@ class GenericFunction(functions.GenericFunction):
         functions.GenericFunction.__init__(self, *args, **kwargs)
 
 
+# Functions are classified as in the PostGIS doc.
+# <http://www.postgis.org/documentation/manual-svn/reference.html>
+
+
+#
+# Geometry Accessors
+#
+
+
 class GeometryType(GenericFunction):
     name = 'ST_GeometryType'
+
+
+#
+# Geometry Outputs
+#
+
+
+class AsText(GenericFunction):
+    name = 'ST_AsText'
+
+
+#
+# Geometry Processing
+#
 
 
 class Buffer(GenericFunction):
