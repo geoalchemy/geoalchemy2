@@ -63,7 +63,6 @@ class CallFunctionTest(unittest.TestCase):
     def tearDown(self):
         session.rollback()
         metadata.drop_all()
-        pass
 
     def _create_one(self):
         l = Lake('LINESTRING(0 0,1 1)')
