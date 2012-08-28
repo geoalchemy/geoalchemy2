@@ -33,6 +33,24 @@ class _Comparator(UserDefinedType.Comparator):
 
         return getattr(func_, name)
 
+    def intersects(self, other):
+        """
+        The && operator. A's BBOX intersects B's.
+        """
+        return self.op('&&')(other)
+
+    def overlaps_or_left(self, other):
+        """
+        The &< operator. A's BBOX overlaps or is to the left of B's.
+        """
+        return self.op('&<')(other)
+
+    def overlaps_or_right(self, other):
+        """
+        The &> operator. A's BBOX overlaps or is to the right of B's.
+        """
+        return self.op('&>')(other)
+
 
 class _SpatialElement(object):
 

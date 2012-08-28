@@ -52,6 +52,45 @@ class TestGeometry(unittest.TestCase):
         table.c.geom.Buffer(2)
 
 
+class TestOperator(unittest.TestCase):
+
+    def _create_table(self):
+        from sqlalchemy import Table, MetaData, Column
+        from geoalchemy2.types import Geometry
+        table = Table('table', MetaData(), Column('geom', Geometry))
+        return table
+
+    def test_eq(self):
+        table = self._create_table()
+        expr = table.c.geom == 'POINT(1 2)'
+        eq_sql(expr, '"table".geom = ST_GeomFromText(:geom_1)')
+
+    def test_eq_with_None(self):
+        table = self._create_table()
+        expr = table.c.geom == None
+        eq_sql(expr, '"table".geom IS NULL')
+
+    def test_ne(self):
+        table = self._create_table()
+        expr = table.c.geom != 'POINT(1 2)'
+        eq_sql(expr, '"table".geom != ST_GeomFromText(:geom_1)')
+
+    def test_ne_with_None(self):
+        table = self._create_table()
+        expr = table.c.geom != None
+        eq_sql(expr, '"table".geom IS NOT NULL')
+
+    def test_intersects(self):
+        table = self._create_table()
+        expr = table.c.geom.intersects('POINT(1 2')
+        eq_sql(expr, '"table".geom && ST_GeomFromText(:geom_1)')
+
+    def test_overlaps_or_left(self):
+        table = self._create_table()
+        expr = table.c.geom.overlaps_or_left('POINT(1 2')
+        eq_sql(expr, '"table".geom &< ST_GeomFromText(:geom_1)')
+
+
 class TestWKBElement(unittest.TestCase):
 
     def test_desc(self):
