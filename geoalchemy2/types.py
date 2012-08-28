@@ -1,3 +1,7 @@
+# FIXME not sure it makes sense that WKBElement uses UserDefinedType.Comparator
+# FIXME add more specific geometry types
+# FIXME add appropriate get_col_spec for PostGIS 2 (typmod)
+
 import binascii
 
 from sqlalchemy.types import UserDefinedType
