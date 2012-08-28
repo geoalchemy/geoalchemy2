@@ -70,7 +70,7 @@ class CallFunctionTest(unittest.TestCase):
         session.flush()
         return l.id
 
-    def test_geometry_type(self):
+    def test_ST_GeometryType(self):
         from sqlalchemy.sql import select, func
 
         lake_id = self._create_one()
@@ -91,7 +91,7 @@ class CallFunctionTest(unittest.TestCase):
         ok_(isinstance(r4, Lake))
         eq_(r4.id, lake_id)
 
-    def test_buffer(self):
+    def test_ST_Buffer(self):
         from sqlalchemy.sql import select, func
         from geoalchemy2 import WKBElement
 
