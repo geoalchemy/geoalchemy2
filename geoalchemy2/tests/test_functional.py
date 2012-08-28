@@ -25,7 +25,36 @@ class Lake(Base):
 session = sessionmaker(bind=engine)()
 
 
-class FunctionalTest(unittest.TestCase):
+class InsertionTest(unittest.TestCase):
+
+    def setUp(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+
+    def tearDown(self):
+        session.rollback()
+        metadata.drop_all()
+
+    def test_WKT(self):
+        from geoalchemy2 import WKBElement
+        l = Lake('LINESTRING(0 0,1 1)')
+        session.add(l)
+        session.flush()
+        session.expire(l)
+        ok_(isinstance(l.geom, WKBElement))
+        wkt = session.execute(l.geom.ST_AsText()).scalar()
+        eq_(wkt, 'LINESTRING(0 0,1 1)')
+
+    def test_WKTElement(self):
+        from geoalchemy2 import WKTElement, WKBElement
+        l = Lake(WKTElement('LINESTRING(0 0,1 1)'))
+        session.add(l)
+        session.flush()
+        session.expire(l)
+        ok_(isinstance(l.geom, WKBElement))
+
+
+class CallFunctionTest(unittest.TestCase):
 
     def setUp(self):
         metadata.drop_all(checkfirst=True)
