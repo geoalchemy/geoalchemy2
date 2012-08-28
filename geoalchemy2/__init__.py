@@ -5,10 +5,7 @@ from .types import (  # NOQA
     LineString
     )
 
-from .functions import (  # NOQA
-    Buffer,
-    GeometryType
-    )
+from .functions import *  # NOQA
 
 from sqlalchemy import Table, event
 from sqlalchemy.sql import select, func, expression
