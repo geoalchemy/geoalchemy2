@@ -2,6 +2,32 @@ import binascii
 
 from sqlalchemy.types import UserDefinedType
 from sqlalchemy.sql import func, expression
+from sqlalchemy.util import memoized_property
+
+
+class _Comparator(UserDefinedType.Comparator):
+    """
+    A custom comparator class. Used both in the Geometry type, and
+    in WKBElement.
+    """
+
+    def __getattr__(self, name):
+
+        # Function names that don't start with "ST_" are rejected. This is not
+        # to mess up with SQLAlchemy's use of hasattr/getattr on Column
+        # objects.
+
+        if not name.startswith('ST_'):
+            raise AttributeError
+
+        # We create our own _FunctionGenerator here, and use it in place of
+        # SQLAlchemy's "func" object. This is to be able to "bind" the function
+        # to the SQL expression. See also
+        # geoalchemy2.functions.GenericFunction.
+
+        func_ = expression._FunctionGenerator(expr=self.expr)
+
+        return getattr(func_, name)
 
 
 class _SpatialElement(object):
@@ -27,6 +53,8 @@ class WKTElement(_SpatialElement):
 
 class WKBElement(_SpatialElement, expression.Function):
 
+    comparator_factory = _Comparator
+
     def __init__(self, data):
         self.data = data
         expression.Function.__init__(self, "ST_GeomFromWKB", data)
@@ -35,48 +63,25 @@ class WKBElement(_SpatialElement, expression.Function):
     def desc(self):
         return binascii.hexlify(self.data)
 
+    @memoized_property
+    def comparator(self):
+        return self.comparator_factory(self)
+
     def __getattr__(self, name):
-        # This is the scheme by which expressions like
-        # Lake.geom.ST_Buffer(2) work.
-
-        # Function names that don't start with "ST_" are rejected. This not
-        # to mess up with SQLAlchemy's use of hasattr/getattr on Column
-        # objects.
-        if not name.startswith('ST_'):
-            raise AttributeError
-
-        # We create our own _FunctionGenerator here, and use it in place of
-        # SQLAlchemy's "func" object. This is to be able to "bind" the
-        # function to the SQL expression. See also
-        # geoalchemy2.functions.GenericFunction.
-        func_ = expression._FunctionGenerator(expr=self)
-
-        return getattr(func_, name)
+        #
+        # This is how things like Lake.geom.ST_Buffer(2) creates
+        # SQL expressions of this form:
+        #
+        # ST_Buffer(ST_GeomFromWKB(:ST_GeomFromWKB_1), :param_1)
+        #
+        return getattr(self.comparator, name)
 
 
 class Geometry(UserDefinedType):
 
     name = "GEOMETRY"
 
-    class comparator_factory(UserDefinedType.Comparator):
-
-        def __getattr__(self, name):
-            # This is the scheme by which expressions like
-            # Lake.geom.ST_Buffer(2) work.
-
-            # Function names that don't start with "ST_" are rejected. This not
-            # to mess up with SQLAlchemy's use of hasattr/getattr on Column
-            # objects.
-            if not name.startswith('ST_'):
-                raise AttributeError
-
-            # We create our own _FunctionGenerator here, and use it in place of
-            # SQLAlchemy's "func" object. This is to be able to "bind" the
-            # function to the SQL expression. See also
-            # geoalchemy2.functions.GenericFunction.
-            func_ = expression._FunctionGenerator(expr=self.expr)
-
-            return getattr(func_, name)
+    comparator_factory = _Comparator
 
     def __init__(self, srid=-1, dimension=2):
         self.srid = srid
