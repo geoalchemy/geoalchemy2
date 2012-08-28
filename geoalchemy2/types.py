@@ -62,11 +62,12 @@ class _SpatialElement(object):
             (self.__class__.__name__, id(self), self.desc)  # pragma: no cover
 
 
-class WKTElement(_SpatialElement):
+class WKTElement(_SpatialElement, expression.Function):
 
     def __init__(self, data, srid=-1):
         self.srid = srid
         self.data = data
+        expression.Function.__init__(self, "ST_GeomFromText", data)
 
     @property
     def desc(self):
