@@ -55,11 +55,11 @@ class _Comparator(UserDefinedType.Comparator):
 class _SpatialElement(object):
 
     def __str__(self):
-        return self.desc
+        return self.desc  # pragma: no cover
 
     def __repr__(self):
-        return "<%s at 0x%x; %r>" % (self.__class__.__name__,
-                                     id(self), self.desc)
+        return "<%s at 0x%x; %r>" % \
+            (self.__class__.__name__, id(self), self.desc)  # pragma: no cover
 
 
 class WKTElement(_SpatialElement):
