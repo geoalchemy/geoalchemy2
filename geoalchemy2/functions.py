@@ -1,6 +1,6 @@
 from sqlalchemy.sql import functions
 
-from .. import types
+from . import types
 
 
 class GenericFunction(functions.GenericFunction):
