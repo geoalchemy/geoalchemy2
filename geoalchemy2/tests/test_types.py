@@ -18,6 +18,11 @@ def _create_table():
 
 class TestGeometry(unittest.TestCase):
 
+    def test_get_col_spec(self):
+        from geoalchemy2 import Geometry
+        g = Geometry(srid=900913)
+        eq_(g.get_col_spec(), 'geometry(GEOMETRY,900913)')
+
     def test_column_expression(self):
         from sqlalchemy.sql import select
         table = _create_table()

@@ -110,6 +110,9 @@ class Geometry(UserDefinedType):
         self.srid = srid
         self.dimension = dimension
 
+    def get_col_spec(self):
+        return 'geometry(%s,%d)' % (self.name, self.srid)
+
     def bind_expression(self, bindvalue):
         return func.ST_GeomFromText(bindvalue, type_=self)
 
