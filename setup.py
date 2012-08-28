@@ -3,6 +3,20 @@ from setuptools import setup, find_packages
 
 version = '0.1'
 
+install_requires = [
+    'SQLAlchemy>0.7'
+    ]
+
+
+setup_requires = [
+    'nose'
+    ]
+
+tests_require = install_requires + [
+    'coverage',
+    'psycopg2',
+    ]
+
 setup(name='GeoAlchemy2',
       version=version,
       description="Using SQLAlchemy with Spatial Databases",
@@ -24,9 +38,10 @@ setup(name='GeoAlchemy2',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests', "doc"]),
       include_package_data=True,
       zip_safe=False,
-      install_requires=[
-          'SQLAlchemy>0.7',
-      ],
+      install_requires=install_requires,
+      setup_requires=setup_requires,
+      tests_require=tests_require,
+      test_suite="geoalchemy2.tests",
       entry_points="""
       # -*- Entry points: -*-
       """,
