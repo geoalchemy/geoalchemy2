@@ -1,2 +1,3 @@
 *.pyc
 GeoAlchemy2.egg-info
+.coverage
