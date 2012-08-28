@@ -1,7 +1,7 @@
 import unittest
 import re
 
-from nose.tools import eq_
+from nose.tools import eq_, raises
 
 
 def eq_sql(a, b, msg=None):
@@ -37,3 +37,26 @@ class TestGeometry(unittest.TestCase):
         i = insert(table).values(geom='POINT(1 2)')
         eq_sql(i, 'INSERT INTO "table" (geom) VALUES (ST_GeomFromText(:geom))')
         eq_(i.compile().params, {'geom': 'POINT(1 2)'})
+
+
+class TestWKBElement(unittest.TestCase):
+
+    def test_desc(self):
+        from geoalchemy2.types import WKBElement
+        e = WKBElement('\x01\x02')
+        eq_(e.desc, '0102')
+
+    def test_function(self):
+        from geoalchemy2.types import WKBElement
+        e = WKBElement('\x01\x02')
+        f = e.ST_Buffer(2)
+        eq_sql(f,
+               'ST_Buffer(ST_GeomFromWKB(:ST_GeomFromWKB_1), :param_1)')
+        eq_(f.compile().params,
+            {u'ST_GeomFromWKB_1': '\x01\x02', u'param_1': 2})
+
+    @raises(AttributeError)
+    def test_non_ST_function(self):
+        from geoalchemy2.types import WKBElement
+        e = WKBElement('\x01\x02')
+        e.Buffer
