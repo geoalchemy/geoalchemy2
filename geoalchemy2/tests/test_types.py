@@ -27,7 +27,7 @@ class TestGeometry(unittest.TestCase):
         from sqlalchemy.sql import select
         table = self._create_table()
         s = select(['foo']).where(table.c.geom == 'POINT(1 2)')
-        eq_sql(s, 'SELECT foo FROM "table" WHERE ' \
+        eq_sql(s, 'SELECT foo FROM "table" WHERE '
                   '"table".geom = ST_GeomFromText(:geom_1)')
         eq_(s.compile().params, {'geom_1': 'POINT(1 2)'})
 
@@ -38,6 +38,19 @@ class TestGeometry(unittest.TestCase):
         eq_sql(i, 'INSERT INTO "table" (geom) VALUES (ST_GeomFromText(:geom))')
         eq_(i.compile().params, {'geom': 'POINT(1 2)'})
 
+    def test_function_call(self):
+        from sqlalchemy.sql import select
+        table = self._create_table()
+        s = select([table.c.geom.ST_Buffer(2)])
+        eq_sql(s,
+               'SELECT ST_AsBinary(ST_Buffer("table".geom, :param_1)) '
+               'AS "ST_Buffer_1" FROM "table"')
+
+    @raises(AttributeError)
+    def test_non_ST_function_call(self):
+        table = self._create_table()
+        table.c.geom.Buffer(2)
+
 
 class TestWKBElement(unittest.TestCase):
 
@@ -46,7 +59,7 @@ class TestWKBElement(unittest.TestCase):
         e = WKBElement('\x01\x02')
         eq_(e.desc, '0102')
 
-    def test_function(self):
+    def test_function_call(self):
         from geoalchemy2.types import WKBElement
         e = WKBElement('\x01\x02')
         f = e.ST_Buffer(2)
@@ -56,7 +69,7 @@ class TestWKBElement(unittest.TestCase):
             {u'ST_GeomFromWKB_1': '\x01\x02', u'param_1': 2})
 
     @raises(AttributeError)
-    def test_non_ST_function(self):
+    def test_non_ST_function_call(self):
         from geoalchemy2.types import WKBElement
         e = WKBElement('\x01\x02')
-        e.Buffer
+        e.Buffer(2)
