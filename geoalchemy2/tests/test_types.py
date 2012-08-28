@@ -58,6 +58,70 @@ class TestGeometry(unittest.TestCase):
         table.c.geom.Buffer(2)
 
 
+class TestPoint(unittest.TestCase):
+
+    def test_get_col_spec(self):
+        from geoalchemy2.types import Point
+        g = Point(srid=900913)
+        eq_(g.get_col_spec(), 'geometry(POINT,900913)')
+
+
+class TestCurve(unittest.TestCase):
+
+    def test_get_col_spec(self):
+        from geoalchemy2.types import Curve
+        g = Curve(srid=900913)
+        eq_(g.get_col_spec(), 'geometry(CURVE,900913)')
+
+
+class TestLineString(unittest.TestCase):
+
+    def test_get_col_spec(self):
+        from geoalchemy2.types import LineString
+        g = LineString(srid=900913)
+        eq_(g.get_col_spec(), 'geometry(LINESTRING,900913)')
+
+
+class TestPolygon(unittest.TestCase):
+
+    def test_get_col_spec(self):
+        from geoalchemy2.types import Polygon
+        g = Polygon(srid=900913)
+        eq_(g.get_col_spec(), 'geometry(POLYGON,900913)')
+
+
+class TestMultiPoint(unittest.TestCase):
+
+    def test_get_col_spec(self):
+        from geoalchemy2.types import MultiPoint
+        g = MultiPoint(srid=900913)
+        eq_(g.get_col_spec(), 'geometry(MULTIPOINT,900913)')
+
+
+class TestMultiLineString(unittest.TestCase):
+
+    def test_get_col_spec(self):
+        from geoalchemy2.types import MultiLineString
+        g = MultiLineString(srid=900913)
+        eq_(g.get_col_spec(), 'geometry(MULTILINESTRING,900913)')
+
+
+class TestMultiPolygon(unittest.TestCase):
+
+    def test_get_col_spec(self):
+        from geoalchemy2.types import MultiPolygon
+        g = MultiPolygon(srid=900913)
+        eq_(g.get_col_spec(), 'geometry(MULTIPOLYGON,900913)')
+
+
+class TestGeometryCollection(unittest.TestCase):
+
+    def test_get_col_spec(self):
+        from geoalchemy2.types import GeometryCollection
+        g = GeometryCollection(srid=900913)
+        eq_(g.get_col_spec(), 'geometry(GEOMETRYCOLLECTION,900913)')
+
+
 class TestFunction(unittest.TestCase):
 
     def test_ST_Equal_WKTElement_WKTElement(self):

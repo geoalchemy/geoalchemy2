@@ -2,7 +2,14 @@ from .types import (  # NOQA
     WKTElement,
     WKBElement,
     Geometry,
-    LineString
+    Point,
+    Curve,
+    LineString,
+    Polygon,
+    MultiPoint,
+    MultiLineString,
+    MultiPolygon,
+    GeometryCollection
     )
 
 from .functions import *  # NOQA

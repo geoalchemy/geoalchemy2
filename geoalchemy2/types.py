@@ -1,6 +1,4 @@
 # FIXME not sure it makes sense that WKBElement uses UserDefinedType.Comparator
-# FIXME add more specific geometry types
-# FIXME add appropriate get_col_spec for PostGIS 2 (typmod)
 
 import binascii
 
@@ -126,5 +124,33 @@ class Geometry(UserDefinedType):
         return process
 
 
-class LineString(Geometry):
-    name = "LINESTRING"
+class Point(Geometry):
+    name = 'POINT'
+
+
+class Curve(Geometry):
+    name = 'CURVE'
+
+
+class LineString(Curve):
+    name = 'LINESTRING'
+
+
+class Polygon(Geometry):
+    name = 'POLYGON'
+
+
+class MultiPoint(Geometry):
+    name = 'MULTIPOINT'
+
+
+class MultiLineString(Geometry):
+    name = 'MULTILINESTRING'
+
+
+class MultiPolygon(Geometry):
+    name = 'MULTIPOLYGON'
+
+
+class GeometryCollection(Geometry):
+    name = 'GEOMETRYCOLLECTION'
