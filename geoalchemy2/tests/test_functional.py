@@ -1,7 +1,7 @@
 import unittest
 from nose.tools import eq_, ok_
 
-from sqlalchemy import create_engine, MetaData, Column, Integer
+from sqlalchemy import create_engine, MetaData, Column, Integer, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -24,9 +24,10 @@ class Lake(Base):
 
 session = sessionmaker(bind=engine)()
 
-# FIXME remove this for PostGIS 2
-from geoalchemy2 import _setup_ddl_events
-_setup_ddl_events()
+postgis_version = session.execute(func.postgis_version()).scalar()
+if not postgis_version.startswith('2.'):
+    from geoalchemy2 import _setup_ddl_events
+    _setup_ddl_events()
 
 
 class InsertionTest(unittest.TestCase):
