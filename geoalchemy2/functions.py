@@ -3,7 +3,10 @@ from sqlalchemy.sql import functions
 from . import types
 
 __all__ = [
-        'GenericFunction', 'GeometryType', 'Buffer'
+        'GenericFunction',
+        'GeometryType',
+        'AsText',
+        'Buffer'
         ]
 
 
