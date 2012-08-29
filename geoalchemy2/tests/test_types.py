@@ -171,17 +171,17 @@ class TestOperator(unittest.TestCase):
 
     def test_intersects(self):
         table = _create_table()
-        expr = table.c.geom.intersects('POINT(1 2')
+        expr = table.c.geom.intersects('POINT(1 2)')
         eq_sql(expr, '"table".geom && ST_GeomFromText(:geom_1)')
 
     def test_overlaps_or_left(self):
         table = _create_table()
-        expr = table.c.geom.overlaps_or_left('POINT(1 2')
+        expr = table.c.geom.overlaps_or_left('POINT(1 2)')
         eq_sql(expr, '"table".geom &< ST_GeomFromText(:geom_1)')
 
     def test_overlaps_or_right(self):
         table = _create_table()
-        expr = table.c.geom.overlaps_or_right('POINT(1 2')
+        expr = table.c.geom.overlaps_or_right('POINT(1 2)')
         eq_sql(expr, '"table".geom &> ST_GeomFromText(:geom_1)')
 
     def test_distance_between_points(self):
