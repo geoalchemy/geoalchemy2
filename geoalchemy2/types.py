@@ -49,6 +49,19 @@ class _Comparator(UserDefinedType.Comparator):
         """
         return self.op('&>')(other)
 
+    def distance_between_points(self, other):
+        """
+        The <-> operator. The distance between two points.
+        """
+        return self.op('<->')(other)
+
+    def distance_between_bbox(self, other):
+        """
+        The <-> operator. The distance between bounding box of two
+        geometries.
+        """
+        return self.op('<#>')(other)
+
 
 class _SpatialElement(object):
 

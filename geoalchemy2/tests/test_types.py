@@ -184,6 +184,30 @@ class TestOperator(unittest.TestCase):
         expr = table.c.geom.overlaps_or_right('POINT(1 2')
         eq_sql(expr, '"table".geom &> ST_GeomFromText(:geom_1)')
 
+    def test_distance_between_points(self):
+        table = _create_table()
+        expr = table.c.geom.distance_between_points('POINT(1 2)')
+        eq_sql(expr, '"table".geom <-> ST_GeomFromText(:geom_1)')
+        s = table.select().order_by(
+                table.c.geom.distance_between_points('POINT(1 2)')).limit(10)
+        eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom_1 '
+                  'FROM "table" '
+                  'ORDER BY "table".geom <-> ST_GeomFromText(:geom_2) '
+                  'LIMIT :param_1')
+        eq_(s.compile().params, {u'geom_2': 'POINT(1 2)', u'param_1': 10})
+
+    def test_distance_between_bbox(self):
+        table = _create_table()
+        expr = table.c.geom.distance_between_bbox('POINT(1 2)')
+        eq_sql(expr, '"table".geom <#> ST_GeomFromText(:geom_1)')
+        s = table.select().order_by(
+                table.c.geom.distance_between_bbox('POINT(1 2)')).limit(10)
+        eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom_1 '
+                  'FROM "table" '
+                  'ORDER BY "table".geom <#> ST_GeomFromText(:geom_2) '
+                  'LIMIT :param_1')
+        eq_(s.compile().params, {u'geom_2': 'POINT(1 2)', u'param_1': 10})
+
 
 class TestWKTElement(unittest.TestCase):
 
