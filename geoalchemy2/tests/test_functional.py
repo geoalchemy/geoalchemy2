@@ -24,6 +24,10 @@ class Lake(Base):
 
 session = sessionmaker(bind=engine)()
 
+# FIXME remove this for PostGIS 2
+from geoalchemy2 import _setup_ddl_events
+_setup_ddl_events()
+
 
 class InsertionTest(unittest.TestCase):
 

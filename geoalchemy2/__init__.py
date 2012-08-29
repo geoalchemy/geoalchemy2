@@ -68,4 +68,3 @@ def _setup_ddl_events():
 
         elif event == 'after-drop':
             table.columns = table.info.pop('_saved_columns')
-_setup_ddl_events()
