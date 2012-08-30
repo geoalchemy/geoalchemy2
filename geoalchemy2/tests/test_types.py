@@ -232,9 +232,3 @@ class TestWKBElement(unittest.TestCase):
                'ST_Buffer(ST_GeomFromWKB(:ST_GeomFromWKB_1), :param_1)')
         eq_(f.compile().params,
             {u'ST_GeomFromWKB_1': '\x01\x02', u'param_1': 2})
-
-    @raises(AttributeError)
-    def test_non_ST_function_call(self):
-        from geoalchemy2.types import WKBElement
-        e = WKBElement('\x01\x02')
-        e.Buffer(2)

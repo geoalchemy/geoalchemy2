@@ -1,10 +1,21 @@
-# FIXME not sure it makes sense that WKBElement uses UserDefinedType.Comparator
-
 import binascii
 
 from sqlalchemy.types import UserDefinedType
 from sqlalchemy.sql import func, expression
-from sqlalchemy.util import memoized_property
+
+
+def _generate_function(name, expr=None):
+    """
+    Generate a spatial function from its name, and "bind" it
+    to the expression passed in ``expr``.
+    """
+
+    # We create our own _FunctionGenerator here, and use it in place of
+    # SQLAlchemy's "func" object. This is to be able to "bind" the
+    # function to the SQL expression. See also GenericFunction above.
+
+    func_ = expression._FunctionGenerator(expr=expr)
+    return getattr(func_, name)
 
 
 class _Comparator(UserDefinedType.Comparator):
@@ -15,21 +26,14 @@ class _Comparator(UserDefinedType.Comparator):
 
     def __getattr__(self, name):
 
-        # Function names that don't start with "ST_" are rejected. This is not
-        # to mess up with SQLAlchemy's use of hasattr/getattr on Column
-        # objects.
+        # Function names that don't start with "ST_" are rejected.
+        # This is not to mess up with SQLAlchemy's use of
+        # hasattr/getattr on Column objects.
 
         if not name.startswith('ST_'):
             raise AttributeError
 
-        # We create our own _FunctionGenerator here, and use it in place of
-        # SQLAlchemy's "func" object. This is to be able to "bind" the function
-        # to the SQL expression. See also
-        # geoalchemy2.functions.GenericFunction.
-
-        func_ = expression._FunctionGenerator(expr=self.expr)
-
-        return getattr(func_, name)
+        return _generate_function(name, expr=self.expr)
 
     def intersects(self, other):
         """
@@ -97,18 +101,15 @@ class WKBElement(_SpatialElement, expression.Function):
     def desc(self):
         return binascii.hexlify(self.data)
 
-    @memoized_property
-    def comparator(self):
-        return self.comparator_factory(self)
-
     def __getattr__(self, name):
         #
-        # This is how things like Lake.geom.ST_Buffer(2) creates
+        # This is how things like lake.geom.ST_Buffer(2) creates
         # SQL expressions of this form:
         #
         # ST_Buffer(ST_GeomFromWKB(:ST_GeomFromWKB_1), :param_1)
         #
-        return getattr(self.comparator, name)
+
+        return _generate_function(name, expr=self)
 
 
 class Geometry(UserDefinedType):
