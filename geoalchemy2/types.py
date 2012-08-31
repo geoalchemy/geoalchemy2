@@ -20,8 +20,9 @@ def _generate_function(name, expr=None):
 
 class _Comparator(UserDefinedType.Comparator):
     """
-    A custom comparator class. Used both in the Geometry type, and
-    in WKBElement.
+    A custom comparator class. Used in :class:`geoalchemy2.types.Geometry`.
+
+    This is where spatial operators like ``&&`` and ``&<`` are defined.
     """
 
     def __getattr__(self, name):
@@ -37,31 +38,31 @@ class _Comparator(UserDefinedType.Comparator):
 
     def intersects(self, other):
         """
-        The && operator. A's BBOX intersects B's.
+        The ``&&`` operator. A's BBOX intersects B's.
         """
         return self.op('&&')(other)
 
     def overlaps_or_left(self, other):
         """
-        The &< operator. A's BBOX overlaps or is to the left of B's.
+        The ``&<`` operator. A's BBOX overlaps or is to the left of B's.
         """
         return self.op('&<')(other)
 
     def overlaps_or_right(self, other):
         """
-        The &> operator. A's BBOX overlaps or is to the right of B's.
+        The ``&>`` operator. A's BBOX overlaps or is to the right of B's.
         """
         return self.op('&>')(other)
 
     def distance_between_points(self, other):
         """
-        The <-> operator. The distance between two points.
+        The ``<->`` operator. The distance between two points.
         """
         return self.op('<->')(other)
 
     def distance_between_bbox(self, other):
         """
-        The <-> operator. The distance between bounding box of two
+        The ``<#>`` operator. The distance between bounding box of two
         geometries.
         """
         return self.op('<#>')(other)
@@ -78,6 +79,9 @@ class _SpatialElement(object):
 
 
 class WKTElement(_SpatialElement, expression.Function):
+    """
+    Instances of this class wrap a WKT value.
+    """
 
     def __init__(self, data, srid=-1):
         self.srid = srid
@@ -86,12 +90,17 @@ class WKTElement(_SpatialElement, expression.Function):
 
     @property
     def desc(self):
+        """
+        This element's description string.
+        """
         return self.data
 
 
 class WKBElement(_SpatialElement, expression.Function):
-
-    comparator_factory = _Comparator
+    """
+    Instances of this class wrap a WKB value. Geometry values read
+    from the database are converted to instances of type.
+    """
 
     def __init__(self, data):
         self.data = data
@@ -99,6 +108,9 @@ class WKBElement(_SpatialElement, expression.Function):
 
     @property
     def desc(self):
+        """
+        This element's description string.
+        """
         return binascii.hexlify(self.data)
 
     def __getattr__(self, name):
@@ -113,10 +125,29 @@ class WKBElement(_SpatialElement, expression.Function):
 
 
 class Geometry(UserDefinedType):
+    """
+    The base Geometry type.
+
+    This class defines ``bind_expression`` and ``column_expression`` methods
+    that wrap expressions into ``ST_GeomFromText`` and ``ST_AsBinary`` calls
+    depending on the context.
+
+    For example the statement ``select([table.c.geom])`` will generate the SQL
+    ``SELECT ST_AsBinary("table".geom) AS geom_1 FROM "table"``. And the
+    statement ``insert(table).values(geom='POINT(1 2)')`` will generate
+    ``INSERT INTO "table" (geom) VALUES (ST_GeomFromText(:geom))``.
+
+    Also, this class defines ``result_processor``, in such a way that values
+    received from the database are converted to
+    :class:`geoalchemy2.types.WKBElement` object.
+
+    """
 
     name = "GEOMETRY"
 
     comparator_factory = _Comparator
+    """ This is the way by which spatial operators are defined for
+        geometry columns. """
 
     def __init__(self, srid=-1, dimension=2):
         self.srid = srid
