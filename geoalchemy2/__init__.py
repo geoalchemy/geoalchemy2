@@ -12,7 +12,7 @@ from .types import (  # NOQA
     GeometryCollection
     )
 
-from .functions import *  # NOQA
+from . import functions  # NOQA
 
 from sqlalchemy import Table, event
 from sqlalchemy.sql import select, func, expression

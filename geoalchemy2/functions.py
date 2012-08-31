@@ -2,14 +2,6 @@ from sqlalchemy.sql import functions
 
 from . import types
 
-__all__ = [
-        'GenericFunction',
-        'GeometryType',
-        'AsText',
-        'Area',
-        'Buffer'
-        ]
-
 
 class GenericFunction(functions.GenericFunction):
 
