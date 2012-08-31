@@ -143,8 +143,8 @@ We can now query the database for ``Majeur``::
 Let's add more lakes::
 
     >>> session.add_all([
-    ...     Lake(name='Garde', geom='POLYGON((1 0,2 0,2 1,1 1,1 0))'),
-    ...     Lake(name='Orta', geom='POLYGON((2 0,3 0,3 1,2 1,2 0))')
+    ...     Lake(name='Garde', geom='POLYGON((1 0,3 0,3 2,1 2,1 0))'),
+    ...     Lake(name='Orta', geom='POLYGON((3 0,6 0,6 3,3 3,3 0))')
     ... ])
     >>> session.commit()
 
@@ -155,11 +155,11 @@ A ``Query`` object is created using the ``query()`` function on ``Session``.
 For example here's a ``Query`` that loads ``Lake`` instances ordered by
 their names::
 
-    >>> q = session.query(Lake).order_by(Lake.name)
+    >>> query = session.query(Lake).order_by(Lake.name)
 
 Any ``Query`` is iterable::
 
-    >>> for lake in q:
+    >>> for lake in query:
     ...     print lake.name
     ...
     Garde
@@ -181,19 +181,89 @@ Spatial Query
 As spatial database users executing spatial queries is of a great interest to
 us. There comes GeoAlchemy!
 
-Let's see some examples.
+Spatial relationship
+~~~~~~~~~~~~~~~~~~~~
 
-Apply a Spatial Function to Geometry Attribute
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using spatial filters in SQL SELECT queries is very common. Such queries are
+performed by using spatial relationship functions, or operators, in the
+``WHERE`` clause of the SQL query.
 
-Return buffers of our lakes::
+For example, to find the ``Lake`` s that contain the point ``POINT(4 1)``,
+we can use this ``Query``::
+
+    >>> from sqlalchemy import func
+    >>> query = session.query(Lake).filter(
+    ...             func.ST_Contains(Lake.geom, 'POINT(4 1)'))
+    ...
+    >>> for lake in query:
+    ...     print lake.name
+    ...
+    Orta
+
+GeoAlchemy allows rewriting this ``Query`` more concisely::
+
+    >>> from sqlalchemy import func
+    >>> query = session.query(Lake).filter(Lake.geom.ST_Contains('POINT(4 1)'))
+    >>> for lake in query:
+    ...     print lake.name
+    ...
+    Orta
+
+Here the ``ST_Contains`` function is applied to the ``Lake.geom`` column
+property. In that case the column property is actually passed to the function,
+as its first argument.
+
+Here's another spatial filtering query, based on ``ST_Intersects``::
+
+    >>> query = session.query(Lake).filter(
+    ...             Lake.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
+    ...
+    >>> for lake in query:
+    ...     print lake.name
+    ...
+    Garde
+    Orta
+
+We can also apply relationship functions to ``WKBElement``. For example::
+
+    >>> lake = session.query(Lake).filter_by(name='Garde').one()
+    >>> print session.scalar(lake.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
+    True
+
+``session.scalar`` allows executing a clause and returning a scalar
+value (a boolean value in this case).
+
+The GeoAlchemy functions all start with ``ST_``. Operators are also called as
+functions, but the function names don't include the ``ST_`` prefix. As an
+example let's use PostGIS' ``&&`` operator, which allows testing
+whether the bounding boxes of geometries intersect. GeoAlchemy provides
+the ``intersects`` function for that::
+
+    >>> query = session.queryt
+    >>> query = session.query(Lake).filter(
+    ...             Lake.geom.intersects('LINESTRING(2 1,4 1)'))
+    ...
+    >>> for lake in query:
+    ...     print lake.name
+    ...
+    Garde
+    Orta
+
+Processing and Measurement
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here's a ``Query`` that calculates the areas of buffers for our lakes::
 
     >>> from sqlalchemy import func
     >>> query = session.query(Lake.name,
     ...                       func.ST_Area(func.ST_Buffer(Lake.geom, 2)) \
     ...                           .label('bufferarea'))
     >>> for row in query:
-        print '%s: %f' % (row.name, row.bufferarea)
+    ...     print '%s: %f' % (row.name, row.bufferarea)
+    ...
+    Majeur: 21.485781
+    Garde: 32.485781
+    Orta: 45.485781
 
 This ``Query`` applies the PostGIS ``ST_Buffer`` function to the geometry
 column of every row of the ``lake`` table. The return value is a list of rows,
@@ -201,25 +271,30 @@ where each row is actually a tuple of two values: the lake name, and the area
 of a buffer of the lake. Each tuple is actually an SQLAlchemy ``KeyedTuple``
 object, which provides property type accessors.
 
-GeoAlchemy allows rewriting this query more concisely::
+Again, the ``Query`` can written more concisely::
 
     >>> query = session.query(Lake.name,
     ...                       Lake.geom.ST_Buffer(2).ST_Area().label('bufferarea'))
     >>> for row in query:
-        print '%s: %f' % (row.name, row.bufferarea)
+    ...     print '%s: %f' % (row.name, row.bufferarea)
+    ...
+    Majeur: 21.485781
+    Garde: 32.485781
+    Orta: 45.485781
 
-When a function is applied to a ``Geometry`` column property, that column
-property is actually passed to the function as its first argument. Note
-also how function calls can be chained.
+Obviously, processing and measurement functions can alo be used in ``WHERE``
+clauses. For example::
 
-Apply a Spatial Function to a ``WKBElement``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    >>> lake = session.query(Lake).filter(
+    ...             Lake.geom.ST_Buffer(2).ST_Area() > 33).one()
+    ...
+    >>> print lake.name
+    Orta
 
-Now, given a ``Lake`` object, get the area of a buffer of this ``Lake``::
+And, like any other functions supported by GeoAlchemy, processing and
+measurement functions can be applied to ``WKBElement``. For example::
 
     >>> lake = session.query(Lake).filter_by(name='Majeur').one()
     >>> bufferarea = session.scalar(lake.geom.ST_Buffer(2).ST_Area())
     >>> print '%s: %f' % (lake.name, bufferarea)
-
-``session.scalar`` allows executing a clause and returning a scalar
-value (the buffer's area in this case).
+    Majeur: 21.485781

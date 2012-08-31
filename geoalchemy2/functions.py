@@ -50,6 +50,14 @@ class Area(GenericFunction):
     name = 'ST_Area'
 
 
+class Contains(GenericFunction):
+    name = 'ST_Contains'
+
+
+class Intersects(GenericFunction):
+    name = 'ST_Intersects'
+
+
 #
 # Geometry Processing
 #
