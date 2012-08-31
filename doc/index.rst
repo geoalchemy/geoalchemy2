@@ -22,8 +22,6 @@ Contents:
 
    orm_tutorial
    core_tutorial
-   spatial_functions
-   spatial_operators
 
 Indices and tables
 ==================
