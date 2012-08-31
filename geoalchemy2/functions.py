@@ -6,6 +6,7 @@ __all__ = [
         'GenericFunction',
         'GeometryType',
         'AsText',
+        'Area',
         'Buffer'
         ]
 
@@ -39,6 +40,14 @@ class GeometryType(GenericFunction):
 
 class AsText(GenericFunction):
     name = 'ST_AsText'
+
+#
+# Spatial Relationships and Measurements
+#
+
+
+class Area(GenericFunction):
+    name = 'ST_Area'
 
 
 #
