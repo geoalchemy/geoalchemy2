@@ -18,7 +18,7 @@ want to add, and maintain, support for other spatial databases in GeoAlchemy 2!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    orm_tutorial
    core_tutorial
