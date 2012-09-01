@@ -239,7 +239,7 @@ example let's use PostGIS' ``&&`` operator, which allows testing
 whether the bounding boxes of geometries intersect. GeoAlchemy provides
 the ``intersects`` function for that::
 
-    >>> query = session.queryt
+    >>> query = session.query
     >>> query = session.query(Lake).filter(
     ...             Lake.geom.intersects('LINESTRING(2 1,4 1)'))
     ...
