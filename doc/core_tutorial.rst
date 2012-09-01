@@ -32,9 +32,7 @@ Define a Table
 
 The very first object that we need to create is a ``Table``. Here
 we create a ``lake_table`` object, which will correspond to the
-``lake`` table in the database.
-
-::
+``lake`` table in the database::
 
     >>> from sqlalchemy import Table, Column, Integer, String, MetaData
     >>> from geoalchemy2 import Polygon
@@ -46,14 +44,14 @@ we create a ``lake_table`` object, which will correspond to the
     ...     Column('geom', Polygon)
     ... )
 
- This table is composed of three columns, ``id``, ``name`` and ``geom``. The
- ``geom`` column is of type ``Polygon``, which is provided by GeoAlchemy.
+This table is composed of three columns, ``id``, ``name`` and ``geom``. The
+``geom`` column is of type ``Polygon``, which is provided by GeoAlchemy.
  
- Any ``Table`` object is added to a ``MetaData`` object, which is catalog of
- ``Table`` objects (and other related objects).
+Any ``Table`` object is added to a ``MetaData`` object, which is a catalog of
+``Table`` objects (and other related objects).
 
-Create the Table in the Database
---------------------------------
+Create the Table
+----------------
 
 With our ``Table`` being defined we're ready (to have SQLAlchemy)
 create it in the database::
@@ -68,66 +66,106 @@ In that case every ``Table`` that's referenced to by ``metadata`` would be
 created in the database. The ``metadata`` object includes one ``Table`` here,
 our now well-known ``lake_table`` object.
 
-Add New Objects
----------------
+Insertions
+----------
 
-To persist our ``Lake`` object, we ``add()`` it to the ``Session``::
+We want to insert records into the ``lake`` table. For that we need to create
+an ``Insert`` object. SQLAlchemy provides multiple constructs for creating an
+``Insert`` object, here's one::
 
-    >>> session.add(lake)
+    >>> ins = lake_table.insert()
+    >>> str(ins)
+    INSERT INTO lake (id, name, geom) VALUES (:id, :name, ST_GeomFromText(:geom))
 
-At this point the ``lake`` object has been added to the ``Session``, but no SQL
-has been issued to the database. The object is in a *pending* state. To persist
-the object a *flush* or *commit* operation must occur (commit implies flush)::
+The ``geom`` column being a ``Geometry`` column, the ``:geom`` bind value is
+wrapped in a ``ST_GeomFromText`` call.
 
-    >>> session.commit()
+To limit the columns named in the ``INSERT`` query the ``values()`` method
+can be used::
 
-We can now query the database for ``Majeur``::
-
-    >>> our_lake = session.query(Lake).filter_by(name='Majeur').first()
-    >>> our_lake.name
-    u'Majeur'
-    >>> our_lake.geom
-    <WKBElement at 0x9af594c; '0103000000010000000500000000000000000000000000000000000000000000000000f03f0000000000000000000000000000f03f000000000000f03f0000000000000000000000000000f03f00000000000000000000000000000000'>
-    >>> our_lake.id
-    1
-
-``our_lake.geom`` is a ``WKBElement``, which a type provided by GeoAlchemy.
-``WKBElement`` wraps a WKB value returned by the database.
-
-Let's add more lakes::
-
-    >>> session.add_all([
-    ...     Lake(name='Garde', geom='POLYGON((1 0,3 0,3 2,1 2,1 0))'),
-    ...     Lake(name='Orta', geom='POLYGON((3 0,6 0,6 3,3 3,3 0))')
-    ... ])
-    >>> session.commit()
-
-Query
------
-
-A ``Query`` object is created using the ``query()`` function on ``Session``.
-For example here's a ``Query`` that loads ``Lake`` instances ordered by
-their names::
-
-    >>> query = session.query(Lake).order_by(Lake.name)
-
-Any ``Query`` is iterable::
-
-    >>> for lake in query:
-    ...     print lake.name
+    >>> ins = lake_table.insert().values(name='Majeur',
+    ...                                  geom='POLYGON((0 0,1 0,1 1,0 1,0 0))')
     ...
-    Garde
-    Majeur
-    Orta
+    >>> str(ins)
+    INSERT INTO lake (name, geom) VALUES (:name, ST_GeomFromText(:geom))
 
-Another way to execute the query and get a list of ``Lake`` objects involves
-calling ``all()`` on the ``Query``::
+.. tip::
 
-    >>> lakes = session.query(Lake).order_by(Lake.name).all()
+    The string representation of the SQL expression does not include the
+    data placed in ``values``. We got named bind parameters instead. To
+    view the data we can get a compiled form of the expression, and ask
+    for its ``params``::
 
-The SQLAlchemy ORM Tutorial's `Querying section
-<http://docs.sqlalchemy.org/en/latest/orm/tutorial.html#querying>`_ provides
-more examples of queries.
+        >>> ins.compile.params()
+        {'geom': 'POLYGON((0 0,1 0,1 1,0 1,0 0))', 'name': 'Majeur'}
+
+Up to now we've created an ``INSERT`` query but we haven't sent this query to
+the database yet. Before being able to send it to the database we need
+a database ``Connection``. We can get a ``Connection`` from the ``Engine``
+object we created earlier::
+
+    >>> conn = engine.connect()
+
+We're now ready to execute our ``INSERT`` statement::
+
+    >>> result = conn.execute(ins)
+
+This is what the logging system should output::
+
+    INSERT INTO lake (name, geom) VALUES (%(name)s, ST_GeomFromText(%(geom)s)) RETURNING lake.id
+    {'geom': 'POLYGON((0 0,1 0,1 1,0 1,0 0))', 'name': 'Majeur'}
+    COMMIT
+
+The value returned by ``conn.execute()``, stored in ``result``, is
+a ``sqlalchemy.engine.ResultProxy`` object. In the case of an ``INSERT`` we can
+get the primary key value which was generated from our statement::
+
+    >>> result.inserted_primary_key
+    [1]
+
+Instead of using ``values()`` to specify our ``INSERT`` data, we can send
+the data to the ``execute()`` method on ``Connection``. So we could rewrite
+things as follows::
+
+    >>> conn.execute(lake_table.insert(),
+    ...              name='Majeur', geom='POLYGON((0 0,1 0,1 1,0 1,0 0))')
+
+Now let's use another form, allowing to insert multiple rows at once::
+
+    >>> conn.execute(lake_table.insert(), [
+    ...     {'name': 'Garde', 'geom': 'POLYGON((1 0,3 0,3 2,1 2,1 0))'},
+    ...     {'name': 'Orta', 'geom': 'POLYGON((3 0,6 0,6 3,3 3,3 0))'}
+    ...     ])
+    ...
+
+Selections
+----------
+
+Inserting involved creating an ``Insert`` object, so it'd come to no surprise
+that Selecting involves creating a ``Select`` object.  The primary construct to
+generate ``SELECT`` statements is SQLAlchemy`s ``select()`` function::
+
+    >>> from sqlalchemy.sql import select
+    >>> s = select([lake_table])
+    >>> str(s)
+    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom_1 FROM lake
+
+The ``geom`` column being a ``Geometry`` it is wrapped in ``ST_AsBinary`` call
+when specified as a column in a ``SELECT`` statement.
+
+We can now execute the statement and look at the results::
+
+    >>> result = conn.execute(s)
+    >>> for row in result:
+    ...     print 'name:', row['name'], '; geom:', row['geom_1'].desc
+    ...
+    name: Majeur ; geom: 0103...
+    name: Garde ; geom: 0103...
+    name: Orta ; geom: 0103...
+
+``row['geom_1']`` is :class:`geoalchemy2.types.WKBElement` instance. In this
+example we just get an hexadecimal representation of the geometry's WKB value
+using the ``desc`` property.
 
 Spatial Query
 -------------
@@ -142,50 +180,40 @@ Using spatial filters in SQL SELECT queries is very common. Such queries are
 performed by using spatial relationship functions, or operators, in the
 ``WHERE`` clause of the SQL query.
 
-For example, to find the ``Lake`` s that contain the point ``POINT(4 1)``,
-we can use this ``Query``::
+For example, to find lakes that contain the point ``POINT(4 1)``,
+we can use this::
+
 
     >>> from sqlalchemy import func
-    >>> query = session.query(Lake).filter(
-    ...             func.ST_Contains(Lake.geom, 'POINT(4 1)'))
+    >>> s = select([lake_table],
+                   func.ST_Contains(lake_table.c.geom, 'POINT(4 1)'))
+    >>> str(s)
+    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom_1 FROM lake WHERE ST_Contains(lake.geom, :param_1)
+    >>> result = conn.execute(s)
+    >>> for row in result:
+    ...     print 'name:', row['name'], '; geom:', row['geom_1'].desc
     ...
-    >>> for lake in query:
-    ...     print lake.name
+    name: Orta ; geom: 0103...
+
+GeoAlchemy allows rewriting this more concisely::
+
+    >>> s = select([lake_table], lake_table.c.geom.ST_Contains('POINT(4 1)'))
+    >>> str(s)
+    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom_1 FROM lake WHERE ST_Contains(lake.geom, :param_1)
+
+Here the ``ST_Contains`` function is applied to ``lake.c.geom``. In that case
+the column is actually passed to the function, as its first argument.
+
+Here's another spatial query, based on ``ST_Intersects``::
+
+    >>> s = select([lake_table],
+    ...            lake_table.c.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
+    >>> result = conn.execute(s)
+    >>> for row in result:
+    ...     print 'name:', row['name'], '; geom:', row['geom_1'].desc
     ...
-    Orta
-
-GeoAlchemy allows rewriting this ``Query`` more concisely::
-
-    >>> from sqlalchemy import func
-    >>> query = session.query(Lake).filter(Lake.geom.ST_Contains('POINT(4 1)'))
-    >>> for lake in query:
-    ...     print lake.name
-    ...
-    Orta
-
-Here the ``ST_Contains`` function is applied to the ``Lake.geom`` column
-property. In that case the column property is actually passed to the function,
-as its first argument.
-
-Here's another spatial filtering query, based on ``ST_Intersects``::
-
-    >>> query = session.query(Lake).filter(
-    ...             Lake.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
-    ...
-    >>> for lake in query:
-    ...     print lake.name
-    ...
-    Garde
-    Orta
-
-We can also apply relationship functions to ``WKBElement``. For example::
-
-    >>> lake = session.query(Lake).filter_by(name='Garde').one()
-    >>> print session.scalar(lake.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
-    True
-
-``session.scalar`` allows executing a clause and returning a scalar
-value (a boolean value in this case).
+    name: Garde ; geom: 0103...
+    name: Orta ; geom: 0103...
 
 The GeoAlchemy functions all start with ``ST_``. Operators are also called as
 functions, but the function names don't include the ``ST_`` prefix. As an
@@ -193,45 +221,28 @@ example let's use PostGIS' ``&&`` operator, which allows testing
 whether the bounding boxes of geometries intersect. GeoAlchemy provides
 the ``intersects`` function for that::
 
-    >>> query = session.queryt
-    >>> query = session.query(Lake).filter(
-    ...             Lake.geom.intersects('LINESTRING(2 1,4 1)'))
+    >>> s = select([lake_table],
+    ...            lake_table.c.geom.intersects('LINESTRING(2 1,4 1)'))
+    >>> result = conn.execute(s)
+    >>> for row in result:
+    ...     print 'name:', row['name'], '; geom:', row['geom_1'].desc
     ...
-    >>> for lake in query:
-    ...     print lake.name
-    ...
-    Garde
-    Orta
+    name: Garde ; geom: 0103...
+    name: Orta ; geom: 0103...
 
 Processing and Measurement
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here's a ``Query`` that calculates the areas of buffers for our lakes::
+Here's a ``Select`` that calculates the areas of buffers for our lakes::
 
-    >>> from sqlalchemy import func
-    >>> query = session.query(Lake.name,
-    ...                       func.ST_Area(func.ST_Buffer(Lake.geom, 2)) \
-    ...                           .label('bufferarea'))
-    >>> for row in query:
-    ...     print '%s: %f' % (row.name, row.bufferarea)
-    ...
-    Majeur: 21.485781
-    Garde: 32.485781
-    Orta: 45.485781
-
-This ``Query`` applies the PostGIS ``ST_Buffer`` function to the geometry
-column of every row of the ``lake`` table. The return value is a list of rows,
-where each row is actually a tuple of two values: the lake name, and the area
-of a buffer of the lake. Each tuple is actually an SQLAlchemy ``KeyedTuple``
-object, which provides property type accessors.
-
-Again, the ``Query`` can written more concisely::
-
-    >>> query = session.query(Lake.name,
-    ...                       Lake.geom.ST_Buffer(2).ST_Area().label('bufferarea'))
-    >>> for row in query:
-    ...     print '%s: %f' % (row.name, row.bufferarea)
-    ...
+    >>> s = select([lake_table.c.name,
+                    func.ST_Area(
+                        lake_table.c.geom.ST_Buffer(2)).label('bufferarea')])
+    >>> str(s)
+    SELECT lake.name, ST_Area(ST_Buffer(lake.geom, %(param_1)s)) AS bufferarea FROM lake
+    >>> result = conn.execute(s)
+    >>> for row in result:
+    ...     print '%s: %f' % (row['name'], row['bufferarea'])
     Majeur: 21.485781
     Garde: 32.485781
     Orta: 45.485781
@@ -239,16 +250,21 @@ Again, the ``Query`` can written more concisely::
 Obviously, processing and measurement functions can alo be used in ``WHERE``
 clauses. For example::
 
-    >>> lake = session.query(Lake).filter(
-    ...             Lake.geom.ST_Buffer(2).ST_Area() > 33).one()
-    ...
-    >>> print lake.name
+    >>> s = select([lake_table.c.name],
+                   lake_table.c.geom.ST_Buffer(2).ST_Area() > 33)
+    >>> str(s)
+    SELECT lake.name FROM lake WHERE ST_Area(ST_Buffer(lake.geom, :param_1)) > :ST_Area_1
+    >>> result = conn.execute(s)
+    >>> for row in result:
+    ...     print row['name']
     Orta
 
 And, like any other functions supported by GeoAlchemy, processing and
 measurement functions can be applied to ``WKBElement``. For example::
 
-    >>> lake = session.query(Lake).filter_by(name='Majeur').one()
-    >>> bufferarea = session.scalar(lake.geom.ST_Buffer(2).ST_Area())
-    >>> print '%s: %f' % (lake.name, bufferarea)
+    >>> s = select([lake_table], lake_table.c.name == 'Majeur')
+    >>> result = conn.execute(s)
+    >>> lake = result.fetchone()
+    >>> bufferarea = conn.scalar(lake[lake_table.c.geom].ST_Buffer(2).ST_Area())
+    >>> print '%s: %f' % (lake['name'], bufferarea)
     Majeur: 21.485781
