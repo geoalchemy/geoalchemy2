@@ -157,15 +157,16 @@ We can now execute the statement and look at the results::
 
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row['name'], '; geom:', row['geom_1'].desc
+    ...     print 'name:', row[lake_table.c.name], \
+    ...           '; geom:', row[lake_table.c.geom].desc
     ...
     name: Majeur ; geom: 0103...
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
 
-``row['geom_1']`` is :class:`geoalchemy2.types.WKBElement` instance. In this
-example we just get an hexadecimal representation of the geometry's WKB value
-using the ``desc`` property.
+``row[lake_table.c.geom]`` is a :class:`geoalchemy2.types.WKBElement` instance.
+In this example we just get an hexadecimal representation of the geometry's WKB
+value using the ``desc`` property.
 
 Spatial Query
 -------------
@@ -191,7 +192,8 @@ we can use this::
     SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom_1 FROM lake WHERE ST_Contains(lake.geom, :param_1)
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row['name'], '; geom:', row['geom_1'].desc
+    ...     print 'name:', row[lake_table.c.name], \
+    ...           '; geom:', row[lake_table.c.geom].desc
     ...
     name: Orta ; geom: 0103...
 
@@ -210,7 +212,8 @@ Here's another spatial query, based on ``ST_Intersects``::
     ...            lake_table.c.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row['name'], '; geom:', row['geom_1'].desc
+    ...     print 'name:', row[lake_table.c.name], \
+    ...           '; geom:', row[lake_table.c.geom].desc
     ...
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
@@ -225,7 +228,8 @@ the ``intersects`` function for that::
     ...            lake_table.c.geom.intersects('LINESTRING(2 1,4 1)'))
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row['name'], '; geom:', row['geom_1'].desc
+    ...     print 'name:', row[lake_table.c.name], \
+    ...           '; geom:', row[lake_table.c.geom].desc
     ...
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
