@@ -133,7 +133,7 @@ class Geometry(UserDefinedType):
     depending on the context.
 
     For example the statement ``select([table.c.geom])`` will generate the SQL
-    ``SELECT ST_AsBinary("table".geom) AS geom_1 FROM "table"``. And the
+    ``SELECT ST_AsBinary("table".geom) AS geom FROM "table"``. And the
     statement ``insert(table).values(geom='POINT(1 2)')`` will generate
     ``INSERT INTO "table" (geom) VALUES (ST_GeomFromText(:geom))``.
 

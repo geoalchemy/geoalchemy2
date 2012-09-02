@@ -148,7 +148,7 @@ generate ``SELECT`` statements is SQLAlchemy`s ``select()`` function::
     >>> from sqlalchemy.sql import select
     >>> s = select([lake_table])
     >>> str(s)
-    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom_1 FROM lake
+    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom FROM lake
 
 The ``geom`` column being a ``Geometry`` it is wrapped in ``ST_AsBinary`` call
 when specified as a column in a ``SELECT`` statement.
@@ -157,16 +157,15 @@ We can now execute the statement and look at the results::
 
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row[lake_table.c.name], \
-    ...           '; geom:', row[lake_table.c.geom].desc
+    ...     print 'name:', row['name'], '; geom:', row['geom'].desc
     ...
     name: Majeur ; geom: 0103...
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
 
-``row[lake_table.c.geom]`` is a :class:`geoalchemy2.types.WKBElement` instance.
-In this example we just get an hexadecimal representation of the geometry's WKB
-value using the ``desc`` property.
+``row['geom']`` is a :class:`geoalchemy2.types.WKBElement` instance.  In this
+example we just get an hexadecimal representation of the geometry's WKB value
+using the ``desc`` property.
 
 Spatial Query
 -------------
@@ -189,11 +188,10 @@ we can use this::
     >>> s = select([lake_table],
                    func.ST_Contains(lake_table.c.geom, 'POINT(4 1)'))
     >>> str(s)
-    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom_1 FROM lake WHERE ST_Contains(lake.geom, :param_1)
+    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom FROM lake WHERE ST_Contains(lake.geom, :param_1)
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row[lake_table.c.name], \
-    ...           '; geom:', row[lake_table.c.geom].desc
+    ...     print 'name:', row['name'], '; geom:', row['geom'].desc
     ...
     name: Orta ; geom: 0103...
 
@@ -201,7 +199,7 @@ GeoAlchemy allows rewriting this more concisely::
 
     >>> s = select([lake_table], lake_table.c.geom.ST_Contains('POINT(4 1)'))
     >>> str(s)
-    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom_1 FROM lake WHERE ST_Contains(lake.geom, :param_1)
+    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom FROM lake WHERE ST_Contains(lake.geom, :param_1)
 
 Here the ``ST_Contains`` function is applied to ``lake.c.geom``. In that case
 the column is actually passed to the function, as its first argument.
@@ -212,8 +210,7 @@ Here's another spatial query, based on ``ST_Intersects``::
     ...            lake_table.c.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row[lake_table.c.name], \
-    ...           '; geom:', row[lake_table.c.geom].desc
+    ...     print 'name:', row['name'], '; geom:', row['geom'].desc
     ...
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
@@ -228,8 +225,7 @@ the ``intersects`` function for that::
     ...            lake_table.c.geom.intersects('LINESTRING(2 1,4 1)'))
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row[lake_table.c.name], \
-    ...           '; geom:', row[lake_table.c.geom].desc
+    ...     print 'name:', row['name'], '; geom:', row['geom'].desc
     ...
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...

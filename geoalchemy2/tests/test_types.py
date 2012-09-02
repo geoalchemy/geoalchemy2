@@ -27,7 +27,7 @@ class TestGeometry(unittest.TestCase):
         from sqlalchemy.sql import select
         table = _create_table()
         s = select([table.c.geom])
-        eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom_1 FROM "table"')
+        eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom FROM "table"')
 
     def test_select_bind_expression(self):
         from sqlalchemy.sql import select
@@ -190,11 +190,11 @@ class TestOperator(unittest.TestCase):
         eq_sql(expr, '"table".geom <-> ST_GeomFromText(:geom_1)')
         s = table.select().order_by(
                 table.c.geom.distance_between_points('POINT(1 2)')).limit(10)
-        eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom_1 '
+        eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom '
                   'FROM "table" '
-                  'ORDER BY "table".geom <-> ST_GeomFromText(:geom_2) '
+                  'ORDER BY "table".geom <-> ST_GeomFromText(:geom_1) '
                   'LIMIT :param_1')
-        eq_(s.compile().params, {u'geom_2': 'POINT(1 2)', u'param_1': 10})
+        eq_(s.compile().params, {u'geom_1': 'POINT(1 2)', u'param_1': 10})
 
     def test_distance_between_bbox(self):
         table = _create_table()
@@ -202,11 +202,11 @@ class TestOperator(unittest.TestCase):
         eq_sql(expr, '"table".geom <#> ST_GeomFromText(:geom_1)')
         s = table.select().order_by(
                 table.c.geom.distance_between_bbox('POINT(1 2)')).limit(10)
-        eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom_1 '
+        eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom '
                   'FROM "table" '
-                  'ORDER BY "table".geom <#> ST_GeomFromText(:geom_2) '
+                  'ORDER BY "table".geom <#> ST_GeomFromText(:geom_1) '
                   'LIMIT :param_1')
-        eq_(s.compile().params, {u'geom_2': 'POINT(1 2)', u'param_1': 10})
+        eq_(s.compile().params, {u'geom_1': 'POINT(1 2)', u'param_1': 10})
 
 
 class TestWKTElement(unittest.TestCase):
