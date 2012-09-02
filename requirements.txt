@@ -1,1 +1,1 @@
--e http://hg.sqlalchemy.org/sqlalchemy/#egg=SQLAlchemy
+-e hg+http://hg.sqlalchemy.org/sqlalchemy/#egg=SQLAlchemy
