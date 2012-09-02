@@ -1,1 +1,1 @@
-SQLAlchemy>=0.7.8
+-e http://hg.sqlalchemy.org/sqlalchemy/#egg=SQLAlchemy
