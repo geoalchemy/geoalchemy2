@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 version = '0.1'
 
 install_requires = [
-    'SQLAlchemy>=0.7.8'
+    'SQLAlchemy>0.7'
     ]
 
 
