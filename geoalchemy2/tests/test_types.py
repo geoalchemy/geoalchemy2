@@ -57,6 +57,16 @@ class TestGeometry(unittest.TestCase):
         table = _create_table()
         table.c.geom.Buffer(2)
 
+    def test_subquery(self):
+        # test for geometry columns not delivered to the result
+        # http://hg.sqlalchemy.org/sqlalchemy/rev/f1efb20c6d61
+        from sqlalchemy.sql import select
+        table = _create_table()
+        s = select([table]).alias('name').select()
+        eq_sql(s,
+               'SELECT ST_AsBinary(name.geom) AS geom FROM '
+               '(SELECT "table".geom AS geom FROM "table") AS name')
+
 
 class TestPoint(unittest.TestCase):
 
