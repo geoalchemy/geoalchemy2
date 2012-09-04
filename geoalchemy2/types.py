@@ -1,127 +1,8 @@
-import binascii
-
 from sqlalchemy.types import UserDefinedType
-from sqlalchemy.sql import func, expression
+from sqlalchemy.sql import func
 
-
-def _generate_function(name, expr=None):
-    """
-    Generate a spatial function from its name, and "bind" it
-    to the expression passed in ``expr``.
-    """
-
-    # We create our own _FunctionGenerator here, and use it in place of
-    # SQLAlchemy's "func" object. This is to be able to "bind" the
-    # function to the SQL expression. See also GenericFunction above.
-
-    func_ = expression._FunctionGenerator(expr=expr)
-    return getattr(func_, name)
-
-
-class _Comparator(UserDefinedType.Comparator):
-    """
-    A custom comparator class. Used in :class:`geoalchemy2.types.Geometry`.
-
-    This is where spatial operators like ``&&`` and ``&<`` are defined.
-    """
-
-    def __getattr__(self, name):
-
-        # Function names that don't start with "ST_" are rejected.
-        # This is not to mess up with SQLAlchemy's use of
-        # hasattr/getattr on Column objects.
-
-        if not name.startswith('ST_'):
-            raise AttributeError
-
-        return _generate_function(name, expr=self.expr)
-
-    def intersects(self, other):
-        """
-        The ``&&`` operator. A's BBOX intersects B's.
-        """
-        return self.op('&&')(other)
-
-    def overlaps_or_left(self, other):
-        """
-        The ``&<`` operator. A's BBOX overlaps or is to the left of B's.
-        """
-        return self.op('&<')(other)
-
-    def overlaps_or_right(self, other):
-        """
-        The ``&>`` operator. A's BBOX overlaps or is to the right of B's.
-        """
-        return self.op('&>')(other)
-
-    def distance_between_points(self, other):
-        """
-        The ``<->`` operator. The distance between two points.
-        """
-        return self.op('<->')(other)
-
-    def distance_between_bbox(self, other):
-        """
-        The ``<#>`` operator. The distance between bounding box of two
-        geometries.
-        """
-        return self.op('<#>')(other)
-
-
-class _SpatialElement(object):
-
-    def __str__(self):
-        return self.desc  # pragma: no cover
-
-    def __repr__(self):
-        return "<%s at 0x%x; %r>" % \
-            (self.__class__.__name__, id(self), self.desc)  # pragma: no cover
-
-
-class WKTElement(_SpatialElement, expression.Function):
-    """
-    Instances of this class wrap a WKT value.
-    """
-
-    def __init__(self, data, srid=-1):
-        self.srid = srid
-        self.data = data
-        expression.Function.__init__(self, "ST_GeomFromText", data)
-
-    @property
-    def desc(self):
-        """
-        This element's description string.
-        """
-        return self.data
-
-
-class WKBElement(_SpatialElement, expression.Function):
-    """
-    Instances of this class wrap a WKB value. Geometry values read
-    from the database are converted to instances of type.
-    """
-
-    def __init__(self, data):
-        self.data = data
-        expression.Function.__init__(self, "ST_GeomFromWKB", data)
-
-    @property
-    def desc(self):
-        """
-        This element's description string.
-        """
-        return binascii.hexlify(self.data)
-
-    def __getattr__(self, name):
-        #
-        # This is how things like lake.geom.ST_Buffer(2) creates
-        # SQL expressions of this form:
-        #
-        # ST_Buffer(ST_GeomFromWKB(:ST_GeomFromWKB_1), :param_1)
-        #
-
-        return _generate_function(name, expr=self)
+from .comparator import Comparator
+from .elements import WKBElement
 
 
 class _GISType(UserDefinedType):
@@ -147,7 +28,7 @@ class _GISType(UserDefinedType):
     """ The name of ST_*FromText function for this type.
         Set in subclasses. """
 
-    comparator_factory = _Comparator
+    comparator_factory = Comparator
     """ This is the way by which spatial operators are defined for
         geometry/geography columns. """
 

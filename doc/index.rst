@@ -72,6 +72,7 @@ Reference
    types
    elements
    spatial_functions
+   comparator
 
 Development
 -----------

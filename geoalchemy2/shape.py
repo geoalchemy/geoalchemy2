@@ -1,7 +1,7 @@
 import shapely.wkb
 import shapely.wkt
 
-from .types import WKBElement, WKTElement
+from .elements import WKBElement, WKTElement
 
 
 def to_shape(element):

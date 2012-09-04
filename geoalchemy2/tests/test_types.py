@@ -195,7 +195,7 @@ class TestFunction(unittest.TestCase):
 
     def test_ST_Equal_WKTElement_WKTElement(self):
         from sqlalchemy import func
-        from geoalchemy2.types import WKTElement
+        from geoalchemy2.elements import WKTElement
         expr = func.ST_Equals(WKTElement('POINT(1 2)'),
                               WKTElement('POINT(1 2)'))
         eq_sql(expr,
@@ -207,7 +207,7 @@ class TestFunction(unittest.TestCase):
 
     def test_ST_Equal_Column_WKTElement(self):
         from sqlalchemy import func
-        from geoalchemy2.types import WKTElement
+        from geoalchemy2.elements import WKTElement
         table = _create_geometry_table()
         expr = func.ST_Equals(table.c.geom, WKTElement('POINT(1 2)'))
         eq_sql(expr,
@@ -281,7 +281,7 @@ class TestOperator(unittest.TestCase):
 class TestWKTElement(unittest.TestCase):
 
     def test_desc(self):
-        from geoalchemy2.types import WKTElement
+        from geoalchemy2.elements import WKTElement
         e = WKTElement('POINT(1 2)')
         eq_(e.desc, 'POINT(1 2)')
 
@@ -289,12 +289,12 @@ class TestWKTElement(unittest.TestCase):
 class TestWKBElement(unittest.TestCase):
 
     def test_desc(self):
-        from geoalchemy2.types import WKBElement
+        from geoalchemy2.elements import WKBElement
         e = WKBElement('\x01\x02')
         eq_(e.desc, '0102')
 
     def test_function_call(self):
-        from geoalchemy2.types import WKBElement
+        from geoalchemy2.elements import WKBElement
         e = WKBElement('\x01\x02')
         f = e.ST_Buffer(2)
         eq_sql(f,

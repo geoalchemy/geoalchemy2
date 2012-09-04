@@ -2,7 +2,7 @@ from nose.tools import ok_, eq_
 
 
 def test_to_shape_WKBElement():
-    from geoalchemy2.types import WKBElement
+    from geoalchemy2.elements import WKBElement
     from geoalchemy2.shape import to_shape
     from shapely.geometry import Point
     e = WKBElement('\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00'
@@ -14,7 +14,7 @@ def test_to_shape_WKBElement():
 
 
 def test_to_shape_WKTElement():
-    from geoalchemy2.types import WKTElement
+    from geoalchemy2.elements import WKTElement
     from geoalchemy2.shape import to_shape
     from shapely.geometry import Point
     e = WKTElement('POINT(1 2)')
@@ -27,7 +27,7 @@ def test_to_shape_WKTElement():
 def test_from_shape():
     from shapely.geometry import Point
     from geoalchemy2.shape import from_shape
-    from geoalchemy2.types import WKBElement
+    from geoalchemy2.elements import WKBElement
     p = Point(1, 2)
     e = from_shape(p)
     ok_(isinstance(e, WKBElement))

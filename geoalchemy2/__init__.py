@@ -1,8 +1,11 @@
 from .types import (  # NOQA
-    WKTElement,
-    WKBElement,
     Geometry,
     Geography
+    )
+
+from .elements import (  # NOQA
+    WKTElement,
+    WKBElement
     )
 
 from . import functions  # NOQA

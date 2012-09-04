@@ -3,17 +3,7 @@
 Types
 =====
 
-.. autoclass:: geoalchemy2.types.Geometry
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. autoclass:: geoalchemy2.types.Geography
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. autoclass:: geoalchemy2.types._Comparator
+.. automodule:: geoalchemy2.types
    :members:
    :undoc-members:
    :show-inheritance:

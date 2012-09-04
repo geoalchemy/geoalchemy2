@@ -3,12 +3,12 @@
 Elements
 ========
 
-.. autoclass:: geoalchemy2.types.WKTElement
+.. autoclass:: geoalchemy2.elements.WKTElement
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: geoalchemy2.types.WKBElement
+.. autoclass:: geoalchemy2.elements.WKBElement
    :members:
    :undoc-members:
    :show-inheritance:
