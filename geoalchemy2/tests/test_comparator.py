@@ -48,10 +48,65 @@ class TestOperator(unittest.TestCase):
         expr = table.c.geom.overlaps_or_left('POINT(1 2)')
         eq_sql(expr, '"table".geom &< ST_GeomFromText(:geom_1)')
 
+    def test_overlaps_or_below(self):
+        table = _create_geometry_table()
+        expr = table.c.geom.overlaps_or_below('POINT(1 2)')
+        eq_sql(expr, '"table".geom &<| ST_GeomFromText(:geom_1)')
+
     def test_overlaps_or_right(self):
         table = _create_geometry_table()
         expr = table.c.geom.overlaps_or_right('POINT(1 2)')
         eq_sql(expr, '"table".geom &> ST_GeomFromText(:geom_1)')
+
+    def test_left(self):
+        table = _create_geometry_table()
+        expr = table.c.geom.left('POINT(1 2)')
+        eq_sql(expr, '"table".geom << ST_GeomFromText(:geom_1)')
+
+    def test_lshift(self):
+        table = _create_geometry_table()
+        expr = table.c.geom << 'POINT(1 2)'
+        eq_sql(expr, '"table".geom << ST_GeomFromText(:geom_1)')
+
+    def test_below(self):
+        table = _create_geometry_table()
+        expr = table.c.geom.below('POINT(1 2)')
+        eq_sql(expr, '"table".geom <<| ST_GeomFromText(:geom_1)')
+
+    def test_right(self):
+        table = _create_geometry_table()
+        expr = table.c.geom.right('POINT(1 2)')
+        eq_sql(expr, '"table".geom >> ST_GeomFromText(:geom_1)')
+
+    def test_rshift(self):
+        table = _create_geometry_table()
+        expr = table.c.geom >> 'POINT(1 2)'
+        eq_sql(expr, '"table".geom >> ST_GeomFromText(:geom_1)')
+
+    def test_contained(self):
+        table = _create_geometry_table()
+        expr = table.c.geom.contained('POINT(1 2)')
+        eq_sql(expr, '"table".geom @ ST_GeomFromText(:geom_1)')
+
+    def test_overlaps_or_above(self):
+        table = _create_geometry_table()
+        expr = table.c.geom.overlaps_or_above('POINT(1 2)')
+        eq_sql(expr, '"table".geom |&> ST_GeomFromText(:geom_1)')
+
+    def test_above(self):
+        table = _create_geometry_table()
+        expr = table.c.geom.above('POINT(1 2)')
+        eq_sql(expr, '"table".geom |>> ST_GeomFromText(:geom_1)')
+
+    #def test_contains(self):
+        #table = _create_geometry_table()
+        #expr = table.c.geom.contains('POINT(1 2)')
+        #eq_sql(expr, '"table".geom ~ ST_GeomFromText(:geom_1)')
+
+    def test_same(self):
+        table = _create_geometry_table()
+        expr = table.c.geom.same('POINT(1 2)')
+        eq_sql(expr, '"table".geom ~= ST_GeomFromText(:geom_1)')
 
     def test_distance_centroid(self):
         table = _create_geometry_table()

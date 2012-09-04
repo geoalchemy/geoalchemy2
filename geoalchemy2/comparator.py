@@ -45,11 +45,79 @@ class Comparator(UserDefinedType.Comparator):
         """
         return self.op('&<')(other)
 
+    def overlaps_or_below(self, other):
+        """
+        The ``&<|`` operator. A's BBOX overlaps or is below B's.
+        """
+        return self.op('&<|')(other)
+
     def overlaps_or_right(self, other):
         """
         The ``&>`` operator. A's BBOX overlaps or is to the right of B's.
         """
         return self.op('&>')(other)
+
+    def left(self, other):
+        """
+        The ``<<`` operator. A's BBOX is strictly to the left of B's.
+        """
+        return self.op('<<')(other)
+
+    def __lshift__(self, other):
+        """
+        The ``<<`` operator. A's BBOX is strictly to the left of B's.
+        Same as ``left``.
+        """
+        return self.left(other)
+
+    def below(self, other):
+        """
+        The ``<<|`` operator. A's BBOX is strictly below B's.
+        """
+        return self.op('<<|')(other)
+
+    def right(self, other):
+        """
+        The ``>>`` operator. A's BBOX is strictly to the right of B's.
+        """
+        return self.op('>>')(other)
+
+    def __rshift__(self, other):
+        """
+        The ``>>`` operator. A's BBOX is strictly to the left of B's.
+        Same as ``right``.
+        """
+        return self.right(other)
+
+    def contained(self, other):
+        """
+        The ``@`` operator. A's BBOX is contained by B's.
+        """
+        return self.op('@')(other)
+
+    def overlaps_or_above(self, other):
+        """
+        The ``|&>`` operator. A's BBOX overlaps or is to the right of B's.
+        """
+        return self.op('|&>')(other)
+
+    def above(self, other):
+        """
+        The ``|>>`` operator. A's BBOX is strictly above B's.
+        """
+        return self.op('|>>')(other)
+
+    #def contains(self, other):
+        #"""
+        #The ``~`` operator. A's BBOX contains B's.
+        #"""
+        #return self.op('~')(other)
+
+    def same(self, other):
+        """
+        The ``~=`` operator. A's BBOX is the same as B's.
+        """
+        return self.op('~=')(other)
 
     def distance_centroid(self, other):
         """
