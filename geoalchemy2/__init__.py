@@ -2,14 +2,7 @@ from .types import (  # NOQA
     WKTElement,
     WKBElement,
     Geometry,
-    Point,
-    Curve,
-    LineString,
-    Polygon,
-    MultiPoint,
-    MultiLineString,
-    MultiPolygon,
-    GeometryCollection
+    Geography
     )
 
 from . import functions  # NOQA
@@ -61,7 +54,7 @@ def _setup_ddl_events():
                         func.AddGeometryColumn(
                             table.name, c.name,
                             c.type.srid,
-                            c.type.name,
+                            c.type.geometry_type,
                             c.type.dimension)])
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)

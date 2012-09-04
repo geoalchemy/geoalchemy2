@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, MetaData, Column, Integer, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from geoalchemy2 import LineString
+from geoalchemy2 import Geometry
 
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
@@ -16,7 +16,7 @@ Base = declarative_base(metadata=metadata)
 class Lake(Base):
     __tablename__ = 'lake'
     id = Column(Integer, primary_key=True)
-    geom = Column(LineString)
+    geom = Column(Geometry(geometry_type='LINESTRING'))
 
     def __init__(self, geom):
         self.geom = geom

@@ -124,40 +124,40 @@ class WKBElement(_SpatialElement, expression.Function):
         return _generate_function(name, expr=self)
 
 
-class Geometry(UserDefinedType):
+class _GISType(UserDefinedType):
     """
-    The base Geometry type.
+    The base class for :class:`geoalchemy2.types.Geometry` and
+    :class:`geoalchemy2.types.Geography`.
 
     This class defines ``bind_expression`` and ``column_expression`` methods
-    that wrap expressions into ``ST_GeomFromText`` and ``ST_AsBinary`` calls
-    depending on the context.
+    that wrap column expressions in ``ST_GeomFromText``, ``ST_GeogFromText``,
+    or ``ST_AsBinary`` calls.
 
-    For example the statement ``select([table.c.geom])`` will generate the SQL
-    ``SELECT ST_AsBinary("table".geom) AS geom FROM "table"``. And the
-    statement ``insert(table).values(geom='POINT(1 2)')`` will generate
-    ``INSERT INTO "table" (geom) VALUES (ST_GeomFromText(:geom))``.
-
-    Also, this class defines ``result_processor``, in such a way that values
+    This class also defines the ``result_processor`` method, so that WKB values
     received from the database are converted to
-    :class:`geoalchemy2.types.WKBElement` object.
+    :class:`geoalchemy2.types.WKBElement` objects.
 
     """
 
-    name = "GEOMETRY"
+    name = None
+    """ Name used for defining the main geo type (geometry or geography)
+        in CREATE TABLE statements. Set in subclasses. """
+
+    from_text = None
+    """ The name of ST_*FromText function for this type.
+        Set in subclasses. """
 
     comparator_factory = _Comparator
     """ This is the way by which spatial operators are defined for
-        geometry columns. """
+        geometry/geography columns. """
 
-    def __init__(self, srid=-1, dimension=2):
+    def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2):
+        self.geometry_type = geometry_type
         self.srid = srid
         self.dimension = dimension
 
     def get_col_spec(self):
-        return 'geometry(%s,%d)' % (self.name, self.srid)
-
-    def bind_expression(self, bindvalue):
-        return func.ST_GeomFromText(bindvalue, type_=self)
+        return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
 
     def column_expression(self, col):
         return func.ST_AsBinary(col, type_=self)
@@ -168,34 +168,30 @@ class Geometry(UserDefinedType):
                 return WKBElement(value)
         return process
 
-
-class Point(Geometry):
-    name = 'POINT'
-
-
-class Curve(Geometry):
-    name = 'CURVE'
+    def bind_expression(self, bindvalue):
+        return getattr(func, self.from_text)(bindvalue, type_=self)
 
 
-class LineString(Curve):
-    name = 'LINESTRING'
+class Geometry(_GISType):
+    """
+    The Geometry type.
+
+    """
+
+    name = 'geometry'
+    """ Type name used for defining geometry columns in ``CREATE TABLE``. """
+
+    from_text = 'ST_GeomFromText'
+    """ The ``FromText`` geometry constructor. """
 
 
-class Polygon(Geometry):
-    name = 'POLYGON'
+class Geography(_GISType):
+    """
+    The Geography type.
+    """
 
+    name = 'geography'
+    """ Type name used for defining geography columns in ``CREATE TABLE``. """
 
-class MultiPoint(Geometry):
-    name = 'MULTIPOINT'
-
-
-class MultiLineString(Geometry):
-    name = 'MULTILINESTRING'
-
-
-class MultiPolygon(Geometry):
-    name = 'MULTIPOLYGON'
-
-
-class GeometryCollection(Geometry):
-    name = 'GEOMETRYCOLLECTION'
+    from_text = 'ST_GeogFromText'
+    """ The ``FromText`` geography constructor. """

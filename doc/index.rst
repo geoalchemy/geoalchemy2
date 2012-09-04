@@ -46,6 +46,9 @@ new `type-level comparator system
 GeoAlchemy 2 adds ``to_shape``, ``from_shape`` functions for a better
 integration with `Shapely <http://pypi.python.org/pypi/Shapely>`_.
 
+GeoAlchemy 2 supports PostGIS' ``geography`` type. The support is
+partial at the moment.
+
 
 Tutorials
 ---------
