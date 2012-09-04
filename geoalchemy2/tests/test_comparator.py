@@ -98,10 +98,10 @@ class TestOperator(unittest.TestCase):
         expr = table.c.geom.above('POINT(1 2)')
         eq_sql(expr, '"table".geom |>> ST_GeomFromText(:geom_1)')
 
-    #def test_contains(self):
-        #table = _create_geometry_table()
-        #expr = table.c.geom.contains('POINT(1 2)')
-        #eq_sql(expr, '"table".geom ~ ST_GeomFromText(:geom_1)')
+    def test_contains(self):
+        table = _create_geometry_table()
+        expr = table.c.geom.contains('POINT(1 2)')
+        eq_sql(expr, '"table".geom ~ ST_GeomFromText(:geom_1)')
 
     def test_same(self):
         table = _create_geometry_table()

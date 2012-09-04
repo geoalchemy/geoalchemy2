@@ -107,11 +107,11 @@ class Comparator(UserDefinedType.Comparator):
         """
         return self.op('|>>')(other)
 
-    #def contains(self, other):
-        #"""
-        #The ``~`` operator. A's BBOX contains B's.
-        #"""
-        #return self.op('~')(other)
+    def contains(self, other, **kw):
+        """
+        The ``~`` operator. A's BBOX contains B's.
+        """
+        return self.op('~')(other)
 
     def same(self, other):
         """
