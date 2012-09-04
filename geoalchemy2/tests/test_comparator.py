@@ -43,9 +43,9 @@ class TestOperator(unittest.TestCase):
         expr = table.c.geom.intersects('POINT(1 2)')
         eq_sql(expr, '"table".geom && ST_GeomFromText(:geom_1)')
 
-    def test_overlaps_or_left(self):
+    def test_overlaps_or_to_left(self):
         table = _create_geometry_table()
-        expr = table.c.geom.overlaps_or_left('POINT(1 2)')
+        expr = table.c.geom.overlaps_or_to_left('POINT(1 2)')
         eq_sql(expr, '"table".geom &< ST_GeomFromText(:geom_1)')
 
     def test_overlaps_or_below(self):
@@ -53,14 +53,14 @@ class TestOperator(unittest.TestCase):
         expr = table.c.geom.overlaps_or_below('POINT(1 2)')
         eq_sql(expr, '"table".geom &<| ST_GeomFromText(:geom_1)')
 
-    def test_overlaps_or_right(self):
+    def test_overlaps_or_to_right(self):
         table = _create_geometry_table()
-        expr = table.c.geom.overlaps_or_right('POINT(1 2)')
+        expr = table.c.geom.overlaps_or_to_right('POINT(1 2)')
         eq_sql(expr, '"table".geom &> ST_GeomFromText(:geom_1)')
 
-    def test_left(self):
+    def test_to_left(self):
         table = _create_geometry_table()
-        expr = table.c.geom.left('POINT(1 2)')
+        expr = table.c.geom.to_left('POINT(1 2)')
         eq_sql(expr, '"table".geom << ST_GeomFromText(:geom_1)')
 
     def test_lshift(self):
@@ -73,9 +73,9 @@ class TestOperator(unittest.TestCase):
         expr = table.c.geom.below('POINT(1 2)')
         eq_sql(expr, '"table".geom <<| ST_GeomFromText(:geom_1)')
 
-    def test_right(self):
+    def test_to_right(self):
         table = _create_geometry_table()
-        expr = table.c.geom.right('POINT(1 2)')
+        expr = table.c.geom.to_right('POINT(1 2)')
         eq_sql(expr, '"table".geom >> ST_GeomFromText(:geom_1)')
 
     def test_rshift(self):

@@ -39,7 +39,7 @@ class Comparator(UserDefinedType.Comparator):
         """
         return self.op('&&')(other)
 
-    def overlaps_or_left(self, other):
+    def overlaps_or_to_left(self, other):
         """
         The ``&<`` operator. A's BBOX overlaps or is to the left of B's.
         """
@@ -51,13 +51,13 @@ class Comparator(UserDefinedType.Comparator):
         """
         return self.op('&<|')(other)
 
-    def overlaps_or_right(self, other):
+    def overlaps_or_to_right(self, other):
         """
         The ``&>`` operator. A's BBOX overlaps or is to the right of B's.
         """
         return self.op('&>')(other)
 
-    def left(self, other):
+    def to_left(self, other):
         """
         The ``<<`` operator. A's BBOX is strictly to the left of B's.
         """
@@ -66,15 +66,15 @@ class Comparator(UserDefinedType.Comparator):
     def __lshift__(self, other):
         """
         The ``<<`` operator. A's BBOX is strictly to the left of B's.
-        Same as ``left``, so::
+        Same as ``to_left``, so::
 
             table.c.geom << 'POINT(1 2)'
 
         is the same as::
 
-            table.c.geom.left('POINT(1 2)')
+            table.c.geom.to_left('POINT(1 2)')
         """
-        return self.left(other)
+        return self.to_left(other)
 
     def below(self, other):
         """
@@ -82,7 +82,7 @@ class Comparator(UserDefinedType.Comparator):
         """
         return self.op('<<|')(other)
 
-    def right(self, other):
+    def to_right(self, other):
         """
         The ``>>`` operator. A's BBOX is strictly to the right of B's.
         """
@@ -91,15 +91,15 @@ class Comparator(UserDefinedType.Comparator):
     def __rshift__(self, other):
         """
         The ``>>`` operator. A's BBOX is strictly to the left of B's.
-        Same as ``right``, so::
+        Same as `to_`right``, so::
 
             table.c.geom >> 'POINT(1 2)'
 
         is the same as::
 
-            table.c.geom.right('POINT(1 2)')
+            table.c.geom.to_right('POINT(1 2)')
         """
-        return self.right(other)
+        return self.to_right(other)
 
     def contained(self, other):
         """
