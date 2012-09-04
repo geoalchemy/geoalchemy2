@@ -57,22 +57,33 @@ class Geometry(_GISType):
     """
     The Geometry type.
 
+    Creating a geometry column is done like this::
+
+        Column(Geometry(geometry_type='POINT', srid=4326))
+
     """
 
     name = 'geometry'
     """ Type name used for defining geometry columns in ``CREATE TABLE``. """
 
     from_text = 'ST_GeomFromText'
-    """ The ``FromText`` geometry constructor. """
+    """ The ``FromText`` geometry constructor. Used by the parent class'
+        ``bind_expression`` method. """
 
 
 class Geography(_GISType):
     """
     The Geography type.
+
+    Creating a geography column is done like this::
+
+        Column(Geometry(geometry_type='POINT', srid=4326))
+
     """
 
     name = 'geography'
     """ Type name used for defining geography columns in ``CREATE TABLE``. """
 
     from_text = 'ST_GeogFromText'
-    """ The ``FromText`` geography constructor. """
+    """ The ``FromText`` geography constructor. Used by the parent class'
+        ``bind_expression`` method. """
