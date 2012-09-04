@@ -66,7 +66,13 @@ class Comparator(UserDefinedType.Comparator):
     def __lshift__(self, other):
         """
         The ``<<`` operator. A's BBOX is strictly to the left of B's.
-        Same as ``left``.
+        Same as ``left``, so::
+
+            table.c.geom << 'POINT(1 2)'
+
+        is the same as::
+
+            table.c.geom.left('POINT(1 2)')
         """
         return self.left(other)
 
@@ -85,7 +91,13 @@ class Comparator(UserDefinedType.Comparator):
     def __rshift__(self, other):
         """
         The ``>>`` operator. A's BBOX is strictly to the left of B's.
-        Same as ``right``.
+        Same as ``right``, so::
+
+            table.c.geom >> 'POINT(1 2)'
+
+        is the same as::
+
+            table.c.geom.right('POINT(1 2)')
         """
         return self.right(other)
 
