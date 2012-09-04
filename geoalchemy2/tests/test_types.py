@@ -253,24 +253,24 @@ class TestOperator(unittest.TestCase):
         expr = table.c.geom.overlaps_or_right('POINT(1 2)')
         eq_sql(expr, '"table".geom &> ST_GeomFromText(:geom_1)')
 
-    def test_distance_between_points(self):
+    def test_distance_centroid(self):
         table = _create_geometry_table()
-        expr = table.c.geom.distance_between_points('POINT(1 2)')
+        expr = table.c.geom.distance_centroid('POINT(1 2)')
         eq_sql(expr, '"table".geom <-> ST_GeomFromText(:geom_1)')
         s = table.select().order_by(
-                table.c.geom.distance_between_points('POINT(1 2)')).limit(10)
+                table.c.geom.distance_centroid('POINT(1 2)')).limit(10)
         eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom '
                   'FROM "table" '
                   'ORDER BY "table".geom <-> ST_GeomFromText(:geom_1) '
                   'LIMIT :param_1')
         eq_(s.compile().params, {u'geom_1': 'POINT(1 2)', u'param_1': 10})
 
-    def test_distance_between_bbox(self):
+    def test_distance_box(self):
         table = _create_geometry_table()
-        expr = table.c.geom.distance_between_bbox('POINT(1 2)')
+        expr = table.c.geom.distance_box('POINT(1 2)')
         eq_sql(expr, '"table".geom <#> ST_GeomFromText(:geom_1)')
         s = table.select().order_by(
-                table.c.geom.distance_between_bbox('POINT(1 2)')).limit(10)
+                table.c.geom.distance_box('POINT(1 2)')).limit(10)
         eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom '
                   'FROM "table" '
                   'ORDER BY "table".geom <#> ST_GeomFromText(:geom_1) '
