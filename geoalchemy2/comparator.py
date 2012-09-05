@@ -1,8 +1,43 @@
 """
 
 This module defines a ``Comparator`` class for use with geometry and geography
-objects. This is where spatial operators like ``&&``, ``&<`` are defined.
+objects. This is where spatial operators, like ``&&``, ``&<``, are defined.
+Spatial operators very often apply to the bounding boxes of geometries. For
+example, ``geom1 && geom2`` indicates if geom1's bounding box intersects
+geom2's.
 
+Examples
+--------
+
+Select the objects whose bounding boxes are to the left of ``LINESTRING(0 -90,0
+90)`` (the bounding box of ``LINESTRING(0 -90,0 90)`` is ``LINESTRING(0 -90,0
+90)``)::
+
+    select([table]).where(table.c.geom.to_left('LINESTRING(0 -90,0 90)'))
+
+The ``<<`` and ``>>`` operators are a bit specific, because they have
+corresponding Python operator (``__lshift__`` and ``__rshift__``). The
+above ``SELECT`` expression can thus be rewritten like this::
+
+    select([table]).where(table.c.geom << 'LINESTRING(0 -90,0 90)')
+
+Operators can also be used when using the ORM. For example::
+
+    Session.query(Cls).filter(Cls.geom << 'LINESTRING(0 -90,0 90)')
+
+Now some other examples with the ``<#>`` operator.
+
+Select the ten objects that are the closest to ``POINT(0 0)`` (typical
+closed neighbors problem)::
+
+    select([table]).order_by(table.c.geom.distance_box('POINT(0 0)')).limit(10)
+
+Using the ORM::
+
+    Session.query(Cls).order_by(Cls.geom.distance_box('POINT(0 0)')).limit(10)
+
+Reference
+---------
 """
 
 from sqlalchemy.types import UserDefinedType
