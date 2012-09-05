@@ -157,8 +157,8 @@ generate ``SELECT`` statements is SQLAlchemy`s ``select()`` function::
     >>> str(s)
     SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom FROM lake
 
-The ``geom`` column being a ``Geometry`` it is wrapped in ``ST_AsBinary`` call
-when specified as a column in a ``SELECT`` statement.
+The ``geom`` column being a ``Geometry`` it is wrapped in a ``ST_AsBinary``
+call when specified as a column in a ``SELECT`` statement.
 
 We can now execute the statement and look at the results::
 
@@ -272,7 +272,8 @@ clauses. For example::
     Orta
 
 And, like any other functions supported by GeoAlchemy, processing and
-measurement functions can be applied to ``WKBElement``. For example::
+measurement functions can be applied to
+:class:`geoalchemy2.elements.WKBElement`. For example::
 
     >>> s = select([lake_table], lake_table.c.name == 'Majeur')
     >>> result = conn.execute(s)

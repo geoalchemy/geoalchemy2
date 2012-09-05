@@ -140,8 +140,9 @@ We can now query the database for ``Majeur``::
     >>> our_lake.id
     1
 
-``our_lake.geom`` is a ``WKBElement``, which a type provided by GeoAlchemy.
-``WKBElement`` wraps a WKB value returned by the database.
+``our_lake.geom`` is a :class:`geoalchemy2.elements.WKBElement`, which a type
+provided by GeoAlchemy.  :class:`geoalchemy2.elements.WKBElement` wraps a WKB
+value returned by the database.
 
 Let's add more lakes::
 
@@ -227,7 +228,8 @@ Here's another spatial filtering query, based on ``ST_Intersects``::
     Garde
     Orta
 
-We can also apply relationship functions to ``WKBElement``. For example::
+We can also apply relationship functions to
+:class:`geoalchemy2.elements.WKBElement`. For example::
 
     >>> lake = session.query(Lake).filter_by(name='Garde').one()
     >>> print session.scalar(lake.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
@@ -295,7 +297,8 @@ clauses. For example::
     Orta
 
 And, like any other functions supported by GeoAlchemy, processing and
-measurement functions can be applied to ``WKBElement``. For example::
+measurement functions can be applied to
+:class:`geoalchemy2.elements.WKBElement`. For example::
 
     >>> lake = session.query(Lake).filter_by(name='Majeur').one()
     >>> bufferarea = session.scalar(lake.geom.ST_Buffer(2).ST_Area())
