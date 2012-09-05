@@ -35,7 +35,7 @@ def _setup_ddl_event_listeners():
         if event in ('before-create', 'before-drop'):
             regular_cols = [c for c in table.c if
                                 not isinstance(c.type, Geometry) or
-                                c.type.mgmt == False]
+                                c.type.management == False]
             gis_cols = set(table.c).difference(regular_cols)
             table.info["_saved_columns"] = table.c
 
@@ -53,7 +53,7 @@ def _setup_ddl_event_listeners():
         elif event == 'after-create':
             table.columns = table.info.pop('_saved_columns')
             for c in table.c:
-                if isinstance(c.type, Geometry) and c.type.mgmt == True:
+                if isinstance(c.type, Geometry) and c.type.management == True:
                     stmt = select([
                         func.AddGeometryColumn(
                             table.name, c.name,

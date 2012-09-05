@@ -27,6 +27,29 @@ class _GISType(UserDefinedType):
     received from the database are converted to
     :class:`geoalchemy2.types.WKBElement` objects.
 
+    Constructor arguments:
+
+    * ``geometry_type`` - The geometry type. Possible values are
+      ``"GEOMETRY"``, ``"POINT"``, ``"LINESTRING"``, ``"POLYGON"``,
+      ``"MULTIPOINT"``, ``"MULTILINESTRING"``, ``"MULTIPOLYGON"``,
+      ``"GEOMETRYCOLLECTION"``, and ``"CURVE"``. The latter is actually not
+      supported with :class:`geoalchemy2.types.Geography`.  Default is
+      ``"GEOMETRY"``.
+
+    * ``srid`` - The SRID for this column. Should be an ``int`` (e.g.
+      ``4326``). Default is ``-1``.
+
+    * ``dimension`` - The dimension of the geomtry. Default is ``2``.
+
+    * ``spatial_index`` - Indicate if a spatial index should be created.
+      Default is ``True``.
+
+    * ``management`` - Indicate if the ``AddGeometryColumn`` and
+      ``DropGeometryColumn`` managements functions should be called when adding
+      and dropping the geometry column. Should be set to ``True`` for PostGIS
+      1.x. Default is ``False``. Note that this option has no effect for
+      :class:`geoalchemy.types.Geography`.
+
     """
 
     name = None
@@ -42,11 +65,12 @@ class _GISType(UserDefinedType):
         geometry/geography columns. """
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
-                 spatial_index=True):
+                 spatial_index=True, management=False):
         self.geometry_type = geometry_type
         self.srid = srid
         self.dimension = dimension
         self.spatial_index = spatial_index
+        self.management = management
 
     def get_col_spec(self):
         return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
@@ -85,11 +109,6 @@ class Geometry(_GISType):
     from_text = 'ST_GeomFromText'
     """ The ``FromText`` geometry constructor. Used by the parent class'
         ``bind_expression`` method. """
-
-    def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
-                 spatial_index=True, mgmt=False):
-        _GISType.__init__(self, geometry_type, srid, dimension, spatial_index)
-        self.mgmt = mgmt
 
 
 class Geography(_GISType):

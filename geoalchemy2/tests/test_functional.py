@@ -28,7 +28,7 @@ postgis_version = session.execute(func.postgis_version()).scalar()
 if not postgis_version.startswith('2.'):
     # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
     # management functions should be used.
-    Lake.__table__.c.geom.type.mgmt = True
+    Lake.__table__.c.geom.type.management = True
 
 
 class InsertionTest(unittest.TestCase):
