@@ -3,6 +3,12 @@
 Core Tutorial
 =============
 
+(This tutorial is greatly inspired from the `SQLAlchemy SQL Expression Language
+Tutorial`_, which is recommended reading, eventually.)
+
+.. _SQLAlchemy SQL Expression Language Tutorial:
+    http://docs.sqlalchemy.org/en/latest/core/tutorial.html
+
 This tutorial shows how to use the SQLAlchemy Expression Language (a.k.a.
 SQLAlchemy Core) with GeoAlchemy. As defined by the SQLAlchemy documentation
 itself, in contrast to the ORM's domain-centric mode of usage, the SQL
