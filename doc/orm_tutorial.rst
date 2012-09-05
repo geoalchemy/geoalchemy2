@@ -3,9 +3,11 @@
 ORM Tutorial
 ============
 
-(This tutorial is greatly inspired from the `SQLAlchemy ORM Tutorial`_.)
+(This tutorial is greatly inspired by the `SQLAlchemy ORM Tutorial`_, which is
+recommended reading, eventually.)
 
-.. _SQLAlchemy ORM Tutorial: http://docs.sqlalchemy.org/en/latest/index.html
+.. _SQLAlchemy ORM Tutorial:
+    http://docs.sqlalchemy.org/en/latest/orm/tutorial.html
 
 GeoAlchemy does not provide an Object Relational Mapper (ORM), but works well
 with the SQLAlchemy ORM. This tutorial shows how to use the SQLAlchemy ORM with
