@@ -208,8 +208,9 @@ GeoAlchemy allows rewriting this more concisely::
     >>> str(s)
     SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom FROM lake WHERE ST_Contains(lake.geom, :param_1)
 
-Here the ``ST_Contains`` function is applied to ``lake.c.geom``. In that case
-the column is actually passed to the function, as its first argument.
+Here the ``ST_Contains`` function is applied to ``lake.c.geom``. And the
+generated SQL the ``lake.geom`` column is actually passed to the
+``ST_Contains`` function as the first argument.
 
 Here's another spatial query, based on ``ST_Intersects``::
 
@@ -222,11 +223,15 @@ Here's another spatial query, based on ``ST_Intersects``::
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
 
+ This query selects lakes whose geometries intersect ``LINESTRING(2 1,4 1)``.
+
 The GeoAlchemy functions all start with ``ST_``. Operators are also called as
-functions, but the function names don't include the ``ST_`` prefix. As an
-example let's use PostGIS' ``&&`` operator, which allows testing
-whether the bounding boxes of geometries intersect. GeoAlchemy provides
-the ``intersects`` function for that::
+functions, but the names of operator functions don't include the ``ST_``
+prefix.
+
+As an example let's use PostGIS' ``&&`` operator, which allows testing
+whether the bounding boxes of geometries intersect. GeoAlchemy provides the
+``intersects`` function for that::
 
     >>> s = select([lake_table],
     ...            lake_table.c.geom.intersects('LINESTRING(2 1,4 1)'))
