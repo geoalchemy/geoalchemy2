@@ -70,6 +70,11 @@ class Geometry(_GISType):
 
         Column(Geometry(geometry_type='POINT', srid=4326))
 
+    Set ``mgmt`` to ``True`` in the arguments passed to ``Geometry`` for the
+    ``AddGeometryColumn`` and ``DropGeometryColumn`` management function to
+    be applied when the geometry column is created and dropped, respectively.
+    Default is ``False``.
+
     """
 
     name = 'geometry'
@@ -78,6 +83,11 @@ class Geometry(_GISType):
     from_text = 'ST_GeomFromText'
     """ The ``FromText`` geometry constructor. Used by the parent class'
         ``bind_expression`` method. """
+
+    def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
+                 mgmt=False):
+        _GISType.__init__(self, geometry_type, srid, dimension)
+        self.mgmt = mgmt
 
 
 class Geography(_GISType):

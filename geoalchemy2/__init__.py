@@ -14,7 +14,7 @@ from sqlalchemy import Table, event
 from sqlalchemy.sql import select, func, expression
 
 
-def _setup_ddl_events():
+def _setup_ddl_event_listeners():
     @event.listens_for(Table, "before_create")
     def before_create(target, connection, **kw):
         dispatch("before-create", target, connection)
@@ -33,8 +33,9 @@ def _setup_ddl_events():
 
     def dispatch(event, table, bind):
         if event in ('before-create', 'before-drop'):
-            regular_cols = [c for c in table.c if not
-                                    isinstance(c.type, Geometry)]
+            regular_cols = [c for c in table.c if
+                                not isinstance(c.type, Geometry) or
+                                c.type.mgmt == False]
             gis_cols = set(table.c).difference(regular_cols)
             table.info["_saved_columns"] = table.c
 
@@ -52,7 +53,7 @@ def _setup_ddl_events():
         elif event == 'after-create':
             table.columns = table.info.pop('_saved_columns')
             for c in table.c:
-                if isinstance(c.type, Geometry):
+                if isinstance(c.type, Geometry) and c.type.mgmt == True:
                     stmt = select([
                         func.AddGeometryColumn(
                             table.name, c.name,
@@ -64,3 +65,4 @@ def _setup_ddl_events():
 
         elif event == 'after-drop':
             table.columns = table.info.pop('_saved_columns')
+_setup_ddl_event_listeners()
