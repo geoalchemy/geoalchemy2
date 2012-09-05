@@ -62,6 +62,13 @@ def _setup_ddl_event_listeners():
                             c.type.dimension)])
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
+                if isinstance(c.type, (Geometry, Geography)) and \
+                       c.type.spatial_index == True:
+                    bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
+                                 'USING GIST (%s)' %
+                                 (table.name, c.name,
+                                  (table.schema or 'public'),
+                                  table.name, c.name))
 
         elif event == 'after-drop':
             table.columns = table.info.pop('_saved_columns')

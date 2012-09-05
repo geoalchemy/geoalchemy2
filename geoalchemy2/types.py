@@ -41,10 +41,12 @@ class _GISType(UserDefinedType):
     """ This is the way by which spatial operators are defined for
         geometry/geography columns. """
 
-    def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2):
+    def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
+                 spatial_index=True):
         self.geometry_type = geometry_type
         self.srid = srid
         self.dimension = dimension
+        self.spatial_index = spatial_index
 
     def get_col_spec(self):
         return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
@@ -85,8 +87,8 @@ class Geometry(_GISType):
         ``bind_expression`` method. """
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
-                 mgmt=False):
-        _GISType.__init__(self, geometry_type, srid, dimension)
+                 spatial_index=True, mgmt=False):
+        _GISType.__init__(self, geometry_type, srid, dimension, spatial_index)
         self.mgmt = mgmt
 
 
