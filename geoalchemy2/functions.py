@@ -1,3 +1,55 @@
+"""
+
+This module defines the :class:`GenericFunction` class, which is the base for
+the implementation of spatial functions in GeoAlchemy.  This module is also
+where actual spatial functions are defined. Spatial functions supported by
+GeoAlchemy are defined in this module. See :class:`GenericFunction` to know how
+to create new spatial functions.
+
+.. note::
+
+    By convention the names of spatial functions are prefixed by ``ST_``.  This
+    is to be consistent with PostGIS', which itself is based on the ``SQL-MM``
+    standard.
+
+Functions created by subclassing :class:`GenericFunction` can be called
+in several ways:
+
+* By using the ``func`` object, which is the SQLAlchemy standard way of calling
+  a function. For example, without the ORM::
+
+      select([func.ST_Area(lake_table.c.geom)])
+
+  and with the ORM::
+
+      Session.query(func.ST_Area(Lake.geom))
+
+* By applying the function to a geometry column. For example, without the
+  ORM::
+
+      select([lake_table.c.geom.ST_Area()])
+
+  and with the ORM::
+
+      Session.query(Lake.geom.ST_Area())
+
+* By applying the function to a :class:`geoalchemy2.elements.WKBElement`
+  object (:class:`geoalchemy2.elements.WKBElement` is the type into
+  which GeoAlchemy converts geometry values read from the database), or
+  to a :class:`geoalchemy2.elements.WKTElement` object. For example,
+  without the ORM::
+
+      conn.scalar(lake['geom'].ST_Area())
+
+  and with the ORM::
+
+      session.scalar(lake.geom.ST_Area())
+
+Reference
+---------
+
+"""
+
 from sqlalchemy.sql import functions
 
 from . import types
