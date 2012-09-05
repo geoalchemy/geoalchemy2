@@ -1,7 +1,7 @@
-.. _comparator:
+.. _spatial_operators:
 
-Operator/Comparator
-===================
+Spatial Operators
+=================
 
 .. automodule:: geoalchemy2.comparator
    :members:
