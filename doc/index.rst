@@ -73,6 +73,7 @@ Reference
    elements
    spatial_functions
    spatial_operators
+   migrate
 
 Development
 -----------

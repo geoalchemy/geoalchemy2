@@ -4,6 +4,10 @@ from sqlalchemy.sql import expression
 
 
 class _SpatialElement(object):
+    """
+    The base class for :class:`geoalchemy2.elements.WKTElement` and
+    :class:`geoalchemy2.elements.WKBElement`.
+    """
 
     def __str__(self):
         return self.desc  # pragma: no cover
