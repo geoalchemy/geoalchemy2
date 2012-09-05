@@ -1,5 +1,5 @@
 """
-This module includes the :class:`geoalchemy2.types.Geometry`` and
+This module includes the :class:`geoalchemy2.types.Geometry` and
 :class:`geoalchemy2.types.Geography` to use when defining geometry
 and geography columns, respecively.
 
