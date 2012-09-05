@@ -280,3 +280,10 @@ measurement functions can be applied to ``WKBElement``. For example::
     >>> bufferarea = conn.scalar(lake[lake_table.c.geom].ST_Buffer(2).ST_Area())
     >>> print '%s: %f' % (lake['name'], bufferarea)
     Majeur: 21.485781
+
+Further Reference
+-----------------
+
+* Spatial Functions Reference: :ref:`spatial_functions`
+* Spatial Operators Reference: :ref:`spatial_operators`
+* Elements Reference: :ref:`elements`
