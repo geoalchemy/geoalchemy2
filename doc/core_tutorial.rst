@@ -41,17 +41,18 @@ we create a ``lake_table`` object, which will correspond to the
 ``lake`` table in the database::
 
     >>> from sqlalchemy import Table, Column, Integer, String, MetaData
-    >>> from geoalchemy2 import Polygon
+    >>> from geoalchemy2 import Geometry
     >>>
     >>> metadata = MetaData()
     >>> lake_table = Table('lake', metadata,
     ...     Column('id', Integer, primary_key=True),
     ...     Column('name', String),
-    ...     Column('geom', Polygon)
+    ...     Column('geom', Geometry('POLYGON'))
     ... )
 
 This table is composed of three columns, ``id``, ``name`` and ``geom``. The
-``geom`` column is of type ``Polygon``, which is provided by GeoAlchemy.
+``geom`` column is a :class:`geoalchemy2.types.Geometry` column whose
+``geometry_type`` is ``POLYGON``.
  
 Any ``Table`` object is added to a ``MetaData`` object, which is a catalog of
 ``Table`` objects (and other related objects).

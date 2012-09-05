@@ -46,7 +46,7 @@ database table they will be mapped to.
 
     >>> from sqlalchemy.ext.declarative import declarative_base
     >>> from sqlalchemy import Column, Integer, String
-    >>> from geoalchemy2 import Polygon
+    >>> from geoalchemy2 import Geometry
     >>>
     >>> Base = declarative_base()
     >>>
@@ -54,13 +54,14 @@ database table they will be mapped to.
     ...     __tablename__ = 'lake'
     ...     id = Column(Integer, primary_key=True)
     ...     name = Column(String)
-    ...     geom = Column(Polygon)
+    ...     geom = Column(Geometry('POLYGON'))
 
 
 The ``Lake`` class establishes details about the table being mapped, including
 the name of the table denoted by ``__tablename__``, and three columns ``id``,
 ``name``, and ``geom``. The ``id`` column will be the primary key of the table.
-The ``geom`` column is of type ``Polygon``, which is provided by GeoAlchemy.
+The ``geom`` column is a :class:`geoalchemy2.types.Geometry` column whose
+``geometry_type`` is ``POLYGON``.
 
 Create the Table in the Database
 --------------------------------
