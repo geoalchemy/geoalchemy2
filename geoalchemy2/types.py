@@ -1,3 +1,12 @@
+"""
+This module includes the :class:`geoalchemy2.types.Geometry`` and
+:class:`geoalchemy2.types.Geography` to use when defining geometry
+and geography columns, respecively.
+
+Reference
+---------
+"""
+
 from sqlalchemy.types import UserDefinedType
 from sqlalchemy.sql import func
 
@@ -77,7 +86,7 @@ class Geography(_GISType):
 
     Creating a geography column is done like this::
 
-        Column(Geometry(geometry_type='POINT', srid=4326))
+        Column(Geography(geometry_type='POINT', srid=4326))
 
     """
 
