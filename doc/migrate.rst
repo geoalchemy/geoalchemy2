@@ -1,3 +1,5 @@
+.. _migrate:
+
 Migrate to GeoAlchemy 2
 =======================
 
