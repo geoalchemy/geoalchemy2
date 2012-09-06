@@ -29,26 +29,46 @@ class _GISType(UserDefinedType):
 
     Constructor arguments:
 
-    * ``geometry_type`` - The geometry type. Possible values are
-      ``"GEOMETRY"``, ``"POINT"``, ``"LINESTRING"``, ``"POLYGON"``,
-      ``"MULTIPOINT"``, ``"MULTILINESTRING"``, ``"MULTIPOLYGON"``,
-      ``"GEOMETRYCOLLECTION"``, and ``"CURVE"``. The latter is actually not
-      supported with :class:`geoalchemy2.types.Geography`.  Default is
-      ``"GEOMETRY"``.
+    ``geometry_type``
 
-    * ``srid`` - The SRID for this column. Should be an ``int`` (e.g.
-      ``4326``). Default is ``-1``.
+        The geometry type.
 
-    * ``dimension`` - The dimension of the geomtry. Default is ``2``.
+        Possible values are:
 
-    * ``spatial_index`` - Indicate if a spatial index should be created.
-      Default is ``True``.
+          * ``"GEOMETRY"``,
+          * ``"POINT"``,
+          * ``"LINESTRING"``,
+          * ``"POLYGON"``,
+          * ``"MULTIPOINT"``,
+          * ``"MULTILINESTRING"``,
+          * ``"MULTIPOLYGON"``,
+          * ``"GEOMETRYCOLLECTION"``
+          * ``"CURVE"``.
 
-    * ``management`` - Indicate if the ``AddGeometryColumn`` and
-      ``DropGeometryColumn`` managements functions should be called when adding
-      and dropping the geometry column. Should be set to ``True`` for PostGIS
-      1.x. Default is ``False``. Note that this option has no effect for
-      :class:`geoalchemy.types.Geography`.
+       The latter is actually not supported with
+       :class:`geoalchemy2.types.Geography`.
+
+       Default is ``"GEOMETRY"``.
+
+    ``srid``
+
+        The SRID for this column. E.g. 426. Default is ``-1``.
+
+    ``dimension``
+
+        The dimension of the geometry. Default is ``2``.
+
+    ``spatial_index``
+
+        Indicate if a spatial index should be created. Default is ``True``.
+
+    ``management``
+
+        Indicate if the ``AddGeometryColumn`` and ``DropGeometryColumn``
+        managements functions should be called when adding and dropping the
+        geometry column. Should be set to ``True`` for PostGIS 1.x. Default is
+        ``False``. Note that this option has no effect for
+        :class:`geoalchemy2.types.Geography`.
 
     """
 
@@ -96,10 +116,8 @@ class Geometry(_GISType):
 
         Column(Geometry(geometry_type='POINT', srid=4326))
 
-    Set ``mgmt`` to ``True`` in the arguments passed to ``Geometry`` for the
-    ``AddGeometryColumn`` and ``DropGeometryColumn`` management function to
-    be applied when the geometry column is created and dropped, respectively.
-    Default is ``False``.
+    See :class:`geoalchemy2.types._GISType` for the list of arguments that can
+    be passed to the constructor.
 
     """
 
@@ -118,6 +136,9 @@ class Geography(_GISType):
     Creating a geography column is done like this::
 
         Column(Geography(geometry_type='POINT', srid=4326))
+
+    See :class:`geoalchemy2.types._GISType` for the list of arguments that can
+    be passed to the constructor.
 
     """
 
