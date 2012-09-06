@@ -10,7 +10,7 @@ from .elements import (  # NOQA
 
 from . import functions  # NOQA
 
-from sqlalchemy import Table, event
+from sqlalchemy import Table, Index, event
 from sqlalchemy.sql import select, func, expression
 
 
@@ -64,11 +64,8 @@ def _setup_ddl_event_listeners():
                     bind.execute(stmt)
                 if isinstance(c.type, (Geometry, Geography)) and \
                        c.type.spatial_index == True:
-                    bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
-                                 'USING GIST (%s)' %
-                                 (table.name, c.name,
-                                  (table.schema or 'public'),
-                                  table.name, c.name))
+                    Index('idx_%s_%s' % (table.name, c.name), c,
+                          postgresql_using='gist').create(bind)
 
         elif event == 'after-drop':
             table.columns = table.info.pop('_saved_columns')
