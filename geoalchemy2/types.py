@@ -86,7 +86,7 @@ class _GISType(UserDefinedType):
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
                  spatial_index=True, management=False):
-        self.geometry_type = geometry_type
+        self.geometry_type = geometry_type.upper()
         self.srid = int(srid)
         self.dimension = dimension
         self.spatial_index = spatial_index
