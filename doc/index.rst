@@ -80,6 +80,7 @@ Reference Documentation
    elements
    spatial_functions
    spatial_operators
+   shape
 
 Development
 -----------

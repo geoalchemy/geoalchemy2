@@ -1,3 +1,7 @@
+"""
+This module provides utility functions for integrating with Shapely.
+"""
+
 import shapely.wkb
 import shapely.wkt
 
@@ -18,7 +22,7 @@ def to_shape(element):
 
 def from_shape(shape):
     """
-    Fonction to convert a Shapely geometry to a
+    Function to convert a Shapely geometry to a
     :class:`geoalchemy2.types.WKBElement`.
     """
     return WKBElement(shape.wkb)
