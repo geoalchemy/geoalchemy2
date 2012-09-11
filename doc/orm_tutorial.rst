@@ -206,7 +206,6 @@ we can use this ``Query``::
 
 GeoAlchemy allows rewriting this ``Query`` more concisely::
 
-    >>> from sqlalchemy import func
     >>> query = session.query(Lake).filter(Lake.geom.ST_Contains('POINT(4 1)'))
     >>> for lake in query:
     ...     print lake.name
