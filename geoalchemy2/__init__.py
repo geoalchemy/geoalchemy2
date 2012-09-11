@@ -35,7 +35,7 @@ def _setup_ddl_event_listeners():
         if event in ('before-create', 'before-drop'):
             regular_cols = [c for c in table.c if
                                 not isinstance(c.type, Geometry) or
-                                c.type.management == False]
+                                c.type.management is False]
             gis_cols = set(table.c).difference(regular_cols)
             table.info["_saved_columns"] = table.c
 
@@ -53,7 +53,7 @@ def _setup_ddl_event_listeners():
         elif event == 'after-create':
             table.columns = table.info.pop('_saved_columns')
             for c in table.c:
-                if isinstance(c.type, Geometry) and c.type.management == True:
+                if isinstance(c.type, Geometry) and c.type.management is True:
                     stmt = select([
                         func.AddGeometryColumn(
                             table.name, c.name,
@@ -63,7 +63,7 @@ def _setup_ddl_event_listeners():
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
                 if isinstance(c.type, (Geometry, Geography)) and \
-                       c.type.spatial_index == True:
+                       c.type.spatial_index is True:
                     bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
                                  'USING GIST (%s)' %
                                  (table.name, c.name,
