@@ -10,7 +10,7 @@ Examples
 --------
 
 Select the objects whose bounding boxes are to the left of ``LINESTRING(0 -90,0
-90)`` (the bounding box of ``LINESTRING(0 -90,0 90)`` is ``LINESTRING(0 -90,0
+90)`` (the bounding box of ``LINESTRING(0 -90,0 90)`` is ``BOX(0 -90,0
 90)``)::
 
     select([table]).where(table.c.geom.to_left('LINESTRING(0 -90,0 90)'))
