@@ -245,6 +245,11 @@ class ST_Perimeter(GenericFunction):
     name = 'ST_Perimeter'
 
 
+class ST_Project(GenericFunction):
+    name = 'ST_Project'
+    type = types.Geography
+
+
 class ST_Relate(GenericFunction):
     name = 'ST_Relate'
 
