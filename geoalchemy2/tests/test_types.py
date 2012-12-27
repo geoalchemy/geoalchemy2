@@ -199,11 +199,13 @@ class TestFunction(unittest.TestCase):
         expr = func.ST_Equals(WKTElement('POINT(1 2)'),
                               WKTElement('POINT(1 2)'))
         eq_sql(expr,
-               'ST_Equals(ST_GeomFromText(:ST_GeomFromText_1), '
-               'ST_GeomFromText(:ST_GeomFromText_2))')
+           'ST_Equals(ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2),'
+           ' ST_GeomFromText(:ST_GeomFromText_3, :ST_GeomFromText_4))')
         eq_(expr.compile().params,
             {u'ST_GeomFromText_1': 'POINT(1 2)',
-             u'ST_GeomFromText_2': 'POINT(1 2)'})
+             u'ST_GeomFromText_2': -1,
+             u'ST_GeomFromText_3': 'POINT(1 2)',
+             u'ST_GeomFromText_4': -1})
 
     def test_ST_Equal_Column_WKTElement(self):
         from sqlalchemy import func
@@ -212,5 +214,6 @@ class TestFunction(unittest.TestCase):
         expr = func.ST_Equals(table.c.geom, WKTElement('POINT(1 2)'))
         eq_sql(expr,
                'ST_Equals("table".geom, '
-               'ST_GeomFromText(:ST_GeomFromText_1))')
-        eq_(expr.compile().params, {u'ST_GeomFromText_1': 'POINT(1 2)'})
+               'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2))')
+        eq_(expr.compile().params, {u'ST_GeomFromText_1': 'POINT(1 2)',
+                                    u'ST_GeomFromText_2': -1})

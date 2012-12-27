@@ -9,6 +9,10 @@ class _SpatialElement(object):
     :class:`geoalchemy2.elements.WKBElement`.
     """
 
+    def __init__(self, data, srid=-1):
+        self.srid = srid
+        self.data = data
+
     def __str__(self):
         return self.desc  # pragma: no cover
 
@@ -22,10 +26,10 @@ class WKTElement(_SpatialElement, expression.Function):
     Instances of this class wrap a WKT value.
     """
 
-    def __init__(self, data, srid=-1):
-        self.srid = srid
-        self.data = data
-        expression.Function.__init__(self, "ST_GeomFromText", data)
+    def __init__(self, *args, **kwargs):
+        _SpatialElement.__init__(self, *args, **kwargs)
+        expression.Function.__init__(self, "ST_GeomFromText",
+                                     self.data, self.srid)
 
     @property
     def desc(self):
@@ -41,9 +45,10 @@ class WKBElement(_SpatialElement, expression.Function):
     from the database are converted to instances of this type.
     """
 
-    def __init__(self, data):
-        self.data = data
-        expression.Function.__init__(self, "ST_GeomFromWKB", data)
+    def __init__(self, *args, **kwargs):
+        _SpatialElement.__init__(self, *args, **kwargs)
+        expression.Function.__init__(self, "ST_GeomFromWKB",
+                                     self.data, self.srid)
 
     @property
     def desc(self):

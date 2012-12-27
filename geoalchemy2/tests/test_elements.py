@@ -29,6 +29,8 @@ class TestWKBElement(unittest.TestCase):
         e = WKBElement('\x01\x02')
         f = e.ST_Buffer(2)
         eq_sql(f,
-               'ST_Buffer(ST_GeomFromWKB(:ST_GeomFromWKB_1), :param_1)')
+            'ST_Buffer(ST_GeomFromWKB(:ST_GeomFromWKB_1, :ST_GeomFromWKB_2), '
+            ':param_1)')
         eq_(f.compile().params,
-            {u'ST_GeomFromWKB_1': '\x01\x02', u'param_1': 2})
+            {u'param_1': 2, u'ST_GeomFromWKB_1': '\x01\x02',
+             u'ST_GeomFromWKB_2': -1})

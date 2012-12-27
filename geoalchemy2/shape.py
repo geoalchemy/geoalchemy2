@@ -20,9 +20,9 @@ def to_shape(element):
         return shapely.wkt.loads(element.data)
 
 
-def from_shape(shape):
+def from_shape(shape, srid=-1):
     """
     Function to convert a Shapely geometry to a
     :class:`geoalchemy2.types.WKBElement`.
     """
-    return WKBElement(shape.wkb)
+    return WKBElement(buffer(shape.wkb), srid=srid)
