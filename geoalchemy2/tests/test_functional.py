@@ -1,11 +1,12 @@
 import unittest
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, raises
 
 from sqlalchemy import create_engine, MetaData, Column, Integer, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 from geoalchemy2 import Geometry
+from sqlalchemy.exc import IntegrityError, InternalError
 
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
@@ -16,7 +17,7 @@ Base = declarative_base(metadata=metadata)
 class Lake(Base):
     __tablename__ = 'lake'
     id = Column(Integer, primary_key=True)
-    geom = Column(Geometry(geometry_type='LINESTRING'))
+    geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
 
     def __init__(self, geom):
         self.geom = geom
@@ -41,25 +42,25 @@ class InsertionTest(unittest.TestCase):
         session.rollback()
         metadata.drop_all()
 
+    @raises(IntegrityError)
     def test_WKT(self):
-        from geoalchemy2 import WKBElement
+        # IntegrityError: (IntegrityError) new row for relation "lake" violates
+        # check constraint "enforce_srid_geom"
         l = Lake('LINESTRING(0 0,1 1)')
         session.add(l)
         session.flush()
-        session.expire(l)
-        ok_(isinstance(l.geom, WKBElement))
-        wkt = session.execute(l.geom.ST_AsText()).scalar()
-        eq_(wkt, 'LINESTRING(0 0,1 1)')
 
     def test_WKTElement(self):
         from geoalchemy2 import WKTElement, WKBElement
-        l = Lake(WKTElement('LINESTRING(0 0,1 1)'))
+        l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(l)
         session.flush()
         session.expire(l)
         ok_(isinstance(l.geom, WKBElement))
         wkt = session.execute(l.geom.ST_AsText()).scalar()
         eq_(wkt, 'LINESTRING(0 0,1 1)')
+        srid = session.execute(l.geom.ST_SRID()).scalar()
+        eq_(srid, 4326)
 
 
 class CallFunctionTest(unittest.TestCase):
@@ -73,7 +74,8 @@ class CallFunctionTest(unittest.TestCase):
         metadata.drop_all()
 
     def _create_one(self):
-        l = Lake('LINESTRING(0 0,1 1)')
+        from geoalchemy2 import WKTElement
+        l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(l)
         session.flush()
         return l.id
@@ -101,7 +103,7 @@ class CallFunctionTest(unittest.TestCase):
 
     def test_ST_Buffer(self):
         from sqlalchemy.sql import select, func
-        from geoalchemy2 import WKBElement
+        from geoalchemy2 import WKBElement, WKTElement
 
         lake_id = self._create_one()
 
@@ -119,6 +121,15 @@ class CallFunctionTest(unittest.TestCase):
         ok_(r1.data == r2.data == r3.data)
 
         r4 = session.query(Lake).filter(
-                func.ST_Within('POINT(0 0)', Lake.geom.ST_Buffer(2))).one()
+                func.ST_Within(WKTElement('POINT(0 0)', srid=4326),
+                        Lake.geom.ST_Buffer(2))).one()
         ok_(isinstance(r4, Lake))
         eq_(r4.id, lake_id)
+
+    @raises(InternalError)
+    def test_ST_Buffer_Mixed_SRID(self):
+        from sqlalchemy.sql import func
+        self._create_one()
+        session.query(Lake).filter(
+                func.ST_Within('POINT(0 0)',
+                      Lake.geom.ST_Buffer(2))).one()
