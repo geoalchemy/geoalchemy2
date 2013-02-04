@@ -132,6 +132,16 @@ class ST_Y(GenericFunction):
 
 
 #
+# Geometry Accessors
+#
+
+
+class ST_Transform(GenericFunction):
+    name = 'ST_Transform'
+    type = types.Geometry
+
+
+#
 # Geometry Outputs
 #
 
