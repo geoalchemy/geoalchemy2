@@ -123,6 +123,10 @@ class ST_NPoints(GenericFunction):
     name = 'ST_NPoints'
 
 
+class ST_SRID(GenericFunction):
+    name = 'ST_SRID'
+
+
 class ST_X(GenericFunction):
     name = 'ST_X'
 
