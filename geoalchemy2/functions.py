@@ -219,8 +219,8 @@ class ST_Distance(GenericFunction):
     name = 'ST_Distance'
 
 
-class ST_DistanceSphere(GenericFunction):
-    name = 'ST_DistanceSphere'
+class ST_Distance_Sphere(GenericFunction):
+    name = 'ST_Distance_Sphere'
 
 
 class ST_DFullyWithin(GenericFunction):
