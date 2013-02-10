@@ -132,7 +132,7 @@ class ST_Y(GenericFunction):
 
 
 #
-# Geometry Accessors
+# Geometry Editors
 #
 
 
