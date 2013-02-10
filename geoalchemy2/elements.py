@@ -63,14 +63,6 @@ class WKBElement(_SpatialElement, expression.Function):
     most cases you won't need to create ``WKBElement`` instances
     yourself.
 
-    Usage examples::
-
-        wkb_element_1 = WKTElement('\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00'
-                                   '\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@')
-        wkb_element_2 = WKTElement('\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00'
-                                   '\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@',
-                                   srid=4326)
-
     Note: you can create ``WKBElement`` objects from Shapely geometries
     using the :func:`geoalchemy2.shape.from_shape` function.
     """
