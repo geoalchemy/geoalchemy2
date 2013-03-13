@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 from geoalchemy2 import Geometry
-from sqlalchemy.exc import IntegrityError, InternalError
+from sqlalchemy.exc import DataError, IntegrityError, InternalError
 
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
@@ -42,10 +42,15 @@ class InsertionTest(unittest.TestCase):
         session.rollback()
         metadata.drop_all()
 
-    @raises(IntegrityError)
+    @raises(DataError, IntegrityError)
     def test_WKT(self):
+        # With PostGIS 1.5:
         # IntegrityError: (IntegrityError) new row for relation "lake" violates
         # check constraint "enforce_srid_geom"
+        #
+        # With PostGIS 2.0:
+        # DataError: (DataError) Geometry SRID (0) does not match column SRID
+        # (4326)
         l = Lake('LINESTRING(0 0,1 1)')
         session.add(l)
         session.flush()
