@@ -9,25 +9,18 @@ GeoAlchemy 2 Documentation
 *Using SQLAlchemy with Spatial Databases.*
 
 GeoAlchemy 2 aims to be simpler than its predecessor, in terms of both usage,
-and maintainance. GeoAlchemy 2 uses SQLAlchemy's most recent features, and aims
-to work well with, and fully benefit from, what will be SQLAlchemy 1.0.
+and maintainance.
 
-GeoAlchemy 2 supports PostGIS 2. It also supports the 1.x series of PostGIS for
-the moment. Whether we will continue supporting the 1.x series is not decided
-yet, and will depend on the level complexity required to support both series.
+GeoAlchemy 2 requires SQLAlchemy 0.8; it does not work with SQLAlchemy 0.7 and
+lower.
 
-GeoAlchemy 2 doesn't currently other dialects than PostgreSQL/PostGIS.
+GeoAlchemy 2 supports PostGIS 2.0 and PostGIS 1.5.
+
+GeoAlchemy 2 doesn't currently support other dialects than PostgreSQL/PostGIS.
 Supporting Oracle Locator in the previous series was the main contributor to
-complexifying the code. So it is currently not clear whether we want to go
-there again. Please contact us you want to add, and maintain, support for other
+code complexity. So it is currently not clear whether we want to go there
+again. Please contact us you want to add, and maintain, support for other
 spatial databases in GeoAlchemy 2.
-
-.. note::
-
-    GeoAlchemy 2 doesn't currently work with any official release of
-    SQLAlchemy. GeoAlchemy 2 works with SQLAlchemy's current development
-    branch, which is available at http://hg.sqlalchemy.org/sqlalchemy.
-    GeoAlchemy 2 will work with the next SQLAlchemy release, namely 0.8.
 
 What's New in GeoAlchemy 2
 --------------------------
