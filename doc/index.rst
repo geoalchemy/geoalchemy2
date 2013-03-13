@@ -36,10 +36,16 @@ Expression Language* (a.k.a the SQLAlchemy Core). This is thanks to SQLAlchemy's
 new `type-level comparator system
 <http://docs.sqlalchemy.org/en/latest/core/types.html?highlight=comparator_factory#types-operators>`_.
 
+GeoAlchemy 2 supports PostGIS' ``geometry`` type, as well as ``geography``
+type.
+
+GeoAlchemy 2 supports `reflection
+<http://docs.sqlalchemy.org/en/latest/core/schema.html#metadata-reflection>`_
+of geometry and geography columns.
+
 GeoAlchemy 2 adds ``to_shape``, ``from_shape`` functions for a better
 integration with `Shapely <http://pypi.python.org/pypi/Shapely>`_.
 
-GeoAlchemy 2 supports PostGIS' ``geography`` type.
 
 .. toctree::
    :hidden:
