@@ -53,9 +53,9 @@ application to GeoAlchemy 2.
 Tutorials
 ---------
 
-GeoAlchemy works both with SQLAlchemy's *Object Relational Mapping* (ORM) *SQL
-Expression Language*. This documentation provides a tutorial for each system.
-If you're new to GeoAlchemy start with this.
+GeoAlchemy 2 works with both SQLAlchemy's *Object Relational Mapping* (ORM) and
+*SQL Expression Language*. This documentation provides a tutorial for each
+system. If you're new to GeoAlchemy 2 start with this.
 
 .. toctree::
    :maxdepth: 1
@@ -82,7 +82,10 @@ The code is available on GitHub: https://github.com/geoalchemy/geoalchemy2.
 
 Contributors:
 
-* Eric Lemoine, Camptocamp SA
+* Eric Lemoine, Camptocamp SA (https://github.com/elemoine)
+* Frédéric Junod, Camptocamp SA (https://github.com/fredj)
+* rapto (https://github.com/rapto)
+* Tom Payne, Camptocamp SA (https://github.com/twpayne)
 
 Many thanks to Mike Bayer for his guidance and support! He also `fostered
 <https://groups.google.com/forum/?fromgroups=#!topic/geoalchemy/k3PmQOB_FX4>`_
