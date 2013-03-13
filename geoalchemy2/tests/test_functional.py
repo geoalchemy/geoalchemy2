@@ -133,3 +133,27 @@ class CallFunctionTest(unittest.TestCase):
         session.query(Lake).filter(
                 func.ST_Within('POINT(0 0)',
                       Lake.geom.ST_Buffer(2))).one()
+
+
+class ReflectionTest(unittest.TestCase):
+
+    def setUp(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+
+    def tearDown(self):
+        metadata.drop_all()
+
+    def test_reflection(self):
+        from sqlalchemy import Table
+        from geoalchemy2 import Geometry
+
+        t = Table('lake', MetaData(), autoload=True, autoload_with=engine)
+        type_ = t.c.geom.type
+        ok_(isinstance(type_, Geometry))
+        if not postgis_version.startswith('2.'):
+            eq_(type_.geometry_type, 'GEOMETRY')
+            eq_(type_.srid, -1)
+        else:
+            eq_(type_.geometry_type, 'LINESTRING')
+            eq_(type_.srid, 4326)

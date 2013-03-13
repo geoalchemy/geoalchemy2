@@ -9,6 +9,7 @@ Reference
 
 from sqlalchemy.types import UserDefinedType
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql.base import ischema_names
 
 from .comparator import Comparator
 from .elements import WKBElement
@@ -148,3 +149,9 @@ class Geography(_GISType):
     from_text = 'ST_GeogFromText'
     """ The ``FromText`` geography constructor. Used by the parent class'
         ``bind_expression`` method. """
+
+
+# Register Geometry and Geography to SQLAlchemy's Postgres reflection
+# subsystem.
+ischema_names['geometry'] = Geometry
+ischema_names['geography'] = Geography
