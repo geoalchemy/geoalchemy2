@@ -1,0 +1,19 @@
+language: python
+
+python:
+  - 2.7
+
+services:
+  - postgresql
+
+install:
+  - sudo apt-get install postgresql-9.1-postgis -q
+
+before_script:
+  - psql -c "CREATE ROLE gis PASSWORD 'gis' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;" -U postgres
+  - psql -c 'CREATE DATABASE gis;' -U postgres
+  - psql -d gis -f /usr/share/postgresql/9.1/contrib/postgis-1.5/postgis.sql -U postgres
+  - psql -d gis -f /usr/share/postgresql/9.1/contrib/postgis-1.5/spatial_ref_sys.sql -U postgres
+
+script:
+  - python setup.py nosetests -v
