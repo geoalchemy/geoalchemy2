@@ -33,17 +33,24 @@ def _setup_ddl_event_listeners():
 
     def dispatch(event, table, bind):
         if event in ('before-create', 'before-drop'):
-            regular_cols = [c for c in table.c if
-                                not isinstance(c.type, Geometry) or
-                                c.type.management is False]
-            gis_cols = set(table.c).difference(regular_cols)
+            # Filter Geometry columns from the table with management=True
+            # Note: Geography and PostGIS >= 2.0 don't need this
+            gis_cols = [c for c in table.c if
+                        isinstance(c.type, Geometry) and
+                        c.type.management is True]
+
+            # Find all other columns that are not managed Geometries
+            regular_cols = set(table.c).difference(gis_cols)
+
+            # Save original table column list for later
             table.info["_saved_columns"] = table.c
 
-            # temporarily patch a set of columns not including the
-            # Geometry columns
+            # Temporarily patch a set of columns not including the
+            # managed Geometry columns
             table.columns = expression.ColumnCollection(*regular_cols)
 
             if event == 'before-drop':
+                # Drop the managed Geometry columns with DropGeometryColumn()
                 for c in gis_cols:
                     stmt = select([
                         func.DropGeometryColumn('public', table.name, c.name)])
@@ -51,8 +58,11 @@ def _setup_ddl_event_listeners():
                     bind.execute(stmt)
 
         elif event == 'after-create':
+            # Restore original column list including managed Geometry columns
             table.columns = table.info.pop('_saved_columns')
+
             for c in table.c:
+                # Add the managed Geometry columns with AddGeometryColumn()
                 if isinstance(c.type, Geometry) and c.type.management is True:
                     stmt = select([
                         func.AddGeometryColumn(
@@ -62,8 +72,10 @@ def _setup_ddl_event_listeners():
                             c.type.dimension)])
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
+
+                # Add spatial indices for the Geometry and Geography columns
                 if isinstance(c.type, (Geometry, Geography)) and \
-                       c.type.spatial_index is True:
+                        c.type.spatial_index is True:
                     bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
                                  'USING GIST (%s)' %
                                  (table.name, c.name,
@@ -71,5 +83,6 @@ def _setup_ddl_event_listeners():
                                   table.name, c.name))
 
         elif event == 'after-drop':
+            # Restore original column list including managed Geometry columns
             table.columns = table.info.pop('_saved_columns')
 _setup_ddl_event_listeners()
