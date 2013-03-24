@@ -67,7 +67,7 @@ def _setup_ddl_event_listeners():
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
                 if isinstance(c.type, (Geometry, Geography)) and \
-                       c.type.spatial_index is True:
+                        c.type.spatial_index is True:
                     bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
                                  'USING GIST (%s)' %
                                  (table.name, c.name,
