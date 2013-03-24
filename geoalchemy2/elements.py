@@ -1,6 +1,8 @@
 import binascii
 
-from sqlalchemy.sql import expression
+from sqlalchemy.sql import expression, ColumnElement
+from sqlalchemy.types import to_instance
+from sqlalchemy.ext.compiler import compiles
 
 
 class _SpatialElement(object):
@@ -93,3 +95,19 @@ class WKBElement(_SpatialElement, expression.Function):
 
         func_ = expression._FunctionGenerator(expr=self)
         return getattr(func_, name)
+
+
+class PGCompositeElement(ColumnElement):
+    """
+    Instances of this class wrap a Postgres composite type.
+    """
+    def __init__(self, base, field, type_):
+        ColumnElement.__init__(self)
+        self.base = base
+        self.field = field
+        self.type = to_instance(type_)
+
+
+@compiles(PGCompositeElement)
+def _compile_pgelem(expr, compiler, **kw):
+    return '(%s).%s' % (compiler.process(expr.base, **kw), expr.field)

@@ -34,3 +34,17 @@ class TestWKBElement(unittest.TestCase):
         eq_(f.compile().params,
             {u'param_1': 2, u'ST_GeomFromWKB_1': '\x01\x02',
              u'ST_GeomFromWKB_2': -1})
+
+
+class TestPGCompositeElement(unittest.TestCase):
+
+    def test_compile(self):
+        from sqlalchemy import MetaData, Table, Column, String
+        from geoalchemy2.elements import PGCompositeElement
+
+        # text fixture
+        metadata = MetaData()
+        foo = Table('foo', metadata, Column('one', String))
+
+        e = PGCompositeElement(foo.c.one, 'geom', String)
+        eq_(str(e), '(foo.one).geom')
