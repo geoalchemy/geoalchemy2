@@ -33,10 +33,14 @@ def _setup_ddl_event_listeners():
 
     def dispatch(event, table, bind):
         if event in ('before-create', 'before-drop'):
-            regular_cols = [c for c in table.c if
-                                not isinstance(c.type, Geometry) or
-                                c.type.management is False]
-            gis_cols = set(table.c).difference(regular_cols)
+            # Filter GIS columns from the table
+            gis_cols = [c for c in table.c if
+                        isinstance(c.type, Geometry) and
+                        c.type.management is True]
+
+            # Find the non-GIS columns
+            regular_cols = set(table.c).difference(gis_cols)
+
             table.info["_saved_columns"] = table.c
 
             # temporarily patch a set of columns not including the
