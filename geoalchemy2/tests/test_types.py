@@ -217,3 +217,18 @@ class TestFunction(unittest.TestCase):
                'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2))')
         eq_(expr.compile().params, {u'ST_GeomFromText_1': 'POINT(1 2)',
                                     u'ST_GeomFromText_2': -1})
+
+
+class TestPGCompositeType(unittest.TestCase):
+
+    def test_ST_Dump(self):
+        from sqlalchemy import func
+        from sqlalchemy.sql import select
+        from geoalchemy2.types import PGCompositeType, Geometry
+
+        table = _create_geography_table()
+        type_ = PGCompositeType({'geom': Geometry})
+        s = select([func.ST_Dump(table.c.geom, type_=type_).geom])
+        eq_sql(s,
+               'SELECT ST_AsBinary((ST_Dump("table".geom)).geom) AS anon_1 '
+               'FROM "table"')
