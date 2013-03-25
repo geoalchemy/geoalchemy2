@@ -230,5 +230,5 @@ class TestPGCompositeType(unittest.TestCase):
         type_ = PGCompositeType({'geom': Geometry})
         s = select([func.ST_Dump(table.c.geom, type_=type_).geom])
         eq_sql(s,
-               'SELECT ST_AsBinary((ST_Dump("table".geom)).geom) AS anon_1 '
+               'SELECT ST_AsBinary((ST_Dump("table".geom)).geom) AS geom '
                'FROM "table"')
