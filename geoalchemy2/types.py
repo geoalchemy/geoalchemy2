@@ -7,7 +7,7 @@ Reference
 ---------
 """
 
-from sqlalchemy.types import UserDefinedType
+from sqlalchemy.types import UserDefinedType, String
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
@@ -170,6 +170,8 @@ class PGCompositeType(UserDefinedType):
                                % (self.type, key))
 
             return PGCompositeElement(self.expr, key, type_)
+
+GeometryDump = PGCompositeType({'path': String, 'geom': Geometry})
 
 # Register Geometry and Geography to SQLAlchemy's Postgres reflection
 # subsystem.

@@ -134,27 +134,25 @@ class CallFunctionTest(unittest.TestCase):
     def test_ST_Dump(self):
         from sqlalchemy.sql import select, func
         from geoalchemy2 import WKBElement, WKTElement
-        from geoalchemy2.types import PGCompositeType
+        from geoalchemy2.types import GeometryDump
 
         lake_id = self._create_one()
 
-        type_ = PGCompositeType({'geom': Geometry})
-
-        s = select([func.ST_Dump(Lake.__table__.c.geom, type_=type_)])
+        s = select([func.ST_Dump(Lake.__table__.c.geom, type_=GeometryDump)])
         r1 = session.execute(s).scalar()
         ok_(isinstance(r1, str))
 
-        s = select([func.ST_Dump(Lake.__table__.c.geom, type_=type_).geom])
+        s = select([func.ST_Dump(Lake.__table__.c.geom, type_=GeometryDump).geom])
         r2 = session.execute(s).scalar()
         ok_(isinstance(r2, WKBElement))
 
         lake = session.query(Lake).get(lake_id)
-        r3 = session.execute(func.ST_Dump(lake.geom, type_=type_).geom).scalar()
+        r3 = session.execute(func.ST_Dump(lake.geom, type_=GeometryDump).geom).scalar()
         ok_(isinstance(r3, WKBElement))
 
         ok_(r2.data == r3.data)
 
-        r4 = session.query(func.ST_Dump(Lake.geom, type_=type_).geom).scalar()
+        r4 = session.query(func.ST_Dump(Lake.geom, type_=GeometryDump).geom).scalar()
         ok_(isinstance(r4, WKBElement))
 
         ok_(r2.data == r3.data == r4.data)
