@@ -3,6 +3,7 @@ GeoAlchemy 2
 ============
 
 .. image:: https://travis-ci.org/geoalchemy/geoalchemy2.png?branch=master
+.. image:: https://coveralls.io/repos/geoalchemy/geoalchemy2/badge.png?branch=master
 
 GeoAlchemy 2 is a Python toolkit for working with spatial databases. It is
 based on the gorgeous `SQLAlchemy <http://www.sqlalchemy.org/>`_.
