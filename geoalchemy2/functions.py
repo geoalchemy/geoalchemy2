@@ -311,3 +311,11 @@ class ST_Union(GenericFunction):
     """
     name = 'ST_Union'
     type = types.Geometry
+
+
+class ST_Dump(GenericFunction):
+    """
+    Return type: :class:`geoalchemy2.types.GeometryDump`.
+    """
+    name = 'ST_Dump'
+    type = types.GeometryDump

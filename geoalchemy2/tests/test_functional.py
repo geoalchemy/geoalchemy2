@@ -157,6 +157,11 @@ class CallFunctionTest(unittest.TestCase):
 
         ok_(r2.data == r3.data == r4.data)
 
+        r5 = session.query(Lake.geom.ST_Dump().geom).scalar()
+        ok_(isinstance(r5, WKBElement))
+
+        ok_(r2.data == r3.data == r4.data == r5.data)
+
     @raises(InternalError)
     def test_ST_Buffer_Mixed_SRID(self):
         from sqlalchemy.sql import func
