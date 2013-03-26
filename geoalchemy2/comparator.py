@@ -54,6 +54,8 @@ class Comparator(UserDefinedType.Comparator):
     This is where spatial operators like ``&&`` and ``&<`` are defined.
     """
 
+    key = None
+
     def __getattr__(self, name):
 
         # Function names that don't start with "ST_" are rejected.
