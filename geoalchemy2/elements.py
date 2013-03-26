@@ -102,7 +102,6 @@ class PGCompositeElement(expression.FunctionElement):
     Instances of this class wrap a Postgres composite type.
     """
     def __init__(self, base, field, type_):
-        self.key = base
         self.name = field
         self.type = to_instance(type_)
 
@@ -111,4 +110,4 @@ class PGCompositeElement(expression.FunctionElement):
 
 @compiles(PGCompositeElement)
 def _compile_pgelem(expr, compiler, **kw):
-    return '(%s).%s' % (compiler.process(expr.key, **kw), expr.name)
+    return '(%s).%s' % (compiler.process(expr.clauses, **kw), expr.name)
