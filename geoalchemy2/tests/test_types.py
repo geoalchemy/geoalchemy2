@@ -224,10 +224,9 @@ class TestCompositeType(unittest.TestCase):
     def test_ST_Dump(self):
         from sqlalchemy import func
         from sqlalchemy.sql import select
-        from geoalchemy2.types import GeometryDump
 
         table = _create_geography_table()
-        s = select([func.ST_Dump(table.c.geom, type_=GeometryDump).geom])
+        s = select([func.ST_Dump(table.c.geom).geom])
         eq_sql(s,
                'SELECT ST_AsBinary((ST_Dump("table".geom)).geom) AS geom '
                'FROM "table"')
