@@ -12,7 +12,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
 from .comparator import Comparator
-from .elements import WKBElement, PGCompositeElement
+from .elements import WKBElement, CompositeElement
 
 
 class _GISType(UserDefinedType):
@@ -151,9 +151,9 @@ class Geography(_GISType):
         ``bind_expression`` method. """
 
 
-class PGCompositeType(UserDefinedType):
+class CompositeType(UserDefinedType):
     """
-    A wrapper for the PGCompositeElement, that can be used as the return
+    A wrapper for the CompositeElement, that can be used as the return
     type in Postgres functions that return composite values.
 
     See :class:`geoalchemy2.types.GeometryDump` for an example how to use it.
@@ -169,9 +169,9 @@ class PGCompositeType(UserDefinedType):
                 raise KeyError("Type '%s' doesn't have an attribute: '%s'"
                                % (self.type, key))
 
-            return PGCompositeElement(self.expr, key, type_)
+            return CompositeElement(self.expr, key, type_)
 
-GeometryDump = PGCompositeType({'path': String, 'geom': Geometry})
+GeometryDump = CompositeType({'path': String, 'geom': Geometry})
 
 # Register Geometry and Geography to SQLAlchemy's Postgres reflection
 # subsystem.

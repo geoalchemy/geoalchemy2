@@ -97,7 +97,7 @@ class WKBElement(_SpatialElement, expression.Function):
         return getattr(func_, name)
 
 
-class PGCompositeElement(expression.FunctionElement):
+class CompositeElement(expression.FunctionElement):
     """
     Instances of this class wrap a Postgres composite type.
     """
@@ -105,9 +105,9 @@ class PGCompositeElement(expression.FunctionElement):
         self.name = field
         self.type = to_instance(type_)
 
-        super(PGCompositeElement, self).__init__(base)
+        super(CompositeElement, self).__init__(base)
 
 
-@compiles(PGCompositeElement)
+@compiles(CompositeElement)
 def _compile_pgelem(expr, compiler, **kw):
     return '(%s).%s' % (compiler.process(expr.clauses, **kw), expr.name)

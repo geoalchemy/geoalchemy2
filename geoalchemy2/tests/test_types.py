@@ -219,7 +219,7 @@ class TestFunction(unittest.TestCase):
                                     u'ST_GeomFromText_2': -1})
 
 
-class TestPGCompositeType(unittest.TestCase):
+class TestCompositeType(unittest.TestCase):
 
     def test_ST_Dump(self):
         from sqlalchemy import func
