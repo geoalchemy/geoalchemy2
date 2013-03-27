@@ -136,6 +136,7 @@ class CallFunctionTest(unittest.TestCase):
         from geoalchemy2 import WKBElement
 
         lake_id = self._create_one()
+        lake = session.query(Lake).get(lake_id)
 
         s = select([func.ST_Dump(Lake.__table__.c.geom)])
         r1 = session.execute(s).scalar()
@@ -144,22 +145,19 @@ class CallFunctionTest(unittest.TestCase):
         s = select([func.ST_Dump(Lake.__table__.c.geom).geom])
         r2 = session.execute(s).scalar()
         ok_(isinstance(r2, WKBElement))
+        eq_(r2.data, lake.geom.data)
 
-        lake = session.query(Lake).get(lake_id)
         r3 = session.execute(func.ST_Dump(lake.geom).geom).scalar()
         ok_(isinstance(r3, WKBElement))
-
-        ok_(r2.data == r3.data)
+        eq_(r3.data, lake.geom.data)
 
         r4 = session.query(func.ST_Dump(Lake.geom).geom).scalar()
         ok_(isinstance(r4, WKBElement))
-
-        ok_(r2.data == r3.data == r4.data)
+        eq_(r4.data, lake.geom.data)
 
         r5 = session.query(Lake.geom.ST_Dump().geom).scalar()
         ok_(isinstance(r5, WKBElement))
-
-        ok_(r2.data == r3.data == r4.data == r5.data)
+        eq_(r5.data, lake.geom.data)
 
     @raises(InternalError)
     def test_ST_Buffer_Mixed_SRID(self):
