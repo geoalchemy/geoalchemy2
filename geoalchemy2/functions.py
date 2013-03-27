@@ -319,3 +319,11 @@ class ST_Dump(GenericFunction):
     """
     name = 'ST_Dump'
     type = types.GeometryDump
+
+
+class ST_DumpPoints(GenericFunction):
+    """
+    Return type: :class:`geoalchemy2.types.GeometryDump`.
+    """
+    name = 'ST_DumpPoints'
+    type = types.GeometryDump
