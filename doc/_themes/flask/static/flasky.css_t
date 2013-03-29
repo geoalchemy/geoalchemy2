@@ -349,6 +349,9 @@ pre {
     padding: 7px 30px;
     margin: 15px -30px;
     line-height: 1.3em;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
 }
 
 dl pre, blockquote pre, li pre {
@@ -364,7 +367,10 @@ dl dl pre {
 tt {
     background-color: #ecf0f3;
     color: #222;
-    /* padding: 1px 2px; */
+    padding: 3px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
 }
 
 tt.xref, a tt {
