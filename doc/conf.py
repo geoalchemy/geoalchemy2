@@ -217,7 +217,7 @@ man_pages = [
      [u'Eric Lemoine'], 1)
 ]
 
-# Mocks for Read the Dics
+# Mocks for Read the Docs
 import sys
 
 class Mock(object):
