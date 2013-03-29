@@ -1,8 +1,6 @@
 GeoAlchemy 2 Documentation
 ==========================
 
-.. image:: assets/geoalchemy.png
-
 *Using SQLAlchemy with Spatial Databases.*
 
 GeoAlchemy 2 aims to be simpler than its predecessor, in terms of both usage,
