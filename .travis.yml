@@ -29,10 +29,10 @@ install:
 before_script:
   - psql -c "CREATE ROLE gis PASSWORD 'gis' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;" -U postgres
   - psql -c 'CREATE DATABASE gis;' -U postgres
-  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -f /usr/share/postgresql/9.1/contrib/postgis-1.5/postgis.sql -U postgres; fi
-  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -f /usr/share/postgresql/9.1/contrib/postgis-1.5/spatial_ref_sys.sql -U postgres; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then psql -d gis -f /usr/share/postgresql/9.1/contrib/postgis-2.0/postgis.sql -U postgres; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then psql -d gis -f /usr/share/postgresql/9.1/contrib/postgis-2.0/spatial_ref_sys.sql -U postgres; fi
+  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -U postgres -f /usr/share/postgresql/9.1/contrib/postgis-1.5/postgis.sql; fi
+  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -U postgres -f /usr/share/postgresql/9.1/contrib/postgis-1.5/spatial_ref_sys.sql; fi
+  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then psql -d gis -U postgres -f /usr/share/postgresql/9.1/contrib/postgis-2.0/postgis.sql; fi
+  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then psql -d gis -U postgres -f /usr/share/postgresql/9.1/contrib/postgis-2.0/spatial_ref_sys.sql; fi
 
 script:
   - python setup.py nosetests -v
