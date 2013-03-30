@@ -1,6 +1,7 @@
 from .types import (  # NOQA
     Geometry,
-    Geography
+    Geography,
+    Raster
     )
 
 from .elements import (  # NOQA

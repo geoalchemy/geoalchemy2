@@ -217,3 +217,11 @@ class TestFunction(unittest.TestCase):
                'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2))')
         eq_(expr.compile().params, {u'ST_GeomFromText_1': 'POINT(1 2)',
                                     u'ST_GeomFromText_2': -1})
+
+
+class TestRaster(unittest.TestCase):
+
+    def test_get_col_spec(self):
+        from geoalchemy2 import Raster
+        r = Raster()
+        eq_(r.get_col_spec(), 'raster')

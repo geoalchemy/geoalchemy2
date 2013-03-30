@@ -151,7 +151,16 @@ class Geography(_GISType):
         ``bind_expression`` method. """
 
 
+class Raster(UserDefinedType):
+    def __init__(self, spatial_index=True):
+        self.spatial_index = spatial_index
+
+    def get_col_spec(self):
+        return 'raster'
+
+
 # Register Geometry and Geography to SQLAlchemy's Postgres reflection
 # subsystem.
 ischema_names['geometry'] = Geometry
 ischema_names['geography'] = Geography
+ischema_names['raster'] = Raster
