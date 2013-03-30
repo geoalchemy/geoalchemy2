@@ -16,7 +16,6 @@ env:
   - POSTGIS_VERSION=2.0.3
 
 install:
-  - pip install coveralls
   - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then sudo apt-get install postgresql-9.1-postgis -q; fi
   - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-get install build-essential postgresql-9.1 postgresql-server-dev-9.1 libxml2-dev libproj-dev libjson0-dev libgeos-dev xsltproc docbook-xsl docbook-mathml; fi
   - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then wget http://download.osgeo.org/postgis/source/postgis-$POSTGIS_VERSION.tar.gz; fi
@@ -39,4 +38,5 @@ script:
   - python setup.py nosetests -v
 
 after_script:
+  - pip install coveralls
   - coveralls
