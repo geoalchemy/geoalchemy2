@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, MetaData, Column, Integer, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from geoalchemy2 import Geometry
+from geoalchemy2 import Geometry, Raster
 from sqlalchemy.exc import DataError, IntegrityError, InternalError
 
 
@@ -30,6 +30,15 @@ if not postgis_version.startswith('2.'):
     # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
     # management functions should be used.
     Lake.__table__.c.geom.type.management = True
+else:
+    # The raster type is only available on PostGIS 2.0 and above
+    class Ocean(Base):
+        __tablename__ = 'ocean'
+        id = Column(Integer, primary_key=True)
+        rast = Column(Raster)
+
+        def __init__(self, rast):
+            self.rast = rast
 
 
 class InsertionTest(unittest.TestCase):
