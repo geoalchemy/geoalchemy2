@@ -83,6 +83,17 @@ def _setup_ddl_event_listeners():
                                   (table.schema or 'public'),
                                   table.name, c.name))
 
+                # Add spatial indices for the Raster columns
+                #
+                # Note the use of ST_ConvexHull since most raster operators are
+                # based on the convex hull of the rasters.
+                if isinstance(c.type, Raster) and c.type.spatial_index is True:
+                    bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
+                                 'USING GIST (ST_ConvexHull(%s))' %
+                                 (table.name, c.name,
+                                  (table.schema or 'public'),
+                                  table.name, c.name))
+
         elif event == 'after-drop':
             # Restore original column list including managed Geometry columns
             table.columns = table.info.pop('_saved_columns')
