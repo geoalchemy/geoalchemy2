@@ -1,5 +1,6 @@
 import unittest
 from nose.tools import eq_, ok_, raises
+from nose.plugins.skip import SkipTest
 
 from sqlalchemy import create_engine, MetaData, Column, Integer, func
 from sqlalchemy.orm import sessionmaker
@@ -75,6 +76,35 @@ class InsertionTest(unittest.TestCase):
         eq_(wkt, 'LINESTRING(0 0,1 1)')
         srid = session.execute(l.geom.ST_SRID()).scalar()
         eq_(srid, 4326)
+
+    def test_Raster(self):
+        if not postgis_version.startswith('2.'):
+            raise SkipTest
+
+        from geoalchemy2 import WKTElement
+        polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
+        o = Ocean(func.ST_AsRaster(polygon, 5, 5))
+        session.add(o)
+        session.flush()
+        session.expire(o)
+
+        height = session.execute(func.ST_Height(o.rast)).scalar()
+        eq_(height, 5)
+
+        width = session.execute(func.ST_Width(o.rast)).scalar()
+        eq_(width, 5)
+
+        # The top left corner is covered by the polygon
+        top_left_point = WKTElement('Point(0 1)', srid=4326)
+        top_left = session.execute(
+            func.ST_Value(o.rast, top_left_point)).scalar()
+        eq_(top_left, 1)
+
+        # The bottom right corner has NODATA
+        bottom_right_point = WKTElement('Point(1 0)', srid=4326)
+        bottom_right = session.execute(
+            func.ST_Value(o.rast, bottom_right_point)).scalar()
+        eq_(bottom_right, None)
 
 
 class CallFunctionTest(unittest.TestCase):
