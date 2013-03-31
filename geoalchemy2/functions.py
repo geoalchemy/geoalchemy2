@@ -94,220 +94,90 @@ class GenericFunction(functions.GenericFunction):
 # <http://www.postgis.org/documentation/manual-svn/reference.html>
 
 
-#
-# Geometry Accessors
-#
-
-
-class ST_Envelope(GenericFunction):
-    """
-    Return type: :class:`geoalchemy2.types.Geometry`.
-    """
-    name = 'ST_Envelope'
-    type = types.Geometry
-
-
-class ST_GeometryN(GenericFunction):
-    name = 'ST_GeometryN'
-
-
-class ST_GeometryType(GenericFunction):
-    name = 'ST_GeometryType'
-
-
-class ST_IsValid(GenericFunction):
-    name = 'ST_IsValid'
-
-
-class ST_NPoints(GenericFunction):
-    name = 'ST_NPoints'
-
-
-class ST_SRID(GenericFunction):
-    name = 'ST_SRID'
-
-
-class ST_X(GenericFunction):
-    name = 'ST_X'
-
-
-class ST_Y(GenericFunction):
-    name = 'ST_Y'
-
-
-#
-# Geometry Editors
-#
-
-
-class ST_Transform(GenericFunction):
-    name = 'ST_Transform'
-    type = types.Geometry
-
-
-#
-# Geometry Outputs
-#
-
-
-class ST_AsBinary(GenericFunction):
-    name = 'ST_AsBinary'
-
-
-class ST_AsGeoJSON(GenericFunction):
-    name = 'ST_AsGeoJSON'
-
-
-class ST_AsGML(GenericFunction):
-    name = 'ST_AsGML'
-
-
-class ST_AsKML(GenericFunction):
-    name = 'ST_AsKML'
-
-
-class ST_AsSVG(GenericFunction):
-    name = 'ST_AsSVG'
-
-
-class ST_AsText(GenericFunction):
-    name = 'ST_AsText'
-
-
-class ST_AsText(GenericFunction):
-    name = 'ST_AsText'
-
-
-#
-# Spatial Relationships and Measurements
-#
-
-
-class ST_Area(GenericFunction):
-    name = 'ST_Area'
-
-
-class ST_Centroid(GenericFunction):
-    """
-    Return type: :class:`geoalchemy2.types.Geometry`.
-    """
-    name = 'ST_Centroid'
-    type = types.Geometry
-
-
-class ST_Contains(GenericFunction):
-    name = 'ST_Contains'
-
-
-class ST_ContainsProperly(GenericFunction):
-    name = 'ST_ContainsProperly'
-
-
-class ST_Covers(GenericFunction):
-    name = 'ST_Covers'
-
-
-class ST_CoveredBy(GenericFunction):
-    name = 'ST_CoveredBy'
-
-
-class ST_Crosses(GenericFunction):
-    name = 'ST_Crosses'
-
-
-class ST_Disjoint(GenericFunction):
-    name = 'ST_Disjoint'
-
-
-class ST_Distance(GenericFunction):
-    name = 'ST_Distance'
-
-
-class ST_Distance_Sphere(GenericFunction):
-    name = 'ST_Distance_Sphere'
-
-
-class ST_DFullyWithin(GenericFunction):
-    name = 'ST_DFullyWithin'
-
-
-class ST_DWithin(GenericFunction):
-    name = 'ST_DWithin'
-
-
-class ST_Equals(GenericFunction):
-    name = 'ST_Equals'
-
-
-class ST_Intersects(GenericFunction):
-    name = 'ST_Intersects'
-
-
-class ST_Length(GenericFunction):
-    name = 'ST_Length'
-
-
-class ST_OrderingEquals(GenericFunction):
-    name = 'ST_OrderingEquals'
-
-
-class ST_Overlaps(GenericFunction):
-    name = 'ST_Overlaps'
-
-
-class ST_Perimeter(GenericFunction):
-    name = 'ST_Perimeter'
-
-
-class ST_Project(GenericFunction):
-    name = 'ST_Project'
-    type = types.Geography
-
-
-class ST_Relate(GenericFunction):
-    name = 'ST_Relate'
-
-
-class ST_Touches(GenericFunction):
-    name = 'ST_Touches'
-
-
-class ST_Within(GenericFunction):
-    name = 'ST_Within'
-
-
-#
-# Geometry Processing
-#
-
-
-class ST_Buffer(GenericFunction):
-    """
-    Return type: :class:`geoalchemy2.types.Geometry`.
-    """
-    name = 'ST_Buffer'
-    type = types.Geometry
-
-
-class ST_Difference(GenericFunction):
-    """
-    Return type: :class:`geoalchemy2.types.Geometry`.
-    """
-    name = 'ST_Difference'
-    type = types.Geometry
-
-
-class ST_Intersection(GenericFunction):
-    """
-    Return type: :class:`geoalchemy2.types.Geometry`.
-    """
-    name = 'ST_Intersection'
-    type = types.Geometry
-
-
-class ST_Union(GenericFunction):
-    """
-    Return type: :class:`geoalchemy2.types.Geometry`.
-    """
-    name = 'ST_Union'
-    type = types.Geometry
+_FUNCTIONS = [
+    #
+    # Geometry Accessors
+    #
+
+    ('ST_Envelope', types.Geometry, None),
+    ('ST_GeometryN', None, None),
+    ('ST_GeometryType', None, None),
+    ('ST_IsValid', None, None),
+    ('ST_NPoints', None, None),
+    ('ST_SRID', None, None),
+    ('ST_X', None, None),
+    ('ST_Y', None, None),
+
+    #
+    # Geometry Editors
+    #
+
+    ('ST_Transform', types.Geometry, None),
+
+    #
+    # Geometry Outputs
+    #
+
+    ('ST_AsBinary', None, None),
+    ('ST_AsGeoJSON', None, None),
+    ('ST_AsGML', None, None),
+    ('ST_AsKML', None, None),
+    ('ST_AsSVG', None, None),
+    ('ST_AsText', None, None),
+    ('ST_AsText', None, None),
+
+    #
+    # Spatial Relationships and Measurements
+    #
+
+    ('ST_Area', None, None),
+    ('ST_Centroid', types.Geometry, None),
+    ('ST_Contains', None, None),
+    ('ST_ContainsProperly', None, None),
+    ('ST_Covers', None, None),
+    ('ST_CoveredBy', None, None),
+    ('ST_Crosses', None, None),
+    ('ST_Disjoint', None, None),
+    ('ST_Distance', None, None),
+    ('ST_Distance_Sphere', None, None),
+    ('ST_DFullyWithin', None, None),
+    ('ST_DWithin', None, None),
+    ('ST_Equals', None, None),
+    ('ST_Intersects', None, None),
+    ('ST_Length', None, None),
+    ('ST_OrderingEquals', None, None),
+    ('ST_Overlaps', None, None),
+    ('ST_Perimeter', None, None),
+    ('ST_Project', types.Geography, None),
+    ('ST_Relate', None, None),
+    ('ST_Touches', None, None),
+    ('ST_Within', None, None),
+
+    #
+    # Geometry Processing
+    #
+
+    ('ST_Buffer', types.Geometry, None),
+    ('ST_Difference', types.Geometry, None),
+    ('ST_Intersection', types.Geometry, None),
+    ('ST_Union', types.Geometry, None),
+]
+
+# Iterate through _FUNCTION and create GenericFunction classes dynamically
+for name, type_, doc in _FUNCTIONS:
+    attributes = {'name': name}
+    docs = []
+
+    if doc is not None:
+        docs.append(doc)
+
+    if type_ is not None:
+        attributes['type'] = type_
+
+        type_str = '{}.{}'.format(type_.__module__, type_.__name__)
+        docs.append('Return type: :class:`{}`.'.format(type_str))
+
+    if len(docs) != 0:
+        attributes['__doc__'] = '\n\n'.join(docs)
+
+    globals()[name] = type(name, (GenericFunction,), attributes)
