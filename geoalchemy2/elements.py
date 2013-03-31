@@ -97,6 +97,13 @@ class WKBElement(_SpatialElement, expression.Function):
 
 
 class RasterElement(expression.FunctionElement):
+    """
+    Instances of this class wrap a ``raster`` value. Raster values read
+    from the database are converted to instances of this type. In
+    most cases you won't need to create ``RasterElement`` instances
+    yourself.
+    """
+
     name = 'raster'
 
     def __init__(self, data):
