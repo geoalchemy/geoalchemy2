@@ -152,6 +152,27 @@ class Geography(_GISType):
 
 
 class Raster(UserDefinedType):
+    """
+    The Raster column type.
+
+    Creating a raster column is done like this::
+
+        Column(Raster)
+
+    See :class:`geoalchemy2.types._GISType` for the list of arguments that can
+    be passed to the constructor.
+
+    This class defines the ``result_processor`` method, so that raster values
+    received from the database are converted to
+    :class:`geoalchemy2.elements.RasterElement` objects.
+
+    Constructor arguments:
+
+    ``spatial_index``
+
+        Indicate if a spatial index should be created. Default is ``True``.
+
+    """
     def __init__(self, spatial_index=True):
         self.spatial_index = spatial_index
 
