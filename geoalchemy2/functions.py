@@ -100,35 +100,35 @@ _FUNCTIONS = [
     #
 
     ('ST_Envelope', types.Geometry,
-     '''Returns a geometry representing the double precision (float8) bounding
-        box of the supplied geometry.'''),
+     'Returns a geometry representing the double precision (float8) bounding'
+     'box of the supplied geometry.'),
 
     ('ST_GeometryN', None,
-     '''Return the 1-based Nth geometry if the geometry is a
-        ``GEOMETRYCOLLECTION``, ``(MULTI)POINT``, ``(MULTI)LINESTRING``,
-        ``MULTICURVE`` or ``(MULTI)POLYGON``, ``POLYHEDRALSURFACE`` Otherwise,
-        return ``NULL``.'''),
+     'Return the 1-based Nth geometry if the geometry is a '
+     '``GEOMETRYCOLLECTION``, ``(MULTI)POINT``, ``(MULTI)LINESTRING``, '
+     '``MULTICURVE`` or ``(MULTI)POLYGON``, ``POLYHEDRALSURFACE`` Otherwise, '
+     'return ``NULL``.'),
 
     ('ST_GeometryType', None,
-     '''Return the geometry type of the ``ST_Geometry`` value.'''),
+     'Return the geometry type of the ``ST_Geometry`` value.'),
 
     ('ST_IsValid', None,
-     '''Returns ``true`` if the ``ST_Geometry`` is well formed.'''),
+     'Returns ``true`` if the ``ST_Geometry`` is well formed.'),
 
     ('ST_NPoints', None,
-     '''Return the number of points (vertexes) in a geometry.'''),
+     'Return the number of points (vertexes) in a geometry.'),
 
     ('ST_SRID', None,
-     '''Returns the spatial reference identifier for the ``ST_Geometry`` as
-        defined in ``spatial_ref_sys`` table.'''),
+     'Returns the spatial reference identifier for the ``ST_Geometry`` as '
+     'defined in ``spatial_ref_sys`` table.'),
 
     ('ST_X', None,
-     '''Return the X coordinate of the point, or ``NULL`` if not available.
-        Input must be a point.'''),
+     'Return the X coordinate of the point, or ``NULL`` if not available. '
+     'Input must be a point.'),
 
     ('ST_Y', None,
-     '''Return the Y coordinate of the point, or ``NULL`` if not available.
-        Input must be a point.'''),
+     'Return the Y coordinate of the point, or ``NULL`` if not available. '
+     'Input must be a point.'),
 
     #
     # Geometry Editors
