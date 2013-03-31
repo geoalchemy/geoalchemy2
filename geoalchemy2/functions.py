@@ -192,6 +192,7 @@ for name, type_, doc in _FUNCTIONS:
 
     if doc is not None:
         docs.append(doc)
+        docs.append('see http://postgis.net/docs/{}.html'.format(name))
 
     if type_ is not None:
         attributes['type'] = type_
