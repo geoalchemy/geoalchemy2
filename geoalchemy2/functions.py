@@ -99,14 +99,36 @@ _FUNCTIONS = [
     # Geometry Accessors
     #
 
-    ('ST_Envelope', types.Geometry, None),
-    ('ST_GeometryN', None, None),
-    ('ST_GeometryType', None, None),
-    ('ST_IsValid', None, None),
-    ('ST_NPoints', None, None),
-    ('ST_SRID', None, None),
-    ('ST_X', None, None),
-    ('ST_Y', None, None),
+    ('ST_Envelope', types.Geometry,
+     '''Returns a geometry representing the double precision (float8) bounding
+        box of the supplied geometry.'''),
+
+    ('ST_GeometryN', None,
+     '''Return the 1-based Nth geometry if the geometry is a
+        ``GEOMETRYCOLLECTION``, ``(MULTI)POINT``, ``(MULTI)LINESTRING``,
+        ``MULTICURVE`` or ``(MULTI)POLYGON``, ``POLYHEDRALSURFACE`` Otherwise,
+        return ``NULL``.'''),
+
+    ('ST_GeometryType', None,
+     '''Return the geometry type of the ``ST_Geometry`` value.'''),
+
+    ('ST_IsValid', None,
+     '''Returns ``true`` if the ``ST_Geometry`` is well formed.'''),
+
+    ('ST_NPoints', None,
+     '''Return the number of points (vertexes) in a geometry.'''),
+
+    ('ST_SRID', None,
+     '''Returns the spatial reference identifier for the ``ST_Geometry`` as
+        defined in ``spatial_ref_sys`` table.'''),
+
+    ('ST_X', None,
+     '''Return the X coordinate of the point, or ``NULL`` if not available.
+        Input must be a point.'''),
+
+    ('ST_Y', None,
+     '''Return the Y coordinate of the point, or ``NULL`` if not available.
+        Input must be a point.'''),
 
     #
     # Geometry Editors
