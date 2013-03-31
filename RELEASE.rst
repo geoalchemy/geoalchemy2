@@ -30,8 +30,8 @@ Create Git tag and push it::
     $ git tag -a x.y -m 'version x.y'
     $ git push origin x.y
 
-Go to http://readthedocs.org/dashboard/geoalchemy-2/edit/ and set "Default branch"
-to x.y.
+Go to http://readthedocs.org/dashboard/geoalchemy-2/edit/ and set "Default
+version" to x.y.
 
 Upload the package to PyPI::
 

@@ -1,8 +1,3 @@
-.. GeoAlchemy2 documentation master file, created by
-   sphinx-quickstart on Thu Aug 23 06:38:45 2012.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 GeoAlchemy 2 Documentation
 ==========================
 
@@ -91,6 +86,7 @@ Contributors:
 * Eric Lemoine, Camptocamp SA (https://github.com/elemoine)
 * Frédéric Junod, Camptocamp SA (https://github.com/fredj)
 * rapto (https://github.com/rapto)
+* Tobias Bieniek (https://github.com/Turbo87)
 * Tom Payne, Camptocamp SA (https://github.com/twpayne)
 
 Many thanks to Mike Bayer for his guidance and support! He also `fostered
@@ -99,7 +95,7 @@ the birth of GeoAlchemy 2.
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

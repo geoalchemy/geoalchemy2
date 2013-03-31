@@ -62,7 +62,7 @@ class GenericFunction(functions.GenericFunction):
     This class inherits from ``sqlalchemy.sql.functions.GenericFunction``, so
     functions defined by subclassing this class can be given a fixed return
     type. For example, functions like :class:`ST_Buffer` and
-    :class:`ST_Envelope` have their ``type`` attribues set to
+    :class:`ST_Envelope` have their ``type`` attributes set to
     :class:`geoalchemy2.types.Geometry`.
 
     This class allows constructs like ``Lake.geom.ST_Buffer(2)``. In that
