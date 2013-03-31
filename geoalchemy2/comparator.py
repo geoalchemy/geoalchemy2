@@ -46,12 +46,12 @@ from sqlalchemy.types import UserDefinedType
 from sqlalchemy.sql import expression
 
 
-class Comparator(UserDefinedType.Comparator):
+class ST_FunctionMixin(object):
     """
-    A custom comparator class. Used in :class:`geoalchemy2.types.Geometry`
-    and :class:`geoalchemy2.types.Geography`.
+    This is how things like lake.geom.ST_Buffer(2) creates SQL expressions
+    of this form:
 
-    This is where spatial operators like ``&&`` and ``&<`` are defined.
+        ST_Buffer(ST_GeomFromWKB(:ST_GeomFromWKB_1), :param_1)
     """
 
     def __getattr__(self, name):
@@ -67,8 +67,22 @@ class Comparator(UserDefinedType.Comparator):
         # SQLAlchemy's "func" object. This is to be able to "bind" the
         # function to the SQL expression. See also GenericFunction above.
 
-        func_ = expression._FunctionGenerator(expr=self.expr)
+        if hasattr(self, 'expr'):
+            expr = self.expr
+        else:
+            expr = self
+
+        func_ = expression._FunctionGenerator(expr=expr)
         return getattr(func_, name)
+
+
+class Comparator(UserDefinedType.Comparator, ST_FunctionMixin):
+    """
+    A custom comparator class. Used in :class:`geoalchemy2.types.Geometry`
+    and :class:`geoalchemy2.types.Geography`.
+
+    This is where spatial operators like ``&&`` and ``&<`` are defined.
+    """
 
     def intersects(self, other):
         """
