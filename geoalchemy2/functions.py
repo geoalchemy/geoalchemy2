@@ -166,37 +166,131 @@ _FUNCTIONS = [
     # Spatial Relationships and Measurements
     #
 
-    ('ST_Area', None, None),
-    ('ST_Centroid', types.Geometry, None),
-    ('ST_Contains', None, None),
-    ('ST_ContainsProperly', None, None),
-    ('ST_Covers', None, None),
-    ('ST_CoveredBy', None, None),
-    ('ST_Crosses', None, None),
-    ('ST_Disjoint', None, None),
-    ('ST_Distance', None, None),
-    ('ST_Distance_Sphere', None, None),
-    ('ST_DFullyWithin', None, None),
-    ('ST_DWithin', None, None),
-    ('ST_Equals', None, None),
-    ('ST_Intersects', None, None),
-    ('ST_Length', None, None),
-    ('ST_OrderingEquals', None, None),
-    ('ST_Overlaps', None, None),
-    ('ST_Perimeter', None, None),
-    ('ST_Project', types.Geography, None),
-    ('ST_Relate', None, None),
-    ('ST_Touches', None, None),
-    ('ST_Within', None, None),
+    ('ST_Area', None,
+     'Returns the area of the surface if it is a polygon or multi-polygon. For '
+     '``geometry`` type area is in SRID units. For ``geography`` area is in '
+     'square meters.'),
+
+    ('ST_Centroid', types.Geometry,
+     'Returns the geometric center of a geometry.'),
+
+    ('ST_Contains', None,
+     'Returns true if and only if no points of B lie in the exterior of A, and '
+     'at least one point of the interior of B lies in the interior of A.'),
+
+    ('ST_ContainsProperly', None,
+     'Returns true if B intersects the interior of A but not the boundary (or '
+     'exterior). A does not contain properly itself, but does contain itself.'),
+
+    ('ST_Covers', None,
+     'Returns 1 (TRUE) if no point in Geometry B is outside Geometry A'),
+
+    ('ST_CoveredBy', None,
+     'Returns 1 (TRUE) if no point in Geometry/Geography A is outside Geometry'
+     '/Geography B'),
+
+    ('ST_Crosses', None,
+     'Returns TRUE if the supplied geometries have some, but not all, '
+     'interior points in common.'),
+
+    ('ST_Disjoint', None,
+     ' Returns TRUE if the Geometries do not "spatially intersect" - if they '
+     'do not share any space together.'),
+
+    ('ST_Distance', None,
+     'For geometry type Returns the 2-dimensional cartesian minimum distance '
+     '(based on spatial ref) between two geometries in projected units. For '
+     'geography type defaults to return spheroidal minimum distance between '
+     'two geographies in meters.'),
+
+    ('ST_Distance_Sphere', None,
+     'Returns minimum distance in meters between two lon/lat geometries. Uses '
+     'a spherical earth and radius of 6370986 meters. Faster than '
+     '``ST_Distance_Spheroid``, but less accurate. PostGIS versions '
+     'prior to 1.5 only implemented for points.'),
+
+    ('ST_DFullyWithin', None,
+     'Returns true if all of the geometries are within the specified distance '
+     'of one another'),
+
+    ('ST_DWithin', None,
+     'Returns true if the geometries are within the specified distance of one '
+     'another. For geometry units are in those of spatial reference and For '
+     'geography units are in meters and measurement is defaulted to '
+     '``use_spheroid=true`` (measure around spheroid), for faster check, '
+     '``use_spheroid=false`` to measure along sphere.'),
+
+    ('ST_Equals', None,
+     'Returns true if the given geometries represent the same geometry. '
+     'Directionality is ignored.'),
+
+    ('ST_Intersects', None,
+     'Returns ``TRUE`` if the Geometries/Geography "spatially intersect in '
+     '2D" - (share any portion of space) and ``FALSE`` if they don\'t (they '
+     'are Disjoint). For geography -- tolerance is 0.00001 meters (so any '
+     'points that close are considered to intersect)'),
+
+    ('ST_Length', None,
+     'Returns the 2d length of the geometry if it is a linestring or '
+     'multilinestring. geometry are in units of spatial reference and '
+     'geography are in meters (default spheroid)'),
+
+    ('ST_OrderingEquals', None,
+     'Returns true if the given geometries represent the same geometry and '
+     'points are in the same directional order.'),
+
+    ('ST_Overlaps', None,
+     'Returns TRUE if the Geometries share space, are of the same dimension, '
+     'but are not completely contained by each other.'),
+
+    ('ST_Perimeter', None,
+     'Return the length measurement of the boundary of an ST_Surface or '
+     'ST_MultiSurface geometry or geography. (Polygon, Multipolygon). '
+     'geometry measurement is in units of spatial reference and geography is '
+     'in meters.'),
+
+    ('ST_Project', types.Geography,
+     'Returns a ``POINT`` projected from a start point using a distance in '
+     'meters and bearing (azimuth) in radians.'),
+
+    ('ST_Relate', None,
+     'Returns ``TRUE`` if this Geometry is spatially related to '
+     'anotherGeometry, by testing for intersections between the Interior, '
+     'Boundary and Exterior of the two geometries as specified by the values '
+     'in the intersectionMatrixPattern. If no intersectionMatrixPattern is '
+     'passed in, then returns the maximum intersectionMatrixPattern that '
+     'relates the 2 geometries.'),
+
+    ('ST_Touches', None,
+     'Returns ``TRUE`` if the geometries have at least one point in common, but '
+     'their interiors do not intersect.'),
+
+    ('ST_Within', None,
+     'Returns ``TRUE`` if the geometry A is completely inside geometry B'),
 
     #
     # Geometry Processing
     #
 
-    ('ST_Buffer', types.Geometry, None),
-    ('ST_Difference', types.Geometry, None),
-    ('ST_Intersection', types.Geometry, None),
-    ('ST_Union', types.Geometry, None),
+    ('ST_Buffer', types.Geometry,
+     'For geometry: Returns a geometry that represents all points whose '
+     'distance from this Geometry is less than or equal to distance. '
+     'Calculations are in the Spatial Reference System of this Geometry.\n\n'
+     'For geography: Uses a planar transform wrapper. Introduced in 1.5 '
+     'support for different end cap and mitre settings to control shape.'),
+
+    ('ST_Difference', types.Geometry,
+     'Returns a geometry that represents that part of geometry A that does '
+     'not intersect with geometry B.'),
+
+    ('ST_Intersection', types.Geometry,
+     'Returns a geometry that represents the shared portion of geomA and '
+     'geomB. The geography implementation does a transform to geometry to do '
+     'the intersection and then transform back to WGS84.'),
+
+    ('ST_Union', types.Geometry,
+     'Returns a geometry that represents the point set union of the '
+     'Geometries.'),
 ]
 
 # Iterate through _FUNCTION and create GenericFunction classes dynamically
