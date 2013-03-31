@@ -86,6 +86,7 @@ Contributors:
 * Eric Lemoine, Camptocamp SA (https://github.com/elemoine)
 * Frédéric Junod, Camptocamp SA (https://github.com/fredj)
 * rapto (https://github.com/rapto)
+* Tobias Bieniek (https://github.com/Turbo87)
 * Tom Payne, Camptocamp SA (https://github.com/twpayne)
 
 Many thanks to Mike Bayer for his guidance and support! He also `fostered
