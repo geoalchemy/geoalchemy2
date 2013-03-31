@@ -42,3 +42,10 @@ class TestRasterElement(unittest.TestCase):
         from geoalchemy2.elements import RasterElement
         e = RasterElement(b'\x01\x02')
         eq_(e.desc, b'0102')
+
+    def test_function_call(self):
+        from geoalchemy2.elements import RasterElement
+        e = RasterElement(b'\x01\x02')
+        f = e.ST_Height()
+        eq_sql(f, 'ST_Height(:raster_1::raster)')
+        eq_(f.compile().params, {u'raster_1': b'\x01\x02'})

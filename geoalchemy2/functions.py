@@ -311,3 +311,16 @@ class ST_Union(GenericFunction):
     """
     name = 'ST_Union'
     type = types.Geometry
+
+
+#
+# Raster Accessors
+#
+
+
+class ST_Height(GenericFunction):
+    name = 'ST_Height'
+
+
+class ST_Width(GenericFunction):
+    name = 'ST_Width'

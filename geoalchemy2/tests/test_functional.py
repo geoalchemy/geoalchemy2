@@ -90,10 +90,10 @@ class InsertionTest(unittest.TestCase):
 
         ok_(isinstance(o.rast, RasterElement))
 
-        height = session.execute(func.ST_Height(o.rast)).scalar()
+        height = session.execute(o.rast.ST_Height()).scalar()
         eq_(height, 5)
 
-        width = session.execute(func.ST_Width(o.rast)).scalar()
+        width = session.execute(o.rast.ST_Width()).scalar()
         eq_(width, 5)
 
         # The top left corner is covered by the polygon
