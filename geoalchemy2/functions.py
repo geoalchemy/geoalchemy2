@@ -319,6 +319,9 @@ class ST_Union(GenericFunction):
 
 
 class ST_AsRaster(GenericFunction):
+    """
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
     name = 'ST_AsRaster'
     type = types.Raster
 
