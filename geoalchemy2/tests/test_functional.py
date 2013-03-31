@@ -83,7 +83,7 @@ class InsertionTest(unittest.TestCase):
 
         from geoalchemy2 import WKTElement, RasterElement
         polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
-        o = Ocean(func.ST_AsRaster(polygon, 5, 5))
+        o = Ocean(polygon.ST_AsRaster(5, 5))
         session.add(o)
         session.flush()
         session.expire(o)

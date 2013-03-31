@@ -318,6 +318,16 @@ class ST_Union(GenericFunction):
 #
 
 
+class ST_AsRaster(GenericFunction):
+    name = 'ST_AsRaster'
+    type = types.Raster
+
+
+#
+# Raster Accessors
+#
+
+
 class ST_Height(GenericFunction):
     name = 'ST_Height'
 
