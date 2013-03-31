@@ -324,3 +324,12 @@ class ST_Height(GenericFunction):
 
 class ST_Width(GenericFunction):
     name = 'ST_Width'
+
+
+#
+# Raster Pixel Accessors and Setters
+#
+
+
+class ST_Value(GenericFunction):
+    name = 'ST_Value'

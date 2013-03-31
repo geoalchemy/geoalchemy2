@@ -99,13 +99,13 @@ class InsertionTest(unittest.TestCase):
         # The top left corner is covered by the polygon
         top_left_point = WKTElement('Point(0 1)', srid=4326)
         top_left = session.execute(
-            func.ST_Value(o.rast, top_left_point)).scalar()
+            o.rast.ST_Value(top_left_point)).scalar()
         eq_(top_left, 1)
 
         # The bottom right corner has NODATA
         bottom_right_point = WKTElement('Point(1 0)', srid=4326)
         bottom_right = session.execute(
-            func.ST_Value(o.rast, bottom_right_point)).scalar()
+            o.rast.ST_Value(bottom_right_point)).scalar()
         eq_(bottom_right, None)
 
 
