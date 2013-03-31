@@ -32,6 +32,29 @@ if not postgis_version.startswith('2.'):
     Lake.__table__.c.geom.type.management = True
 
 
+class IndexTest(unittest.TestCase):
+
+    def setUp(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+
+    def tearDown(self):
+        session.rollback()
+        metadata.drop_all()
+
+    def test_LakeIndex(self):
+        """ Make sure the Lake table has an index on the geom column """
+
+        from sqlalchemy.engine import reflection
+        inspector = reflection.Inspector.from_engine(engine)
+        indices = inspector.get_indexes(Lake.__tablename__)
+        eq_(len(indices), 1)
+
+        index = indices[0]
+        eq_(index.get('unique'), False)
+        eq_(index.get('column_names'), [u'geom'])
+
+
 class InsertionTest(unittest.TestCase):
 
     def setUp(self):
