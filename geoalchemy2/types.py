@@ -26,7 +26,7 @@ class _GISType(UserDefinedType):
 
     This class also defines the ``result_processor`` method, so that WKB values
     received from the database are converted to
-    :class:`geoalchemy2.types.WKBElement` objects.
+    :class:`geoalchemy2.elements.WKBElement` objects.
 
     Constructor arguments:
 
