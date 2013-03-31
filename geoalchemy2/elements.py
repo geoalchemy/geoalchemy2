@@ -1,6 +1,7 @@
 import binascii
 
 from sqlalchemy.sql import expression
+from sqlalchemy.ext.compiler import compiles
 
 
 class _SpatialElement(object):
@@ -93,3 +94,49 @@ class WKBElement(_SpatialElement, expression.Function):
 
         func_ = expression._FunctionGenerator(expr=self)
         return getattr(func_, name)
+
+
+class RasterElement(expression.FunctionElement):
+    name = 'raster'
+
+    def __init__(self, data):
+        self.data = data
+        expression.FunctionElement.__init__(self, self.data)
+
+    def __str__(self):
+        return self.desc  # pragma: no cover
+
+    def __repr__(self):
+        return "<%s at 0x%x; %r>" % \
+            (self.__class__.__name__, id(self), self.desc)  # pragma: no cover
+
+    @property
+    def desc(self):
+        """
+        This element's description string.
+        """
+        desc = binascii.hexlify(self.data)
+        if len(desc) < 30:
+            return desc
+
+        return desc[:30] + '...'
+
+    def __getattr__(self, name):
+        #
+        # This is how things like ocean.rast.ST_Value(...) creates
+        # SQL expressions of this form:
+        #
+        # ST_Value(:ST_GeomFromWKB_1), :param_1)
+        #
+
+        # We create our own _FunctionGenerator here, and use it in place of
+        # SQLAlchemy's "func" object. This is to be able to "bind" the
+        # function to the SQL expression. See also GenericFunction above.
+
+        func_ = expression._FunctionGenerator(expr=self)
+        return getattr(func_, name)
+
+
+@compiles(RasterElement)
+def compile_mycolumn(element, compiler, **kw):
+    return "%s::raster" % compiler.process(element.clauses)

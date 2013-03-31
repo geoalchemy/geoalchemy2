@@ -6,7 +6,8 @@ from .types import (  # NOQA
 
 from .elements import (  # NOQA
     WKTElement,
-    WKBElement
+    WKBElement,
+    RasterElement
     )
 
 from . import functions  # NOQA

@@ -34,3 +34,11 @@ class TestWKBElement(unittest.TestCase):
         eq_(f.compile().params,
             {u'param_1': 2, u'ST_GeomFromWKB_1': b'\x01\x02',
              u'ST_GeomFromWKB_2': -1})
+
+
+class TestRasterElement(unittest.TestCase):
+
+    def test_desc(self):
+        from geoalchemy2.elements import RasterElement
+        e = RasterElement(b'\x01\x02')
+        eq_(e.desc, b'0102')
