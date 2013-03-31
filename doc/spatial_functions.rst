@@ -6,4 +6,3 @@ Spatial Functions
 .. automodule:: geoalchemy2.functions
    :members:
    :undoc-members:
-   :show-inheritance:
