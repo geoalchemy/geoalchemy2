@@ -134,19 +134,33 @@ _FUNCTIONS = [
     # Geometry Editors
     #
 
-    ('ST_Transform', types.Geometry, None),
+    ('ST_Transform', types.Geometry,
+     'Returns a new geometry with its coordinates transformed to the SRID '
+     'referenced by the integer parameter.'),
 
     #
     # Geometry Outputs
     #
 
-    ('ST_AsBinary', None, None),
-    ('ST_AsGeoJSON', None, None),
-    ('ST_AsGML', None, None),
-    ('ST_AsKML', None, None),
-    ('ST_AsSVG', None, None),
-    ('ST_AsText', None, None),
-    ('ST_AsText', None, None),
+    ('ST_AsBinary', None,
+     'Return the Well-Known Binary (WKB) representation of the geometry/'
+     'geography without SRID meta data.'),
+
+    ('ST_AsGeoJSON', None, 'Return the geometry as a GeoJSON element.'),
+
+    ('ST_AsGML', None, 'Return the geometry as a GML version 2 or 3 element.'),
+
+    ('ST_AsKML', None,
+     'Return the geometry as a KML element. Several variants. Default '
+     'version=2, default precision=15'),
+
+    ('ST_AsSVG', None,
+     'Returns a Geometry in SVG path data given a geometry or geography '
+     'object.'),
+
+    ('ST_AsText', None,
+     'Return the Well-Known Text (WKT) representation of the geometry/'
+     'geography without SRID metadata.'),
 
     #
     # Spatial Relationships and Measurements
