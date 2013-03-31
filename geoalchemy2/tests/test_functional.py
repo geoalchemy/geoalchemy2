@@ -81,12 +81,14 @@ class InsertionTest(unittest.TestCase):
         if not postgis_version.startswith('2.'):
             raise SkipTest
 
-        from geoalchemy2 import WKTElement
+        from geoalchemy2 import WKTElement, RasterElement
         polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
         o = Ocean(func.ST_AsRaster(polygon, 5, 5))
         session.add(o)
         session.flush()
         session.expire(o)
+
+        ok_(isinstance(o.rast, RasterElement))
 
         height = session.execute(func.ST_Height(o.rast)).scalar()
         eq_(height, 5)

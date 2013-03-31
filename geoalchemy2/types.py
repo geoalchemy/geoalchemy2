@@ -12,7 +12,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
 from .comparator import Comparator
-from .elements import WKBElement
+from .elements import WKBElement, RasterElement
 
 
 class _GISType(UserDefinedType):
@@ -157,6 +157,12 @@ class Raster(UserDefinedType):
 
     def get_col_spec(self):
         return 'raster'
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            if value is not None:
+                return RasterElement(value)
+        return process
 
 
 # Register Geometry and Geography to SQLAlchemy's Postgres reflection
