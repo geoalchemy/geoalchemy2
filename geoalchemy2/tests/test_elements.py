@@ -28,9 +28,9 @@ class TestWKBElement(unittest.TestCase):
         from geoalchemy2.elements import WKBElement
         e = WKBElement(b'\x01\x02')
         f = e.ST_Buffer(2)
-        eq_sql(f,
-            'ST_Buffer(ST_GeomFromWKB(:ST_GeomFromWKB_1, :ST_GeomFromWKB_2), '
-            ':param_1)')
+        eq_sql(f, 'ST_Buffer('
+               'ST_GeomFromWKB(:ST_GeomFromWKB_1, :ST_GeomFromWKB_2), '
+               ':param_1)')
         eq_(f.compile().params,
             {u'param_1': 2, u'ST_GeomFromWKB_1': b'\x01\x02',
              u'ST_GeomFromWKB_2': -1})

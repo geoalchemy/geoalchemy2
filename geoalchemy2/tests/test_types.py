@@ -198,9 +198,9 @@ class TestFunction(unittest.TestCase):
         from geoalchemy2.elements import WKTElement
         expr = func.ST_Equals(WKTElement('POINT(1 2)'),
                               WKTElement('POINT(1 2)'))
-        eq_sql(expr,
-           'ST_Equals(ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2),'
-           ' ST_GeomFromText(:ST_GeomFromText_3, :ST_GeomFromText_4))')
+        eq_sql(expr, 'ST_Equals('
+               'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2), '
+               'ST_GeomFromText(:ST_GeomFromText_3, :ST_GeomFromText_4))')
         eq_(expr.compile().params,
             {u'ST_GeomFromText_1': 'POINT(1 2)',
              u'ST_GeomFromText_2': -1,
