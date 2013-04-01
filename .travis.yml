@@ -31,6 +31,9 @@ install:
   - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo make install; fi
   - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then cd ..; fi
 
+  # Install flake8 style checker
+  - pip install flake8
+
 before_script:
   # Create database user "gis"
   - psql -c "CREATE ROLE gis PASSWORD 'gis' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;" -U postgres
@@ -44,6 +47,9 @@ before_script:
   - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then psql -d gis -U postgres -c "CREATE EXTENSION postgis;"; fi
 
 script:
+  # Run the library through flake8
+  - flake8 geoalchemy2 --ignore=E711
+
   # Run the unit test suite
   - python setup.py nosetests -v
 
