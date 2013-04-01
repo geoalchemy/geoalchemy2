@@ -300,13 +300,13 @@ for name, type_, doc in _FUNCTIONS:
 
     if doc is not None:
         docs.append(doc)
-        docs.append('see http://postgis.net/docs/{}.html'.format(name))
+        docs.append('see http://postgis.net/docs/{0}.html'.format(name))
 
     if type_ is not None:
         attributes['type'] = type_
 
-        type_str = '{}.{}'.format(type_.__module__, type_.__name__)
-        docs.append('Return type: :class:`{}`.'.format(type_str))
+        type_str = '{0}.{0}'.format(type_.__module__, type_.__name__)
+        docs.append('Return type: :class:`{0}`.'.format(type_str))
 
     if len(docs) != 0:
         attributes['__doc__'] = '\n\n'.join(docs)
