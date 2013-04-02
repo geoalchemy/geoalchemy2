@@ -19,14 +19,14 @@ def eq_sql(a, b, msg=None):
 
 def _test_simple_func(name):
     eq_sql(getattr(func, name)(1).select(),
-           'SELECT %(name)s(:param_1) AS "%(name)s_1"' % \
-                   dict(name=name))
+           'SELECT %(name)s(:param_1) AS "%(name)s_1"' %
+           dict(name=name))
 
 
 def _test_geometry_returning_func(name):
     eq_sql(getattr(func, name)(1).select(),
-           'SELECT ST_AsBinary(%(name)s(:param_1)) AS "%(name)s_1"' % \
-                   dict(name=name))
+           'SELECT ST_AsBinary(%(name)s(:param_1)) AS "%(name)s_1"' %
+           dict(name=name))
 
 
 def test_ST_Envelope():
