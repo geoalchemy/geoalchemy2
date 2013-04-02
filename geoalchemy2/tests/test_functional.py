@@ -190,8 +190,8 @@ class CallFunctionTest(unittest.TestCase):
         ok_(r1.data == r2.data == r3.data)
 
         r4 = session.query(Lake).filter(
-                func.ST_Within(WKTElement('POINT(0 0)', srid=4326),
-                        Lake.geom.ST_Buffer(2))).one()
+            func.ST_Within(WKTElement('POINT(0 0)', srid=4326),
+                           Lake.geom.ST_Buffer(2))).one()
         ok_(isinstance(r4, Lake))
         eq_(r4.id, lake_id)
 
@@ -200,8 +200,8 @@ class CallFunctionTest(unittest.TestCase):
         from sqlalchemy.sql import func
         self._create_one()
         session.query(Lake).filter(
-                func.ST_Within('POINT(0 0)',
-                      Lake.geom.ST_Buffer(2))).one()
+            func.ST_Within('POINT(0 0)',
+                           Lake.geom.ST_Buffer(2))).one()
 
 
 class ReflectionTest(unittest.TestCase):

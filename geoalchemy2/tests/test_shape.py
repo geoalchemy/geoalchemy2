@@ -1,5 +1,11 @@
+import sys
+
 from nose.tools import ok_, eq_
 from nose.plugins.skip import SkipTest
+
+# Backwards compatibility for Python 3.x
+if sys.version_info[0] != 2:
+    buffer = memoryview
 
 
 def test_to_shape_WKBElement():
