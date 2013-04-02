@@ -306,7 +306,7 @@ for name, type_, doc in _FUNCTIONS:
     if type_ is not None:
         attributes['type'] = type_
 
-        type_str = '{0}.{0}'.format(type_.__module__, type_.__name__)
+        type_str = '{0}.{1}'.format(type_.__module__, type_.__name__)
         docs.append('Return type: :class:`{0}`.'.format(type_str))
 
     if len(docs) != 0:
