@@ -292,6 +292,25 @@ _FUNCTIONS = [
     ('ST_Union', types.Geometry,
      'Returns a geometry that represents the point set union of the '
      'Geometries.'),
+
+    #
+    # Raster Constructors
+    #
+
+    ('ST_AsRaster', types.Raster, None),
+
+    #
+    # Raster Accessors
+    #
+
+    ('ST_Height', None, None),
+    ('ST_Width', None, None),
+
+    #
+    # Raster Pixel Accessors and Setters
+    #
+
+    ('ST_Value', None, None),
 ]
 
 # Iterate through _FUNCTION and create GenericFunction classes dynamically
@@ -313,38 +332,3 @@ for name, type_, doc in _FUNCTIONS:
         attributes['__doc__'] = '\n\n'.join(docs)
 
     globals()[name] = type(name, (GenericFunction,), attributes)
-
-
-#
-# Raster Constructors
-#
-
-
-class ST_AsRaster(GenericFunction):
-    """
-    Return type: :class:`geoalchemy2.types.Raster`.
-    """
-    name = 'ST_AsRaster'
-    type = types.Raster
-
-
-#
-# Raster Accessors
-#
-
-
-class ST_Height(GenericFunction):
-    name = 'ST_Height'
-
-
-class ST_Width(GenericFunction):
-    name = 'ST_Width'
-
-
-#
-# Raster Pixel Accessors and Setters
-#
-
-
-class ST_Value(GenericFunction):
-    name = 'ST_Value'
