@@ -2,16 +2,10 @@
 This module provides utility functions for integrating with Shapely.
 """
 
-import sys
-
 import shapely.wkb
 import shapely.wkt
 
 from .elements import WKBElement, WKTElement
-
-# Backwards compatibility for Python 3.x
-if sys.version_info[0] != 2:
-    buffer = memoryview
 
 
 def to_shape(element):
@@ -48,4 +42,4 @@ def from_shape(shape, srid=-1):
         from shapely.geometry import Point
         wkb_element = from_shape(Point(5, 45), srid=4326)
     """
-    return WKBElement(buffer(shape.wkb), srid=srid)
+    return WKBElement(buffer(shape.wkb), srid=srid)  # flake8: noqa
