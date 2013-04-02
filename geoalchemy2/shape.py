@@ -42,4 +42,4 @@ def from_shape(shape, srid=-1):
         from shapely.geometry import Point
         wkb_element = from_shape(Point(5, 45), srid=4326)
     """
-    return WKBElement(buffer(shape.wkb), srid=srid)
+    return WKBElement(buffer(shape.wkb), srid=srid)  # flake8: noqa
