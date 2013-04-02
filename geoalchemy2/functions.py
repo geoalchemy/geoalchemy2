@@ -331,7 +331,7 @@ for name, type_, doc in _FUNCTIONS:
     if isinstance(doc, tuple):
         docs.append(doc[0])
         docs.append('see http://postgis.net/docs/{0}.html'.format(doc[1]))
-    elif isinstance(doc, (str, unicode)):
+    elif doc is not None:
         docs.append(doc)
         docs.append('see http://postgis.net/docs/{0}.html'.format(name))
 
