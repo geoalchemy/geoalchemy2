@@ -2,10 +2,16 @@
 This module provides utility functions for integrating with Shapely.
 """
 
+import sys
+
 import shapely.wkb
 import shapely.wkt
 
 from .elements import WKBElement, WKTElement
+
+# Backwards compatibility for Python 3.x
+if sys.version_info[0] != 2:
+    buffer = memoryview
 
 
 def to_shape(element):

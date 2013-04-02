@@ -167,20 +167,21 @@ _FUNCTIONS = [
     #
 
     ('ST_Area', None,
-     'Returns the area of the surface if it is a polygon or multi-polygon. For '
-     '``geometry`` type area is in SRID units. For ``geography`` area is in '
-     'square meters.'),
+     'Returns the area of the surface if it is a polygon or multi-polygon. '
+     'For ``geometry`` type area is in SRID units. For ``geography`` area is '
+     'in square meters.'),
 
     ('ST_Centroid', types.Geometry,
      'Returns the geometric center of a geometry.'),
 
     ('ST_Contains', None,
-     'Returns true if and only if no points of B lie in the exterior of A, and '
-     'at least one point of the interior of B lies in the interior of A.'),
+     'Returns true if and only if no points of B lie in the exterior of A, '
+     'and at least one point of the interior of B lies in the interior of A.'),
 
     ('ST_ContainsProperly', None,
-     'Returns true if B intersects the interior of A but not the boundary (or '
-     'exterior). A does not contain properly itself, but does contain itself.'),
+     'Returns true if B intersects the interior of A but not the boundary '
+     '(or exterior). A does not contain properly itself, but does contain '
+     'itself.'),
 
     ('ST_Covers', None,
      'Returns 1 (TRUE) if no point in Geometry B is outside Geometry A'),
@@ -262,8 +263,8 @@ _FUNCTIONS = [
      'relates the 2 geometries.'),
 
     ('ST_Touches', None,
-     'Returns ``TRUE`` if the geometries have at least one point in common, but '
-     'their interiors do not intersect.'),
+     'Returns ``TRUE`` if the geometries have at least one point in common, '
+     'but their interiors do not intersect.'),
 
     ('ST_Within', None,
      'Returns ``TRUE`` if the geometry A is completely inside geometry B'),
