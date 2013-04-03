@@ -46,12 +46,10 @@ from sqlalchemy.types import UserDefinedType
 from sqlalchemy.sql import expression
 
 
-class Comparator(UserDefinedType.Comparator):
+class BaseComparator(UserDefinedType.Comparator):
     """
-    A custom comparator class. Used in :class:`geoalchemy2.types.Geometry`
-    and :class:`geoalchemy2.types.Geography`.
-
-    This is where spatial operators like ``&&`` and ``&<`` are defined.
+    A custom comparator base class. It adds the ability to call spatial
+    functions on columns that use this kind of comparator.
     """
 
     def __getattr__(self, name):
@@ -69,6 +67,15 @@ class Comparator(UserDefinedType.Comparator):
 
         func_ = expression._FunctionGenerator(expr=self.expr)
         return getattr(func_, name)
+
+
+class Comparator(BaseComparator):
+    """
+    A custom comparator class. Used in :class:`geoalchemy2.types.Geometry`
+    and :class:`geoalchemy2.types.Geography`.
+
+    This is where spatial operators like ``&&`` and ``&<`` are defined.
+    """
 
     def intersects(self, other):
         """
