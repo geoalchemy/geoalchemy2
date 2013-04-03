@@ -145,7 +145,7 @@ class RasterElement(expression.FunctionElement):
 
 
 @compiles(RasterElement)
-def compile_mycolumn(element, compiler, **kw):
+def compile_RasterElement(element, compiler, **kw):
     """
     This function makes sure the :class:`geoalchemy2.elements.RasterWKTElement`
     contents are correctly casted to the ``raster`` type before using it.
