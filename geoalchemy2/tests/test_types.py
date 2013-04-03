@@ -233,6 +233,19 @@ class TestRaster(unittest.TestCase):
         r = Raster()
         eq_(r.get_col_spec(), 'raster')
 
+    def test_column_expression(self):
+        from sqlalchemy.sql import select
+        table = _create_raster_table()
+        s = select([table.c.rast])
+        eq_sql(s, 'SELECT "table".rast FROM "table"')
+
+    def test_insert_bind_expression(self):
+        from sqlalchemy.sql import insert
+        table = _create_raster_table()
+        i = insert(table).values(rast=b'\x01\x02')
+        eq_sql(i, 'INSERT INTO "table" (rast) VALUES (:rast)')
+        eq_(i.compile().params, {'rast': b'\x01\x02'})
+
     def test_function_call(self):
         from sqlalchemy.sql import select
         table = _create_raster_table()
@@ -240,3 +253,8 @@ class TestRaster(unittest.TestCase):
         eq_sql(s,
                'SELECT ST_Height("table".rast) '
                'AS "ST_Height_1" FROM "table"')
+
+    @raises(AttributeError)
+    def test_non_ST_function_call(self):
+        table = _create_raster_table()
+        table.c.geom.Height()
