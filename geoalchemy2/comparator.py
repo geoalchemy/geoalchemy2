@@ -96,7 +96,7 @@ class Comparator(BaseComparator):
     A custom comparator class. Used in :class:`geoalchemy2.types.Geometry`
     and :class:`geoalchemy2.types.Geography`.
 
-    This is where spatial operators like ``&&`` and ``&<`` are defined.
+    This is where spatial operators like ``<<`` and ``<->`` are defined.
     """
 
     def overlaps_or_below(self, other):
