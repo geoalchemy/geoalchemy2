@@ -49,7 +49,11 @@ from sqlalchemy.sql import expression
 class BaseComparator(UserDefinedType.Comparator):
     """
     A custom comparator base class. It adds the ability to call spatial
-    functions on columns that use this kind of comparator.
+    functions on columns that use this kind of comparator. It also defines
+    functions that map to operators supported by ``Geometry``, ``Geography``
+    and ``Raster`` columns.
+
+    This comparator is used by the :class:`geoalchemy2.types.Raster`.
     """
 
     def __getattr__(self, name):
@@ -68,15 +72,6 @@ class BaseComparator(UserDefinedType.Comparator):
         func_ = expression._FunctionGenerator(expr=self.expr)
         return getattr(func_, name)
 
-
-class Comparator(BaseComparator):
-    """
-    A custom comparator class. Used in :class:`geoalchemy2.types.Geometry`
-    and :class:`geoalchemy2.types.Geography`.
-
-    This is where spatial operators like ``&&`` and ``&<`` are defined.
-    """
-
     def intersects(self, other):
         """
         The ``&&`` operator. A's BBOX intersects B's.
@@ -89,17 +84,26 @@ class Comparator(BaseComparator):
         """
         return self.op('&<')(other)
 
-    def overlaps_or_below(self, other):
-        """
-        The ``&<|`` operator. A's BBOX overlaps or is below B's.
-        """
-        return self.op('&<|')(other)
-
     def overlaps_or_to_right(self, other):
         """
         The ``&>`` operator. A's BBOX overlaps or is to the right of B's.
         """
         return self.op('&>')(other)
+
+
+class Comparator(BaseComparator):
+    """
+    A custom comparator class. Used in :class:`geoalchemy2.types.Geometry`
+    and :class:`geoalchemy2.types.Geography`.
+
+    This is where spatial operators like ``&&`` and ``&<`` are defined.
+    """
+
+    def overlaps_or_below(self, other):
+        """
+        The ``&<|`` operator. A's BBOX overlaps or is below B's.
+        """
+        return self.op('&<|')(other)
 
     def to_left(self, other):
         """
