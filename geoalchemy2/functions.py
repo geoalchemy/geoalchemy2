@@ -116,7 +116,7 @@ _FUNCTIONS = [
      'Returns ``true`` if the ``ST_Geometry`` is well formed.'),
 
     ('ST_NPoints', None,
-     'Return the number of points (vertexes) in a geometry.'),
+     'Return the number of points (vertices) in a geometry.'),
 
     ('ST_SRID', None,
      'Returns the spatial reference identifier for the ``ST_Geometry`` as '
