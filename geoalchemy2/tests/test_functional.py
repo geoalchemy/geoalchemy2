@@ -226,3 +226,14 @@ class ReflectionTest(unittest.TestCase):
         else:
             eq_(type_.geometry_type, 'LINESTRING')
             eq_(type_.srid, 4326)
+
+    def test_raster_reflection(self):
+        if not postgis_version.startswith('2.'):
+            raise SkipTest
+
+        from sqlalchemy import Table
+        from geoalchemy2 import Raster
+
+        t = Table('ocean', MetaData(), autoload=True, autoload_with=engine)
+        type_ = t.c.rast.type
+        ok_(isinstance(type_, Raster))
