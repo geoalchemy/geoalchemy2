@@ -23,6 +23,13 @@ def _create_geography_table():
     return table
 
 
+def _create_raster_table():
+    from sqlalchemy import Table, MetaData, Column
+    from geoalchemy2.types import Raster
+    table = Table('table', MetaData(), Column('rast', Raster))
+    return table
+
+
 class TestGeometry(unittest.TestCase):
 
     def test_get_col_spec(self):
@@ -225,3 +232,11 @@ class TestRaster(unittest.TestCase):
         from geoalchemy2 import Raster
         r = Raster()
         eq_(r.get_col_spec(), 'raster')
+
+    def test_function_call(self):
+        from sqlalchemy.sql import select
+        table = _create_raster_table()
+        s = select([table.c.rast.ST_Height()])
+        eq_sql(s,
+               'SELECT ST_Height("table".rast) '
+               'AS "ST_Height_1" FROM "table"')

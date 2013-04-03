@@ -11,7 +11,7 @@ from sqlalchemy.types import UserDefinedType
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
-from .comparator import Comparator
+from .comparator import BaseComparator, Comparator
 from .elements import WKBElement, RasterElement
 
 
@@ -173,6 +173,13 @@ class Raster(UserDefinedType):
         Indicate if a spatial index should be created. Default is ``True``.
 
     """
+
+    comparator_factory = BaseComparator
+    """
+    This is the way by which spatial operators and functions are
+    defined for raster columns.
+    """
+
     def __init__(self, spatial_index=True):
         self.spatial_index = spatial_index
 
