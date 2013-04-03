@@ -16,6 +16,17 @@ class TestWKTElement(unittest.TestCase):
         e = WKTElement('POINT(1 2)')
         eq_(e.desc, 'POINT(1 2)')
 
+    def test_function_call(self):
+        from geoalchemy2.elements import WKTElement
+        e = WKTElement('POINT(1 2)')
+        f = e.ST_Buffer(2)
+        eq_sql(f, 'ST_Buffer('
+               'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2), '
+               ':param_1)')
+        eq_(f.compile().params,
+            {u'param_1': 2, u'ST_GeomFromText_1': 'POINT(1 2)',
+             u'ST_GeomFromText_2': -1})
+
 
 class TestWKBElement(unittest.TestCase):
 
