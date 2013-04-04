@@ -45,7 +45,7 @@ def test_from_shape():
     p = Point(1, 2)
     e = from_shape(p)
     ok_(isinstance(e, WKBElement))
-    ok_(isinstance(e.data, buffer))
+    ok_(isinstance(e.data, buffer))  # flake8: noqa
     s = shapely.wkb.loads(str(e.data))
     ok_(isinstance(s, Point))
     ok_(p.equals(p))

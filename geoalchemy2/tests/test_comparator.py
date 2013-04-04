@@ -113,7 +113,7 @@ class TestOperator(unittest.TestCase):
         expr = table.c.geom.distance_centroid('POINT(1 2)')
         eq_sql(expr, '"table".geom <-> ST_GeomFromText(:geom_1)')
         s = table.select().order_by(
-                table.c.geom.distance_centroid('POINT(1 2)')).limit(10)
+            table.c.geom.distance_centroid('POINT(1 2)')).limit(10)
         eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom '
                   'FROM "table" '
                   'ORDER BY "table".geom <-> ST_GeomFromText(:geom_1) '
@@ -125,7 +125,7 @@ class TestOperator(unittest.TestCase):
         expr = table.c.geom.distance_box('POINT(1 2)')
         eq_sql(expr, '"table".geom <#> ST_GeomFromText(:geom_1)')
         s = table.select().order_by(
-                table.c.geom.distance_box('POINT(1 2)')).limit(10)
+            table.c.geom.distance_box('POINT(1 2)')).limit(10)
         eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom '
                   'FROM "table" '
                   'ORDER BY "table".geom <#> ST_GeomFromText(:geom_1) '

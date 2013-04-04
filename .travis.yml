@@ -1,6 +1,7 @@
 language: python
 
 python:
+  - 2.6
   - 2.7
   - 3.3
 
@@ -13,26 +14,42 @@ services:
 
 env:
   - POSTGIS_VERSION=1.5
-  - POSTGIS_VERSION=2.0.3
+  - POSTGIS_VERSION=2
 
 install:
-  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then sudo apt-get install postgresql-9.1-postgis -q > /dev/null; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-get install build-essential postgresql-9.1 postgresql-server-dev-9.1 libxml2-dev libproj-dev libjson0-dev libgeos-dev xsltproc docbook-xsl docbook-mathml > /dev/null; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then wget http://download.osgeo.org/postgis/source/postgis-$POSTGIS_VERSION.tar.gz; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then tar xfvz postgis-$POSTGIS_VERSION.tar.gz > /dev/null; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then cd postgis-$POSTGIS_VERSION; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then ./configure --without-topology --without-raster > /dev/null; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then make > /dev/null; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo make install > /dev/null; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then cd ..; fi
+  # Add PPA for geos 3.3.x
+  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-add-repository -y ppa:sharpie/for-science; fi
+
+  # Install PostGIS 2.x
+  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-add-repository -y ppa:sharpie/postgis-nightly; fi
+  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-get update; fi
+
+  # Install PostGIS
+  - sudo apt-get install postgresql-9.1-postgis -q
+
+  # Install flake8 style checker
+  - pip install flake8
 
 before_script:
-  - psql -c "CREATE ROLE gis PASSWORD 'gis' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;" -U postgres > /dev/null
-  - psql -c 'CREATE DATABASE gis;' -U postgres > /dev/null
-  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -f /usr/share/postgresql/9.1/contrib/postgis-1.5/postgis.sql -U postgres > /dev/null; fi
-  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -f /usr/share/postgresql/9.1/contrib/postgis-1.5/spatial_ref_sys.sql -U postgres > /dev/null; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then psql -d gis -f /usr/share/postgresql/9.1/contrib/postgis-2.0/postgis.sql -U postgres > /dev/null; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then psql -d gis -f /usr/share/postgresql/9.1/contrib/postgis-2.0/spatial_ref_sys.sql -U postgres > /dev/null; fi
+  # Create database user "gis"
+  - psql -c "CREATE ROLE gis PASSWORD 'gis' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;" -U postgres
+
+  # Create database "gis"
+  - psql -c 'CREATE DATABASE gis;' -U postgres
+
+  # Add PostGIS extension to "gis" database
+  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -U postgres -f /usr/share/postgresql/9.1/contrib/postgis-1.5/postgis.sql; fi
+  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -U postgres -f /usr/share/postgresql/9.1/contrib/postgis-1.5/spatial_ref_sys.sql; fi
+  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then psql -d gis -U postgres -c "CREATE EXTENSION postgis;"; fi
 
 script:
+  # Run the library through flake8
+  - flake8 geoalchemy2 --ignore=E711
+
+  # Run the unit test suite
   - python setup.py nosetests -v
+
+after_script:
+  # Report coverage results to coveralls.io
+  - pip install coveralls
+  - coveralls
