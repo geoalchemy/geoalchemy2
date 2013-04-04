@@ -107,7 +107,7 @@ _FUNCTIONS = [
      'Return the 1-based Nth geometry if the geometry is a '
      '``GEOMETRYCOLLECTION``, ``(MULTI)POINT``, ``(MULTI)LINESTRING``, '
      '``MULTICURVE`` or ``(MULTI)POLYGON``, ``POLYHEDRALSURFACE`` Otherwise, '
-     'return ``NULL``.'),
+     'return ``None``.'),
 
     ('ST_GeometryType', None,
      'Return the geometry type of the ``ST_Geometry`` value.'),
@@ -123,11 +123,11 @@ _FUNCTIONS = [
      'defined in ``spatial_ref_sys`` table.'),
 
     ('ST_X', None,
-     'Return the X coordinate of the point, or ``NULL`` if not available. '
+     'Return the X coordinate of the point, or ``None`` if not available. '
      'Input must be a point.'),
 
     ('ST_Y', None,
-     'Return the Y coordinate of the point, or ``NULL`` if not available. '
+     'Return the Y coordinate of the point, or ``None`` if not available. '
      'Input must be a point.'),
 
     #
@@ -228,7 +228,7 @@ _FUNCTIONS = [
 
     ('ST_Intersects', None,
      'Returns ``True`` if the Geometries/Geography "spatially intersect in '
-     '2D" - (share any portion of space) and ``FALSE`` if they don\'t (they '
+     '2D" - (share any portion of space) and ``False`` if they don\'t (they '
      'are Disjoint). For geography -- tolerance is 0.00001 meters (so any '
      'points that close are considered to intersect)'),
 
