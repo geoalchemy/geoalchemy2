@@ -14,23 +14,18 @@ services:
 
 env:
   - POSTGIS_VERSION=1.5
-  - POSTGIS_VERSION=2.0.3
+  - POSTGIS_VERSION=2
 
 install:
-  # Install PostGIS 1.5
-  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then sudo apt-get install postgresql-9.1-postgis -q; fi
+  # Add PPA for geos 3.3.x
+  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-add-repository -y ppa:sharpie/for-science; fi
 
-  # Install Prerequisites for building GEOS and PostGIS
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-get install build-essential postgresql-9.1 postgresql-server-dev-9.1 libxml2-dev libproj-dev libjson0-dev libgeos-dev xsltproc docbook-xsl docbook-mathml libgdal1-dev; fi
+  # Install PostGIS 2.x
+  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-add-repository -y ppa:sharpie/postgis-nightly; fi
+  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-get update; fi
 
-  # Build and install PostGIS 2.x
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then wget http://download.osgeo.org/postgis/source/postgis-$POSTGIS_VERSION.tar.gz; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then tar xfvz postgis-$POSTGIS_VERSION.tar.gz; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then cd postgis-$POSTGIS_VERSION; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then ./configure --without-topology --with-raster; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then make; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo make install; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then cd ..; fi
+  # Install PostGIS
+  - sudo apt-get install postgresql-9.1-postgis -q
 
   # Install flake8 style checker
   - pip install flake8
