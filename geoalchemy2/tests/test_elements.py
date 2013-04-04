@@ -16,6 +16,17 @@ class TestWKTElement(unittest.TestCase):
         e = WKTElement('POINT(1 2)')
         eq_(e.desc, 'POINT(1 2)')
 
+    def test_function_call(self):
+        from geoalchemy2.elements import WKTElement
+        e = WKTElement('POINT(1 2)')
+        f = e.ST_Buffer(2)
+        eq_sql(f, 'ST_Buffer('
+               'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2), '
+               ':param_1)')
+        eq_(f.compile().params,
+            {u'param_1': 2, u'ST_GeomFromText_1': 'POINT(1 2)',
+             u'ST_GeomFromText_2': -1})
+
 
 class TestWKBElement(unittest.TestCase):
 
@@ -34,3 +45,18 @@ class TestWKBElement(unittest.TestCase):
         eq_(f.compile().params,
             {u'param_1': 2, u'ST_GeomFromWKB_1': b'\x01\x02',
              u'ST_GeomFromWKB_2': -1})
+
+
+class TestRasterElement(unittest.TestCase):
+
+    def test_desc(self):
+        from geoalchemy2.elements import RasterElement
+        e = RasterElement(b'\x01\x02')
+        eq_(e.desc, b'0102')
+
+    def test_function_call(self):
+        from geoalchemy2.elements import RasterElement
+        e = RasterElement(b'\x01\x02')
+        f = e.ST_Height()
+        eq_sql(f, 'ST_Height(:raster_1::raster)')
+        eq_(f.compile().params, {u'raster_1': b'\x01\x02'})

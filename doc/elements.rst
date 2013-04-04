@@ -12,3 +12,7 @@ Elements
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. autoclass:: geoalchemy2.elements.RasterElement
+   :members:
+   :show-inheritance:
