@@ -1,11 +1,13 @@
 from .types import (  # NOQA
     Geometry,
-    Geography
+    Geography,
+    Raster
     )
 
 from .elements import (  # NOQA
     WKTElement,
-    WKBElement
+    WKBElement,
+    RasterElement
     )
 
 from . import functions  # NOQA
@@ -78,6 +80,17 @@ def _setup_ddl_event_listeners():
                         c.type.spatial_index is True:
                     bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
                                  'USING GIST (%s)' %
+                                 (table.name, c.name,
+                                  (table.schema or 'public'),
+                                  table.name, c.name))
+
+                # Add spatial indices for the Raster columns
+                #
+                # Note the use of ST_ConvexHull since most raster operators are
+                # based on the convex hull of the rasters.
+                if isinstance(c.type, Raster) and c.type.spatial_index is True:
+                    bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
+                                 'USING GIST (ST_ConvexHull(%s))' %
                                  (table.name, c.name,
                                   (table.schema or 'public'),
                                   table.name, c.name))

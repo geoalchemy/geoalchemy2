@@ -1,11 +1,12 @@
 import unittest
 from nose.tools import eq_, ok_, raises
+from nose.plugins.skip import SkipTest
 
 from sqlalchemy import create_engine, MetaData, Column, Integer, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from geoalchemy2 import Geometry
+from geoalchemy2 import Geometry, Raster
 from sqlalchemy.exc import DataError, IntegrityError, InternalError
 
 
@@ -30,6 +31,15 @@ if not postgis_version.startswith('2.'):
     # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
     # management functions should be used.
     Lake.__table__.c.geom.type.management = True
+else:
+    # The raster type is only available on PostGIS 2.0 and above
+    class Ocean(Base):
+        __tablename__ = 'ocean'
+        id = Column(Integer, primary_key=True)
+        rast = Column(Raster)
+
+        def __init__(self, rast):
+            self.rast = rast
 
 
 class IndexTest(unittest.TestCase):
@@ -89,6 +99,37 @@ class InsertionTest(unittest.TestCase):
         eq_(wkt, 'LINESTRING(0 0,1 1)')
         srid = session.execute(l.geom.ST_SRID()).scalar()
         eq_(srid, 4326)
+
+    def test_Raster(self):
+        if not postgis_version.startswith('2.'):
+            raise SkipTest
+
+        from geoalchemy2 import WKTElement, RasterElement
+        polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
+        o = Ocean(polygon.ST_AsRaster(5, 5))
+        session.add(o)
+        session.flush()
+        session.expire(o)
+
+        ok_(isinstance(o.rast, RasterElement))
+
+        height = session.execute(o.rast.ST_Height()).scalar()
+        eq_(height, 5)
+
+        width = session.execute(o.rast.ST_Width()).scalar()
+        eq_(width, 5)
+
+        # The top left corner is covered by the polygon
+        top_left_point = WKTElement('Point(0 1)', srid=4326)
+        top_left = session.execute(
+            o.rast.ST_Value(top_left_point)).scalar()
+        eq_(top_left, 1)
+
+        # The bottom right corner has NODATA
+        bottom_right_point = WKTElement('Point(1 0)', srid=4326)
+        bottom_right = session.execute(
+            o.rast.ST_Value(bottom_right_point)).scalar()
+        eq_(bottom_right, None)
 
 
 class CallFunctionTest(unittest.TestCase):
@@ -185,3 +226,14 @@ class ReflectionTest(unittest.TestCase):
         else:
             eq_(type_.geometry_type, 'LINESTRING')
             eq_(type_.srid, 4326)
+
+    def test_raster_reflection(self):
+        if not postgis_version.startswith('2.'):
+            raise SkipTest
+
+        from sqlalchemy import Table
+        from geoalchemy2 import Raster
+
+        t = Table('ocean', MetaData(), autoload=True, autoload_with=engine)
+        type_ = t.c.rast.type
+        ok_(isinstance(type_, Raster))

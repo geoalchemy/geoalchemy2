@@ -11,8 +11,8 @@ from sqlalchemy.types import UserDefinedType
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
-from .comparator import Comparator
-from .elements import WKBElement
+from .comparator import BaseComparator, Comparator
+from .elements import WKBElement, RasterElement
 
 
 class _GISType(UserDefinedType):
@@ -26,7 +26,7 @@ class _GISType(UserDefinedType):
 
     This class also defines the ``result_processor`` method, so that WKB values
     received from the database are converted to
-    :class:`geoalchemy2.types.WKBElement` objects.
+    :class:`geoalchemy2.elements.WKBElement` objects.
 
     Constructor arguments:
 
@@ -151,7 +151,50 @@ class Geography(_GISType):
         ``bind_expression`` method. """
 
 
+class Raster(UserDefinedType):
+    """
+    The Raster column type.
+
+    Creating a raster column is done like this::
+
+        Column(Raster)
+
+    See :class:`geoalchemy2.types._GISType` for the list of arguments that can
+    be passed to the constructor.
+
+    This class defines the ``result_processor`` method, so that raster values
+    received from the database are converted to
+    :class:`geoalchemy2.elements.RasterElement` objects.
+
+    Constructor arguments:
+
+    ``spatial_index``
+
+        Indicate if a spatial index should be created. Default is ``True``.
+
+    """
+
+    comparator_factory = BaseComparator
+    """
+    This is the way by which spatial operators and functions are
+    defined for raster columns.
+    """
+
+    def __init__(self, spatial_index=True):
+        self.spatial_index = spatial_index
+
+    def get_col_spec(self):
+        return 'raster'
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            if value is not None:
+                return RasterElement(value)
+        return process
+
+
 # Register Geometry and Geography to SQLAlchemy's Postgres reflection
 # subsystem.
 ischema_names['geometry'] = Geometry
 ischema_names['geography'] = Geography
+ischema_names['raster'] = Raster
