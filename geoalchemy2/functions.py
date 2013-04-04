@@ -228,7 +228,7 @@ _FUNCTIONS = [
 
     ('ST_Intersects', None,
      'Returns ``True`` if the Geometries/Geography "spatially intersect in '
-     '2D" - (share any portion of space) and ``FALSE`` if they don\'t (they '
+     '2D" - (share any portion of space) and ``False`` if they don\'t (they '
      'are Disjoint). For geography -- tolerance is 0.00001 meters (so any '
      'points that close are considered to intersect)'),
 
