@@ -258,3 +258,16 @@ class TestRaster(unittest.TestCase):
     def test_non_ST_function_call(self):
         table = _create_raster_table()
         table.c.geom.Height()
+
+
+class TestCompositeType(unittest.TestCase):
+
+    def test_ST_Dump(self):
+        from sqlalchemy import func
+        from sqlalchemy.sql import select
+
+        table = _create_geography_table()
+        s = select([func.ST_Dump(table.c.geom).geom])
+        eq_sql(s,
+               'SELECT ST_AsBinary((ST_Dump("table".geom)).geom) AS geom '
+               'FROM "table"')

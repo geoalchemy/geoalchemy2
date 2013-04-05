@@ -56,6 +56,8 @@ class BaseComparator(UserDefinedType.Comparator):
     This comparator is used by the :class:`geoalchemy2.types.Raster`.
     """
 
+    key = None
+
     def __getattr__(self, name):
 
         # Function names that don't start with "ST_" are rejected.

@@ -1,6 +1,7 @@
 import binascii
 
 from sqlalchemy.sql import expression
+from sqlalchemy.types import to_instance
 from sqlalchemy.ext.compiler import compiles
 
 
@@ -157,3 +158,19 @@ def compile_RasterElement(element, compiler, **kw):
     ``'...'::raster`` by this function.
     """
     return "%s::raster" % compiler.process(element.clauses)
+
+
+class CompositeElement(expression.FunctionElement):
+    """
+    Instances of this class wrap a Postgres composite type.
+    """
+    def __init__(self, base, field, type_):
+        self.name = field
+        self.type = to_instance(type_)
+
+        super(CompositeElement, self).__init__(base)
+
+
+@compiles(CompositeElement)
+def _compile_pgelem(expr, compiler, **kw):
+    return '(%s).%s' % (compiler.process(expr.clauses, **kw), expr.name)

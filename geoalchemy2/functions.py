@@ -285,6 +285,14 @@ _FUNCTIONS = [
      'Returns a geometry that represents that part of geometry A that does '
      'not intersect with geometry B.'),
 
+    ('ST_Dump', types.GeometryDump,
+     'Returns a set of geometry_dump (geom,path) rows, that make up a '
+     'geometry g1.'),
+
+    ('ST_DumpPoints', types.GeometryDump,
+     'Returns a set of geometry_dump (geom,path) rows of all points that '
+     'make up a geometry.'),
+
     ('ST_Intersection', types.Geometry,
      'Returns a geometry that represents the shared portion of geomA and '
      'geomB. The geography implementation does a transform to geometry to do '
