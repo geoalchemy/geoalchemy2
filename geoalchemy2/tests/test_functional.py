@@ -230,17 +230,17 @@ class CallFunctionTest(unittest.TestCase):
         lake_id = self._create_one()
         lake = session.query(Lake).get(lake_id)
 
-        q = session.query(lake.geom.ST_DumpPoints().geom).all()
+        q = session.query(lake.geom.ST_DumpPoints().geom.label('geom')).all()
         eq_(len(q), 2)
 
         p1 = q[0]
-        ok_(isinstance(p1[0], WKBElement))
-        p1 = session.execute(func.ST_AsText(p1[0])).scalar()
+        ok_(isinstance(p1.geom, WKBElement))
+        p1 = session.execute(func.ST_AsText(p1.geom)).scalar()
         eq_(p1, 'POINT(0 0)')
 
         p2 = q[1]
-        ok_(isinstance(p2[0], WKBElement))
-        p2 = session.execute(func.ST_AsText(p2[0])).scalar()
+        ok_(isinstance(p2.geom, WKBElement))
+        p2 = session.execute(func.ST_AsText(p2.geom)).scalar()
         eq_(p2, 'POINT(1 1)')
 
     @raises(InternalError)
