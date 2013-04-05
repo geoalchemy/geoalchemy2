@@ -198,6 +198,10 @@ class CompositeType(UserDefinedType):
     See :class:`geoalchemy2.types.GeometryDump` for an example how to use it.
     """
 
+    typemap = {}
+    """ Dictionary used for defining the content types and their
+        corresponding keys. Set in subclasses. """
+
     class comparator_factory(UserDefinedType.Comparator):
         def __getattr__(self, key):
             try:
