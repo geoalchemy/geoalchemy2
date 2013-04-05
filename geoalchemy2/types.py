@@ -7,8 +7,9 @@ Reference
 ---------
 """
 
-from sqlalchemy.types import UserDefinedType, String
+from sqlalchemy.types import UserDefinedType, Integer
 from sqlalchemy.sql import func
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
 from .comparator import BaseComparator, Comparator
@@ -219,7 +220,7 @@ class GeometryDump(CompositeType):
     a geom field.
     """
 
-    typemap = {'path': String, 'geom': Geometry}
+    typemap = {'path': postgresql.ARRAY(Integer), 'geom': Geometry}
     """ Dictionary defining the contents of a ``geometry_dump``. """
 
 # Register Geometry and Geography to SQLAlchemy's Postgres reflection

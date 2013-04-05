@@ -206,6 +206,11 @@ class CallFunctionTest(unittest.TestCase):
         r1 = session.execute(s).scalar()
         ok_(isinstance(r1, str))
 
+        s = select([func.ST_Dump(Lake.__table__.c.geom).path])
+        r2 = session.execute(s).scalar()
+        ok_(isinstance(r2, list))
+        eq_(r2, [])
+
         s = select([func.ST_Dump(Lake.__table__.c.geom).geom])
         r2 = session.execute(s).scalar()
         ok_(isinstance(r2, WKBElement))
@@ -223,6 +228,8 @@ class CallFunctionTest(unittest.TestCase):
         ok_(isinstance(r5, WKBElement))
         eq_(r5.data, lake.geom.data)
 
+        ok_(r2.data == r3.data == r4.data == r5.data)
+
     def test_ST_DumpPoints(self):
         from sqlalchemy.sql import func
         from geoalchemy2 import WKBElement
@@ -230,15 +237,22 @@ class CallFunctionTest(unittest.TestCase):
         lake_id = self._create_one()
         lake = session.query(Lake).get(lake_id)
 
-        q = session.query(lake.geom.ST_DumpPoints().geom.label('geom')).all()
+        dump = lake.geom.ST_DumpPoints()
+
+        q = session.query(dump.path.label('path'),
+                          dump.geom.label('geom')).all()
         eq_(len(q), 2)
 
         p1 = q[0]
+        ok_(isinstance(p1.path, list))
+        eq_(p1.path, [1])
         ok_(isinstance(p1.geom, WKBElement))
         p1 = session.execute(func.ST_AsText(p1.geom)).scalar()
         eq_(p1, 'POINT(0 0)')
 
         p2 = q[1]
+        ok_(isinstance(p2.path, list))
+        eq_(p2.path, [2])
         ok_(isinstance(p2.geom, WKBElement))
         p2 = session.execute(func.ST_AsText(p2.geom)).scalar()
         eq_(p2, 'POINT(1 1)')
