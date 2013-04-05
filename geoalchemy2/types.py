@@ -197,8 +197,6 @@ class CompositeType(UserDefinedType):
 
     See :class:`geoalchemy2.types.GeometryDump` for an example how to use it.
     """
-    def __init__(self, typemap):
-        self.typemap = typemap
 
     class comparator_factory(UserDefinedType.Comparator):
         def __getattr__(self, key):
@@ -210,7 +208,14 @@ class CompositeType(UserDefinedType):
 
             return CompositeElement(self.expr, key, type_)
 
-GeometryDump = CompositeType({'path': String, 'geom': Geometry})
+
+class GeometryDump(CompositeType):
+    """
+    The return type for functions like ``ST_Dump``, consisting of a path and
+    a geom field.
+    """
+
+    typemap = {'path': String, 'geom': Geometry}
 
 # Register Geometry and Geography to SQLAlchemy's Postgres reflection
 # subsystem.
