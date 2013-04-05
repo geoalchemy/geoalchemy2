@@ -60,3 +60,17 @@ class TestRasterElement(unittest.TestCase):
         f = e.ST_Height()
         eq_sql(f, 'ST_Height(:raster_1::raster)')
         eq_(f.compile().params, {u'raster_1': b'\x01\x02'})
+
+
+class TestCompositeElement(unittest.TestCase):
+
+    def test_compile(self):
+        from sqlalchemy import MetaData, Table, Column, String
+        from geoalchemy2.elements import CompositeElement
+
+        # text fixture
+        metadata = MetaData()
+        foo = Table('foo', metadata, Column('one', String))
+
+        e = CompositeElement(foo.c.one, 'geom', String)
+        eq_(str(e), '(foo.one).geom')

@@ -7,12 +7,13 @@ Reference
 ---------
 """
 
-from sqlalchemy.types import UserDefinedType
+from sqlalchemy.types import UserDefinedType, Integer
 from sqlalchemy.sql import func
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
 from .comparator import BaseComparator, Comparator
-from .elements import WKBElement, RasterElement
+from .elements import WKBElement, RasterElement, CompositeElement
 
 
 class _GISType(UserDefinedType):
@@ -189,6 +190,38 @@ class Raster(UserDefinedType):
                 return RasterElement(value)
         return process
 
+
+class CompositeType(UserDefinedType):
+    """
+    A wrapper for the CompositeElement, that can be used as the return
+    type in Postgres functions that return composite values.
+
+    See :class:`geoalchemy2.types.GeometryDump` for an example how to use it.
+    """
+
+    typemap = {}
+    """ Dictionary used for defining the content types and their
+        corresponding keys. Set in subclasses. """
+
+    class comparator_factory(UserDefinedType.Comparator):
+        def __getattr__(self, key):
+            try:
+                type_ = self.type.typemap[key]
+            except KeyError:
+                raise KeyError("Type '%s' doesn't have an attribute: '%s'"
+                               % (self.type, key))
+
+            return CompositeElement(self.expr, key, type_)
+
+
+class GeometryDump(CompositeType):
+    """
+    The return type for functions like ``ST_Dump``, consisting of a path and
+    a geom field.
+    """
+
+    typemap = {'path': postgresql.ARRAY(Integer), 'geom': Geometry}
+    """ Dictionary defining the contents of a ``geometry_dump``. """
 
 # Register Geometry and Geography to SQLAlchemy's Postgres reflection
 # subsystem.

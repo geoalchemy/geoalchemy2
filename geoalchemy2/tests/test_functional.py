@@ -195,6 +195,68 @@ class CallFunctionTest(unittest.TestCase):
         ok_(isinstance(r4, Lake))
         eq_(r4.id, lake_id)
 
+    def test_ST_Dump(self):
+        from sqlalchemy.sql import select, func
+        from geoalchemy2 import WKBElement
+
+        lake_id = self._create_one()
+        lake = session.query(Lake).get(lake_id)
+
+        s = select([func.ST_Dump(Lake.__table__.c.geom)])
+        r1 = session.execute(s).scalar()
+        ok_(isinstance(r1, str))
+
+        s = select([func.ST_Dump(Lake.__table__.c.geom).path])
+        r2 = session.execute(s).scalar()
+        ok_(isinstance(r2, list))
+        eq_(r2, [])
+
+        s = select([func.ST_Dump(Lake.__table__.c.geom).geom])
+        r2 = session.execute(s).scalar()
+        ok_(isinstance(r2, WKBElement))
+        eq_(r2.data, lake.geom.data)
+
+        r3 = session.execute(func.ST_Dump(lake.geom).geom).scalar()
+        ok_(isinstance(r3, WKBElement))
+        eq_(r3.data, lake.geom.data)
+
+        r4 = session.query(func.ST_Dump(Lake.geom).geom).scalar()
+        ok_(isinstance(r4, WKBElement))
+        eq_(r4.data, lake.geom.data)
+
+        r5 = session.query(Lake.geom.ST_Dump().geom).scalar()
+        ok_(isinstance(r5, WKBElement))
+        eq_(r5.data, lake.geom.data)
+
+        ok_(r2.data == r3.data == r4.data == r5.data)
+
+    def test_ST_DumpPoints(self):
+        from sqlalchemy.sql import func
+        from geoalchemy2 import WKBElement
+
+        lake_id = self._create_one()
+        lake = session.query(Lake).get(lake_id)
+
+        dump = lake.geom.ST_DumpPoints()
+
+        q = session.query(dump.path.label('path'),
+                          dump.geom.label('geom')).all()
+        eq_(len(q), 2)
+
+        p1 = q[0]
+        ok_(isinstance(p1.path, list))
+        eq_(p1.path, [1])
+        ok_(isinstance(p1.geom, WKBElement))
+        p1 = session.execute(func.ST_AsText(p1.geom)).scalar()
+        eq_(p1, 'POINT(0 0)')
+
+        p2 = q[1]
+        ok_(isinstance(p2.path, list))
+        eq_(p2.path, [2])
+        ok_(isinstance(p2.geom, WKBElement))
+        p2 = session.execute(func.ST_AsText(p2.geom)).scalar()
+        eq_(p2, 'POINT(1 1)')
+
     @raises(InternalError)
     def test_ST_Buffer_Mixed_SRID(self):
         from sqlalchemy.sql import func
