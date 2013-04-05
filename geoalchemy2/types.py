@@ -220,6 +220,7 @@ class GeometryDump(CompositeType):
     """
 
     typemap = {'path': String, 'geom': Geometry}
+    """ Dictionary defining the contents of a ``geometry_dump``. """
 
 # Register Geometry and Geography to SQLAlchemy's Postgres reflection
 # subsystem.
