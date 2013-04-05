@@ -285,6 +285,14 @@ _FUNCTIONS = [
      'Returns a geometry that represents that part of geometry A that does '
      'not intersect with geometry B.'),
 
+    ('ST_Dump', types.GeometryDump,
+     'Returns a set of geometry_dump (geom,path) rows, that make up a '
+     'geometry g1.'),
+
+    ('ST_DumpPoints', types.GeometryDump,
+     'Returns a set of geometry_dump (geom,path) rows of all points that '
+     'make up a geometry.'),
+
     ('ST_Intersection', types.Geometry,
      'Returns a geometry that represents the shared portion of geomA and '
      'geomB. The geography implementation does a transform to geometry to do '
@@ -346,19 +354,3 @@ for name, type_, doc in _FUNCTIONS:
         attributes['__doc__'] = '\n\n'.join(docs)
 
     globals()[name] = type(name, (GenericFunction,), attributes)
-
-
-class ST_Dump(GenericFunction):
-    """
-    Return type: :class:`geoalchemy2.types.GeometryDump`.
-    """
-    name = 'ST_Dump'
-    type = types.GeometryDump
-
-
-class ST_DumpPoints(GenericFunction):
-    """
-    Return type: :class:`geoalchemy2.types.GeometryDump`.
-    """
-    name = 'ST_DumpPoints'
-    type = types.GeometryDump
