@@ -1,7 +1,7 @@
-"""
-This module includes the :class:`geoalchemy2.types.Geometry` and
-:class:`geoalchemy2.types.Geography` to use when defining geometry
-and geography columns, respectively.
+""" This module defines the :class:`geoalchemy2.types.Geometry`,
+:class:`geoalchemy2.types.Geography`, and :class:`geoalchemy2.types.Raster`
+classes, that are used when defining geometry, geography and raster
+columns/properties in models.
 
 Reference
 ---------
@@ -193,10 +193,10 @@ class Raster(UserDefinedType):
 
 class CompositeType(UserDefinedType):
     """
-    A wrapper for the CompositeElement, that can be used as the return
-    type in Postgres functions that return composite values.
+    A wrapper for SQLAlchemy's ``CompositeElement``, that can be used as the
+    return type in PostgreSQL functions that return composite values.
 
-    See :class:`geoalchemy2.types.GeometryDump` for an example how to use it.
+    This is used as the base class of :class:`geoalchemy2.types.GeometryDump`.
     """
 
     typemap = {}
@@ -217,13 +217,13 @@ class CompositeType(UserDefinedType):
 class GeometryDump(CompositeType):
     """
     The return type for functions like ``ST_Dump``, consisting of a path and
-    a geom field.
+    a geom field. You could normally never use this class directly.
     """
 
     typemap = {'path': postgresql.ARRAY(Integer), 'geom': Geometry}
     """ Dictionary defining the contents of a ``geometry_dump``. """
 
-# Register Geometry and Geography to SQLAlchemy's Postgres reflection
+# Register Geometry, Geography and Raster to SQLAlchemy's Postgres reflection
 # subsystem.
 ischema_names['geometry'] = Geometry
 ischema_names['geography'] = Geography
