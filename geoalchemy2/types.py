@@ -193,8 +193,9 @@ class Raster(UserDefinedType):
 
 class CompositeType(UserDefinedType):
     """
-    A wrapper for SQLAlchemy's ``CompositeElement``, that can be used as the
-    return type in PostgreSQL functions that return composite values.
+    A wrapper for :class:`geoalchemy2.elements.CompositeElement`, that can be
+    used as the return type in PostgreSQL functions that return composite
+    values.
 
     This is used as the base class of :class:`geoalchemy2.types.GeometryDump`.
     """
@@ -217,7 +218,7 @@ class CompositeType(UserDefinedType):
 class GeometryDump(CompositeType):
     """
     The return type for functions like ``ST_Dump``, consisting of a path and
-    a geom field. You could normally never use this class directly.
+    a geom field. You should normally never use this class directly.
     """
 
     typemap = {'path': postgresql.ARRAY(Integer), 'geom': Geometry}
