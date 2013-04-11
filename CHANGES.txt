@@ -1,0 +1,15 @@
+GeoAlchemy 2 Changelog
+======================
+
+0.2
+---
+
+* ST_Dump support @Turbo87 (#18)
+* Use of Travis CI and coveralls.io @Turbo87
+* New doc theme, new logo @Turbo87 (#23)
+* PostGIS 2 Raster support @Turbo87 (#25)
+
+0.1
+---
+
+* Initial release (PostGIS 2 support, Geometry et Geography types)
