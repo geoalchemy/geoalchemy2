@@ -3,44 +3,59 @@ GeoAlchemy 2 Documentation
 
 *Using SQLAlchemy with Spatial Databases.*
 
-GeoAlchemy 2 aims to be simpler than its predecessor, in terms of both usage,
-and maintainance.
+GeoAlchemy 2 provides extensions to `SQLAlchemy <http://sqlalchemy.org>`_ for
+working with spatial databases.
 
-GeoAlchemy 2 requires SQLAlchemy 0.8; it does not work with SQLAlchemy 0.7 and
-lower.
+GeoAlchemy 2 focuses on `PostGIS <http://postgis.net/>`_. PostGIS 1.5 and
+PostGIS 2 are supported.
 
-GeoAlchemy 2 supports PostGIS 2.0 and PostGIS 1.5.
+.. note::
 
-GeoAlchemy 2 doesn't currently support other dialects than PostgreSQL/PostGIS.
-Supporting Oracle Locator in the previous series was the main contributor to
-code complexity. So it is currently not clear whether we want to go there
-again. Please contact us you want to add, and maintain, support for other
-spatial databases in GeoAlchemy 2.
+    GeoAlchemy 2 doesn't currently support other dialects than
+    PostgreSQL/PostGIS.  Supporting Oracle Locator in the previous series was
+    the main contributor to code complexity. So it is currently not clear
+    whether we want to go there again.
+
+GeoAlchemy 2 aims to be simpler than its predecessor, `GeoAlchemy
+<https://pypi.python.org/pypi/GeoAlchemy>`_. Simpler to use, and simpler
+to maintain.
+
+
+Requirements
+------------
+
+GeoAlchemy 2 requires SQLAlchemy 0.8. GeoAlchemy 2 does not work with
+SQLAlchemy 0.7 and lower.
+
+Installation
+------------
+
+GeoAlchemy 2 is `available on the Python Package Index
+<https://pypi.python.org/pypi/GeoAlchemy2/>`_. So it can be installed
+with the standard `pip <http://www.pip-installer.org>`_ or
+`easy_install <http://peak.telecommunity.com/DevCenter/EasyInstall>`_
+tools.
 
 What's New in GeoAlchemy 2
 --------------------------
 
-The first series had its own namespace for spatial functions, namely
-``geoalchemy.functions``. With GeoAlchemy 2, spatial functions are called like
-any other function, using ``func``, which is SQLAlchemy's `standard way
-<http://docs.sqlalchemy.org/en/latest/core/expression_api.html#sqlalchemy.sql.expression.func>`_
-of calling SQL functions.
+* GeoAlchemy 2 supports PostGIS' ``geometry`` type, as well as the ``geography``
+  and ``raster`` types.
 
-GeoAlchemy 2 works with SQLAlchemy's ORM, as well as with SQLAlchemy's *SQL
-Expression Language* (a.k.a the SQLAlchemy Core). This is thanks to SQLAlchemy's
-new `type-level comparator system
-<http://docs.sqlalchemy.org/en/latest/core/types.html?highlight=comparator_factory#types-operators>`_.
-
-GeoAlchemy 2 supports PostGIS' ``geometry`` type, as well as ``geography``
-type.
-
-GeoAlchemy 2 supports `reflection
-<http://docs.sqlalchemy.org/en/latest/core/schema.html#metadata-reflection>`_
-of geometry and geography columns.
-
-GeoAlchemy 2 adds ``to_shape``, ``from_shape`` functions for a better
-integration with `Shapely <http://pypi.python.org/pypi/Shapely>`_.
-
+* The first series had its own namespace for spatial functions. With GeoAlchemy
+  2, spatial functions are called like any other SQLAlchemy function, using
+  ``func``, which is SQLAlchemy's `standard way
+  <http://docs.sqlalchemy.org/en/latest/core/expression_api.html#sqlalchemy.sql.expression.func>`_
+  of calling SQL functions.
+* GeoAlchemy 2 works with SQLAlchemy's ORM, as well as with SQLAlchemy's *SQL
+  Expression Language* (a.k.a the SQLAlchemy Core). (This is thanks to
+  SQLAlchemy's new `type-level comparator system
+  <http://docs.sqlalchemy.org/en/latest/core/types.html?highlight=comparator_factory#types-operators>`_.)
+* GeoAlchemy 2 supports `reflection
+  <http://docs.sqlalchemy.org/en/latest/core/schema.html#metadata-reflection>`_
+  of geometry and geography columns.
+* GeoAlchemy 2 adds ``to_shape``, ``from_shape`` functions for a better
+  integration with `Shapely <http://pypi.python.org/pypi/Shapely>`_.
 
 .. toctree::
    :hidden:

@@ -21,8 +21,8 @@ is now defined like this::
 
     geom = Column(Geometry('POLYGON'))
 
-This change is related to the support of the `geoalchemy2.types.Geography`
-type.
+This change is related to GeoAlchemy 2 supporting the
+`geoalchemy2.types.Geography` type.
 
 Calling Spatial Functions
 -------------------------
@@ -55,8 +55,9 @@ WKB and WKT Elements
 --------------------
 
 The first series has classes like ``PersistentSpatialElement``,
-``PGPersistentSpatialElement``, ``WKTSpatialElement``. They're all gone,
-and replaced by two classes only:
+``PGPersistentSpatialElement``, ``WKTSpatialElement``.
+
+They're all gone, and replaced by two classes only:
 :class:`geoalchemy2.elements.WKTElement` and
 :class:`geoalchemy2.elements.WKBElement`.
 
@@ -69,12 +70,12 @@ If no SRID need be specified, a string can used directly::
 
     Lake.geom.ST_Touches('POINT(1 1)')
 
-:class:`geoalchemy2.elements.WKTElement` literally replaces the
-first series' ``WKTSpatialElement``.
+* :class:`geoalchemy2.elements.WKTElement` literally replaces the
+  first series' ``WKTSpatialElement``.
+* :class:`geoalchemy2.elements.WKBElement` is the type into which GeoAlchemy
+  2 converts geometry values read from the database.
 
-:class:`geoalchemy2.elements.WKBElement` is the type into which GeoAlchemy
-2 converts geometry values read from the database.  For example, the ``geom``
-attributes of ``Lake`` objects loaded from the database would be references to
-:class:`geoalchemy2.elements.WKBElement` objects. This class replaces the first
-series' ``PersistentSpatialElement`` classes.
-
+  For example, the ``geom``
+  attributes of ``Lake`` objects loaded from the database would be references
+  to :class:`geoalchemy2.elements.WKBElement` objects. This class replaces
+  the first series' ``PersistentSpatialElement`` classes.
