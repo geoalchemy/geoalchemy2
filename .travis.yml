@@ -20,7 +20,7 @@ install:
   # Add PPA for geos 3.3.x
   - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-add-repository -y ppa:sharpie/for-science; fi
 
-  # Install PostGIS 2.x
+  # Add PPA for PostGIS 2.x
   - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-add-repository -y ppa:sharpie/postgis-nightly; fi
   - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then sudo apt-get update; fi
 
