@@ -1,4 +1,5 @@
 import binascii
+from .wkb import *
 
 from sqlalchemy.sql import expression
 from sqlalchemy.types import to_instance
@@ -95,6 +96,13 @@ class WKBElement(_SpatialElement, expression.Function):
         This element's description string.
         """
         return binascii.hexlify(self.data)
+
+    @property
+    def tuple(self):
+        """
+        Extracts a python-native structure from data
+        """
+        return load_wkb(bytes(self.data))
 
 
 class RasterElement(expression.FunctionElement):
