@@ -42,7 +42,7 @@ def _setup_ddl_event_listeners():
                         c.type.management is True]
 
             # Find all other columns that are not managed Geometries
-            regular_cols = set(table.c).difference(gis_cols)
+            regular_cols = [x for x in table.c if x not in gis_cols]
 
             # Save original table column list for later
             table.info["_saved_columns"] = table.c
