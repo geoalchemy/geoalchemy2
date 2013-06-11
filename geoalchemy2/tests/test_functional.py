@@ -5,6 +5,7 @@ from nose.plugins.skip import SkipTest
 from sqlalchemy import create_engine, MetaData, Column, Integer, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.schema import CreateSchema, DropSchema
 
 from geoalchemy2 import Geometry, Raster
 from sqlalchemy.exc import DataError, IntegrityError, InternalError
@@ -55,11 +56,17 @@ class IndexTest(unittest.TestCase):
 
     def setUp(self):
         metadata.drop_all(checkfirst=True)
+        try:
+            engine.execute(DropSchema('testschema'))
+        except Exception, e:
+            session.rollback()
+        engine.execute(CreateSchema('testschema'))
         metadata.create_all()
 
     def tearDown(self):
         session.rollback()
         metadata.drop_all()
+        engine.execute(DropSchema('testschema'))
 
     def test_LakeIndex(self):
         """ Make sure the Lake table has an index on the geom column """
@@ -78,11 +85,17 @@ class InsertionTest(unittest.TestCase):
 
     def setUp(self):
         metadata.drop_all(checkfirst=True)
+        try:
+            engine.execute(DropSchema('testschema'))
+        except Exception, e:
+            session.rollback()
+        engine.execute(CreateSchema('testschema'))
         metadata.create_all()
 
     def tearDown(self):
         session.rollback()
         metadata.drop_all()
+        engine.execute(DropSchema('testschema'))
 
     @raises(DataError, IntegrityError)
     def test_WKT(self):
@@ -145,11 +158,17 @@ class CallFunctionTest(unittest.TestCase):
 
     def setUp(self):
         metadata.drop_all(checkfirst=True)
+        try:
+            engine.execute(DropSchema('testschema'))
+        except Exception, e:
+            session.rollback()
+        engine.execute(CreateSchema('testschema'))
         metadata.create_all()
 
     def tearDown(self):
         session.rollback()
         metadata.drop_all()
+        engine.execute(DropSchema('testschema'))
 
     def _create_one(self):
         from geoalchemy2 import WKTElement
@@ -279,10 +298,16 @@ class ReflectionTest(unittest.TestCase):
 
     def setUp(self):
         metadata.drop_all(checkfirst=True)
+        try:
+            engine.execute(DropSchema('testschema'))
+        except Exception, e:
+            session.rollback()
+        engine.execute(CreateSchema('testschema'))
         metadata.create_all()
 
     def tearDown(self):
         metadata.drop_all()
+        engine.execute(DropSchema('testschema'))
 
     def test_reflection(self):
         from sqlalchemy import Table
