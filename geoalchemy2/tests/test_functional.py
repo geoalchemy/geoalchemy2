@@ -23,6 +23,14 @@ class Lake(Base):
     def __init__(self, geom):
         self.geom = geom
 
+class Lake_Schema(Base):
+    __tablename__ = 'lake'
+    __table_args__ = {'schema':'testschema'}
+    id = Column(Integer, primary_key=True)
+    geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
+
+    def __init__(self, geom):
+        self.geom = geom
 
 session = sessionmaker(bind=engine)()
 
@@ -31,6 +39,7 @@ if not postgis_version.startswith('2.'):
     # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
     # management functions should be used.
     Lake.__table__.c.geom.type.management = True
+    Lake_Schema.__table__.c.geom.type.management = True
 else:
     # The raster type is only available on PostGIS 2.0 and above
     class Ocean(Base):
