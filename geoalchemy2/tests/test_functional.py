@@ -18,7 +18,7 @@ Base = declarative_base(metadata=metadata)
 
 class Lake(Base):
     __tablename__ = 'lake'
-    __table_args__ = {'schema':'testschema'}
+    __table_args__ = {'schema': 'testschema'}
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
 
@@ -64,7 +64,7 @@ class IndexTest(unittest.TestCase):
 
         from sqlalchemy.engine import reflection
         inspector = reflection.Inspector.from_engine(engine)
-        indices = inspector.get_indexes(Lake.__tablename__,schema='testschema')
+        indices = inspector.get_indexes(Lake.__tablename__, schema='testschema')
         eq_(len(indices), 1)
 
         index = indices[0]
