@@ -47,7 +47,7 @@ script:
   - flake8 geoalchemy2 --ignore=E711
 
   # Run the unit test suite
-  - python setup.py nosetests -v --rednose
+  - python setup.py nosetests --verbosity=2 --rednose
 
 after_script:
   # Report coverage results to coveralls.io
