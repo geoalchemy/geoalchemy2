@@ -64,7 +64,9 @@ class IndexTest(unittest.TestCase):
 
         from sqlalchemy.engine import reflection
         inspector = reflection.Inspector.from_engine(engine)
-        indices = inspector.get_indexes(Lake.__tablename__, schema='testschema')
+        indices = inspector.get_indexes(
+            Lake.__tablename__,
+            schema='testschema')
         eq_(len(indices), 1)
 
         index = indices[0]
@@ -304,7 +306,12 @@ class ReflectionTest(unittest.TestCase):
         from sqlalchemy import Table
         from geoalchemy2 import Geometry
 
-        t = Table('lake', MetaData(), schema='testschema', autoload=True, autoload_with=engine)
+        t = Table(
+            'lake',
+            MetaData(),
+            schema='testschema',
+            autoload=True,
+            autoload_with=engine)
         type_ = t.c.geom.type
         ok_(isinstance(type_, Geometry))
         if not postgis_version.startswith('2.'):
