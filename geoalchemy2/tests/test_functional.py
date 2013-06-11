@@ -49,7 +49,7 @@ class IndexTest(unittest.TestCase):
         metadata.drop_all(checkfirst=True)
         try:
             engine.execute(DropSchema('testschema'))
-        except Exception, e:
+        except Exception:
             session.rollback()
         engine.execute(CreateSchema('testschema'))
         metadata.create_all()
@@ -80,7 +80,7 @@ class InsertionTest(unittest.TestCase):
         metadata.drop_all(checkfirst=True)
         try:
             engine.execute(DropSchema('testschema'))
-        except Exception, e:
+        except Exception:
             session.rollback()
         engine.execute(CreateSchema('testschema'))
         metadata.create_all()
@@ -153,7 +153,7 @@ class CallFunctionTest(unittest.TestCase):
         metadata.drop_all(checkfirst=True)
         try:
             engine.execute(DropSchema('testschema'))
-        except Exception, e:
+        except Exception:
             session.rollback()
         engine.execute(CreateSchema('testschema'))
         metadata.create_all()
@@ -293,7 +293,7 @@ class ReflectionTest(unittest.TestCase):
         metadata.drop_all(checkfirst=True)
         try:
             engine.execute(DropSchema('testschema'))
-        except Exception, e:
+        except Exception:
             session.rollback()
         engine.execute(CreateSchema('testschema'))
         metadata.create_all()
