@@ -18,14 +18,6 @@ Base = declarative_base(metadata=metadata)
 
 class Lake(Base):
     __tablename__ = 'lake'
-    id = Column(Integer, primary_key=True)
-    geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
-
-    def __init__(self, geom):
-        self.geom = geom
-
-class Lake_Schema(Base):
-    __tablename__ = 'lake'
     __table_args__ = {'schema':'testschema'}
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
@@ -40,7 +32,6 @@ if not postgis_version.startswith('2.'):
     # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
     # management functions should be used.
     Lake.__table__.c.geom.type.management = True
-    Lake_Schema.__table__.c.geom.type.management = True
 else:
     # The raster type is only available on PostGIS 2.0 and above
     class Ocean(Base):
@@ -73,7 +64,7 @@ class IndexTest(unittest.TestCase):
 
         from sqlalchemy.engine import reflection
         inspector = reflection.Inspector.from_engine(engine)
-        indices = inspector.get_indexes(Lake.__tablename__)
+        indices = inspector.get_indexes(Lake.__tablename__,schema='testschema')
         eq_(len(indices), 1)
 
         index = indices[0]
@@ -313,7 +304,7 @@ class ReflectionTest(unittest.TestCase):
         from sqlalchemy import Table
         from geoalchemy2 import Geometry
 
-        t = Table('lake', MetaData(), autoload=True, autoload_with=engine)
+        t = Table('lake', MetaData(), schema='testschema', autoload=True, autoload_with=engine)
         type_ = t.c.geom.type
         ok_(isinstance(type_, Geometry))
         if not postgis_version.startswith('2.'):
