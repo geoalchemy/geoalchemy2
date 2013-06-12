@@ -53,9 +53,11 @@ def _setup_ddl_event_listeners():
 
             if event == 'before-drop':
                 # Drop the managed Geometry columns with DropGeometryColumn()
+                table_schema = table.schema or 'public'
                 for c in gis_cols:
                     stmt = select([
-                        func.DropGeometryColumn('public', table.name, c.name)])
+                        func.DropGeometryColumn(
+                            table_schema, table.name, c.name)])
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
 
@@ -63,15 +65,19 @@ def _setup_ddl_event_listeners():
             # Restore original column list including managed Geometry columns
             table.columns = table.info.pop('_saved_columns')
 
+            table_schema = table.schema or 'public'
             for c in table.c:
                 # Add the managed Geometry columns with AddGeometryColumn()
                 if isinstance(c.type, Geometry) and c.type.management is True:
                     stmt = select([
                         func.AddGeometryColumn(
-                            table.name, c.name,
+                            table_schema,
+                            table.name,
+                            c.name,
                             c.type.srid,
                             c.type.geometry_type,
-                            c.type.dimension)])
+                            c.type.dimension
+                        )])
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
 
