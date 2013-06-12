@@ -37,6 +37,15 @@ before_script:
   # Create database "gis"
   - psql -c 'CREATE DATABASE gis;' -U postgres
 
+  # Create schema "gis" into database "gis"
+  - psql -d gis -c 'CREATE SCHEMA gis;' -U postgres
+
+  # Grant CREATE permission on database "gis" to role "gis"
+  - psql -c 'GRANT CREATE ON DATABASE gis TO "gis";' -U postgres
+
+  # Grant USAGE and CREATE permission on schema "gis" to role "gis"
+  - psql -d gis -c 'GRANT USAGE,CREATE ON SCHEMA gis TO "gis";' -U postgres
+
   # Add PostGIS extension to "gis" database
   - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -U postgres -f /usr/share/postgresql/9.1/contrib/postgis-1.5/postgis.sql; fi
   - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -U postgres -f /usr/share/postgresql/9.1/contrib/postgis-1.5/spatial_ref_sys.sql; fi
