@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.2.1
+-----
+
+* Fix bug where AddGeometryColumn and DropGeometryColumn were not given
+  the actual schema of the table @dolfandringa (#55)
+
 0.2
 ---
 
