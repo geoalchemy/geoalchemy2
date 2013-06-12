@@ -5,6 +5,7 @@ from nose.plugins.skip import SkipTest
 from sqlalchemy import create_engine, MetaData, Column, Integer, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.schema import CreateSchema, DropSchema
 
 from geoalchemy2 import Geometry, Raster
 from sqlalchemy.exc import DataError, IntegrityError, InternalError
@@ -17,12 +18,12 @@ Base = declarative_base(metadata=metadata)
 
 class Lake(Base):
     __tablename__ = 'lake'
+    __table_args__ = {'schema': 'testschema'}
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
 
     def __init__(self, geom):
         self.geom = geom
-
 
 session = sessionmaker(bind=engine)()
 
@@ -46,18 +47,26 @@ class IndexTest(unittest.TestCase):
 
     def setUp(self):
         metadata.drop_all(checkfirst=True)
+        try:
+            engine.execute(DropSchema('testschema'))
+        except Exception:
+            session.rollback()
+        engine.execute(CreateSchema('testschema'))
         metadata.create_all()
 
     def tearDown(self):
         session.rollback()
         metadata.drop_all()
+        engine.execute(DropSchema('testschema'))
 
     def test_LakeIndex(self):
         """ Make sure the Lake table has an index on the geom column """
 
         from sqlalchemy.engine import reflection
         inspector = reflection.Inspector.from_engine(engine)
-        indices = inspector.get_indexes(Lake.__tablename__)
+        indices = inspector.get_indexes(
+            Lake.__tablename__,
+            schema='testschema')
         eq_(len(indices), 1)
 
         index = indices[0]
@@ -69,11 +78,17 @@ class InsertionTest(unittest.TestCase):
 
     def setUp(self):
         metadata.drop_all(checkfirst=True)
+        try:
+            engine.execute(DropSchema('testschema'))
+        except Exception:
+            session.rollback()
+        engine.execute(CreateSchema('testschema'))
         metadata.create_all()
 
     def tearDown(self):
         session.rollback()
         metadata.drop_all()
+        engine.execute(DropSchema('testschema'))
 
     @raises(DataError, IntegrityError)
     def test_WKT(self):
@@ -136,11 +151,17 @@ class CallFunctionTest(unittest.TestCase):
 
     def setUp(self):
         metadata.drop_all(checkfirst=True)
+        try:
+            engine.execute(DropSchema('testschema'))
+        except Exception:
+            session.rollback()
+        engine.execute(CreateSchema('testschema'))
         metadata.create_all()
 
     def tearDown(self):
         session.rollback()
         metadata.drop_all()
+        engine.execute(DropSchema('testschema'))
 
     def _create_one(self):
         from geoalchemy2 import WKTElement
@@ -270,16 +291,27 @@ class ReflectionTest(unittest.TestCase):
 
     def setUp(self):
         metadata.drop_all(checkfirst=True)
+        try:
+            engine.execute(DropSchema('testschema'))
+        except Exception:
+            session.rollback()
+        engine.execute(CreateSchema('testschema'))
         metadata.create_all()
 
     def tearDown(self):
         metadata.drop_all()
+        engine.execute(DropSchema('testschema'))
 
     def test_reflection(self):
         from sqlalchemy import Table
         from geoalchemy2 import Geometry
 
-        t = Table('lake', MetaData(), autoload=True, autoload_with=engine)
+        t = Table(
+            'lake',
+            MetaData(),
+            schema='testschema',
+            autoload=True,
+            autoload_with=engine)
         type_ = t.c.geom.type
         ok_(isinstance(type_, Geometry))
         if not postgis_version.startswith('2.'):

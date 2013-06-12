@@ -2,7 +2,7 @@ import sys
 from setuptools import setup, find_packages
 
 
-version = '0.2'
+version = '0.3-dev'
 
 install_requires = [
     'SQLAlchemy>=0.8'
