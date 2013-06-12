@@ -99,6 +99,7 @@ The code is available on GitHub: https://github.com/geoalchemy/geoalchemy2.
 Contributors:
 
 * Eric Lemoine, Camptocamp SA (https://github.com/elemoine)
+* Dolf Andringa (https://github.com/dolfandringa)
 * Frédéric Junod, Camptocamp SA (https://github.com/fredj)
 * rapto (https://github.com/rapto)
 * Tobias Bieniek (https://github.com/Turbo87)

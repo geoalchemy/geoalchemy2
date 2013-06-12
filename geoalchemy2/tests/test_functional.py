@@ -17,12 +17,12 @@ Base = declarative_base(metadata=metadata)
 
 class Lake(Base):
     __tablename__ = 'lake'
+    __table_args__ = {'schema': 'gis'}
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
 
     def __init__(self, geom):
         self.geom = geom
-
 
 session = sessionmaker(bind=engine)()
 
@@ -35,6 +35,7 @@ else:
     # The raster type is only available on PostGIS 2.0 and above
     class Ocean(Base):
         __tablename__ = 'ocean'
+        __table_args__ = {'schema': 'public'}
         id = Column(Integer, primary_key=True)
         rast = Column(Raster)
 
@@ -57,7 +58,8 @@ class IndexTest(unittest.TestCase):
 
         from sqlalchemy.engine import reflection
         inspector = reflection.Inspector.from_engine(engine)
-        indices = inspector.get_indexes(Lake.__tablename__)
+        indices = inspector.get_indexes(
+            Lake.__tablename__, schema='gis')
         eq_(len(indices), 1)
 
         index = indices[0]
@@ -279,7 +281,12 @@ class ReflectionTest(unittest.TestCase):
         from sqlalchemy import Table
         from geoalchemy2 import Geometry
 
-        t = Table('lake', MetaData(), autoload=True, autoload_with=engine)
+        t = Table(
+            'lake',
+            MetaData(),
+            schema='gis',
+            autoload=True,
+            autoload_with=engine)
         type_ = t.c.geom.type
         ok_(isinstance(type_, Geometry))
         if not postgis_version.startswith('2.'):
