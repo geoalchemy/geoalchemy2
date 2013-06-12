@@ -35,6 +35,7 @@ else:
     # The raster type is only available on PostGIS 2.0 and above
     class Ocean(Base):
         __tablename__ = 'ocean'
+        __table_args__ = {'schema': 'public'}
         id = Column(Integer, primary_key=True)
         rast = Column(Raster)
 
