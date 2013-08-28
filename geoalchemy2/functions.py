@@ -307,29 +307,29 @@ _FUNCTIONS = [
     #
 
     ('ST_AsRaster', types.Raster,
-    ('Converts a PostGIS geometry to a PostGIS raster.', 'RT_ST_AsRaster')),
+     ('Converts a PostGIS geometry to a PostGIS raster.', 'RT_ST_AsRaster')),
 
     #
     # Raster Accessors
     #
 
     ('ST_Height', None,
-    ('Returns the height of the raster in pixels.', 'RT_ST_Height')),
+     ('Returns the height of the raster in pixels.', 'RT_ST_Height')),
 
     ('ST_Width', None,
-    ('Returns the width of the raster in pixels.', 'RT_ST_Width')),
+     ('Returns the width of the raster in pixels.', 'RT_ST_Width')),
 
     #
     # Raster Pixel Accessors and Setters
     #
 
     ('ST_Value', None,
-    ('Returns the value of a given band in a given columnx, rowy pixel or at '
-     'a particular geometric point. Band numbers start at 1 and assumed to be '
-     '1 if not specified. If ``exclude_nodata_value`` is set to ``false``, '
-     'then all pixels include nodata pixels are considered to intersect and '
-     'return value. If ``exclude_nodata_value`` is not passed in then reads '
-     'it from metadata of raster.', 'RT_ST_Value')),
+     ('Returns the value of a given band in a given columnx, rowy pixel or at '
+      'a particular geometric point. Band numbers start at 1 and assumed to '
+      'be 1 if not specified. If ``exclude_nodata_value`` is set to '
+      '``false``, then all pixels include nodata pixels are considered to '
+      'intersect and return value. If ``exclude_nodata_value`` is not passed '
+      'in then reads it from metadata of raster.', 'RT_ST_Value')),
 ]
 
 # Iterate through _FUNCTION and create GenericFunction classes dynamically
