@@ -126,7 +126,7 @@ class Geometry(_GISType):
     name = 'geometry'
     """ Type name used for defining geometry columns in ``CREATE TABLE``. """
 
-    from_text = 'ST_GeomFromText'
+    from_text = 'ST_GeomFromEWKT'
     """ The ``FromText`` geometry constructor. Used by the parent class'
         ``bind_expression`` method. """
 

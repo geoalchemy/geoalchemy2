@@ -48,14 +48,14 @@ class TestGeometry(unittest.TestCase):
         table = _create_geometry_table()
         s = select(['foo']).where(table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE '
-                  '"table".geom = ST_GeomFromText(:geom_1)')
+                  '"table".geom = ST_GeomFromEWKT(:geom_1)')
         eq_(s.compile().params, {'geom_1': 'POINT(1 2)'})
 
     def test_insert_bind_expression(self):
         from sqlalchemy.sql import insert
         table = _create_geometry_table()
         i = insert(table).values(geom='POINT(1 2)')
-        eq_sql(i, 'INSERT INTO "table" (geom) VALUES (ST_GeomFromText(:geom))')
+        eq_sql(i, 'INSERT INTO "table" (geom) VALUES (ST_GeomFromEWKT(:geom))')
         eq_(i.compile().params, {'geom': 'POINT(1 2)'})
 
     def test_function_call(self):
