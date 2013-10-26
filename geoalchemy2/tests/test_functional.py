@@ -67,6 +67,45 @@ class IndexTest(unittest.TestCase):
         eq_(index.get('column_names'), [u'geom'])
 
 
+class InsertionCoreTest(unittest.TestCase):
+
+    def setUp(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+
+    def tearDown(self):
+        session.rollback()
+        metadata.drop_all()
+
+    def test_insert(self):
+        from geoalchemy2 import WKTElement, WKBElement
+        conn = engine.connect()
+
+        # Issue two inserts using DBAPI's executemany() method. This tests
+        # the Geometry type's bind_processor function.
+        conn.execute(Lake.__table__.insert(), [
+            {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'},
+            {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326)}
+        ])
+
+        results = conn.execute(Lake.__table__.select())
+        rows = results.fetchall()
+
+        row = rows[0]
+        ok_(isinstance(row[1], WKBElement))
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        eq_(wkt, 'LINESTRING(0 0,1 1)')
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        eq_(srid, 4326)
+
+        row = rows[1]
+        ok_(isinstance(row[1], WKBElement))
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        eq_(wkt, 'LINESTRING(0 0,2 2)')
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        eq_(srid, 4326)
+
+
 class InsertionTest(unittest.TestCase):
 
     def setUp(self):
