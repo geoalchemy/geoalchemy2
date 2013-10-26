@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
 from .comparator import BaseComparator, Comparator
-from .elements import WKBElement, RasterElement, CompositeElement
+from .elements import WKBElement, WKTElement, RasterElement, CompositeElement
 
 
 class _GISType(UserDefinedType):
@@ -108,6 +108,14 @@ class _GISType(UserDefinedType):
 
     def bind_expression(self, bindvalue):
         return getattr(func, self.from_text)(bindvalue, type_=self)
+
+    def bind_processor(self, dialect):
+        def process(bindvalue):
+            if isinstance(bindvalue, WKTElement):
+                return 'SRID=%d;%s' % (bindvalue.srid, bindvalue.data)
+            else:
+                return bindvalue
+        return process
 
 
 class Geometry(_GISType):
