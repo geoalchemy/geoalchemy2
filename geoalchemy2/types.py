@@ -22,12 +22,14 @@ class _GISType(UserDefinedType):
     :class:`geoalchemy2.types.Geography`.
 
     This class defines ``bind_expression`` and ``column_expression`` methods
-    that wrap column expressions in ``ST_GeomFromText``, ``ST_GeogFromText``,
+    that wrap column expressions in ``ST_GeomFromEWKT``, ``ST_GeogFromText``,
     or ``ST_AsBinary`` calls.
 
-    This class also defines the ``result_processor`` method, so that WKB values
-    received from the database are converted to
-    :class:`geoalchemy2.elements.WKBElement` objects.
+    This class also defines ``result_processor`` and ``bind_processor``
+    methods. The function returned by ``result_processor`` converts WKB values
+    received from the database to :class:`geoalchemy2.elements.WKBElement`
+    objects. The function returned by ``bind_processor`` converts
+    :class:`geoalchemy2.elements.WKTElement` objects to EWKT strings.
 
     Constructor arguments:
 

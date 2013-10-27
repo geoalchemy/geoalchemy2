@@ -82,7 +82,7 @@ class InsertionCoreTest(unittest.TestCase):
         conn = engine.connect()
 
         # Issue two inserts using DBAPI's executemany() method. This tests
-        # the Geometry type's bind_processor function.
+        # the Geometry type's bind_processor and bind_expression functions.
         conn.execute(Lake.__table__.insert(), [
             {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'},
             {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326)}
