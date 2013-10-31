@@ -110,7 +110,7 @@ class InsertionCoreTest(unittest.TestCase):
         eq_(srid, 4326)
 
 
-class InsertionTest(unittest.TestCase):
+class InsertionORMTest(unittest.TestCase):
 
     def setUp(self):
         metadata.drop_all(checkfirst=True)
