@@ -86,6 +86,10 @@ class InsertionCoreTest(unittest.TestCase):
         conn.execute(Lake.__table__.insert(), [
             {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'},
             {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326)}
+
+            # Having WKBElement objects as bind values is not supported, so
+            # the following does not work:
+            #{'geom': from_shape(LineString([[0, 0], [3, 3]], srid=4326)}
         ])
 
         results = conn.execute(Lake.__table__.select())
