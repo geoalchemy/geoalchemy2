@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, MetaData, Column, Integer, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from geoalchemy2 import Geometry, Raster
+from geoalchemy2 import Geometry, Geography, Raster
 from sqlalchemy.exc import DataError, IntegrityError, InternalError
 
 
@@ -23,6 +23,17 @@ class Lake(Base):
 
     def __init__(self, geom):
         self.geom = geom
+
+
+class Poi(Base):
+    __tablename__ = 'poi'
+    __table_args__ = {'schema': 'gis'}
+    id = Column(Integer, primary_key=True)
+    geog = Column(Geography(geometry_type='POINT', srid=4326))
+
+    def __init__(self, geog):
+        self.geog = geog
+
 
 session = sessionmaker(bind=engine)()
 
@@ -202,17 +213,23 @@ class CallFunctionTest(unittest.TestCase):
         session.rollback()
         metadata.drop_all()
 
-    def _create_one(self):
+    def _create_one_lake(self):
         from geoalchemy2 import WKTElement
         l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(l)
         session.flush()
         return l.id
 
+    def _create_one_poi(self):
+        p = Poi('POINT(5 45)')
+        session.add(p)
+        session.flush()
+        return p.id
+
     def test_ST_GeometryType(self):
         from sqlalchemy.sql import select, func
 
-        lake_id = self._create_one()
+        lake_id = self._create_one_lake()
 
         s = select([func.ST_GeometryType(Lake.__table__.c.geom)])
         r1 = session.execute(s).scalar()
@@ -234,7 +251,7 @@ class CallFunctionTest(unittest.TestCase):
         from sqlalchemy.sql import select, func
         from geoalchemy2 import WKBElement, WKTElement
 
-        lake_id = self._create_one()
+        lake_id = self._create_one_lake()
 
         s = select([func.ST_Buffer(Lake.__table__.c.geom, 2)])
         r1 = session.execute(s).scalar()
@@ -259,7 +276,7 @@ class CallFunctionTest(unittest.TestCase):
         from sqlalchemy.sql import select, func
         from geoalchemy2 import WKBElement
 
-        lake_id = self._create_one()
+        lake_id = self._create_one_lake()
         lake = session.query(Lake).get(lake_id)
 
         s = select([func.ST_Dump(Lake.__table__.c.geom)])
@@ -294,7 +311,7 @@ class CallFunctionTest(unittest.TestCase):
         from sqlalchemy.sql import func
         from geoalchemy2 import WKBElement
 
-        lake_id = self._create_one()
+        lake_id = self._create_one_lake()
         lake = session.query(Lake).get(lake_id)
 
         dump = lake.geom.ST_DumpPoints()
@@ -320,10 +337,18 @@ class CallFunctionTest(unittest.TestCase):
     @raises(InternalError)
     def test_ST_Buffer_Mixed_SRID(self):
         from sqlalchemy.sql import func
-        self._create_one()
+        self._create_one_lake()
         session.query(Lake).filter(
             func.ST_Within('POINT(0 0)',
                            Lake.geom.ST_Buffer(2))).one()
+
+    def test_ST_Distance_type_coerce(self):
+        from sqlalchemy.sql.expression import type_coerce
+        poi_id = self._create_one_poi()
+        poi = session.query(Poi) \
+            .filter(Poi.geog.ST_Distance(
+                type_coerce('POINT(5 45)', Geography)) < 1000).one()
+        eq_(poi.id, poi_id)
 
 
 class ReflectionTest(unittest.TestCase):
