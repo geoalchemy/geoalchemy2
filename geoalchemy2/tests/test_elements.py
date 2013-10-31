@@ -4,6 +4,13 @@ import re
 from nose.tools import eq_
 
 
+def _create_geometry_table():
+    from sqlalchemy import Table, MetaData, Column
+    from geoalchemy2.types import Geometry
+    table = Table('table', MetaData(), Column('geom', Geometry))
+    return table
+
+
 def eq_sql(a, b, msg=None):
     a = re.sub(r'[\n\t]', '', str(a))
     eq_(a, b, msg)
@@ -26,6 +33,34 @@ class TestWKTElement(unittest.TestCase):
         eq_(f.compile().params,
             {u'param_1': 2, u'ST_GeomFromText_1': 'POINT(1 2)',
              u'ST_GeomFromText_2': -1})
+
+
+class TestWKTElementFunction(unittest.TestCase):
+
+    def test_ST_Equal_WKTElement_WKTElement(self):
+        from sqlalchemy import func
+        from geoalchemy2.elements import WKTElement
+        expr = func.ST_Equals(WKTElement('POINT(1 2)'),
+                              WKTElement('POINT(1 2)'))
+        eq_sql(expr, 'ST_Equals('
+               'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2), '
+               'ST_GeomFromText(:ST_GeomFromText_3, :ST_GeomFromText_4))')
+        eq_(expr.compile().params,
+            {u'ST_GeomFromText_1': 'POINT(1 2)',
+             u'ST_GeomFromText_2': -1,
+             u'ST_GeomFromText_3': 'POINT(1 2)',
+             u'ST_GeomFromText_4': -1})
+
+    def test_ST_Equal_Column_WKTElement(self):
+        from sqlalchemy import func
+        from geoalchemy2.elements import WKTElement
+        table = _create_geometry_table()
+        expr = func.ST_Equals(table.c.geom, WKTElement('POINT(1 2)'))
+        eq_sql(expr,
+               'ST_Equals("table".geom, '
+               'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2))')
+        eq_(expr.compile().params, {u'ST_GeomFromText_1': 'POINT(1 2)',
+                                    u'ST_GeomFromText_2': -1})
 
 
 class TestWKBElement(unittest.TestCase):
