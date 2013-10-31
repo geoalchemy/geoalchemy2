@@ -48,14 +48,14 @@ class TestGeometry(unittest.TestCase):
         table = _create_geometry_table()
         s = select(['foo']).where(table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE '
-                  '"table".geom = ST_GeomFromText(:geom_1)')
+                  '"table".geom = ST_GeomFromEWKT(:geom_1)')
         eq_(s.compile().params, {'geom_1': 'POINT(1 2)'})
 
     def test_insert_bind_expression(self):
         from sqlalchemy.sql import insert
         table = _create_geometry_table()
         i = insert(table).values(geom='POINT(1 2)')
-        eq_sql(i, 'INSERT INTO "table" (geom) VALUES (ST_GeomFromText(:geom))')
+        eq_sql(i, 'INSERT INTO "table" (geom) VALUES (ST_GeomFromEWKT(:geom))')
         eq_(i.compile().params, {'geom': 'POINT(1 2)'})
 
     def test_function_call(self):
@@ -196,34 +196,6 @@ class TestGeometryCollection(unittest.TestCase):
         from geoalchemy2.types import Geometry
         g = Geometry(geometry_type='GEOMETRYCOLLECTION', srid=900913)
         eq_(g.get_col_spec(), 'geometry(GEOMETRYCOLLECTION,900913)')
-
-
-class TestFunction(unittest.TestCase):
-
-    def test_ST_Equal_WKTElement_WKTElement(self):
-        from sqlalchemy import func
-        from geoalchemy2.elements import WKTElement
-        expr = func.ST_Equals(WKTElement('POINT(1 2)'),
-                              WKTElement('POINT(1 2)'))
-        eq_sql(expr, 'ST_Equals('
-               'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2), '
-               'ST_GeomFromText(:ST_GeomFromText_3, :ST_GeomFromText_4))')
-        eq_(expr.compile().params,
-            {u'ST_GeomFromText_1': 'POINT(1 2)',
-             u'ST_GeomFromText_2': -1,
-             u'ST_GeomFromText_3': 'POINT(1 2)',
-             u'ST_GeomFromText_4': -1})
-
-    def test_ST_Equal_Column_WKTElement(self):
-        from sqlalchemy import func
-        from geoalchemy2.elements import WKTElement
-        table = _create_geometry_table()
-        expr = func.ST_Equals(table.c.geom, WKTElement('POINT(1 2)'))
-        eq_sql(expr,
-               'ST_Equals("table".geom, '
-               'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2))')
-        eq_(expr.compile().params, {u'ST_GeomFromText_1': 'POINT(1 2)',
-                                    u'ST_GeomFromText_2': -1})
 
 
 class TestRaster(unittest.TestCase):

@@ -82,10 +82,10 @@ an ``Insert`` object. SQLAlchemy provides multiple constructs for creating an
 
     >>> ins = lake_table.insert()
     >>> str(ins)
-    INSERT INTO lake (id, name, geom) VALUES (:id, :name, ST_GeomFromText(:geom))
+    INSERT INTO lake (id, name, geom) VALUES (:id, :name, ST_GeomFromEWKT(:geom))
 
 The ``geom`` column being a ``Geometry`` column, the ``:geom`` bind value is
-wrapped in a ``ST_GeomFromText`` call.
+wrapped in a ``ST_GeomFromEWKT`` call.
 
 To limit the columns named in the ``INSERT`` query the ``values()`` method
 can be used::
@@ -94,7 +94,7 @@ can be used::
     ...                                  geom='POLYGON((0 0,1 0,1 1,0 1,0 0))')
     ...
     >>> str(ins)
-    INSERT INTO lake (name, geom) VALUES (:name, ST_GeomFromText(:geom))
+    INSERT INTO lake (name, geom) VALUES (:name, ST_GeomFromEWKT(:geom))
 
 .. tip::
 
@@ -119,7 +119,7 @@ We're now ready to execute our ``INSERT`` statement::
 
 This is what the logging system should output::
 
-    INSERT INTO lake (name, geom) VALUES (%(name)s, ST_GeomFromText(%(geom)s)) RETURNING lake.id
+    INSERT INTO lake (name, geom) VALUES (%(name)s, ST_GeomFromEWKT(%(geom)s)) RETURNING lake.id
     {'geom': 'POLYGON((0 0,1 0,1 1,0 1,0 0))', 'name': 'Majeur'}
     COMMIT
 
@@ -144,6 +144,12 @@ Now let's use another form, allowing to insert multiple rows at once::
     ...     {'name': 'Orta', 'geom': 'POLYGON((3 0,6 0,6 3,3 3,3 0))'}
     ...     ])
     ...
+
+.. tip::
+
+    In the above examples the geometries are specified as WKT strings.
+    Specifying them as EWKT strings is also supported.
+
 
 Selections
 ----------

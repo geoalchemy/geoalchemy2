@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
 from .comparator import BaseComparator, Comparator
-from .elements import WKBElement, RasterElement, CompositeElement
+from .elements import WKBElement, WKTElement, RasterElement, CompositeElement
 
 
 class _GISType(UserDefinedType):
@@ -22,12 +22,14 @@ class _GISType(UserDefinedType):
     :class:`geoalchemy2.types.Geography`.
 
     This class defines ``bind_expression`` and ``column_expression`` methods
-    that wrap column expressions in ``ST_GeomFromText``, ``ST_GeogFromText``,
+    that wrap column expressions in ``ST_GeomFromEWKT``, ``ST_GeogFromText``,
     or ``ST_AsBinary`` calls.
 
-    This class also defines the ``result_processor`` method, so that WKB values
-    received from the database are converted to
-    :class:`geoalchemy2.elements.WKBElement` objects.
+    This class also defines ``result_processor`` and ``bind_processor``
+    methods. The function returned by ``result_processor`` converts WKB values
+    received from the database to :class:`geoalchemy2.elements.WKBElement`
+    objects. The function returned by ``bind_processor`` converts
+    :class:`geoalchemy2.elements.WKTElement` objects to EWKT strings.
 
     Constructor arguments:
 
@@ -109,6 +111,14 @@ class _GISType(UserDefinedType):
     def bind_expression(self, bindvalue):
         return getattr(func, self.from_text)(bindvalue, type_=self)
 
+    def bind_processor(self, dialect):
+        def process(bindvalue):
+            if isinstance(bindvalue, WKTElement):
+                return 'SRID=%d;%s' % (bindvalue.srid, bindvalue.data)
+            else:
+                return bindvalue
+        return process
+
 
 class Geometry(_GISType):
     """
@@ -126,7 +136,7 @@ class Geometry(_GISType):
     name = 'geometry'
     """ Type name used for defining geometry columns in ``CREATE TABLE``. """
 
-    from_text = 'ST_GeomFromText'
+    from_text = 'ST_GeomFromEWKT'
     """ The ``FromText`` geometry constructor. Used by the parent class'
         ``bind_expression`` method. """
 

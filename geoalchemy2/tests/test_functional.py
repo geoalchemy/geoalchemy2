@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, MetaData, Column, Integer, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from geoalchemy2 import Geometry, Raster
+from geoalchemy2 import Geometry, Geography, Raster
 from sqlalchemy.exc import DataError, IntegrityError, InternalError
 
 
@@ -23,6 +23,17 @@ class Lake(Base):
 
     def __init__(self, geom):
         self.geom = geom
+
+
+class Poi(Base):
+    __tablename__ = 'poi'
+    __table_args__ = {'schema': 'gis'}
+    id = Column(Integer, primary_key=True)
+    geog = Column(Geography(geometry_type='POINT', srid=4326))
+
+    def __init__(self, geog):
+        self.geog = geog
+
 
 session = sessionmaker(bind=engine)()
 
@@ -67,7 +78,50 @@ class IndexTest(unittest.TestCase):
         eq_(index.get('column_names'), [u'geom'])
 
 
-class InsertionTest(unittest.TestCase):
+class InsertionCoreTest(unittest.TestCase):
+
+    def setUp(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+
+    def tearDown(self):
+        session.rollback()
+        metadata.drop_all()
+
+    def test_insert(self):
+        from geoalchemy2 import WKTElement, WKBElement
+        conn = engine.connect()
+
+        # Issue two inserts using DBAPI's executemany() method. This tests
+        # the Geometry type's bind_processor and bind_expression functions.
+        conn.execute(Lake.__table__.insert(), [
+            {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'},
+            {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326)}
+
+            # Having WKBElement objects as bind values is not supported, so
+            # the following does not work:
+            #{'geom': from_shape(LineString([[0, 0], [3, 3]], srid=4326)}
+        ])
+
+        results = conn.execute(Lake.__table__.select())
+        rows = results.fetchall()
+
+        row = rows[0]
+        ok_(isinstance(row[1], WKBElement))
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        eq_(wkt, 'LINESTRING(0 0,1 1)')
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        eq_(srid, 4326)
+
+        row = rows[1]
+        ok_(isinstance(row[1], WKBElement))
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        eq_(wkt, 'LINESTRING(0 0,2 2)')
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        eq_(srid, 4326)
+
+
+class InsertionORMTest(unittest.TestCase):
 
     def setUp(self):
         metadata.drop_all(checkfirst=True)
@@ -93,6 +147,24 @@ class InsertionTest(unittest.TestCase):
     def test_WKTElement(self):
         from geoalchemy2 import WKTElement, WKBElement
         l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        session.add(l)
+        session.flush()
+        session.expire(l)
+        ok_(isinstance(l.geom, WKBElement))
+        wkt = session.execute(l.geom.ST_AsText()).scalar()
+        eq_(wkt, 'LINESTRING(0 0,1 1)')
+        srid = session.execute(l.geom.ST_SRID()).scalar()
+        eq_(srid, 4326)
+
+    def test_WKBElement(self):
+        from geoalchemy2 import WKBElement
+        try:
+            from geoalchemy2.shape import from_shape
+            from shapely.geometry import LineString
+        except ImportError:
+            raise SkipTest
+        shape = LineString([[0, 0], [1, 1]])
+        l = Lake(from_shape(shape, srid=4326))
         session.add(l)
         session.flush()
         session.expire(l)
@@ -144,17 +216,23 @@ class CallFunctionTest(unittest.TestCase):
         session.rollback()
         metadata.drop_all()
 
-    def _create_one(self):
+    def _create_one_lake(self):
         from geoalchemy2 import WKTElement
         l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(l)
         session.flush()
         return l.id
 
+    def _create_one_poi(self):
+        p = Poi('POINT(5 45)')
+        session.add(p)
+        session.flush()
+        return p.id
+
     def test_ST_GeometryType(self):
         from sqlalchemy.sql import select, func
 
-        lake_id = self._create_one()
+        lake_id = self._create_one_lake()
 
         s = select([func.ST_GeometryType(Lake.__table__.c.geom)])
         r1 = session.execute(s).scalar()
@@ -176,7 +254,7 @@ class CallFunctionTest(unittest.TestCase):
         from sqlalchemy.sql import select, func
         from geoalchemy2 import WKBElement, WKTElement
 
-        lake_id = self._create_one()
+        lake_id = self._create_one_lake()
 
         s = select([func.ST_Buffer(Lake.__table__.c.geom, 2)])
         r1 = session.execute(s).scalar()
@@ -201,7 +279,7 @@ class CallFunctionTest(unittest.TestCase):
         from sqlalchemy.sql import select, func
         from geoalchemy2 import WKBElement
 
-        lake_id = self._create_one()
+        lake_id = self._create_one_lake()
         lake = session.query(Lake).get(lake_id)
 
         s = select([func.ST_Dump(Lake.__table__.c.geom)])
@@ -236,7 +314,7 @@ class CallFunctionTest(unittest.TestCase):
         from sqlalchemy.sql import func
         from geoalchemy2 import WKBElement
 
-        lake_id = self._create_one()
+        lake_id = self._create_one_lake()
         lake = session.query(Lake).get(lake_id)
 
         dump = lake.geom.ST_DumpPoints()
@@ -262,10 +340,18 @@ class CallFunctionTest(unittest.TestCase):
     @raises(InternalError)
     def test_ST_Buffer_Mixed_SRID(self):
         from sqlalchemy.sql import func
-        self._create_one()
+        self._create_one_lake()
         session.query(Lake).filter(
             func.ST_Within('POINT(0 0)',
                            Lake.geom.ST_Buffer(2))).one()
+
+    def test_ST_Distance_type_coerce(self):
+        from sqlalchemy.sql.expression import type_coerce
+        poi_id = self._create_one_poi()
+        poi = session.query(Poi) \
+            .filter(Poi.geog.ST_Distance(
+                type_coerce('POINT(5 45)', Geography)) < 1000).one()
+        eq_(poi.id, poi_id)
 
 
 class ReflectionTest(unittest.TestCase):

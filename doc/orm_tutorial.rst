@@ -99,6 +99,12 @@ A WKT is passed to the ``Lake`` constructor for its geometry. This WKT
 represents the shape of our lake. Since we have not yet told SQLAlchemy
 to persist the ``lake`` object, its ``id`` is ``None``.
 
+The EWKT (Extented WKT) format is also supported. So, for example, if the
+spatial reference system for the geometry column were ``4326``, the string
+``SRID=4326;POLYGON((0 0,1 0,1,0 1,0 0))`` could be used as the geometry
+representation.
+
+
 Create a Session
 ----------------
 
