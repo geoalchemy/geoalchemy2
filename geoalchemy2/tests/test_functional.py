@@ -145,6 +145,21 @@ class InsertionORMTest(unittest.TestCase):
         srid = session.execute(l.geom.ST_SRID()).scalar()
         eq_(srid, 4326)
 
+    def test_WKBElement(self):
+        from geoalchemy2 import WKBElement
+        from geoalchemy2.shape import from_shape
+        from shapely.geometry import LineString
+        shape = LineString([[0, 0], [1, 1]])
+        l = Lake(from_shape(shape, srid=4326))
+        session.add(l)
+        session.flush()
+        session.expire(l)
+        ok_(isinstance(l.geom, WKBElement))
+        wkt = session.execute(l.geom.ST_AsText()).scalar()
+        eq_(wkt, 'LINESTRING(0 0,1 1)')
+        srid = session.execute(l.geom.ST_SRID()).scalar()
+        eq_(srid, 4326)
+
     def test_Raster(self):
         if not postgis_version.startswith('2.'):
             raise SkipTest
