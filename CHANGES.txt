@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.2.2
+-----
+
+* Support EWKT and working with DBAPI's executemany(). Addresses issues
+  reported by @pgiraud. @elemoine (#62)
+
 0.2.1
 -----
 
