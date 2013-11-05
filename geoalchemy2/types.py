@@ -56,7 +56,7 @@ class _GISType(UserDefinedType):
 
     ``srid``
 
-        The SRID for this column. E.g. 426. Default is ``-1``.
+        The SRID for this column. E.g. 4326. Default is ``-1``.
 
     ``dimension``
 
