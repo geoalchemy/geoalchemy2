@@ -179,3 +179,7 @@ def test_ST_Intersection():
 
 def test_ST_Union():
     _test_geometry_returning_func('ST_Union')
+
+
+def test_ST_Simplify():
+    _test_geometry_returning_func('ST_Union')
