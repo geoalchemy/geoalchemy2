@@ -2,6 +2,9 @@ import unittest
 from nose.tools import eq_, ok_, raises
 from nose.plugins.skip import SkipTest
 
+import sys
+py3k = sys.version_info[0] == 3
+
 from sqlalchemy import create_engine, MetaData, Column, Integer, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -156,13 +159,11 @@ class InsertionORMTest(unittest.TestCase):
         srid = session.execute(l.geom.ST_SRID()).scalar()
         eq_(srid, 4326)
 
+    @unittest.skipIf(py3k, "Shapely is not Py3k compatible")
     def test_WKBElement(self):
         from geoalchemy2 import WKBElement
-        try:
-            from geoalchemy2.shape import from_shape
-            from shapely.geometry import LineString
-        except ImportError:
-            raise SkipTest
+        from geoalchemy2.shape import from_shape
+        from shapely.geometry import LineString
         shape = LineString([[0, 0], [1, 1]])
         l = Lake(from_shape(shape, srid=4326))
         session.add(l)
