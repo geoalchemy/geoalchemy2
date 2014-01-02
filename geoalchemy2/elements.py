@@ -1,6 +1,6 @@
 import binascii
 
-from sqlalchemy.sql import expression
+from sqlalchemy.sql import functions
 from sqlalchemy.types import to_instance
 from sqlalchemy.ext.compiler import compiles
 
@@ -49,7 +49,7 @@ class _SpatialElement(object):
         return getattr(func_, name)
 
 
-class WKTElement(_SpatialElement, expression.Function):
+class WKTElement(_SpatialElement, functions.Function):
     """
     Instances of this class wrap a WKT value.
 
@@ -62,7 +62,7 @@ class WKTElement(_SpatialElement, expression.Function):
 
     def __init__(self, *args, **kwargs):
         _SpatialElement.__init__(self, *args, **kwargs)
-        expression.Function.__init__(self, "ST_GeomFromText",
+        functions.Function.__init__(self, "ST_GeomFromText",
                                      self.data, self.srid)
 
     @property
@@ -73,7 +73,7 @@ class WKTElement(_SpatialElement, expression.Function):
         return self.data
 
 
-class WKBElement(_SpatialElement, expression.Function):
+class WKBElement(_SpatialElement, functions.Function):
     """
     Instances of this class wrap a WKB value. Geometry values read
     from the database are converted to instances of this type. In
@@ -86,7 +86,7 @@ class WKBElement(_SpatialElement, expression.Function):
 
     def __init__(self, *args, **kwargs):
         _SpatialElement.__init__(self, *args, **kwargs)
-        expression.Function.__init__(self, "ST_GeomFromWKB",
+        functions.Function.__init__(self, "ST_GeomFromWKB",
                                      self.data, self.srid)
 
     @property
@@ -97,7 +97,7 @@ class WKBElement(_SpatialElement, expression.Function):
         return binascii.hexlify(self.data)
 
 
-class RasterElement(expression.FunctionElement):
+class RasterElement(functions.FunctionElement):
     """
     Instances of this class wrap a ``raster`` value. Raster values read
     from the database are converted to instances of this type. In
@@ -109,7 +109,7 @@ class RasterElement(expression.FunctionElement):
 
     def __init__(self, data):
         self.data = data
-        expression.FunctionElement.__init__(self, self.data)
+        functions.FunctionElement.__init__(self, self.data)
 
     def __str__(self):
         return self.desc  # pragma: no cover
@@ -152,7 +152,7 @@ def compile_RasterElement(element, compiler, **kw):
     contents are correctly casted to the ``raster`` type before using it.
 
     The other elements in this module don't need such a function because
-    they are derived from :class:`expression.Function`. For the
+    they are derived from :class:`functions.Function`. For the
     :class:`geoalchemy2.elements.RasterElement` class however it would not be
     of any use to have it compile to ``raster('...')`` so it is compiled to
     ``'...'::raster`` by this function.
@@ -160,7 +160,7 @@ def compile_RasterElement(element, compiler, **kw):
     return "%s::raster" % compiler.process(element.clauses)
 
 
-class CompositeElement(expression.FunctionElement):
+class CompositeElement(functions.FunctionElement):
     """
     Instances of this class wrap a Postgres composite type.
     """
