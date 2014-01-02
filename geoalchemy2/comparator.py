@@ -43,7 +43,10 @@ Reference
 """
 
 from sqlalchemy.types import UserDefinedType
-from sqlalchemy.sql import expression
+try:
+    from sqlalchemy.sql.functions import _FunctionGenerator
+except ImportError:  # SQLA < 0.9
+    from sqlalchemy.sql.expression import _FunctionGenerator
 
 
 class BaseComparator(UserDefinedType.Comparator):
@@ -71,7 +74,7 @@ class BaseComparator(UserDefinedType.Comparator):
         # SQLAlchemy's "func" object. This is to be able to "bind" the
         # function to the SQL expression. See also GenericFunction above.
 
-        func_ = expression._FunctionGenerator(expr=self.expr)
+        func_ = _FunctionGenerator(expr=self.expr)
         return getattr(func_, name)
 
     def intersects(self, other):

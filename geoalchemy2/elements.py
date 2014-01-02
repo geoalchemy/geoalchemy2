@@ -1,6 +1,11 @@
 import binascii
 
-from sqlalchemy.sql import expression
+try:
+    from sqlalchemy.sql import functions
+    from sqlalchemy.sql.functions import FunctionElement
+except ImportError:  # SQLA < 0.9
+    from sqlalchemy.sql import expression as functions
+    from sqlalchemy.sql.expression import FunctionElement
 from sqlalchemy.types import to_instance
 from sqlalchemy.ext.compiler import compiles
 
@@ -45,11 +50,11 @@ class _SpatialElement(object):
         # SQLAlchemy's "func" object. This is to be able to "bind" the
         # function to the SQL expression. See also GenericFunction above.
 
-        func_ = expression._FunctionGenerator(expr=self)
+        func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)
 
 
-class WKTElement(_SpatialElement, expression.Function):
+class WKTElement(_SpatialElement, functions.Function):
     """
     Instances of this class wrap a WKT value.
 
@@ -62,8 +67,12 @@ class WKTElement(_SpatialElement, expression.Function):
 
     def __init__(self, *args, **kwargs):
         _SpatialElement.__init__(self, *args, **kwargs)
-        expression.Function.__init__(self, "ST_GeomFromText",
-                                     self.data, self.srid)
+        functions.Function.__init__(
+            self,
+            "ST_GeomFromText",
+            self.data,
+            self.srid
+        )
 
     @property
     def desc(self):
@@ -73,7 +82,7 @@ class WKTElement(_SpatialElement, expression.Function):
         return self.data
 
 
-class WKBElement(_SpatialElement, expression.Function):
+class WKBElement(_SpatialElement, functions.Function):
     """
     Instances of this class wrap a WKB value. Geometry values read
     from the database are converted to instances of this type. In
@@ -86,8 +95,12 @@ class WKBElement(_SpatialElement, expression.Function):
 
     def __init__(self, *args, **kwargs):
         _SpatialElement.__init__(self, *args, **kwargs)
-        expression.Function.__init__(self, "ST_GeomFromWKB",
-                                     self.data, self.srid)
+        functions.Function.__init__(
+            self,
+            "ST_GeomFromWKB",
+            self.data,
+            self.srid
+        )
 
     @property
     def desc(self):
@@ -97,7 +110,7 @@ class WKBElement(_SpatialElement, expression.Function):
         return binascii.hexlify(self.data)
 
 
-class RasterElement(expression.FunctionElement):
+class RasterElement(FunctionElement):
     """
     Instances of this class wrap a ``raster`` value. Raster values read
     from the database are converted to instances of this type. In
@@ -109,7 +122,7 @@ class RasterElement(expression.FunctionElement):
 
     def __init__(self, data):
         self.data = data
-        expression.FunctionElement.__init__(self, self.data)
+        FunctionElement.__init__(self, self.data)
 
     def __str__(self):
         return self.desc  # pragma: no cover
@@ -141,7 +154,7 @@ class RasterElement(expression.FunctionElement):
         # SQLAlchemy's "func" object. This is to be able to "bind" the
         # function to the SQL expression. See also GenericFunction above.
 
-        func_ = expression._FunctionGenerator(expr=self)
+        func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)
 
 
@@ -152,7 +165,7 @@ def compile_RasterElement(element, compiler, **kw):
     contents are correctly casted to the ``raster`` type before using it.
 
     The other elements in this module don't need such a function because
-    they are derived from :class:`expression.Function`. For the
+    they are derived from :class:`functions.Function`. For the
     :class:`geoalchemy2.elements.RasterElement` class however it would not be
     of any use to have it compile to ``raster('...')`` so it is compiled to
     ``'...'::raster`` by this function.
@@ -160,7 +173,7 @@ def compile_RasterElement(element, compiler, **kw):
     return "%s::raster" % compiler.process(element.clauses)
 
 
-class CompositeElement(expression.FunctionElement):
+class CompositeElement(FunctionElement):
     """
     Instances of this class wrap a Postgres composite type.
     """
