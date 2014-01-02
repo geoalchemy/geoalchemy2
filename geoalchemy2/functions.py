@@ -304,7 +304,7 @@ _FUNCTIONS = [
 
     ('ST_Simplify', types.Geometry,
      'Returns a "simplified" version of the given geometry using the '
-     'Douglas-Peucker algorithm')
+     'Douglas-Peucker algorithm'),
 
     #
     # Raster Constructors
