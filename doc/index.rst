@@ -101,6 +101,7 @@ Contributors:
 * Eric Lemoine, Camptocamp SA (https://github.com/elemoine)
 * Dolf Andringa (https://github.com/dolfandringa)
 * Frédéric Junod, Camptocamp SA (https://github.com/fredj)
+* ijl (https://github.com/ijl)
 * rapto (https://github.com/rapto)
 * Tobias Bieniek (https://github.com/Turbo87)
 * Tom Payne, Camptocamp SA (https://github.com/twpayne)
