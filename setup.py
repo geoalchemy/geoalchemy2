@@ -5,9 +5,9 @@ from setuptools import setup, find_packages
 version = '0.2.2'
 
 install_requires = [
-    'SQLAlchemy>=0.8'
+    'SQLAlchemy>=0.8',
+    'Shapely>=1.3.0'
     ]
-
 
 setup_requires = [
     'nose'
@@ -16,12 +16,6 @@ setup_requires = [
 tests_require = install_requires + [
     'psycopg2'
     ]
-
-
-if sys.version_info[0] == 2:
-    # Shapely is only compatible with Python 2.x
-    tests_require.append('shapely')
-
 
 setup(name='GeoAlchemy2',
       version=version,
