@@ -14,6 +14,7 @@ setup_requires = [
     ]
 
 tests_require = install_requires + [
+    'tox',
     'psycopg2'
     ]
 
@@ -32,6 +33,8 @@ setup(name='GeoAlchemy2',
           "Environment :: Plugins",
           "Operating System :: OS Independent",
           "Programming Language :: Python",
+          "Programming Language :: Python :: 2",
+          "Programming Language :: Python :: 3",
           "Intended Audience :: Information Technology",
           "License :: OSI Approved :: MIT License",
           "Topic :: Scientific/Engineering :: GIS"

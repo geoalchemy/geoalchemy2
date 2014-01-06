@@ -3,3 +3,5 @@
 GeoAlchemy2.egg-info
 .coverage
 doc/_build/
+.tox
+*.venv*
