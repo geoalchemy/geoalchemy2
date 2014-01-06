@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.2.3
+-----
+
+* Add ST_Simplify. @nik-cars (#68)
+* SQLAlchemy 0.9 compatibility. @ilj (#59)
+
 0.2.2
 -----
 
