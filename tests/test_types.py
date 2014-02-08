@@ -11,17 +11,20 @@ def eq_sql(a, b):
     assert a == b
 
 
-def _create_geometry_table():
+@pytest.fixture
+def geometry_table():
     table = Table('table', MetaData(), Column('geom', Geometry))
     return table
 
 
-def _create_geography_table():
+@pytest.fixture
+def geography_table():
     table = Table('table', MetaData(), Column('geom', Geography))
     return table
 
 
-def _create_raster_table():
+@pytest.fixture
+def raster_table():
     table = Table('table', MetaData(), Column('rast', Raster))
     return table
 
@@ -32,43 +35,37 @@ class TestGeometry():
         g = Geometry(srid=900913)
         assert g.get_col_spec() == 'geometry(GEOMETRY,900913)'
 
-    def test_column_expression(self):
-        table = _create_geometry_table()
-        s = select([table.c.geom])
+    def test_column_expression(self, geometry_table):
+        s = select([geometry_table.c.geom])
         eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom FROM "table"')
 
-    def test_select_bind_expression(self):
-        table = _create_geometry_table()
-        s = select(['foo']).where(table.c.geom == 'POINT(1 2)')
+    def test_select_bind_expression(self, geometry_table):
+        s = select(['foo']).where(geometry_table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE '
                   '"table".geom = ST_GeomFromEWKT(:geom_1)')
         assert s.compile().params == {'geom_1': 'POINT(1 2)'}
 
-    def test_insert_bind_expression(self):
-        table = _create_geometry_table()
-        i = insert(table).values(geom='POINT(1 2)')
+    def test_insert_bind_expression(self, geometry_table):
+        i = insert(geometry_table).values(geom='POINT(1 2)')
         eq_sql(i, 'INSERT INTO "table" (geom) VALUES (ST_GeomFromEWKT(:geom))')
         assert i.compile().params == {'geom': 'POINT(1 2)'}
 
-    def test_function_call(self):
-        table = _create_geometry_table()
-        s = select([table.c.geom.ST_Buffer(2)])
+    def test_function_call(self, geometry_table):
+        s = select([geometry_table.c.geom.ST_Buffer(2)])
         eq_sql(s,
                'SELECT ST_AsBinary(ST_Buffer("table".geom, :param_1)) '
                'AS "ST_Buffer_1" FROM "table"')
 
-    def test_non_ST_function_call(self):
-        table = _create_geometry_table()
+    def test_non_ST_function_call(self, geometry_table):
 
         with pytest.raises(AttributeError):
-            table.c.geom.Buffer(2)
+            geometry_table.c.geom.Buffer(2)
 
-    def test_subquery(self):
+    def test_subquery(self, geometry_table):
         # test for geometry columns not delivered to the result
         # http://hg.sqlalchemy.org/sqlalchemy/rev/f1efb20c6d61
         from sqlalchemy.sql import select
-        table = _create_geometry_table()
-        s = select([table]).alias('name').select()
+        s = select([geometry_table]).alias('name').select()
         eq_sql(s,
                'SELECT ST_AsBinary(name.geom) AS geom FROM '
                '(SELECT "table".geom AS geom FROM "table") AS name')
@@ -80,42 +77,35 @@ class TestGeography():
         g = Geography(srid=900913)
         assert g.get_col_spec() == 'geography(GEOMETRY,900913)'
 
-    def test_column_expression(self):
-        table = _create_geography_table()
-        s = select([table.c.geom])
+    def test_column_expression(self, geography_table):
+        s = select([geography_table.c.geom])
         eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom FROM "table"')
 
-    def test_select_bind_expression(self):
-        table = _create_geography_table()
-        s = select(['foo']).where(table.c.geom == 'POINT(1 2)')
+    def test_select_bind_expression(self, geography_table):
+        s = select(['foo']).where(geography_table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE '
                   '"table".geom = ST_GeogFromText(:geom_1)')
         assert s.compile().params == {'geom_1': 'POINT(1 2)'}
 
-    def test_insert_bind_expression(self):
-        table = _create_geography_table()
-        i = insert(table).values(geom='POINT(1 2)')
+    def test_insert_bind_expression(self, geography_table):
+        i = insert(geography_table).values(geom='POINT(1 2)')
         eq_sql(i, 'INSERT INTO "table" (geom) VALUES (ST_GeogFromText(:geom))')
         assert i.compile().params == {'geom': 'POINT(1 2)'}
 
-    def test_function_call(self):
-        table = _create_geography_table()
-        s = select([table.c.geom.ST_Buffer(2)])
+    def test_function_call(self, geography_table):
+        s = select([geography_table.c.geom.ST_Buffer(2)])
         eq_sql(s,
                'SELECT ST_AsBinary(ST_Buffer("table".geom, :param_1)) '
                'AS "ST_Buffer_1" FROM "table"')
 
-    def test_non_ST_function_call(self):
-        table = _create_geography_table()
-
+    def test_non_ST_function_call(self, geography_table):
         with pytest.raises(AttributeError):
-            table.c.geom.Buffer(2)
+            geography_table.c.geom.Buffer(2)
 
-    def test_subquery(self):
+    def test_subquery(self, geography_table):
         # test for geography columns not delivered to the result
         # http://hg.sqlalchemy.org/sqlalchemy/rev/f1efb20c6d61
-        table = _create_geography_table()
-        s = select([table]).alias('name').select()
+        s = select([geography_table]).alias('name').select()
         eq_sql(s,
                'SELECT ST_AsBinary(name.geom) AS geom FROM '
                '(SELECT "table".geom AS geom FROM "table") AS name')
@@ -183,36 +173,31 @@ class TestRaster():
         r = Raster()
         assert r.get_col_spec() == 'raster'
 
-    def test_column_expression(self):
-        table = _create_raster_table()
-        s = select([table.c.rast])
+    def test_column_expression(self, raster_table):
+        s = select([raster_table.c.rast])
         eq_sql(s, 'SELECT "table".rast FROM "table"')
 
-    def test_insert_bind_expression(self):
-        table = _create_raster_table()
-        i = insert(table).values(rast=b'\x01\x02')
+    def test_insert_bind_expression(self, raster_table):
+        i = insert(raster_table).values(rast=b'\x01\x02')
         eq_sql(i, 'INSERT INTO "table" (rast) VALUES (:rast)')
         assert i.compile().params == {'rast': b'\x01\x02'}
 
-    def test_function_call(self):
-        table = _create_raster_table()
-        s = select([table.c.rast.ST_Height()])
+    def test_function_call(self, raster_table):
+        s = select([raster_table.c.rast.ST_Height()])
         eq_sql(s,
                'SELECT ST_Height("table".rast) '
                'AS "ST_Height_1" FROM "table"')
 
-    def test_non_ST_function_call(self):
-        table = _create_raster_table()
+    def test_non_ST_function_call(self, raster_table):
 
         with pytest.raises(AttributeError):
-            table.c.geom.Height()
+            raster_table.c.geom.Height()
 
 
 class TestCompositeType():
 
-    def test_ST_Dump(self):
-        table = _create_geography_table()
-        s = select([func.ST_Dump(table.c.geom).geom])
+    def test_ST_Dump(self, geography_table):
+        s = select([func.ST_Dump(geography_table.c.geom).geom])
         eq_sql(s,
                'SELECT ST_AsBinary((ST_Dump("table".geom)).geom) AS geom '
                'FROM "table"')

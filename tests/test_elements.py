@@ -1,4 +1,5 @@
 import re
+import pytest
 
 from sqlalchemy import Table, MetaData, Column, String, func
 from geoalchemy2.types import Geometry
@@ -7,7 +8,8 @@ from geoalchemy2.elements import (
 )
 
 
-def _create_geometry_table():
+@pytest.fixture
+def geometry_table():
     table = Table('table', MetaData(), Column('geom', Geometry))
     return table
 
@@ -51,9 +53,8 @@ class TestWKTElementFunction():
             u'ST_GeomFromText_4': -1,
         }
 
-    def test_ST_Equal_Column_WKTElement(self):
-        table = _create_geometry_table()
-        expr = func.ST_Equals(table.c.geom, WKTElement('POINT(1 2)'))
+    def test_ST_Equal_Column_WKTElement(self, geometry_table):
+        expr = func.ST_Equals(geometry_table.c.geom, WKTElement('POINT(1 2)'))
         eq_sql(expr,
                'ST_Equals("table".geom, '
                'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2))')
