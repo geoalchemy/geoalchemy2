@@ -1,4 +1,3 @@
-import unittest
 import re
 
 from sqlalchemy import Table, MetaData, Column
@@ -15,7 +14,7 @@ def _create_geometry_table():
     return table
 
 
-class TestOperator(unittest.TestCase):
+class TestOperator():
 
     def test_eq(self):
         table = _create_geometry_table()

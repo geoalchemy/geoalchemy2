@@ -1,4 +1,3 @@
-import unittest
 import re
 
 from sqlalchemy import Table, MetaData, Column, String, func
@@ -18,7 +17,7 @@ def eq_sql(a, b):
     assert a == b
 
 
-class TestWKTElement(unittest.TestCase):
+class TestWKTElement():
 
     def test_desc(self):
         e = WKTElement('POINT(1 2)')
@@ -37,7 +36,7 @@ class TestWKTElement(unittest.TestCase):
         }
 
 
-class TestWKTElementFunction(unittest.TestCase):
+class TestWKTElementFunction():
 
     def test_ST_Equal_WKTElement_WKTElement(self):
         expr = func.ST_Equals(WKTElement('POINT(1 2)'),
@@ -64,7 +63,7 @@ class TestWKTElementFunction(unittest.TestCase):
         }
 
 
-class TestWKBElement(unittest.TestCase):
+class TestWKBElement():
 
     def test_desc(self):
         e = WKBElement(b'\x01\x02')
@@ -82,7 +81,7 @@ class TestWKBElement(unittest.TestCase):
         }
 
 
-class TestRasterElement(unittest.TestCase):
+class TestRasterElement():
 
     def test_desc(self):
         e = RasterElement(b'\x01\x02')
@@ -95,7 +94,7 @@ class TestRasterElement(unittest.TestCase):
         assert f.compile().params == {u'raster_1': b'\x01\x02'}
 
 
-class TestCompositeElement(unittest.TestCase):
+class TestCompositeElement():
 
     def test_compile(self):
         # text fixture

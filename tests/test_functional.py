@@ -1,4 +1,3 @@
-import unittest
 import pytest
 
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer
@@ -65,13 +64,13 @@ postgis2_required = pytest.mark.skipif(
 )
 
 
-class IndexTest(unittest.TestCase):
+class TestIndex():
 
-    def setUp(self):
+    def setup(self):
         metadata.drop_all(checkfirst=True)
         metadata.create_all()
 
-    def tearDown(self):
+    def teardown(self):
         session.rollback()
         metadata.drop_all()
 
@@ -87,13 +86,13 @@ class IndexTest(unittest.TestCase):
         assert index.get('column_names') == [u'geom']
 
 
-class InsertionCoreTest(unittest.TestCase):
+class TestInsertionCore():
 
-    def setUp(self):
+    def setup(self):
         metadata.drop_all(checkfirst=True)
         metadata.create_all()
 
-    def tearDown(self):
+    def teardown(self):
         session.rollback()
         metadata.drop_all()
 
@@ -129,13 +128,13 @@ class InsertionCoreTest(unittest.TestCase):
         assert srid == 4326
 
 
-class InsertionORMTest(unittest.TestCase):
+class TestInsertionORM():
 
-    def setUp(self):
+    def setup(self):
         metadata.drop_all(checkfirst=True)
         metadata.create_all()
 
-    def tearDown(self):
+    def teardown(self):
         session.rollback()
         metadata.drop_all()
 
@@ -205,13 +204,13 @@ class InsertionORMTest(unittest.TestCase):
         assert bottom_right is None
 
 
-class CallFunctionTest(unittest.TestCase):
+class TestCallFunction():
 
-    def setUp(self):
+    def setup(self):
         metadata.drop_all(checkfirst=True)
         metadata.create_all()
 
-    def tearDown(self):
+    def teardown(self):
         session.rollback()
         metadata.drop_all()
 
@@ -340,13 +339,13 @@ class CallFunctionTest(unittest.TestCase):
         assert poi.id == poi_id
 
 
-class ReflectionTest(unittest.TestCase):
+class TestReflection():
 
-    def setUp(self):
+    def setup(self):
         metadata.drop_all(checkfirst=True)
         metadata.create_all()
 
-    def tearDown(self):
+    def teardown(self):
         metadata.drop_all()
 
     def test_reflection(self):

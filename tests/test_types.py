@@ -1,5 +1,4 @@
 import pytest
-import unittest
 import re
 
 from sqlalchemy import Table, MetaData, Column
@@ -27,7 +26,7 @@ def _create_raster_table():
     return table
 
 
-class TestGeometry(unittest.TestCase):
+class TestGeometry():
 
     def test_get_col_spec(self):
         g = Geometry(srid=900913)
@@ -75,7 +74,7 @@ class TestGeometry(unittest.TestCase):
                '(SELECT "table".geom AS geom FROM "table") AS name')
 
 
-class TestGeography(unittest.TestCase):
+class TestGeography():
 
     def test_get_col_spec(self):
         g = Geography(srid=900913)
@@ -122,63 +121,63 @@ class TestGeography(unittest.TestCase):
                '(SELECT "table".geom AS geom FROM "table") AS name')
 
 
-class TestPoint(unittest.TestCase):
+class TestPoint():
 
     def test_get_col_spec(self):
         g = Geometry(geometry_type='POINT', srid=900913)
         assert g.get_col_spec() == 'geometry(POINT,900913)'
 
 
-class TestCurve(unittest.TestCase):
+class TestCurve():
 
     def test_get_col_spec(self):
         g = Geometry(geometry_type='CURVE', srid=900913)
         assert g.get_col_spec() == 'geometry(CURVE,900913)'
 
 
-class TestLineString(unittest.TestCase):
+class TestLineString():
 
     def test_get_col_spec(self):
         g = Geometry(geometry_type='LINESTRING', srid=900913)
         assert g.get_col_spec() == 'geometry(LINESTRING,900913)'
 
 
-class TestPolygon(unittest.TestCase):
+class TestPolygon():
 
     def test_get_col_spec(self):
         g = Geometry(geometry_type='POLYGON', srid=900913)
         assert g.get_col_spec() == 'geometry(POLYGON,900913)'
 
 
-class TestMultiPoint(unittest.TestCase):
+class TestMultiPoint():
 
     def test_get_col_spec(self):
         g = Geometry(geometry_type='MULTIPOINT', srid=900913)
         assert g.get_col_spec() == 'geometry(MULTIPOINT,900913)'
 
 
-class TestMultiLineString(unittest.TestCase):
+class TestMultiLineString():
 
     def test_get_col_spec(self):
         g = Geometry(geometry_type='MULTILINESTRING', srid=900913)
         assert g.get_col_spec() == 'geometry(MULTILINESTRING,900913)'
 
 
-class TestMultiPolygon(unittest.TestCase):
+class TestMultiPolygon():
 
     def test_get_col_spec(self):
         g = Geometry(geometry_type='MULTIPOLYGON', srid=900913)
         assert g.get_col_spec() == 'geometry(MULTIPOLYGON,900913)'
 
 
-class TestGeometryCollection(unittest.TestCase):
+class TestGeometryCollection():
 
     def test_get_col_spec(self):
         g = Geometry(geometry_type='GEOMETRYCOLLECTION', srid=900913)
         assert g.get_col_spec() == 'geometry(GEOMETRYCOLLECTION,900913)'
 
 
-class TestRaster(unittest.TestCase):
+class TestRaster():
 
     def test_get_col_spec(self):
         r = Raster()
@@ -209,7 +208,7 @@ class TestRaster(unittest.TestCase):
             table.c.geom.Height()
 
 
-class TestCompositeType(unittest.TestCase):
+class TestCompositeType():
 
     def test_ST_Dump(self):
         table = _create_geography_table()
