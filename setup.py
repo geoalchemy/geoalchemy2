@@ -28,7 +28,6 @@ setup(
     install_requires=[
         'SQLAlchemy>=0.8',
     ],
-    test_suite="geoalchemy2.tests",
     entry_points="""
     # -*- Entry points: -*-
     """,
