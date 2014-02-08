@@ -1,4 +1,3 @@
-from nose.tools import ok_, eq_
 from geoalchemy2.compat import buffer, bytes
 
 
@@ -10,9 +9,9 @@ def test_to_shape_WKBElement():
     e = WKBElement(b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00'
                    b'\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@')
     s = to_shape(e)
-    ok_(isinstance(s, Point))
-    eq_(s.x, 1)
-    eq_(s.y, 2)
+    assert isinstance(s, Point)
+    assert s.x == 1
+    assert s.y == 2
 
 
 def test_to_shape_WKTElement():
@@ -22,9 +21,9 @@ def test_to_shape_WKTElement():
 
     e = WKTElement('POINT(1 2)')
     s = to_shape(e)
-    ok_(isinstance(s, Point))
-    eq_(s.x, 1)
-    eq_(s.y, 2)
+    assert isinstance(s, Point)
+    assert s.x == 1
+    assert s.y == 2
 
 
 def test_from_shape():
@@ -35,8 +34,9 @@ def test_from_shape():
 
     p = Point(1, 2)
     e = from_shape(p)
-    ok_(isinstance(e, WKBElement))
-    ok_(isinstance(e.data, buffer))
+    assert isinstance(e, WKBElement)
+    assert isinstance(e.data, buffer)
+
     s = shapely.wkb.loads(bytes(e.data))
-    ok_(isinstance(s, Point))
-    ok_(p.equals(p))
+    assert isinstance(s, Point)
+    assert p.equals(p)

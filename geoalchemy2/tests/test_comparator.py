@@ -1,12 +1,10 @@
 import unittest
 import re
 
-from nose.tools import eq_
 
-
-def eq_sql(a, b, msg=None):
+def eq_sql(a, b):
     a = re.sub(r'[\n\t]', '', str(a))
-    eq_(a, b, msg)
+    assert a == b
 
 
 def _create_geometry_table():
@@ -118,7 +116,7 @@ class TestOperator(unittest.TestCase):
                   'FROM "table" '
                   'ORDER BY "table".geom <-> ST_GeomFromEWKT(:geom_1) '
                   'LIMIT :param_1')
-        eq_(s.compile().params, {u'geom_1': 'POINT(1 2)', u'param_1': 10})
+        assert s.compile().params == {u'geom_1': 'POINT(1 2)', u'param_1': 10}
 
     def test_distance_box(self):
         table = _create_geometry_table()
@@ -130,4 +128,4 @@ class TestOperator(unittest.TestCase):
                   'FROM "table" '
                   'ORDER BY "table".geom <#> ST_GeomFromEWKT(:geom_1) '
                   'LIMIT :param_1')
-        eq_(s.compile().params, {u'geom_1': 'POINT(1 2)', u'param_1': 10})
+        assert s.compile().params == {u'geom_1': 'POINT(1 2)', u'param_1': 10}
