@@ -47,4 +47,4 @@ Run Tests
 
 To run the tests::
 
-    $ nosetests
+    $ py.test
