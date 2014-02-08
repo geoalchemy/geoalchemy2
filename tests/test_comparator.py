@@ -1,6 +1,9 @@
 import unittest
 import re
 
+from sqlalchemy import Table, MetaData, Column
+from geoalchemy2.types import Geometry
+
 
 def eq_sql(a, b):
     a = re.sub(r'[\n\t]', '', str(a))
@@ -8,8 +11,6 @@ def eq_sql(a, b):
 
 
 def _create_geometry_table():
-    from sqlalchemy import Table, MetaData, Column
-    from geoalchemy2.types import Geometry
     table = Table('table', MetaData(), Column('geom', Geometry))
     return table
 

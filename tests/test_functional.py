@@ -1,12 +1,19 @@
 import unittest
 import pytest
 
-from sqlalchemy import create_engine, MetaData, Column, Integer, func
+from sqlalchemy import create_engine, Table, MetaData, Column, Integer
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.engine import reflection
+from sqlalchemy.exc import DataError, IntegrityError, InternalError
+from sqlalchemy.sql import select, func
+from sqlalchemy.sql.expression import type_coerce
 
 from geoalchemy2 import Geometry, Geography, Raster
-from sqlalchemy.exc import DataError, IntegrityError, InternalError
+from geoalchemy2.elements import WKTElement, WKBElement, RasterElement
+from geoalchemy2.shape import from_shape
+
+from shapely.geometry import LineString
 
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
@@ -71,7 +78,6 @@ class IndexTest(unittest.TestCase):
     def test_LakeIndex(self):
         """ Make sure the Lake table has an index on the geom column """
 
-        from sqlalchemy.engine import reflection
         inspector = reflection.Inspector.from_engine(engine)
         indices = inspector.get_indexes(Lake.__tablename__, schema='gis')
         assert len(indices) == 1
@@ -92,7 +98,6 @@ class InsertionCoreTest(unittest.TestCase):
         metadata.drop_all()
 
     def test_insert(self):
-        from geoalchemy2 import WKTElement, WKBElement
         conn = engine.connect()
 
         # Issue two inserts using DBAPI's executemany() method. This tests
@@ -149,7 +154,6 @@ class InsertionORMTest(unittest.TestCase):
             session.flush()
 
     def test_WKTElement(self):
-        from geoalchemy2 import WKTElement, WKBElement
         l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(l)
         session.flush()
@@ -161,9 +165,6 @@ class InsertionORMTest(unittest.TestCase):
         assert srid == 4326
 
     def test_WKBElement(self):
-        from geoalchemy2 import WKBElement
-        from geoalchemy2.shape import from_shape
-        from shapely.geometry import LineString
         shape = LineString([[0, 0], [1, 1]])
         l = Lake(from_shape(shape, srid=4326))
         session.add(l)
@@ -177,7 +178,6 @@ class InsertionORMTest(unittest.TestCase):
 
     @postgis2_required
     def test_Raster(self):
-        from geoalchemy2 import WKTElement, RasterElement
         polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
         o = Ocean(polygon.ST_AsRaster(5, 5))
         session.add(o)
@@ -216,7 +216,6 @@ class CallFunctionTest(unittest.TestCase):
         metadata.drop_all()
 
     def _create_one_lake(self):
-        from geoalchemy2 import WKTElement
         l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(l)
         session.flush()
@@ -229,8 +228,6 @@ class CallFunctionTest(unittest.TestCase):
         return p.id
 
     def test_ST_GeometryType(self):
-        from sqlalchemy.sql import select, func
-
         lake_id = self._create_one_lake()
 
         s = select([func.ST_GeometryType(Lake.__table__.c.geom)])
@@ -250,9 +247,6 @@ class CallFunctionTest(unittest.TestCase):
         assert r4.id == lake_id
 
     def test_ST_Buffer(self):
-        from sqlalchemy.sql import select, func
-        from geoalchemy2 import WKBElement, WKTElement
-
         lake_id = self._create_one_lake()
 
         s = select([func.ST_Buffer(Lake.__table__.c.geom, 2)])
@@ -275,9 +269,6 @@ class CallFunctionTest(unittest.TestCase):
         assert r4.id == lake_id
 
     def test_ST_Dump(self):
-        from sqlalchemy.sql import select, func
-        from geoalchemy2 import WKBElement
-
         lake_id = self._create_one_lake()
         lake = session.query(Lake).get(lake_id)
 
@@ -310,9 +301,6 @@ class CallFunctionTest(unittest.TestCase):
         assert r2.data == r3.data == r4.data == r5.data
 
     def test_ST_DumpPoints(self):
-        from sqlalchemy.sql import func
-        from geoalchemy2 import WKBElement
-
         lake_id = self._create_one_lake()
         lake = session.query(Lake).get(lake_id)
 
@@ -337,7 +325,6 @@ class CallFunctionTest(unittest.TestCase):
         assert p2 == 'POINT(1 1)'
 
     def test_ST_Buffer_Mixed_SRID(self):
-        from sqlalchemy.sql import func
         self._create_one_lake()
 
         with pytest.raises(InternalError):
@@ -346,7 +333,6 @@ class CallFunctionTest(unittest.TestCase):
                                Lake.geom.ST_Buffer(2))).one()
 
     def test_ST_Distance_type_coerce(self):
-        from sqlalchemy.sql.expression import type_coerce
         poi_id = self._create_one_poi()
         poi = session.query(Poi) \
             .filter(Poi.geog.ST_Distance(
@@ -364,9 +350,6 @@ class ReflectionTest(unittest.TestCase):
         metadata.drop_all()
 
     def test_reflection(self):
-        from sqlalchemy import Table
-        from geoalchemy2 import Geometry
-
         t = Table(
             'lake',
             MetaData(),
@@ -384,9 +367,6 @@ class ReflectionTest(unittest.TestCase):
 
     @postgis2_required
     def test_raster_reflection(self):
-        from sqlalchemy import Table
-        from geoalchemy2 import Raster
-
         t = Table('ocean', MetaData(), autoload=True, autoload_with=engine)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)

@@ -1,10 +1,14 @@
 import unittest
 import re
 
+from sqlalchemy import Table, MetaData, Column, String, func
+from geoalchemy2.types import Geometry
+from geoalchemy2.elements import (
+    WKTElement, WKBElement, RasterElement, CompositeElement
+)
+
 
 def _create_geometry_table():
-    from sqlalchemy import Table, MetaData, Column
-    from geoalchemy2.types import Geometry
     table = Table('table', MetaData(), Column('geom', Geometry))
     return table
 
@@ -17,12 +21,10 @@ def eq_sql(a, b):
 class TestWKTElement(unittest.TestCase):
 
     def test_desc(self):
-        from geoalchemy2.elements import WKTElement
         e = WKTElement('POINT(1 2)')
         assert e.desc == 'POINT(1 2)'
 
     def test_function_call(self):
-        from geoalchemy2.elements import WKTElement
         e = WKTElement('POINT(1 2)')
         f = e.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
@@ -38,8 +40,6 @@ class TestWKTElement(unittest.TestCase):
 class TestWKTElementFunction(unittest.TestCase):
 
     def test_ST_Equal_WKTElement_WKTElement(self):
-        from sqlalchemy import func
-        from geoalchemy2.elements import WKTElement
         expr = func.ST_Equals(WKTElement('POINT(1 2)'),
                               WKTElement('POINT(1 2)'))
         eq_sql(expr, 'ST_Equals('
@@ -53,8 +53,6 @@ class TestWKTElementFunction(unittest.TestCase):
         }
 
     def test_ST_Equal_Column_WKTElement(self):
-        from sqlalchemy import func
-        from geoalchemy2.elements import WKTElement
         table = _create_geometry_table()
         expr = func.ST_Equals(table.c.geom, WKTElement('POINT(1 2)'))
         eq_sql(expr,
@@ -69,12 +67,10 @@ class TestWKTElementFunction(unittest.TestCase):
 class TestWKBElement(unittest.TestCase):
 
     def test_desc(self):
-        from geoalchemy2.elements import WKBElement
         e = WKBElement(b'\x01\x02')
         assert e.desc == b'0102'
 
     def test_function_call(self):
-        from geoalchemy2.elements import WKBElement
         e = WKBElement(b'\x01\x02')
         f = e.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
@@ -89,12 +85,10 @@ class TestWKBElement(unittest.TestCase):
 class TestRasterElement(unittest.TestCase):
 
     def test_desc(self):
-        from geoalchemy2.elements import RasterElement
         e = RasterElement(b'\x01\x02')
         assert e.desc == b'0102'
 
     def test_function_call(self):
-        from geoalchemy2.elements import RasterElement
         e = RasterElement(b'\x01\x02')
         f = e.ST_Height()
         eq_sql(f, 'ST_Height(:raster_1::raster)')
@@ -104,9 +98,6 @@ class TestRasterElement(unittest.TestCase):
 class TestCompositeElement(unittest.TestCase):
 
     def test_compile(self):
-        from sqlalchemy import MetaData, Table, Column, String
-        from geoalchemy2.elements import CompositeElement
-
         # text fixture
         metadata = MetaData()
         foo = Table('foo', metadata, Column('one', String))
