@@ -6,14 +6,12 @@ Python 2 and 3 compatibility:
 """
 
 import sys
-py3k = sys.version_info[0] == 3
 
+if sys.version_info[0] == 2:
+    buffer = __builtins__['buffer']
+    bytes = str
 
-if py3k:
+else:
     # Python 2.6 flake8 workaround
     buffer = __builtins__['memoryview']
     bytes = bytes
-
-else:
-    buffer = __builtins__['buffer']
-    bytes = str
