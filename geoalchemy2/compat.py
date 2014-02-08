@@ -12,11 +12,8 @@ py3k = sys.version_info[0] == 3
 if py3k:
     # Python 2.6 flake8 workaround
     buffer = __builtins__['memoryview']
-    _bytes = bytes
-
-    def bytes(val):
-        return _bytes(val.encode("latin-1") if isinstance(val, str) else val)
+    bytes = bytes
 
 else:
-    buffer = buffer
+    buffer = __builtins__['buffer']
     bytes = str

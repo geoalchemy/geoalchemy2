@@ -7,8 +7,8 @@ def test_to_shape_WKBElement():
     from geoalchemy2.shape import to_shape
     from shapely.geometry import Point
 
-    e = WKBElement('\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00'
-                   '\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@')
+    e = WKBElement(b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00'
+                   b'\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@')
     s = to_shape(e)
     ok_(isinstance(s, Point))
     eq_(s.x, 1)
