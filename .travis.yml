@@ -20,6 +20,9 @@ install:
   # Install PostGIS 1.5
   - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then sudo apt-get install -y --force-yes postgresql-9.1-postgis=1.5.3-2 postgis=1.5.3-2; fi
 
+  # Install python dependencies
+  - pip install -r requirements.txt
+
   # Install flake8 style checker and the coverage module
   - pip install flake8 coverage
 
@@ -49,7 +52,7 @@ script:
   - flake8 geoalchemy2 --ignore=E711
 
   # Run the unit test suite
-  - python setup.py nosetests --verbosity=2 --with-coverage
+  - nosetests --verbosity=2 --with-coverage
 
 after_script:
   # Report coverage results to coveralls.io

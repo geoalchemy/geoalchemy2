@@ -13,6 +13,10 @@ Install the Python and PostgreSQL development packages::
 
     $ apt-get install python2.7-dev libpq-dev
 
+Install the Python dependencies::
+
+    $ pip install -r requirements.txt
+
 Set up the database
 ===================
 
@@ -43,4 +47,4 @@ Run Tests
 
 To run the tests::
 
-    $ python setup.py nosetests
+    $ nosetests
