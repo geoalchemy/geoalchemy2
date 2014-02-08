@@ -5,16 +5,17 @@ from setuptools import setup, find_packages
 version = '0.2.2'
 
 install_requires = [
-    'SQLAlchemy>=0.8',
-    'Shapely>=1.3.0'
+    'SQLAlchemy>=0.8'
     ]
+
 
 setup_requires = [
     'nose'
     ]
 
 tests_require = install_requires + [
-    'psycopg2'
+    'psycopg2',
+    'Shapely>=1.3.0',
     ]
 
 setup(name='GeoAlchemy2',
