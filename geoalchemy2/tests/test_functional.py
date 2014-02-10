@@ -158,11 +158,8 @@ class InsertionORMTest(unittest.TestCase):
 
     def test_WKBElement(self):
         from geoalchemy2 import WKBElement
-        try:
-            from geoalchemy2.shape import from_shape
-            from shapely.geometry import LineString
-        except ImportError:
-            raise SkipTest
+        from geoalchemy2.shape import from_shape
+        from shapely.geometry import LineString
         shape = LineString([[0, 0], [1, 1]])
         l = Lake(from_shape(shape, srid=4326))
         session.add(l)

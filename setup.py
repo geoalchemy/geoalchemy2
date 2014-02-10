@@ -1,4 +1,3 @@
-import sys
 from setuptools import setup, find_packages
 
 
@@ -14,14 +13,9 @@ setup_requires = [
     ]
 
 tests_require = install_requires + [
-    'psycopg2'
+    'psycopg2',
+    'Shapely>=1.3.0',
     ]
-
-
-if sys.version_info[0] == 2:
-    # Shapely is only compatible with Python 2.x
-    tests_require.append('shapely')
-
 
 setup(name='GeoAlchemy2',
       version=version,

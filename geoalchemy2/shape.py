@@ -6,6 +6,7 @@ import shapely.wkb
 import shapely.wkt
 
 from .elements import WKBElement, WKTElement
+from .compat import buffer, bytes
 
 
 def to_shape(element):
@@ -20,7 +21,7 @@ def to_shape(element):
     """
     assert isinstance(element, (WKBElement, WKTElement))
     if isinstance(element, WKBElement):
-        return shapely.wkb.loads(str(element.data))
+        return shapely.wkb.loads(bytes(element.data))
     elif isinstance(element, WKTElement):
         return shapely.wkt.loads(element.data)
 
@@ -42,4 +43,4 @@ def from_shape(shape, srid=-1):
         from shapely.geometry import Point
         wkb_element = from_shape(Point(5, 45), srid=4326)
     """
-    return WKBElement(buffer(shape.wkb), srid=srid)  # flake8: noqa
+    return WKBElement(buffer(shape.wkb), srid=srid)
