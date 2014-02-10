@@ -1,7 +1,5 @@
 import re
 
-from nose.tools import eq_
-
 from sqlalchemy.sql import func
 
 #
@@ -12,9 +10,9 @@ from sqlalchemy.sql import func
 import geoalchemy2.functions  # NOQA
 
 
-def eq_sql(a, b, msg=None):
+def eq_sql(a, b):
     a = re.sub(r'[\n\t]', '', str(a))
-    eq_(a, b, msg)
+    assert a == b
 
 
 def _test_simple_func(name):
