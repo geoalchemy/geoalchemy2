@@ -1,9 +1,7 @@
 language: python
 
 python:
-  - 2.6
   - 2.7
-  - 3.3
 
 notifications:
   email:
@@ -13,18 +11,28 @@ services:
   - postgresql
 
 env:
-  - POSTGIS_VERSION=1.5
-  - POSTGIS_VERSION=2
+  - TOX_ENV=py26sqla08 POSTGIS_VERSION=1.5
+  - TOX_ENV=py26sqla08 POSTGIS_VERSION=2
+  - TOX_ENV=py26sqla09 POSTGIS_VERSION=1.5
+  - TOX_ENV=py26sqla09 POSTGIS_VERSION=2
+  - TOX_ENV=py27sqla08 POSTGIS_VERSION=1.5
+  - TOX_ENV=py27sqla08 POSTGIS_VERSION=2
+  - TOX_ENV=py27sqla09 POSTGIS_VERSION=1.5
+  - TOX_ENV=py27sqla09 POSTGIS_VERSION=2
+  - TOX_ENV=py33sqla08 POSTGIS_VERSION=1.5
+  - TOX_ENV=py33sqla08 POSTGIS_VERSION=2
+  - TOX_ENV=py33sqla09 POSTGIS_VERSION=1.5
+  - TOX_ENV=py33sqla09 POSTGIS_VERSION=2
 
 install:
   # Install PostGIS 1.5
   - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then sudo apt-get install -y --force-yes postgresql-9.1-postgis=1.5.3-2 postgis=1.5.3-2; fi
 
-  # Install python dependencies
-  - pip install -r requirements.txt
+  # Install tox
+  - pip install tox
 
-  # Install flake8 style checker and the coverage module
-  - pip install flake8 pytest-cov coverage
+  # Install flake8 style checker
+  - pip install flake8
 
 before_script:
   # Create database user "gis"
@@ -52,7 +60,7 @@ script:
   - flake8 geoalchemy2 --ignore=E711
 
   # Run the unit test suite
-  - py.test -v --cov geoalchemy2 --cov-report term-missing
+  - tox -e $TOX_ENV --sitepackages -- -v --cov geoalchemy2 --cov-report term-missing
 
 after_script:
   # Report coverage results to coveralls.io
