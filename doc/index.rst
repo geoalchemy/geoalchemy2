@@ -102,6 +102,7 @@ Contributors:
 * Dolf Andringa (https://github.com/dolfandringa)
 * Frédéric Junod, Camptocamp SA (https://github.com/fredj)
 * ijl (https://github.com/ijl)
+* Marcel Radischat (https://github.com/quiqua)
 * rapto (https://github.com/rapto)
 * Tobias Bieniek (https://github.com/Turbo87)
 * Tom Payne, Camptocamp SA (https://github.com/twpayne)
