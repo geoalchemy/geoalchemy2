@@ -49,7 +49,10 @@ def _setup_ddl_event_listeners():
 
             # Temporarily patch a set of columns not including the
             # managed Geometry columns
-            table.columns = expression.ColumnCollection(*regular_cols)
+            column_collection = expression.ColumnCollection()
+            for col in regular_cols:
+                column_collection.add(col)
+            table.columns = column_collection
 
             if event == 'before-drop':
                 # Drop the managed Geometry columns with DropGeometryColumn()
