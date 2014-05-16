@@ -1,5 +1,13 @@
 import pytest
 
+try:
+    from psycopg2cffi import compat
+except ImportError:
+    pass
+else:
+    compat.register()
+    del compat
+
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
