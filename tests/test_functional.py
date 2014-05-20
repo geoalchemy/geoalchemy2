@@ -1,5 +1,13 @@
 import pytest
 
+try:
+    from psycopg2cffi import compat
+except ImportError:
+    pass
+else:
+    compat.register()
+    del compat
+
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -91,13 +99,14 @@ class TestInsertionCore():
     def setup(self):
         metadata.drop_all(checkfirst=True)
         metadata.create_all()
+        self.conn = engine.connect()
 
     def teardown(self):
-        session.rollback()
+        self.conn.close()
         metadata.drop_all()
 
     def test_insert(self):
-        conn = engine.connect()
+        conn = self.conn
 
         # Issue two inserts using DBAPI's executemany() method. This tests
         # the Geometry type's bind_processor and bind_expression functions.
