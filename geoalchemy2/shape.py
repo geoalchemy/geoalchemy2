@@ -1,5 +1,10 @@
 """
 This module provides utility functions for integrating with Shapely.
+
+.. note::
+
+    As GeoAlchemy 2 itself has no dependency on `Shapely`, applications using
+    functions of this module have to ensure that `Shapely` is available.
 """
 
 import shapely.wkb
