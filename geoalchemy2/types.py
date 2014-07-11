@@ -9,14 +9,34 @@ Reference
 
 from sqlalchemy.types import UserDefinedType, Integer
 from sqlalchemy.sql import func
+from sqlalchemy.sql.base import SchemaEventTarget
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names
+from sqlalchemy.event import listen
+from sqlalchemy.schema import Index
 
 from .comparator import BaseComparator, Comparator
 from .elements import WKBElement, WKTElement, RasterElement, CompositeElement
 
+class _SpatialIndexMixin(SchemaEventTarget):
+    """
+    A mixin to create a spatial index on a table/model that a type is
+    attached to.
+    """
+    spatial_index = None
+    spatial_index_transform = None
 
-class _GISType(UserDefinedType):
+    def _set_parent(self, parent):
+        if self.spatial_index:
+            listen(parent, 'after_parent_attach', self._append_spatial_index)
+
+    def _append_spatial_index(self, parent, table):
+        if self.spatial_index_transform:
+            parent = self.spatial_index_transform(parent)
+
+        table.append_constraint(Index(None, parent, postgresql_using='gist'))
+
+class _GISType(UserDefinedType, _SpatialIndexMixin):
     """
     The base class for :class:`geoalchemy2.types.Geometry` and
     :class:`geoalchemy2.types.Geography`.
@@ -162,7 +182,7 @@ class Geography(_GISType):
         ``bind_expression`` method. """
 
 
-class Raster(UserDefinedType):
+class Raster(UserDefinedType, _SpatialIndexMixin):
     """
     The Raster column type.
 
@@ -186,6 +206,15 @@ class Raster(UserDefinedType):
     """
     This is the way by which spatial operators and functions are
     defined for raster columns.
+    """
+
+    spatial_index_transform = func.ST_ConvexHull
+    """
+    This is the transformation used on the spatial index created by passing
+    ``spatial_index=True``.
+
+    Note the use of ST_ConvexHull since most raster operators are based on the
+    convex hull of the rasters.
     """
 
     def __init__(self, spatial_index=True):
