@@ -306,6 +306,9 @@ _FUNCTIONS = [
      'Returns a "simplified" version of the given geometry using the '
      'Douglas-Peucker algorithm'),
 
+    ('ST_ConvexHull', types.Geometry,
+     'Returns the convex hull of the given geometry'),
+
     #
     # Raster Constructors
     #

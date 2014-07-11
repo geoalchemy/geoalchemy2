@@ -28,10 +28,10 @@ Create the ``gis`` database::
 
     $ sudo -u postgres createdb -E UTF-8 gis
     $ sudo -u postgres psql -d gis -c 'CREATE SCHEMA gis;'
-    $ sudo -u postgres psql -c 'GRANT CREATE ON DATABASE gis TO "gis";'
+    $ sudo -u postgres psql -d gis -c 'GRANT CREATE ON DATABASE gis TO "gis";'
     $ sudo -u postgres psql -d gis -c 'GRANT USAGE,CREATE ON SCHEMA gis TO "gis";'
 
-Enable PostGIS for the ``gid`` database.
+Enable PostGIS for the ``gis`` database.
 
 For PostGIS 1.5::
 
