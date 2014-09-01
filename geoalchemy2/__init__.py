@@ -88,7 +88,7 @@ def _setup_ddl_event_listeners():
                 if isinstance(c.type, (Geometry, Geography)) and \
                         c.type.spatial_index is True:
                     bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
-                                 'USING GIST (%s)' %
+                                 'USING GIST ("%s")' %
                                  (table.name, c.name, table_schema,
                                   table.name, c.name))
 
@@ -98,7 +98,7 @@ def _setup_ddl_event_listeners():
                 # based on the convex hull of the rasters.
                 if isinstance(c.type, Raster) and c.type.spatial_index is True:
                     bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
-                                 'USING GIST (ST_ConvexHull(%s))' %
+                                 'USING GIST (ST_ConvexHull("%s"))' %
                                  (table.name, c.name, table_schema,
                                   table.name, c.name))
 
