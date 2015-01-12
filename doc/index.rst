@@ -105,7 +105,7 @@ Contributors:
 * Marcel Radischat (https://github.com/quiqua)
 * rapto (https://github.com/rapto)
 * Tobias Bieniek (https://github.com/Turbo87)
-* Tom Payne, Camptocamp SA (https://github.com/twpayne)
+* Tom Payne (https://github.com/twpayne)
 
 Many thanks to Mike Bayer for his guidance and support! He also `fostered
 <https://groups.google.com/forum/?fromgroups=#!topic/geoalchemy/k3PmQOB_FX4>`_
