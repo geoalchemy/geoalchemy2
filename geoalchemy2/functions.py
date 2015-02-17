@@ -146,6 +146,10 @@ _FUNCTIONS = [
      'Return the Well-Known Binary (WKB) representation of the geometry/'
      'geography without SRID meta data.'),
 
+    ('ST_AsEWKB', None,
+     'Return the Well-Known Binary (WKB) representation of the geometry/'
+     'geography with SRID meta data.'),
+
     ('ST_AsGeoJSON', None, 'Return the geometry as a GeoJSON element.'),
 
     ('ST_AsGML', None, 'Return the geometry as a GML version 2 or 3 element.'),
@@ -161,6 +165,10 @@ _FUNCTIONS = [
     ('ST_AsText', None,
      'Return the Well-Known Text (WKT) representation of the geometry/'
      'geography without SRID metadata.'),
+
+    ('ST_AsEWKT', None,
+     'Return the Well-Known Text (WKT) representation of the geometry/'
+     'geography with SRID metadata.'),
 
     #
     # Spatial Relationships and Measurements
