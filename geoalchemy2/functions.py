@@ -130,6 +130,10 @@ _FUNCTIONS = [
      'Return the Y coordinate of the point, or ``None`` if not available. '
      'Input must be a point.'),
 
+    ('ST_Z', None,
+     'Return the Z coordinate of the point, or ``None`` if not available. '
+     'Input must be a point.'),
+
     #
     # Geometry Editors
     #

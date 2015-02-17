@@ -54,6 +54,8 @@ def test_ST_X():
 def test_ST_Y():
     _test_simple_func('ST_Y')
 
+def test_ST_Z():
+    _test_simple_func('ST_Z')
 
 def test_ST_AsBinary():
     _test_simple_func('ST_AsBinary')
