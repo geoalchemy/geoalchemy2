@@ -95,7 +95,7 @@ class TestOperator():
         eq_sql(expr, '"table".geom <-> ST_GeomFromEWKT(:geom_1)')
         s = geometry_table.select().order_by(
             geometry_table.c.geom.distance_centroid('POINT(1 2)')).limit(10)
-        eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom '
+        eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom '
                   'FROM "table" '
                   'ORDER BY "table".geom <-> ST_GeomFromEWKT(:geom_1) '
                   'LIMIT :param_1')
@@ -106,7 +106,7 @@ class TestOperator():
         eq_sql(expr, '"table".geom <#> ST_GeomFromEWKT(:geom_1)')
         s = geometry_table.select().order_by(
             geometry_table.c.geom.distance_box('POINT(1 2)')).limit(10)
-        eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom '
+        eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom '
                   'FROM "table" '
                   'ORDER BY "table".geom <#> ST_GeomFromEWKT(:geom_1) '
                   'LIMIT :param_1')
