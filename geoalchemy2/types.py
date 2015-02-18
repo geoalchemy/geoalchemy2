@@ -23,7 +23,7 @@ class _GISType(UserDefinedType):
 
     This class defines ``bind_expression`` and ``column_expression`` methods
     that wrap column expressions in ``ST_GeomFromEWKT``, ``ST_GeogFromText``,
-    or ``ST_AsBinary`` calls.
+    or ``ST_AsEWKB`` calls.
 
     This class also defines ``result_processor`` and ``bind_processor``
     methods. The function returned by ``result_processor`` converts WKB values
@@ -100,7 +100,7 @@ class _GISType(UserDefinedType):
         return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
 
     def column_expression(self, col):
-        return func.ST_AsBinary(col, type_=self)
+        return func.ST_AsEWKB(col, type_=self)
 
     def result_processor(self, dialect, coltype):
         def process(value):
@@ -160,6 +160,11 @@ class Geography(_GISType):
     from_text = 'ST_GeogFromText'
     """ The ``FromText`` geography constructor. Used by the parent class'
         ``bind_expression`` method. """
+
+    def column_expression(self, col):
+        # load column as WKB because ST_AsEWKB is not defined for geography
+        # see http://postgis.net/docs/ST_AsEWKB.html
+        return func.ST_AsBinary(col, type_=self)
 
 
 class Raster(UserDefinedType):

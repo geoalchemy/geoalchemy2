@@ -37,7 +37,7 @@ class TestGeometry():
 
     def test_column_expression(self, geometry_table):
         s = select([geometry_table.c.geom])
-        eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom FROM "table"')
+        eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom FROM "table"')
 
     def test_select_bind_expression(self, geometry_table):
         s = select(['foo']).where(geometry_table.c.geom == 'POINT(1 2)')
@@ -53,7 +53,7 @@ class TestGeometry():
     def test_function_call(self, geometry_table):
         s = select([geometry_table.c.geom.ST_Buffer(2)])
         eq_sql(s,
-               'SELECT ST_AsBinary(ST_Buffer("table".geom, :param_1)) '
+               'SELECT ST_AsEWKB(ST_Buffer("table".geom, :param_1)) '
                'AS "ST_Buffer_1" FROM "table"')
 
     def test_non_ST_function_call(self, geometry_table):
@@ -67,7 +67,7 @@ class TestGeometry():
         from sqlalchemy.sql import select
         s = select([geometry_table]).alias('name').select()
         eq_sql(s,
-               'SELECT ST_AsBinary(name.geom) AS geom FROM '
+               'SELECT ST_AsEWKB(name.geom) AS geom FROM '
                '(SELECT "table".geom AS geom FROM "table") AS name')
 
 
@@ -95,7 +95,7 @@ class TestGeography():
     def test_function_call(self, geography_table):
         s = select([geography_table.c.geom.ST_Buffer(2)])
         eq_sql(s,
-               'SELECT ST_AsBinary(ST_Buffer("table".geom, :param_1)) '
+               'SELECT ST_AsEWKB(ST_Buffer("table".geom, :param_1)) '
                'AS "ST_Buffer_1" FROM "table"')
 
     def test_non_ST_function_call(self, geography_table):
@@ -199,5 +199,5 @@ class TestCompositeType():
     def test_ST_Dump(self, geography_table):
         s = select([func.ST_Dump(geography_table.c.geom).geom])
         eq_sql(s,
-               'SELECT ST_AsBinary((ST_Dump("table".geom)).geom) AS geom '
+               'SELECT ST_AsEWKB((ST_Dump("table".geom)).geom) AS geom '
                'FROM "table"')
