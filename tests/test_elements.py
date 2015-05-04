@@ -37,6 +37,27 @@ class TestWKTElement():
             u'ST_GeomFromText_2': -1
         }
 
+    def test_compare(self):
+        # Two identical points
+        e0 = WKTElement('POINT(1 2)')
+        e1 = WKTElement('POINT(1 2)')
+        assert e0 == e1
+
+        # A diffenent point
+        e2 = WKTElement('POINT(2 1)')
+        assert e0 != e2
+        
+        # Same point but wiht different projections, should not be equivalent
+        e3 = WKTElement('POINT(1 2)', srid=4326)
+        assert e0 != e3
+
+        # Same points of the same SRID
+        e4 = WKTElement('POINT(1 2)', srid=4326)
+        assert e3 == e4
+
+        # Can make safe comparisons to None (aka NULL value)
+        assert (e0 == None) == False
+
 
 class TestWKTElementFunction():
 
@@ -80,6 +101,28 @@ class TestWKBElement():
             u'param_1': 2, u'ST_GeomFromWKB_1': b'\x01\x02',
             u'ST_GeomFromWKB_2': -1
         }
+
+    def test_compare(self):
+        # Two identical points
+        e0 = WKBElement(b'\x01\x02')
+        e1 = WKBElement(b'\x01\x02')
+        assert e0 == e1
+
+        # A diffenent point
+        e2 = WKBElement(b'\x02\x01')
+        assert e0 != e2
+        
+        # Same point but wiht different projections, should not be equivalent
+        e3 = WKBElement(b'\x01\x02', srid=4326)
+        assert e0 != e3
+
+        # Same points of the same SRID
+        e4 = WKBElement(b'\x01\x02', srid=4326)
+        assert e3 == e4
+
+        # Can make safe comparisons to None (aka NULL value)
+        assert (e0 == None) == False
+
 
 
 class TestRasterElement():
