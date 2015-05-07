@@ -1,4 +1,5 @@
 import binascii
+from compat import PY3
 
 try:
     from sqlalchemy.sql import functions
