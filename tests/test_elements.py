@@ -81,6 +81,10 @@ class TestWKBElement():
             u'ST_GeomFromWKB_2': -1
         }
 
+    def test_function_str(self):
+        e = WKBElement(b'\x01\x02')
+        assert isinstance(str(e), str)
+
 
 class TestRasterElement():
 
