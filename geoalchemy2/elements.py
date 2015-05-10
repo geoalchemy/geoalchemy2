@@ -53,6 +53,14 @@ class _SpatialElement(object):
         func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)
 
+    def __eq__(self, other):
+        '''
+        Basic equals comparator so that values can be set to NULL
+        '''
+        if isinstance(other, _SpatialElement):
+            return self.srid == other.srid and self.data == other.data
+        return False
+
 
 class WKTElement(_SpatialElement, functions.Function):
     """
