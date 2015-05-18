@@ -1,4 +1,5 @@
 import binascii
+from geoalchemy2.compat import PY3
 
 try:
     from sqlalchemy.sql import functions
@@ -32,11 +33,13 @@ class _SpatialElement(object):
         self.data = data
 
     def __str__(self):
-        return self.desc  # pragma: no cover
+        if not PY3:
+            return self.desc
+        return self.desc.decode('utf-8')
 
     def __repr__(self):
         return "<%s at 0x%x; %r>" % \
-            (self.__class__.__name__, id(self), self.desc)  # pragma: no cover
+            (self.__class__.__name__, id(self), str(self))  # pragma: no cover
 
     def __getattr__(self, name):
         #
