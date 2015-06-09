@@ -17,4 +17,4 @@ Go to http://readthedocs.org/dashboard/geoalchemy-2/edit/ and set "Default
 version" to x.y.
 
 Note that there's no need to manually upload the pakage to PyPI. This is
-done automatically by Travis when the release tag is push to GitHub.
+done automatically by Travis when the release tag is pushed to GitHub.
