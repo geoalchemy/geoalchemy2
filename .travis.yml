@@ -76,3 +76,12 @@ after_script:
   # Report coverage results to coveralls.io
   - pip install coveralls
   - coveralls
+
+deploy:
+  provider: pypi
+  user: erilem
+  password:
+    secure: eYqYIWlsCp/awFekONU9fRKjYeleO49rzf2qWNYG3HxWvp8+1mgjLubnMTIARHiKbB6/iF3PEfGQd7+ICIi6dxWQFxWaBu7HOFaOu0wOXweNbrwhDqKrnJRJ3/2CPRTlYARr7uJhXrVTQVOIC//mEtUX7atF5EVs8fW8BM3/iT0=
+  on:
+    tags: true
+    repo: geoalchemy/geoalchemy2

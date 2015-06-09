@@ -16,6 +16,5 @@ Create Git tag and push it::
 Go to http://readthedocs.org/dashboard/geoalchemy-2/edit/ and set "Default
 version" to x.y.
 
-Upload the package to PyPI::
-
-    $ python setup.py sdist upload
+Note that there's no need to manually upload the pakage to PyPI. This is
+done automatically by Travis when the release tag is push to GitHub.
