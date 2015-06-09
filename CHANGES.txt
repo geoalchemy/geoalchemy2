@@ -1,6 +1,15 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.2.5
+-----
+
+* PyPy Support (#79)
+* Wrap column name in double-quotes (#83)
+* Add ST_Z, ST_AsEWKB and ST_AsEWKT functions (#91)
+* Python 3 Support (#99)
+* Travis config changes (#100, #102)
+
 0.2.4
 -----
 
