@@ -292,7 +292,7 @@ Again, the ``Query`` can written more concisely::
     Garde: 32.485781
     Orta: 45.485781
 
-Obviously, processing and measurement functions can alo be used in ``WHERE``
+Obviously, processing and measurement functions can also be used in ``WHERE``
 clauses. For example::
 
     >>> lake = session.query(Lake).filter(
