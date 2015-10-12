@@ -16,6 +16,7 @@ Install the Python and PostgreSQL development packages::
 Install the Python dependencies::
 
     $ pip install -r requirements.txt
+    $ pip install psycopg2
 
 Set up the database
 ===================
