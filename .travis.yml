@@ -39,8 +39,14 @@ matrix:
     - python: 3.5
       env:
       - TOX_ENV=py35sqla09 POSTGIS_VERSION=1.5
+    - python: 3.5
+      env:
       - TOX_ENV=py35sqla09 POSTGIS_VERSION=2
+    - python: 3.5
+      env:
       - TOX_ENV=py35sqla10 POSTGIS_VERSION=1.5
+    - python: 3.5
+      env:
       - TOX_ENV=py35sqla10 POSTGIS_VERSION=2
 
 install:
