@@ -1,0 +1,2 @@
+# Install geoalchemy2 package
+-e .
