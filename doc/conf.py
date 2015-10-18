@@ -223,23 +223,12 @@ man_pages = [
 
 # Mocks for Read the Docs
 import sys
+from unittest.mock import MagicMock
 
-class Mock(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __call__(self, *args, **kwargs):
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
         return Mock()
 
-    @classmethod
-    def __getattr__(self, name):
-        if name in ('__file__', '__path__'):
-            return '/dev/null'
-        elif name[0] == name[0].upper():
-            return type(name, (), {})
-        else:
-            return Mock()
-
 MOCK_MODULES = ['shapely', 'shapely.wkt', 'shapely.wkb']
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = Mock()
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
