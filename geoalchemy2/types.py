@@ -13,7 +13,9 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
 from .comparator import BaseComparator, Comparator
-from .elements import WKBElement, WKTElement, RasterElement, CompositeElement
+from .elements import (
+    WKBElement, EWKBElement, WKTElement, RasterElement, CompositeElement
+)
 
 
 class _GISType(UserDefinedType):
@@ -84,6 +86,10 @@ class _GISType(UserDefinedType):
     """ The name of ST_*FromText function for this type.
         Set in subclasses. """
 
+    as_binary = None
+    """ The name of ST_*AsBinary function for this type.
+        Set in subclasses. """
+
     comparator_factory = Comparator
     """ This is the way by which spatial operators are defined for
         geometry/geography columns. """
@@ -100,7 +106,7 @@ class _GISType(UserDefinedType):
         return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
 
     def column_expression(self, col):
-        return func.ST_AsBinary(col, type_=self)
+        return getattr(func, self.as_binary)(col, type_=self)
 
     def result_processor(self, dialect, coltype):
         def process(value):
@@ -140,6 +146,24 @@ class Geometry(_GISType):
     """ The ``FromText`` geometry constructor. Used by the parent class'
         ``bind_expression`` method. """
 
+    as_binary = 'ST_AsBinary'
+    """ The name of ST_*AsBinary function for this type. Used by the parent
+        class ``column_expression`` method. """
+
+    def __init__(self, use_ewkb=False, **kwds):
+        super(Geometry, self).__init__(**kwds)
+        self.use_ewkb = use_ewkb
+        if self.use_ewkb:
+            self.as_binary = 'ST_AsEWKB'
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            if value is not None:
+                if self.use_ewkb:
+                    return EWKBElement(value)
+                return WKBElement(value, srid=self.srid)
+        return process
+
 
 class Geography(_GISType):
     """
@@ -160,6 +184,12 @@ class Geography(_GISType):
     from_text = 'ST_GeogFromText'
     """ The ``FromText`` geography constructor. Used by the parent class'
         ``bind_expression`` method. """
+
+    # load column as WKB because ST_AsEWKB is not defined for geography
+    # see http://postgis.net/docs/ST_AsEWKB.html
+    as_binary = 'ST_AsBinary'
+    """ The ``AsBinary`` geography constructor. Used by the parent class'
+        ``column_expression`` method """
 
 
 class Raster(UserDefinedType):
