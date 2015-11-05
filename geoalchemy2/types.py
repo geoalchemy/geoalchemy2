@@ -99,6 +99,7 @@ class _GISType(UserDefinedType):
         self.dimension = dimension
         self.spatial_index = spatial_index
         self.management = management
+        self.extended = self.as_binary == 'ST_AsEWKB'
 
     def get_col_spec(self):
         return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
@@ -109,7 +110,8 @@ class _GISType(UserDefinedType):
     def result_processor(self, dialect, coltype):
         def process(value):
             if value is not None:
-                return WKBElement(value, srid=self.srid)
+                return WKBElement(value, srid=self.srid,
+                                  extended=self.extended)
         return process
 
     def bind_expression(self, bindvalue):

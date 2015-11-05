@@ -38,6 +38,24 @@ class TestWKTElement():
         }
 
 
+class TestExtendedWKTElement():
+
+    def test_desc(self):
+        e = WKTElement('SRID=3857;POINT(1 2 3)', extended=True)
+        assert e.desc == 'SRID=3857;POINT(1 2 3)'
+
+    def test_function_call(self):
+        e = WKTElement('SRID=3857;POINT(1 2 3)', extended=True)
+        f = e.ST_Buffer(2)
+        eq_sql(f, 'ST_Buffer('
+               'ST_GeomFromEWKT(:ST_GeomFromEWKT_1), '
+               ':param_1)')
+        assert f.compile().params == {
+            u'param_1': 2,
+            u'ST_GeomFromEWKT_1': 'SRID=3857;POINT(1 2 3)'
+        }
+
+
 class TestWKTElementFunction():
 
     def test_ST_Equal_WKTElement_WKTElement(self):
@@ -64,7 +82,56 @@ class TestWKTElementFunction():
         }
 
 
+class TestExtendedWKTElementFunction():
+
+    def test_ST_Equal_WKTElement_WKTElement(self):
+        expr = func.ST_Equals(WKTElement('SRID=3857;POINT(1 2 3)',
+                                         extended=True),
+                              WKTElement('SRID=3857;POINT(1 2 3)',
+                                         extended=True))
+        eq_sql(expr, 'ST_Equals('
+               'ST_GeomFromEWKT(:ST_GeomFromEWKT_1), '
+               'ST_GeomFromEWKT(:ST_GeomFromEWKT_2))')
+        assert expr.compile().params == {
+            u'ST_GeomFromEWKT_1': 'SRID=3857;POINT(1 2 3)',
+            u'ST_GeomFromEWKT_2': 'SRID=3857;POINT(1 2 3)',
+        }
+
+    def test_ST_Equal_Column_WKTElement(self, geometry_table):
+        expr = func.ST_Equals(geometry_table.c.geom,
+                              WKTElement('SRID=3857;POINT(1 2 3)',
+                                         extended=True))
+        eq_sql(expr,
+               'ST_Equals("table".geom, '
+               'ST_GeomFromEWKT(:ST_GeomFromEWKT_1))')
+        assert expr.compile().params == {
+            u'ST_GeomFromEWKT_1': 'SRID=3857;POINT(1 2 3)',
+        }
+
+
 class TestWKBElement():
+
+    def test_desc(self):
+        e = WKBElement(b'\x01\x02', extended=True)
+        assert e.desc == b'0102'
+
+    def test_function_call(self):
+        e = WKBElement(b'\x01\x02', extended=True)
+        f = e.ST_Buffer(2)
+        eq_sql(f, 'ST_Buffer('
+               'ST_GeomFromEWKB(:ST_GeomFromEWKB_1), '
+               ':param_1)')
+        assert f.compile().params == {
+            u'param_1': 2,
+            u'ST_GeomFromEWKB_1': b'\x01\x02',
+        }
+
+    def test_function_str(self):
+        e = WKBElement(b'\x01\x02', extended=True)
+        assert isinstance(str(e), str)
+
+
+class TestExtendedWKBElement():
 
     def test_desc(self):
         e = WKBElement(b'\x01\x02')
