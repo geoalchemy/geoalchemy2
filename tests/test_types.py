@@ -16,15 +16,18 @@ def geometry_table():
     table = Table('table', MetaData(), Column('geom', Geometry))
     return table
 
+
 @pytest.fixture
 def geometry_table_ewkb():
     table = Table('table', MetaData(), Column('geom', Geometry(use_ewkb=True)))
     return table
 
+
 @pytest.fixture
 def geography_table():
     table = Table('table', MetaData(), Column('geom', Geography))
     return table
+
 
 @pytest.fixture
 def raster_table():
@@ -68,7 +71,6 @@ class TestGeometry():
         eq_sql(s,
                'SELECT ST_AsEWKB(ST_Buffer("table".geom, :param_1)) '
                'AS "ST_Buffer_1" FROM "table"')
-
 
     def test_non_ST_function_call(self, geometry_table):
 
