@@ -113,6 +113,35 @@ class WKBElement(_SpatialElement, functions.Function):
         return binascii.hexlify(self.data)
 
 
+class EWKBElement(_SpatialElement, functions.Function):
+    """
+    Instances of this class wrap a EWKB value. Geometry values read
+    from the database are converted to instances of this type. You may
+    need to create instances of ``EWKBElement`` yourself.
+
+    Note: you cannot create ``EWKBElement`` objects directly from Shapely
+    geometries using the :func:`geoalchemy2.shape.from_shape` function as there
+    is currently no support in Shapely for SRIDs. Instead, you must have a
+    valid EWKB (e.g. beggining with SRID=4326;) and use directly
+    a ``EWKBElement`` (e.g. ``EWKBElement(buffer(ewkb))``).
+    """
+
+    def __init__(self, *args, **kwargs):
+        _SpatialElement.__init__(self, *args, **kwargs)
+        functions.Function.__init__(
+            self,
+            "ST_GeomFromEWKB",
+            self.data
+        )
+
+    @property
+    def desc(self):
+        """
+        This element's description string.
+        """
+        return binascii.hexlify(self.data)
+
+
 class RasterElement(FunctionElement):
     """
     Instances of this class wrap a ``raster`` value. Raster values read

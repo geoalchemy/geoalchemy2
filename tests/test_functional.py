@@ -17,8 +17,11 @@ from sqlalchemy.sql import select, func
 from sqlalchemy.sql.expression import type_coerce
 
 from geoalchemy2 import Geometry, Geography, Raster
-from geoalchemy2.elements import WKTElement, WKBElement, RasterElement
+from geoalchemy2.elements import (
+    WKTElement, EWKBElement, WKBElement, RasterElement
+)
 from geoalchemy2.shape import from_shape
+from geoalchemy2.compat import buffer
 
 from shapely.geometry import LineString
 
@@ -33,6 +36,17 @@ class Lake(Base):
     __table_args__ = {'schema': 'gis'}
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
+
+    def __init__(self, geom):
+        self.geom = geom
+
+
+class LakeEWKB(Base):
+    __tablename__ = 'lake_ewkb'
+    __table_args__ = {'schema': 'gis'}
+    id = Column(Integer, primary_key=True)
+    geom = Column(Geometry(
+        geometry_type='LINESTRING', srid=4326, use_ewkb=True))
 
     def __init__(self, geom):
         self.geom = geom
@@ -55,6 +69,7 @@ if not postgis_version.startswith('2.'):
     # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
     # management functions should be used.
     Lake.__table__.c.geom.type.management = True
+    LakeEWKB.__table__.c.geom.type.management = True
 else:
     # The raster type is only available on PostGIS 2.0 and above
     class Ocean(Base):
@@ -116,7 +131,7 @@ class TestInsertionCore():
 
             # Having WKBElement objects as bind values is not supported, so
             # the following does not work:
-            #{'geom': from_shape(LineString([[0, 0], [3, 3]], srid=4326)}
+            # {'geom': from_shape(LineString([[0, 0], [3, 3]], srid=4326)}
         ])
 
         results = conn.execute(Lake.__table__.select())
@@ -181,6 +196,24 @@ class TestInsertionORM():
         assert isinstance(l.geom, WKBElement)
         wkt = session.execute(l.geom.ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,1 1)'
+        srid = session.execute(l.geom.ST_SRID()).scalar()
+        assert srid == 4326
+
+    def test_EWKBElement(self):
+        e = EWKBElement(buffer(
+                        b'\001\002\000\000 \346\020\000\000\002\000\000\000'
+                        b'\000\000\000\000\000\000\000\000\000\000\000\000'
+                        b'\000\000\000\000\000\000\000\000\000\000\360?\000'
+                        b'\000\000\000\000\000\360?'))
+        l = LakeEWKB(e)
+        session.add(l)
+        session.flush()
+        session.expire(l)
+        assert isinstance(l.geom, EWKBElement)
+        wkt = session.execute(l.geom.ST_AsText()).scalar()
+        assert wkt == 'LINESTRING(0 0,1 1)'
+        ewkt = session.execute(l.geom.ST_AsEWKT()).scalar()
+        assert ewkt == 'SRID=4326;LINESTRING(0 0,1 1)'
         srid = session.execute(l.geom.ST_SRID()).scalar()
         assert srid == 4326
 

@@ -86,6 +86,9 @@ class GenericFunction(functions.GenericFunction):
     def __init__(self, *args, **kwargs):
         expr = kwargs.pop('expr', None)
         if expr is not None:
+            # Use instance based type for Geometry (see: use_ewkb option)
+            if isinstance(expr.type, types.Geometry) and len(args) > 0:
+                self.type = expr.type
             args = (expr,) + args
         functions.GenericFunction.__init__(self, *args, **kwargs)
 

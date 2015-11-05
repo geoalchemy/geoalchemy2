@@ -18,6 +18,12 @@ def geometry_table():
 
 
 @pytest.fixture
+def geometry_table_ewkb():
+    table = Table('table', MetaData(), Column('geom', Geometry(use_ewkb=True)))
+    return table
+
+
+@pytest.fixture
 def geography_table():
     table = Table('table', MetaData(), Column('geom', Geography))
     return table
@@ -39,6 +45,10 @@ class TestGeometry():
         s = select([geometry_table.c.geom])
         eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom FROM "table"')
 
+    def test_column_expression_ewkb(self, geometry_table_ewkb):
+        s = select([geometry_table_ewkb.c.geom])
+        eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom FROM "table"')
+
     def test_select_bind_expression(self, geometry_table):
         s = select(['foo']).where(geometry_table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE '
@@ -54,6 +64,12 @@ class TestGeometry():
         s = select([geometry_table.c.geom.ST_Buffer(2)])
         eq_sql(s,
                'SELECT ST_AsBinary(ST_Buffer("table".geom, :param_1)) '
+               'AS "ST_Buffer_1" FROM "table"')
+
+    def test_function_call_ewkb(self, geometry_table_ewkb):
+        s = select([geometry_table_ewkb.c.geom.ST_Buffer(2)])
+        eq_sql(s,
+               'SELECT ST_AsEWKB(ST_Buffer("table".geom, :param_1)) '
                'AS "ST_Buffer_1" FROM "table"')
 
     def test_non_ST_function_call(self, geometry_table):

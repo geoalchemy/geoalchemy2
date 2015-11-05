@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import Table, MetaData, Column, String, func
 from geoalchemy2.types import Geometry
 from geoalchemy2.elements import (
-    WKTElement, WKBElement, RasterElement, CompositeElement
+    WKTElement, WKBElement, EWKBElement, RasterElement, CompositeElement
 )
 
 
@@ -83,6 +83,27 @@ class TestWKBElement():
 
     def test_function_str(self):
         e = WKBElement(b'\x01\x02')
+        assert isinstance(str(e), str)
+
+
+class TestEWKBElement():
+
+    def test_dec(self):
+        e = EWKBElement(b'\x01\x02')
+        assert e.desc == b'0102'
+
+    def test_function_call(self):
+        e = EWKBElement(b'\x01\x02')
+        f = e.ST_Buffer(2)
+        eq_sql(f, 'ST_Buffer('
+               'ST_GeomFromEWKB(:ST_GeomFromEWKB_1), '
+               ':param_1)')
+        assert f.compile().params == {
+            u'param_1': 2, u'ST_GeomFromEWKB_1': b'\x01\x02'
+        }
+
+    def test_function_str(self):
+        e = EWKBElement(b'\x01\x02')
         assert isinstance(str(e), str)
 
 
