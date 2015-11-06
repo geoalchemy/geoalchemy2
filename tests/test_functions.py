@@ -54,14 +54,18 @@ def test_ST_X():
 def test_ST_Y():
     _test_simple_func('ST_Y')
 
+
 def test_ST_Z():
     _test_simple_func('ST_Z')
+
 
 def test_ST_AsBinary():
     _test_simple_func('ST_AsBinary')
 
+
 def test_ST_AsEWKB():
     _test_simple_func('ST_AsEWKB')
+
 
 def test_ST_AsGeoJSON():
     _test_simple_func('ST_AsGeoJSON')
@@ -82,8 +86,10 @@ def test_ST_AsSVG():
 def test_ST_AsText():
     _test_simple_func('ST_AsText')
 
+
 def test_ST_AsEWKT():
     _test_simple_func('ST_AsEWKT')
+
 
 def test_ST_Area():
     _test_simple_func('ST_Area')

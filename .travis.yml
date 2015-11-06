@@ -82,7 +82,7 @@ before_script:
 
 script:
   # Run the library through flake8
-  - flake8 geoalchemy2 --ignore=E711
+  - flake8 geoalchemy2 tests --ignore=E711
 
   # Run the unit test suite
   - tox -e $TOX_ENV --sitepackages -- -v --cov geoalchemy2 --cov-report term-missing
