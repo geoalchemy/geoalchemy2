@@ -161,9 +161,9 @@ generate ``SELECT`` statements is SQLAlchemy`s ``select()`` function::
     >>> from sqlalchemy.sql import select
     >>> s = select([lake_table])
     >>> str(s)
-    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom FROM lake
+    SELECT lake.id, lake.name, ST_AsEWKB(lake.geom) AS geom FROM lake
 
-The ``geom`` column being a ``Geometry`` it is wrapped in a ``ST_AsBinary``
+The ``geom`` column being a ``Geometry`` it is wrapped in a ``ST_AsEWKB``
 call when specified as a column in a ``SELECT`` statement.
 
 We can now execute the statement and look at the results::
@@ -201,7 +201,7 @@ we can use this::
     >>> s = select([lake_table],
                    func.ST_Contains(lake_table.c.geom, 'POINT(4 1)'))
     >>> str(s)
-    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom FROM lake WHERE ST_Contains(lake.geom, :param_1)
+    SELECT lake.id, lake.name, ST_AsEWKB(lake.geom) AS geom FROM lake WHERE ST_Contains(lake.geom, :param_1)
     >>> result = conn.execute(s)
     >>> for row in result:
     ...     print 'name:', row['name'], '; geom:', row['geom'].desc
@@ -212,7 +212,7 @@ GeoAlchemy allows rewriting this more concisely::
 
     >>> s = select([lake_table], lake_table.c.geom.ST_Contains('POINT(4 1)'))
     >>> str(s)
-    SELECT lake.id, lake.name, ST_AsBinary(lake.geom) AS geom FROM lake WHERE ST_Contains(lake.geom, :param_1)
+    SELECT lake.id, lake.name, ST_AsEWKB(lake.geom) AS geom FROM lake WHERE ST_Contains(lake.geom, :param_1)
 
 Here the ``ST_Contains`` function is applied to ``lake.c.geom``. And the
 generated SQL the ``lake.geom`` column is actually passed to the

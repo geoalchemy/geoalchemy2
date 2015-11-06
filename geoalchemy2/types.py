@@ -23,7 +23,7 @@ class _GISType(UserDefinedType):
 
     This class defines ``bind_expression`` and ``column_expression`` methods
     that wrap column expressions in ``ST_GeomFromEWKT``, ``ST_GeogFromText``,
-    or ``ST_AsBinary`` calls.
+    or ``ST_AsEWKB`` calls.
 
     This class also defines ``result_processor`` and ``bind_processor``
     methods. The function returned by ``result_processor`` converts WKB values
@@ -81,7 +81,11 @@ class _GISType(UserDefinedType):
         in CREATE TABLE statements. Set in subclasses. """
 
     from_text = None
-    """ The name of ST_*FromText function for this type.
+    """ The name of "from text" function for this type.
+        Set in subclasses. """
+
+    as_binary = None
+    """ The name of the "as binary" function for this type.
         Set in subclasses. """
 
     comparator_factory = Comparator
@@ -95,17 +99,19 @@ class _GISType(UserDefinedType):
         self.dimension = dimension
         self.spatial_index = spatial_index
         self.management = management
+        self.extended = self.as_binary == 'ST_AsEWKB'
 
     def get_col_spec(self):
         return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
 
     def column_expression(self, col):
-        return func.ST_AsBinary(col, type_=self)
+        return getattr(func, self.as_binary)(col, type_=self)
 
     def result_processor(self, dialect, coltype):
         def process(value):
             if value is not None:
-                return WKBElement(value, srid=self.srid)
+                return WKBElement(value, srid=self.srid,
+                                  extended=self.extended)
         return process
 
     def bind_expression(self, bindvalue):
@@ -137,8 +143,12 @@ class Geometry(_GISType):
     """ Type name used for defining geometry columns in ``CREATE TABLE``. """
 
     from_text = 'ST_GeomFromEWKT'
-    """ The ``FromText`` geometry constructor. Used by the parent class'
+    """ The "from text" geometry constructor. Used by the parent class'
         ``bind_expression`` method. """
+
+    as_binary = 'ST_AsEWKB'
+    """ The "as binary" function to use. Used by the parent class'
+        ``column_expression`` method. """
 
 
 class Geography(_GISType):
@@ -160,6 +170,10 @@ class Geography(_GISType):
     from_text = 'ST_GeogFromText'
     """ The ``FromText`` geography constructor. Used by the parent class'
         ``bind_expression`` method. """
+
+    as_binary = 'ST_AsBinary'
+    """ The "as binary" function to use. Used by the parent class'
+        ``column_expression`` method. """
 
 
 class Raster(UserDefinedType):

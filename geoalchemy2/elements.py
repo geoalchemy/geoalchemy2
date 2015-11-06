@@ -26,11 +26,17 @@ class _SpatialElement(object):
         An integer representing the spatial reference system. E.g. 4326.
         Default value is -1, which means no/unknown reference system.
 
+    ``extended``
+
+        A boolean indicating whether the extended format (EWKT or EWKB)
+        is used. Default is `False`.
+
     """
 
-    def __init__(self, data, srid=-1):
+    def __init__(self, data, srid=-1, extended=False):
         self.srid = srid
         self.data = data
+        self.extented = extended
 
     def __str__(self):
         if not PY3:
@@ -59,7 +65,7 @@ class _SpatialElement(object):
 
 class WKTElement(_SpatialElement, functions.Function):
     """
-    Instances of this class wrap a WKT value.
+    Instances of this class wrap a WKT or EWKT value.
 
     Usage examples::
 
@@ -70,12 +76,11 @@ class WKTElement(_SpatialElement, functions.Function):
 
     def __init__(self, *args, **kwargs):
         _SpatialElement.__init__(self, *args, **kwargs)
-        functions.Function.__init__(
-            self,
-            "ST_GeomFromText",
-            self.data,
-            self.srid
-        )
+        if self.extented:
+            args = ("ST_GeomFromEWKT", self.data)
+        else:
+            args = ("ST_GeomFromText", self.data, self.srid)
+        functions.Function.__init__(self, *args)
 
     @property
     def desc(self):
@@ -87,9 +92,10 @@ class WKTElement(_SpatialElement, functions.Function):
 
 class WKBElement(_SpatialElement, functions.Function):
     """
-    Instances of this class wrap a WKB value. Geometry values read
-    from the database are converted to instances of this type. In
-    most cases you won't need to create ``WKBElement`` instances
+    Instances of this class wrap a WKB or EWKB value.
+
+    Geometry values read from the database are converted to instances of this
+    type. In most cases you won't need to create ``WKBElement`` instances
     yourself.
 
     Note: you can create ``WKBElement`` objects from Shapely geometries
@@ -98,12 +104,11 @@ class WKBElement(_SpatialElement, functions.Function):
 
     def __init__(self, *args, **kwargs):
         _SpatialElement.__init__(self, *args, **kwargs)
-        functions.Function.__init__(
-            self,
-            "ST_GeomFromWKB",
-            self.data,
-            self.srid
-        )
+        if self.extented:
+            args = ("ST_GeomFromEWKB", self.data)
+        else:
+            args = ("ST_GeomFromWKB", self.data, self.srid)
+        functions.Function.__init__(self, *args)
 
     @property
     def desc(self):
