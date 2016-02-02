@@ -1,6 +1,15 @@
-=====
-Tests
-=====
+=============================
+Tests using the pytest runner
+=============================
+
+QUICK TEST
+==========
+
+Are your Python, Postgres and PostGIS dependencies are all installed?
+Run the tests in a created ``gis`` database::
+
+    $ sudo -u postgres psql ./tests/create_database.sql
+    $ py.test
 
 Install system dependencies
 ===========================
@@ -17,9 +26,17 @@ Install the Python dependencies::
 
     $ pip install -r requirements.txt
     $ pip install psycopg2
+    $ pip install pytest
 
-Set up the database
-===================
+Set up the database using psql
+==============================
+
+Create all ``gis`` database objects at once::
+
+    $ sudo -u postgres psql ./tests/create_database.sql
+
+Or set up the database using SHELL commands
+===========================================
 
 Create the ``gis`` role::
 

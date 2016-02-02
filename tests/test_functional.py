@@ -23,7 +23,7 @@ from geoalchemy2.shape import from_shape
 from shapely.geometry import LineString
 
 
-engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
+engine = create_engine('postgresql://gis:gis@localhost:5432/gis', echo=True)
 metadata = MetaData(engine)
 Base = declarative_base(metadata=metadata)
 
