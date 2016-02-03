@@ -1,6 +1,6 @@
 -- GeoAlchemy2 PostGIS Tests: Set up the database
 -- -----------------------------------------------------------------------------
--- This PSQL script creates a database named "gis" and adds PostGIS support.
+-- This PSQL script creates a database named "gis" which needs PostGIS support.
 -- Use this to run the GeoAlchemy2 unit tests for Python.
 -- -----------------------------------------------------------------------------
 -- NOTE: Log-in as a DB Superuser, e.g. "postgres".
@@ -23,6 +23,7 @@ GRANT USAGE, CREATE ON SCHEMA gis TO "gis";
 
 -- Enable PostGIS for the "gis" database.
 -- -----------------------------------------------------------------------------
+-- NOTE: See ./tests/setup_tests.sh where an IF-statment installs PostGIS.
 
 -- -----------------------------------------------------------------------------
 -- For PostGIS 1.5: Use the PSQL scripts.
@@ -34,6 +35,6 @@ GRANT USAGE, CREATE ON SCHEMA gis TO "gis";
 -- -----------------------------------------------------------------------------
 -- For PostGIS 2: Create the extension here.
 -- -----------------------------------------------------------------------------
-CREATE EXTENSION postgis;
-CREATE EXTENSION postgis_topology;
+-- CREATE EXTENSION postgis;
+-- CREATE EXTENSION postgis_topology;
 
