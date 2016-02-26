@@ -41,6 +41,8 @@ class _SpatialElement(object):
     def __str__(self):
         if not PY3:
             return self.desc
+        if isinstance(self.desc, str):
+            return self.desc
         return self.desc.decode('utf-8')
 
     def __repr__(self):
@@ -133,7 +135,9 @@ class RasterElement(FunctionElement):
         FunctionElement.__init__(self, self.data)
 
     def __str__(self):
-        return self.desc  # pragma: no cover
+        if not PY3:
+            return self.desc
+        return self.desc.decode('utf-8')
 
     def __repr__(self):
         return "<%s at 0x%x; %r>" % \

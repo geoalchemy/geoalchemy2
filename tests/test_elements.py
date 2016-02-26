@@ -24,6 +24,7 @@ class TestWKTElement():
     def test_desc(self):
         e = WKTElement('POINT(1 2)')
         assert e.desc == 'POINT(1 2)'
+        assert str(e) == 'POINT(1 2)'
 
     def test_function_call(self):
         e = WKTElement('POINT(1 2)')
@@ -43,6 +44,7 @@ class TestExtendedWKTElement():
     def test_desc(self):
         e = WKTElement('SRID=3857;POINT(1 2 3)', extended=True)
         assert e.desc == 'SRID=3857;POINT(1 2 3)'
+        assert str(e) == 'SRID=3857;POINT(1 2 3)'
 
     def test_function_call(self):
         e = WKTElement('SRID=3857;POINT(1 2 3)', extended=True)
@@ -114,6 +116,7 @@ class TestWKBElement():
     def test_desc(self):
         e = WKBElement(b'\x01\x02', extended=True)
         assert e.desc == b'0102'
+        assert str(e) == '0102'
 
     def test_function_call(self):
         e = WKBElement(b'\x01\x02', extended=True)
@@ -136,6 +139,7 @@ class TestExtendedWKBElement():
     def test_desc(self):
         e = WKBElement(b'\x01\x02')
         assert e.desc == b'0102'
+        assert str(e) == '0102'
 
     def test_function_call(self):
         e = WKBElement(b'\x01\x02')
@@ -158,6 +162,7 @@ class TestRasterElement():
     def test_desc(self):
         e = RasterElement(b'\x01\x02')
         assert e.desc == b'0102'
+        assert str(e) == '0102'
 
     def test_function_call(self):
         e = RasterElement(b'\x01\x02')
