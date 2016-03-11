@@ -113,7 +113,7 @@ class TestWKBElement():
 
     def test_desc(self):
         e = WKBElement(b'\x01\x02', extended=True)
-        assert e.desc == b'0102'
+        assert e.desc == '0102'
 
     def test_function_call(self):
         e = WKBElement(b'\x01\x02', extended=True)
@@ -135,7 +135,7 @@ class TestExtendedWKBElement():
 
     def test_desc(self):
         e = WKBElement(b'\x01\x02')
-        assert e.desc == b'0102'
+        assert e.desc == '0102'
 
     def test_function_call(self):
         e = WKBElement(b'\x01\x02')
@@ -157,7 +157,7 @@ class TestRasterElement():
 
     def test_desc(self):
         e = RasterElement(b'\x01\x02')
-        assert e.desc == b'0102'
+        assert e.desc == '0102'
 
     def test_function_call(self):
         e = RasterElement(b'\x01\x02')
