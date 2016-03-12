@@ -11,7 +11,7 @@ Install PostgreSQL and PostGIS::
 
 Install the Python and PostgreSQL development packages::
 
-    $ apt-get install python2.7-dev libpq-dev
+    $ apt-get install python2.7-dev libpq-dev libgeos-dev
 
 Install the Python dependencies::
 
