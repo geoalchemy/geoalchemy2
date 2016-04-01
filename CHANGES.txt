@@ -5,6 +5,8 @@ GeoAlchemy 2 Changelog
 -----
 
 * Read geometries with ST_AsEWKB. @loicgasser, @fredj, @elemoine (#122)
+* Fix SpatialElement.__str__ on Python 3 @b11z, @elemoine (#130)
+* Fix flake8 in tests @loicgrasser (#125)
 
 0.2.6
 -----
