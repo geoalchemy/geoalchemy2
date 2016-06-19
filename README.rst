@@ -9,10 +9,10 @@ GeoAlchemy 2
    :target: https://coveralls.io/r/geoalchemy/geoalchemy2
 
 .. image:: https://readthedocs.org/projects/geoalchemy-2/badge/?version=latest
-   :target: http://geoalchemy-2.readthedocs.org/en/latest/?badge=latest
+   :target: https://geoalchemy-2.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
 GeoAlchemy 2 is a Python toolkit for working with spatial databases. It is
 based on the gorgeous `SQLAlchemy <http://www.sqlalchemy.org/>`_.
 
-Documentation is on Read the Docs: http://geoalchemy-2.rtfd.org.
+Documentation is on Read the Docs: https://geoalchemy-2.readthedocs.io.
