@@ -7,11 +7,11 @@ Install system dependencies
 
 Install PostgreSQL and PostGIS::
 
-    $ apt-get install postgresql-9.1 postgresql-9.1-postgis postgis
+    $ sudo apt-get install postgresql postgis
 
 Install the Python and PostgreSQL development packages::
 
-    $ apt-get install python2.7-dev libpq-dev libgeos-dev
+    $ sudo apt-get install python2.7-dev libpq-dev libgeos-dev
 
 Install the Python dependencies::
 
