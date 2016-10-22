@@ -30,9 +30,9 @@ class TestWKTElement():
         f = e.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2), '
-               ':param_1)')
+               ':ST_Buffer_1)')
         assert f.compile().params == {
-            u'param_1': 2,
+            u'ST_Buffer_1': 2,
             u'ST_GeomFromText_1': 'POINT(1 2)',
             u'ST_GeomFromText_2': -1
         }
@@ -49,9 +49,9 @@ class TestExtendedWKTElement():
         f = e.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromEWKT(:ST_GeomFromEWKT_1), '
-               ':param_1)')
+               ':ST_Buffer_1)')
         assert f.compile().params == {
-            u'param_1': 2,
+            u'ST_Buffer_1': 2,
             u'ST_GeomFromEWKT_1': 'SRID=3857;POINT(1 2 3)'
         }
 
@@ -120,9 +120,9 @@ class TestWKBElement():
         f = e.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromEWKB(:ST_GeomFromEWKB_1), '
-               ':param_1)')
+               ':ST_Buffer_1)')
         assert f.compile().params == {
-            u'param_1': 2,
+            u'ST_Buffer_1': 2,
             u'ST_GeomFromEWKB_1': b'\x01\x02',
         }
 
@@ -142,9 +142,9 @@ class TestExtendedWKBElement():
         f = e.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromWKB(:ST_GeomFromWKB_1, :ST_GeomFromWKB_2), '
-               ':param_1)')
+               ':ST_Buffer_1)')
         assert f.compile().params == {
-            u'param_1': 2, u'ST_GeomFromWKB_1': b'\x01\x02',
+            u'ST_Buffer_1': 2, u'ST_GeomFromWKB_1': b'\x01\x02',
             u'ST_GeomFromWKB_2': -1
         }
 
