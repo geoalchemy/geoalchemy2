@@ -4,7 +4,7 @@ from geoalchemy2.compat import PY3
 try:
     from sqlalchemy.sql import functions
     from sqlalchemy.sql.functions import FunctionElement
-except ImportError:  # SQLA < 0.9
+except ImportError:  # SQLA < 0.9  # pragma: no cover
     from sqlalchemy.sql import expression as functions
     from sqlalchemy.sql.expression import FunctionElement
 from sqlalchemy.types import to_instance
