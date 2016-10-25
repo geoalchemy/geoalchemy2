@@ -45,7 +45,7 @@ Reference
 from sqlalchemy.types import UserDefinedType
 try:
     from sqlalchemy.sql.functions import _FunctionGenerator
-except ImportError:  # SQLA < 0.9
+except ImportError:  # SQLA < 0.9  # pragma: no cover
     from sqlalchemy.sql.expression import _FunctionGenerator
 
 

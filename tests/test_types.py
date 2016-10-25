@@ -53,7 +53,7 @@ class TestGeometry():
     def test_function_call(self, geometry_table):
         s = select([geometry_table.c.geom.ST_Buffer(2)])
         eq_sql(s,
-               'SELECT ST_AsEWKB(ST_Buffer("table".geom, :param_1)) '
+               'SELECT ST_AsEWKB(ST_Buffer("table".geom, :ST_Buffer_2)) '
                'AS "ST_Buffer_1" FROM "table"')
 
     def test_non_ST_function_call(self, geometry_table):
@@ -95,7 +95,7 @@ class TestGeography():
     def test_function_call(self, geography_table):
         s = select([geography_table.c.geom.ST_Buffer(2)])
         eq_sql(s,
-               'SELECT ST_AsEWKB(ST_Buffer("table".geom, :param_1)) '
+               'SELECT ST_AsEWKB(ST_Buffer("table".geom, :ST_Buffer_2)) '
                'AS "ST_Buffer_1" FROM "table"')
 
     def test_non_ST_function_call(self, geography_table):
