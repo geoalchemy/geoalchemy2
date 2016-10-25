@@ -154,7 +154,7 @@ class RasterElement(FunctionElement):
         if len(desc) < 30:
             return desc
 
-        return desc[:30] + '...'
+        return desc[:30] + '...'  # pragma: no cover
 
     def __getattr__(self, name):
         #
