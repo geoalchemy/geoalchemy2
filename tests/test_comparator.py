@@ -1,7 +1,7 @@
 import re
 import pytest
 
-from sqlalchemy import Table, MetaData, Column
+from sqlalchemy import Table, MetaData, Column, select
 from geoalchemy2.types import Geometry
 
 
@@ -23,7 +23,7 @@ class TestOperator():
         eq_sql(expr, '"table".geom = ST_GeomFromEWKT(:geom_1)')
 
     def test_eq_with_None(self, geometry_table):
-        expr = geometry_table.c.geom == None
+        expr = geometry_table.c.geom == None  # NOQA
         eq_sql(expr, '"table".geom IS NULL')
 
     def test_ne(self, geometry_table):
@@ -31,7 +31,7 @@ class TestOperator():
         eq_sql(expr, '"table".geom != ST_GeomFromEWKT(:geom_1)')
 
     def test_ne_with_None(self, geometry_table):
-        expr = geometry_table.c.geom != None
+        expr = geometry_table.c.geom != None  # NOQA
         eq_sql(expr, '"table".geom IS NOT NULL')
 
     def test_intersects(self, geometry_table):
@@ -93,6 +93,8 @@ class TestOperator():
     def test_distance_centroid(self, geometry_table):
         expr = geometry_table.c.geom.distance_centroid('POINT(1 2)')
         eq_sql(expr, '"table".geom <-> ST_GeomFromEWKT(:geom_1)')
+
+    def test_distance_centroid_select(self, geometry_table):
         s = geometry_table.select().order_by(
             geometry_table.c.geom.distance_centroid('POINT(1 2)')).limit(10)
         eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom '
@@ -101,13 +103,31 @@ class TestOperator():
                   'LIMIT :param_1')
         assert s.compile().params == {u'geom_1': 'POINT(1 2)', u'param_1': 10}
 
+    def test_distance_centroid_select_with_label(self, geometry_table):
+        s = select([geometry_table.c.geom.distance_centroid('POINT(1 2)').
+                    label('dc')])
+        s = s.order_by('dc').limit(10)
+        eq_sql(s, 'SELECT "table".geom <-> ST_GeomFromEWKT(:geom_1) AS dc '
+                  'FROM "table" ORDER BY dc LIMIT :param_1')
+        assert s.compile().params == {u'geom_1': 'POINT(1 2)', u'param_1': 10}
+
     def test_distance_box(self, geometry_table):
         expr = geometry_table.c.geom.distance_box('POINT(1 2)')
         eq_sql(expr, '"table".geom <#> ST_GeomFromEWKT(:geom_1)')
+
+    def test_distance_box_select(self, geometry_table):
         s = geometry_table.select().order_by(
             geometry_table.c.geom.distance_box('POINT(1 2)')).limit(10)
         eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom '
                   'FROM "table" '
                   'ORDER BY "table".geom <#> ST_GeomFromEWKT(:geom_1) '
                   'LIMIT :param_1')
+        assert s.compile().params == {u'geom_1': 'POINT(1 2)', u'param_1': 10}
+
+    def test_distance_box_select_with_label(self, geometry_table):
+        s = select([geometry_table.c.geom.distance_box('POINT(1 2)').
+                    label('dc')])
+        s = s.order_by('dc').limit(10)
+        eq_sql(s, 'SELECT "table".geom <#> ST_GeomFromEWKT(:geom_1) AS dc '
+                  'FROM "table" ORDER BY dc LIMIT :param_1')
         assert s.compile().params == {u'geom_1': 'POINT(1 2)', u'param_1': 10}

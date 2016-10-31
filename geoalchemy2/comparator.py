@@ -42,11 +42,30 @@ Reference
 ---------
 """
 
+from sqlalchemy import types as sqltypes
 from sqlalchemy.types import UserDefinedType
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
+from sqlalchemy.sql import operators
 try:
     from sqlalchemy.sql.functions import _FunctionGenerator
 except ImportError:  # SQLA < 0.9  # pragma: no cover
     from sqlalchemy.sql.expression import _FunctionGenerator
+
+
+INTERSECTS = operators.custom_op('&&')
+OVERLAPS_OR_TO_LEFT = operators.custom_op('&<')
+OVERLAPS_OR_TO_RIGHT = operators.custom_op('&>')
+OVERLAPS_OR_BELOW = operators.custom_op('&<|')
+TO_LEFT = operators.custom_op('<<')
+BELOW = operators.custom_op('<<|')
+TO_RIGHT = operators.custom_op('>>')
+CONTAINED = operators.custom_op('@')
+OVERLAPS_OR_ABOVE = operators.custom_op('|&>')
+ABOVE = operators.custom_op('|>>')
+CONTAINS = operators.custom_op('~')
+SAME = operators.custom_op('~=')
+DISTANCE_CENTROID = operators.custom_op('<->')
+DISTANCE_BOX = operators.custom_op('<#>')
 
 
 class BaseComparator(UserDefinedType.Comparator):
@@ -81,19 +100,21 @@ class BaseComparator(UserDefinedType.Comparator):
         """
         The ``&&`` operator. A's BBOX intersects B's.
         """
-        return self.op('&&')(other)
+        return self.operate(INTERSECTS, other, result_type=sqltypes.Boolean)
 
     def overlaps_or_to_left(self, other):
         """
         The ``&<`` operator. A's BBOX overlaps or is to the left of B's.
         """
-        return self.op('&<')(other)
+        return self.operate(OVERLAPS_OR_TO_LEFT, other,
+                            result_type=sqltypes.Boolean)
 
     def overlaps_or_to_right(self, other):
         """
         The ``&>`` operator. A's BBOX overlaps or is to the right of B's.
         """
-        return self.op('&>')(other)
+        return self.operate(OVERLAPS_OR_TO_RIGHT, other,
+                            result_type=sqltypes.Boolean)
 
 
 class Comparator(BaseComparator):
@@ -108,13 +129,14 @@ class Comparator(BaseComparator):
         """
         The ``&<|`` operator. A's BBOX overlaps or is below B's.
         """
-        return self.op('&<|')(other)
+        return self.operate(OVERLAPS_OR_BELOW, other,
+                            result_type=sqltypes.Boolean)
 
     def to_left(self, other):
         """
         The ``<<`` operator. A's BBOX is strictly to the left of B's.
         """
-        return self.op('<<')(other)
+        return self.operate(TO_LEFT, other, result_type=sqltypes.Boolean)
 
     def __lshift__(self, other):
         """
@@ -133,13 +155,13 @@ class Comparator(BaseComparator):
         """
         The ``<<|`` operator. A's BBOX is strictly below B's.
         """
-        return self.op('<<|')(other)
+        return self.operate(BELOW, other, result_type=sqltypes.Boolean)
 
     def to_right(self, other):
         """
         The ``>>`` operator. A's BBOX is strictly to the right of B's.
         """
-        return self.op('>>')(other)
+        return self.operate(TO_RIGHT, other, result_type=sqltypes.Boolean)
 
     def __rshift__(self, other):
         """
@@ -158,41 +180,43 @@ class Comparator(BaseComparator):
         """
         The ``@`` operator. A's BBOX is contained by B's.
         """
-        return self.op('@')(other)
+        return self.operate(CONTAINED, other, result_type=sqltypes.Boolean)
 
     def overlaps_or_above(self, other):
         """
         The ``|&>`` operator. A's BBOX overlaps or is to the right of B's.
         """
-        return self.op('|&>')(other)
+        return self.operate(OVERLAPS_OR_ABOVE, other,
+                            result_type=sqltypes.Boolean)
 
     def above(self, other):
         """
         The ``|>>`` operator. A's BBOX is strictly above B's.
         """
-        return self.op('|>>')(other)
+        return self.operate(ABOVE, other, result_type=sqltypes.Boolean)
 
     def contains(self, other, **kw):
         """
         The ``~`` operator. A's BBOX contains B's.
         """
-        return self.op('~')(other)
+        return self.operate(CONTAINS, other, result_type=sqltypes.Boolean)
 
     def same(self, other):
         """
         The ``~=`` operator. A's BBOX is the same as B's.
         """
-        return self.op('~=')(other)
+        return self.operate(SAME, other, result_type=sqltypes.Boolean)
 
     def distance_centroid(self, other):
         """
         The ``<->`` operator. The distance between two points.
         """
-        return self.op('<->')(other)
+        return self.operate(DISTANCE_CENTROID, other,
+                            result_type=DOUBLE_PRECISION)
 
     def distance_box(self, other):
         """
         The ``<#>`` operator. The distance between bounding box of two
         geometries.
         """
-        return self.op('<#>')(other)
+        return self.operate(DISTANCE_BOX, other, result_type=DOUBLE_PRECISION)
