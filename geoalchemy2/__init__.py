@@ -72,15 +72,18 @@ def _setup_ddl_event_listeners():
             for c in table.c:
                 # Add the managed Geometry columns with AddGeometryColumn()
                 if isinstance(c.type, Geometry) and c.type.management is True:
-                    stmt = select([
-                        func.AddGeometryColumn(
-                            table_schema,
-                            table.name,
-                            c.name,
-                            c.type.srid,
-                            c.type.geometry_type,
-                            c.type.dimension
-                        )])
+                    args = [
+                        table_schema,
+                        table.name,
+                        c.name,
+                        c.type.srid,
+                        c.type.geometry_type,
+                        c.type.dimension
+                    ]
+                    if c.type.use_typmod is not None:
+                        args.append(c.type.use_typmod)
+
+                    stmt = select([func.AddGeometryColumn(*args)])
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
 
