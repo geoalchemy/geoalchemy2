@@ -48,6 +48,17 @@ class Poi(Base):
         self.geog = geog
 
 
+class Summit(Base):
+    __tablename__ = 'summit'
+    __table_args__ = {'schema': 'gis'}
+    id = Column(Integer, primary_key=True)
+    geom = Column(Geometry(
+        geometry_type='POINT', srid=4326, management=True))
+
+    def __init__(self, geom):
+        self.geom = geom
+
+
 session = sessionmaker(bind=engine)()
 
 postgis_version = session.execute(func.postgis_version()).scalar()
@@ -56,6 +67,9 @@ if not postgis_version.startswith('2.'):
     # management functions should be used.
     Lake.__table__.c.geom.type.management = True
 else:
+    # parameter use_typmod for AddGeometryColumn was added in PostGIS 2.0
+    Summit.__table__.c.geom.type.use_typmod = False
+
     # The raster type is only available on PostGIS 2.0 and above
     class Ocean(Base):
         __tablename__ = 'ocean'
@@ -92,6 +106,32 @@ class TestIndex():
         index = indices[0]
         assert not index.get('unique')
         assert index.get('column_names') == [u'geom']
+
+
+class TestTypMod():
+
+    def setup(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+
+    def teardown(self):
+        session.rollback()
+        metadata.drop_all()
+
+    def test_SummitConstraints(self):
+        """ Make sure the geometry column of table Summit is created with
+        `use_typmod=false` (explicit constraints are created).
+         """
+
+        inspector = reflection.Inspector.from_engine(engine)
+        constraints = inspector.get_check_constraints(
+            Summit.__tablename__, schema='gis')
+        assert len(constraints) == 3
+
+        constraint_names = {c['name'] for c in constraints}
+        assert 'enforce_srid_geom' in constraint_names
+        assert 'enforce_dims_geom' in constraint_names
+        assert 'enforce_geotype_geom' in constraint_names
 
 
 class TestInsertionCore():

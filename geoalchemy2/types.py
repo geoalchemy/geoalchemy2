@@ -74,6 +74,15 @@ class _GISType(UserDefinedType):
         ``False``. Note that this option has no effect for
         :class:`geoalchemy2.types.Geography`.
 
+    ``use_typmod``
+
+        By default PostgreSQL type modifiers are used to create the geometry
+        column. To use check constraints instead set ``use_typmod`` to
+        ``False``. By default this option is not included in the call to
+        ``AddGeometryColumn``. Note that this option is only taken
+        into account if ``management`` is set to ``True`` and is only available
+        for PostGIS 2.x.
+
     """
 
     name = None
@@ -93,12 +102,13 @@ class _GISType(UserDefinedType):
         geometry/geography columns. """
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
-                 spatial_index=True, management=False):
+                 spatial_index=True, management=False, use_typmod=None):
         self.geometry_type = geometry_type.upper()
         self.srid = int(srid)
         self.dimension = dimension
         self.spatial_index = spatial_index
         self.management = management
+        self.use_typmod = use_typmod
         self.extended = self.as_binary == 'ST_AsEWKB'
 
     def get_col_spec(self):
