@@ -108,4 +108,6 @@ def _setup_ddl_event_listeners():
         elif event == 'after-drop':
             # Restore original column list including managed Geometry columns
             table.columns = table.info.pop('_saved_columns')
+
+
 _setup_ddl_event_listeners()
