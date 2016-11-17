@@ -37,7 +37,7 @@ install:
   - pip install tox
 
   # Install flake8 style checker
-  - pip install flake8
+  - pip install -r requirements.txt
 
 before_script:
   # Create database user "gis"

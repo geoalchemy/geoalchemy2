@@ -258,6 +258,7 @@ class GeometryDump(CompositeType):
     typemap = {'path': postgresql.ARRAY(Integer), 'geom': Geometry}
     """ Dictionary defining the contents of a ``geometry_dump``. """
 
+
 # Register Geometry, Geography and Raster to SQLAlchemy's Postgres reflection
 # subsystem.
 ischema_names['geometry'] = Geometry
