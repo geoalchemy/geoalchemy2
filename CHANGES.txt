@@ -1,6 +1,14 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.4.0
+-----
+
+* Adapt links for "Read the Docs". @adamchainz (#134)
+* Simplify and fix tests. @elemoine (#138)
+* Set result_type when using operators. @elemoine (#140)
+* Add use_typmod option for AddGeometryColumn. @tsauerwein (#141)
+
 0.3.0
 -----
 
