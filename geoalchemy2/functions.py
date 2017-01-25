@@ -154,6 +154,9 @@ _FUNCTIONS = [
      'Return the Well-Known Binary (WKB) representation of the geometry/'
      'geography with SRID meta data.'),
 
+    ('ST_AsTWKB', None,
+     'Returns the geometry as TWKB, aka "Tiny Well-Known Binary"'),
+
     ('ST_AsGeoJSON', None, 'Return the geometry as a GeoJSON element.'),
 
     ('ST_AsGML', None, 'Return the geometry as a GML version 2 or 3 element.'),

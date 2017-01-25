@@ -67,6 +67,10 @@ def test_ST_AsEWKB():
     _test_simple_func('ST_AsEWKB')
 
 
+def test_ST_AsTWKB():
+    _test_simple_func('ST_AsTWKB')
+
+
 def test_ST_AsGeoJSON():
     _test_simple_func('ST_AsGeoJSON')
 
