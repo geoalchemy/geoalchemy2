@@ -330,18 +330,20 @@ _FUNCTIONS = [
      'Returns a geometry that represents the shared portion of geomA and '
      'geomB. The geography implementation does a transform to geometry to do '
      'the intersection and then transform back to WGS84.'),
-   
-    ('ST_Line_Locate_Point', types.Geometry,
-     'Returns a locate point from geometryA into line.'),
 
+    ('ST_LineLocatePoint', types.Geometry,
+     'Returns a float between 0 and 1 representing the location of the '
+     'closest point on LineString to the given Point, as a fraction of'
+     'total 2d line length.'),
 
     ('ST_LineMerge', types.Geometry,
-     'Returns a geometry that represents that merge of lineStringA and '
-     'lineStringB.'),
+     'Return a (set of) LineString(s) formed by sewing together a '
+     'MULTILINESTRING.'),
 
     ('ST_Line_Substring', types.Geometry,
-     'Returns a geometry that represents substring between line locate point A and B '
-     'belongs to lineStringA.'),
+     'Return a linestring being a substring of the input one '
+     'starting and ending at the given fractions of total 2d length. '
+     'Second and third arguments are float8 values between 0 and 1.'),
 
     ('ST_LineInterpolatePoint', types.Geometry,
      'Returns a point interpolated along a line. First argument must be a '
