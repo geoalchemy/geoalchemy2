@@ -60,6 +60,20 @@ class _SpatialElement(object):
         func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)
 
+    # Allows for pickling
+    def __getstate__(self):
+
+        d = self.__dict__
+
+        return {'srid' : d['srid'], 'data' : str(self)}
+
+    def __setstate__(self, state):
+
+        args = [state['data']]
+        kwargs = {'srid' : state['srid']}
+
+        return self.__class__.__init__(self, *args, **kwargs)
+
 
 class WKTElement(_SpatialElement, functions.Function):
     """
