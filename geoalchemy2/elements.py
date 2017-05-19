@@ -36,7 +36,7 @@ class _SpatialElement(object):
     def __init__(self, data, srid=-1, extended=False):
         self.srid = srid
         self.data = data
-        self.extented = extended
+        self.extended = extended
 
     def __str__(self):
         return self.desc
@@ -74,7 +74,7 @@ class WKTElement(_SpatialElement, functions.Function):
 
     def __init__(self, *args, **kwargs):
         _SpatialElement.__init__(self, *args, **kwargs)
-        if self.extented:
+        if self.extended:
             args = ("ST_GeomFromEWKT", self.data)
         else:
             args = ("ST_GeomFromText", self.data, self.srid)
@@ -102,7 +102,7 @@ class WKBElement(_SpatialElement, functions.Function):
 
     def __init__(self, *args, **kwargs):
         _SpatialElement.__init__(self, *args, **kwargs)
-        if self.extented:
+        if self.extended:
             args = ("ST_GeomFromEWKB", self.data)
         else:
             args = ("ST_GeomFromWKB", self.data, self.srid)
