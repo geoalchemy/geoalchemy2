@@ -3,7 +3,7 @@ import re
 
 from sqlalchemy import Table, MetaData, Column
 from sqlalchemy.sql import select, insert, func
-from geoalchemy2.types import Geometry, Geography, Raster
+from geoalchemy2.types import Geometry, Geography, GeometryJSON, Raster
 
 
 def eq_sql(a, b):
@@ -20,6 +20,12 @@ def geometry_table():
 @pytest.fixture
 def geography_table():
     table = Table('table', MetaData(), Column('geom', Geography))
+    return table
+
+
+@pytest.fixture
+def geometryjson_table():
+    table = Table('table', MetaData(), Column('geom', GeometryJSON))
     return table
 
 
@@ -201,3 +207,48 @@ class TestCompositeType():
         eq_sql(s,
                'SELECT ST_AsEWKB((ST_Dump("table".geom)).geom) AS geom '
                'FROM "table"')
+
+
+# ==============================================================================
+
+
+class TestGeographyJSON():
+
+    def test_get_col_spec(self):
+        g = GeometryJSON(srid=900913)
+        assert g.get_col_spec() == 'geometry(GEOMETRY,900913)'
+
+    def test_column_expression(self, geometryjson_table):
+        s = select([geometryjson_table.c.geom])
+        eq_sql(s, 'SELECT ST_AsGeoJSON("table".geom, :param_1, :param_2) AS geom FROM "table"')
+
+    def test_select_bind_expression(self, geometryjson_table):
+        s = select(['foo']).where(
+            geometryjson_table.c.geom == '{ "coordinates": [ -75.00, 40.00 ], "type": "Point" }')
+        eq_sql(s, 'SELECT foo FROM "table" WHERE "table".geom = ST_GeomFromGeoJSON(:geom_1)')
+        assert s.compile().params == {'geom_1': '{ "coordinates": [ -75.00, 40.00 ], "type": "Point" }' }
+
+    def test_insert_bind_expression(self, geometryjson_table):
+        i = insert(geometryjson_table).values(
+                geom='{ "coordinates": [ -75.00, 40.00 ], "type": "Point" }')
+        eq_sql(i, 'INSERT INTO "table" (geom) VALUES (ST_GeomFromGeoJSON(:geom))')
+        assert i.compile().params == {'geom': '{ "coordinates": [ -75.00, 40.00 ], "type": "Point" }' }
+
+    def test_function_call(self, geometryjson_table):
+        s = select([geometryjson_table.c.geom.ST_Buffer(2)])
+        eq_sql(s,
+               'SELECT ST_AsEWKB(ST_Buffer("table".geom, :param_1)) '
+               'AS "ST_Buffer_1" FROM "table"')
+
+    def test_non_ST_function_call(self, geometryjson_table):
+        with pytest.raises(AttributeError):
+            geometryjson_table.c.geom.Buffer(2)
+
+    def test_subquery(self, geometryjson_table):
+        # test for geography columns not delivered to the result
+        # http://hg.sqlalchemy.org/sqlalchemy/rev/f1efb20c6d61
+        s = select([geometryjson_table]).alias('name').select()
+        eq_sql(s,
+               'SELECT ST_AsGeoJSON(name.geom, :param_1, :param_2) AS geom '
+               'FROM (SELECT "table".geom AS geom FROM "table") AS name')
+

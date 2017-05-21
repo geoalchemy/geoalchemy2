@@ -186,6 +186,112 @@ class Geography(_GISType):
         ``column_expression`` method. """
 
 
+# ==============================================================================
+# GeoJSON Columns and Elements for SQLAlchemy
+# ==============================================================================
+
+import json
+from geoalchemy2.elements import _SpatialElement
+from sqlalchemy.sql import functions
+from sqlalchemy.sql import func
+
+
+class GeoJSONElement(_SpatialElement, functions.Function):
+    """
+    Instances of this class wrap a GeoJSON value.
+
+    Usage examples::
+
+        geojson_element = GeoJSONElement('''{
+                "coordinates": [
+                    -73.974413,
+                    40.646598
+                ],
+                "type": "Point"
+            }''')
+
+        geojson_element_SRID_4326 = GeoJSONElement('''{
+                "coordinates": [
+                    -73.974413,
+                    40.646598
+                ],
+                "crs": {
+                    "properties": {
+                        "name": "EPSG:4326"
+                    },
+                    "type": "name"
+                },
+                "type": "Point"
+            }''')
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        _SpatialElement.__init__(self, *args, **kwargs)
+        functions.Function.__init__(
+            self,
+            "ST_GeomFromGeoJSON",
+            self.data
+        )
+
+    @property
+    def desc(self):
+        """
+        This element's description string.
+        """
+        return self.data
+    
+    @property
+    def as_dict(self):
+        """
+        This element as a dict object.
+        """
+        return json.loads(self.data)
+
+
+class GeometryJSON(Geometry):
+    ''' Geometry JSON or GeoJSON Field
+    
+    This field returns a Geometry object in GeoJSON format.
+
+    Creating a geometry JSON column is done like this::
+
+        Column(GeometryJSON(geometry_type='POINT', srid=4326))
+
+    See :class:`geoalchemy2.types._GISType` for the list of arguments that can
+    be passed to the constructor.
+
+    '''
+
+    from_text = 'ST_GeomFromGeoJSON'
+    """ The ``FromText`` geometry constructor. Used by the parent class'
+        ``bind_expression`` method. """
+
+    def column_expression(self, col):
+        # ST_AsGeoJSON(geometry col, integer maxdecimaldigits=15, integer options=0)
+        return func.ST_AsGeoJSON(col, 15, 2, type_=self)
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            if value is not None:
+                return GeoJSONElement(value, srid=self.srid)
+        return process
+
+    def bind_expression(self, bindvalue):
+        return getattr(func, self.from_text)(bindvalue, type_=self)
+
+    def bind_processor(self, dialect):
+        def process(bindvalue):
+            if isinstance(bindvalue, GeoJSONElement):
+                return '%s' % (bindvalue.data,)
+            else:
+                return bindvalue
+        return process
+
+
+# ==============================================================================
+
+
 class Raster(UserDefinedType):
     """
     The Raster column type.
@@ -263,4 +369,6 @@ class GeometryDump(CompositeType):
 # subsystem.
 ischema_names['geometry'] = Geometry
 ischema_names['geography'] = Geography
+ischema_names['geojson'] = GeometryJSON
 ischema_names['raster'] = Raster
+

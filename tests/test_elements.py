@@ -6,6 +6,7 @@ from geoalchemy2.types import Geometry
 from geoalchemy2.elements import (
     WKTElement, WKBElement, RasterElement, CompositeElement
 )
+from geoalchemy2.types import GeoJSONElement
 
 
 @pytest.fixture
@@ -152,6 +153,34 @@ class TestExtendedWKBElement():
         e = WKBElement(b'\x01\x02')
         assert isinstance(str(e), str)
 
+# ==============================================================================
+
+class TestGeoJSONElement():
+    point_str = '''{
+                "coordinates": [
+                    -75.00,
+                    40.00
+                ],
+                "type": "Point"
+            }'''
+
+    def test_desc(self):
+        e = GeoJSONElement(self.point_str)
+        assert e.desc ==  self.point_str
+
+    def test_function_call(self):
+        e = GeoJSONElement(self.point_str)
+        f = e.ST_Buffer(2)
+        eq_sql(f, 'ST_Buffer(ST_GeomFromGeoJSON(:ST_GeomFromGeoJSON_1), :param_1)')
+        assert f.compile().params == {
+            u'param_1': 2, u'ST_GeomFromGeoJSON_1': self.point_str
+        }
+
+    def test_function_str(self):
+        e = GeoJSONElement(self.point_str)
+        assert isinstance(str(e), str)
+
+# ==============================================================================
 
 class TestRasterElement():
 
