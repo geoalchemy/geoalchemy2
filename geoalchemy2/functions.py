@@ -314,9 +314,9 @@ _FUNCTIONS = [
      'the intersection and then transform back to WGS84.'),
 
     ('ST_LineLocatePoint', types.Geometry,
-     'Returns a float between 0 and 1 representing the location of the closest '
-     'point on LineString to the given Point, as a fraction of total 2d line '
-     'length.'
+     'Returns a float between 0 and 1 representing the location of the '
+     'closest point on LineString to the given Point, as a fraction of total '
+     '2d line length.'
      ''
      'You can use the returned location to extract a Point '
      '(ST_LineInterpolatePoint) or a substring (ST_LineSubstring).'
