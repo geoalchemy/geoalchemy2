@@ -1,0 +1,15 @@
+Source: python3-geoalchemy2
+Section: python
+Priority: optional
+Maintainer: Tom Kralidis <tomkralidis@gmail.com>
+Build-Depends: debhelper (>= 9), python3, python3-setuptools
+Standards-Version: 3.9.5
+X-Python-Version: >= 3.4
+Vcs-Git: https://github.com/geoalchemy/geoalchemy2.git
+
+Package: python3-geoalchemy2
+Architecture: all
+Depends: python3-sqlalchemy
+Suggests: python3-shapely
+Homepage: http://geoalchemy-2.readthedocs.org/
+Description: Geospatial extension to SQLAlchemy with PostGIS support.
