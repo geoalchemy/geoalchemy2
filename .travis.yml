@@ -8,6 +8,7 @@ addons:
     packages:
       - devscripts
       - debhelper
+      - python3-setuptools
 
 notifications:
   email:
