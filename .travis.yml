@@ -1,7 +1,5 @@
 language: python
 
-sudo: required
-
 python:
   - 2.7
 
@@ -91,4 +89,4 @@ deploy:
     repo: geoalchemy/geoalchemy2
 
 after_success:
-  - debuild -b -uc -us
+  - sudo debuild -b -uc -us
