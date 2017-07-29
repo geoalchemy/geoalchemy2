@@ -81,3 +81,6 @@ deploy:
   on:
     tags: true
     repo: geoalchemy/geoalchemy2
+
+after_success:
+  - debuild -b -uc -us
