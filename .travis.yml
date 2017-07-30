@@ -5,16 +5,13 @@ dist: trusty
 
 python:
   - 2.7
-  - 3.5
 
 addons:
   apt:
     packages:
       - devscripts
       - debhelper
-      - fakeroot
       - python-setuptools
-      - python3-setuptools
 
 notifications:
   email:
