@@ -13,6 +13,7 @@ addons:
     packages:
       - devscripts
       - debhelper
+      - fakeroot
       - python-setuptools
       - python3-setuptools
 
