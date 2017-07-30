@@ -1,16 +1,19 @@
 language: python
 
 sudo: required
+dist: trusty
+
 
 python:
   - 2.7
-  - 3.5
+  - 3.6
 
 addons:
   apt:
     packages:
       - devscripts
       - debhelper
+      - python-setuptools
       - python3-setuptools
 
 notifications:
@@ -93,4 +96,4 @@ deploy:
     repo: geoalchemy/geoalchemy2
 
 after_success:
-  - debuild -b -uc -us
+  - sudo debuild -b -uc -us
