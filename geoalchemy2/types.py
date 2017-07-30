@@ -6,6 +6,7 @@ columns/properties in models.
 Reference
 ---------
 """
+import warnings
 
 from sqlalchemy.types import UserDefinedType, Integer
 from sqlalchemy.sql import func
@@ -47,10 +48,15 @@ class _GISType(UserDefinedType):
           * ``"MULTILINESTRING"``,
           * ``"MULTIPOLYGON"``,
           * ``"GEOMETRYCOLLECTION"``
-          * ``"CURVE"``.
+          * ``"CURVE"``,
+          * ``None``.
 
        The latter is actually not supported with
        :class:`geoalchemy2.types.Geography`.
+
+       When set to ``None`` then no "geometry type" constraints will be
+       attached to the geometry type declaration. Using ``None`` here
+       is not compatible with setting ``management`` to ``True``.
 
        Default is ``"GEOMETRY"``.
 
@@ -103,8 +109,12 @@ class _GISType(UserDefinedType):
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
                  spatial_index=True, management=False, use_typmod=None):
-        self.geometry_type = geometry_type.upper()
+        self.geometry_type = geometry_type
         self.srid = int(srid)
+        if self.geometry_type:
+            self.geometry_type = self.geometry_type.upper()
+        elif self.srid > 0:
+            warnings.warn('srid not enforced when geometry_type is None')
         self.dimension = dimension
         self.spatial_index = spatial_index
         self.management = management
@@ -112,6 +122,8 @@ class _GISType(UserDefinedType):
         self.extended = self.as_binary == 'ST_AsEWKB'
 
     def get_col_spec(self):
+        if not self.geometry_type:
+            return self.name
         return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
 
     def column_expression(self, col):
