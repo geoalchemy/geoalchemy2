@@ -1,12 +1,11 @@
 language: python
 
-sudo: required
 dist: trusty
 
 
 python:
   - 2.7
-  - 3.6
+  - 3.5
 
 addons:
   apt:
@@ -97,4 +96,4 @@ deploy:
     repo: geoalchemy/geoalchemy2
 
 after_success:
-  - sudo debuild -b -uc -us
+  - debuild -b -uc -us
