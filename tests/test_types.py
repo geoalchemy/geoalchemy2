@@ -35,6 +35,10 @@ class TestGeometry():
         g = Geometry(srid=900913)
         assert g.get_col_spec() == 'geometry(GEOMETRY,900913)'
 
+    def test_get_col_spec_no_typmod(self):
+        g = Geometry(geometry_type=None)
+        assert g.get_col_spec() == 'geometry'
+
     def test_column_expression(self, geometry_table):
         s = select([geometry_table.c.geom])
         eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom FROM "table"')
@@ -76,6 +80,10 @@ class TestGeography():
     def test_get_col_spec(self):
         g = Geography(srid=900913)
         assert g.get_col_spec() == 'geography(GEOMETRY,900913)'
+
+    def test_get_col_spec_no_typmod(self):
+        g = Geography(geometry_type=None)
+        assert g.get_col_spec() == 'geography'
 
     def test_column_expression(self, geography_table):
         s = select([geography_table.c.geom])
