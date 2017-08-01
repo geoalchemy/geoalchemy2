@@ -12,8 +12,16 @@ from .elements import (  # NOQA
 
 from . import functions  # NOQA
 
-from sqlalchemy import Table, event
+from sqlalchemy import Table, Index, event
 from sqlalchemy.sql import select, func, expression
+
+
+def get_or_create_GIST_Index(table, index_name, column):
+    try:
+        index, = (X for X in table.indexes if X.name == index_name)
+    except ValueError:
+        index = Index(index_name, column, postgresql_using='gist')
+    return index
 
 
 def _setup_ddl_event_listeners():
@@ -34,6 +42,14 @@ def _setup_ddl_event_listeners():
         dispatch("after-drop", target, connection)
 
     def dispatch(event, table, bind):
+        if event == 'before-create':
+            for c in table.c:
+                # Add spatial indices for the Geometry and Geography columns
+                if isinstance(c.type, (Geometry, Geography)) and \
+                        c.type.spatial_index is True:
+                    idx_name = 'idx_%s_%s' % (table.name, c.name)
+                    get_or_create_GIST_Index(table, idx_name, c)
+
         if event in ('before-create', 'before-drop'):
             # Filter Geometry columns from the table with management=True
             # Note: Geography and PostGIS >= 2.0 don't need this
@@ -86,14 +102,6 @@ def _setup_ddl_event_listeners():
                     stmt = select([func.AddGeometryColumn(*args)])
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
-
-                # Add spatial indices for the Geometry and Geography columns
-                if isinstance(c.type, (Geometry, Geography)) and \
-                        c.type.spatial_index is True:
-                    bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
-                                 'USING GIST ("%s")' %
-                                 (table.name, c.name, table_schema,
-                                  table.name, c.name))
 
                 # Add spatial indices for the Raster columns
                 #
