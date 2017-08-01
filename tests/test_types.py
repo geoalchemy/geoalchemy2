@@ -2,7 +2,7 @@ import pytest
 import re
 
 from sqlalchemy import Table, MetaData, Column
-from sqlalchemy.sql import select, insert, func
+from sqlalchemy.sql import select, insert, func, text
 from geoalchemy2.types import Geometry, Geography, Raster
 from geoalchemy2.exc import ArgumentError
 
@@ -61,7 +61,7 @@ class TestGeometry():
         eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom FROM "table"')
 
     def test_select_bind_expression(self, geometry_table):
-        s = select(['foo']).where(geometry_table.c.geom == 'POINT(1 2)')
+        s = select([text('foo')]).where(geometry_table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE '
                   '"table".geom = ST_GeomFromEWKT(:geom_1)')
         assert s.compile().params == {'geom_1': 'POINT(1 2)'}
@@ -107,7 +107,7 @@ class TestGeography():
         eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom FROM "table"')
 
     def test_select_bind_expression(self, geography_table):
-        s = select(['foo']).where(geography_table.c.geom == 'POINT(1 2)')
+        s = select([text('foo')]).where(geography_table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE '
                   '"table".geom = ST_GeogFromText(:geom_1)')
         assert s.compile().params == {'geom_1': 'POINT(1 2)'}
