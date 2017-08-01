@@ -15,6 +15,7 @@ from sqlalchemy.dialects.postgresql.base import ischema_names
 
 from .comparator import BaseComparator, Comparator
 from .elements import WKBElement, WKTElement, RasterElement, CompositeElement
+from .exc import ArgumentError
 
 
 class _GISType(UserDefinedType):
@@ -109,12 +110,10 @@ class _GISType(UserDefinedType):
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
                  spatial_index=True, management=False, use_typmod=None):
+        geometry_type, srid = self.check_ctor_args(
+            geometry_type, srid, management, use_typmod)
         self.geometry_type = geometry_type
-        self.srid = int(srid)
-        if self.geometry_type:
-            self.geometry_type = self.geometry_type.upper()
-        elif self.srid > 0:
-            warnings.warn('srid not enforced when geometry_type is None')
+        self.srid = srid
         self.dimension = dimension
         self.spatial_index = spatial_index
         self.management = management
@@ -146,6 +145,24 @@ class _GISType(UserDefinedType):
             else:
                 return bindvalue
         return process
+
+    @staticmethod
+    def check_ctor_args(geometry_type, srid, management, use_typmod):
+        try:
+            srid = int(srid)
+        except ValueError:
+            raise ArgumentError('srid must be convertible to an integer')
+        if geometry_type:
+            geometry_type = geometry_type.upper()
+        else:
+            if management:
+                raise ArgumentError('geometry_type set to None not compatible '
+                                    'with management')
+            if srid > 0:
+                warnings.warn('srid not enforced when geometry_type is None')
+        if use_typmod and not management:
+            warnings.warn('use_typmod ignored when management is False')
+        return geometry_type, srid
 
 
 class Geometry(_GISType):

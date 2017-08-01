@@ -4,6 +4,7 @@ import re
 from sqlalchemy import Table, MetaData, Column
 from sqlalchemy.sql import select, insert, func
 from geoalchemy2.types import Geometry, Geography, Raster
+from geoalchemy2.exc import ArgumentError
 
 
 def eq_sql(a, b):
@@ -38,6 +39,22 @@ class TestGeometry():
     def test_get_col_spec_no_typmod(self):
         g = Geometry(geometry_type=None)
         assert g.get_col_spec() == 'geometry'
+
+    def test_check_ctor_args_bad_srid(self):
+        with pytest.raises(ArgumentError):
+            Geometry(srid='foo')
+
+    def test_check_ctor_args_incompatible_arguments(self):
+        with pytest.raises(ArgumentError):
+            Geometry(geometry_type=None, management=True)
+
+    def test_check_ctor_args_srid_not_enforced(self):
+        with pytest.warns(UserWarning):
+            Geometry(geometry_type=None, srid=4326)
+
+    def test_check_ctor_args_use_typmod_ignored(self):
+        with pytest.warns(UserWarning):
+            Geometry(management=False, use_typmod=True)
 
     def test_column_expression(self, geometry_table):
         s = select([geometry_table.c.geom])
