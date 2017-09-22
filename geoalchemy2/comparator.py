@@ -184,7 +184,7 @@ class Comparator(BaseComparator):
 
     def overlaps_or_above(self, other):
         """
-        The ``|&>`` operator. A's BBOX overlaps or is to the right of B's.
+        The ``|&>`` operator. A's BBOX overlaps or is above B's.
         """
         return self.operate(OVERLAPS_OR_ABOVE, other,
                             result_type=sqltypes.Boolean)
