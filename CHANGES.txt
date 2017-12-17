@@ -4,6 +4,10 @@ GeoAlchemy 2 Changelog
 0.4.1
 -----
 
+* Fix docstring for overlaps_or_above @dcere (#166)
+* Add a WKTElement extented example @movermeyer (#164)
+* Add checks to _GISType constructor @elemoine (#162)
+* Support geometry column with no typmod @elemoine (#161)
 * Add ST_AsTWKB function. @JacobHayes (#146)
 * Create MANIFEST.in. @pmlandwher (#147)
 * Fix build_sphinx maximum recursion depth. @ifedapoolarewaju (#148)
