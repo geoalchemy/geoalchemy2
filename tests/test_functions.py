@@ -155,6 +155,10 @@ def test_ST_Length():
     _test_simple_func('ST_Length')
 
 
+def test_ST_LineLocatePoint():
+    _test_simple_func('ST_LineLocatePoint')
+
+
 def test_ST_OrderingEquals():
     _test_simple_func('ST_OrderingEquals')
 

@@ -252,6 +252,11 @@ _FUNCTIONS = [
      'multilinestring. geometry are in units of spatial reference and '
      'geography are in meters (default spheroid)'),
 
+    ('ST_LineLocatePoint', None,
+     'Returns a float between 0 and 1 representing the location of the '
+     'closest point on LineString to the given Point, as a fraction of '
+     'total 2d line length.'),
+
     ('ST_OrderingEquals', None,
      'Returns ``True`` if the given geometries represent the same geometry '
      'and points are in the same directional order.'),
@@ -312,16 +317,6 @@ _FUNCTIONS = [
      'Returns a geometry that represents the shared portion of geomA and '
      'geomB. The geography implementation does a transform to geometry to do '
      'the intersection and then transform back to WGS84.'),
-
-    ('ST_LineLocatePoint', types.Geometry,
-     'Returns a float between 0 and 1 representing the location of the '
-     'closest point on LineString to the given Point, as a fraction of total '
-     '2d line length.'
-     ''
-     'You can use the returned location to extract a Point '
-     '(ST_LineInterpolatePoint) or a substring (ST_LineSubstring).'
-     ''
-     'This is useful for approximating numbers of addresses'),
 
     ('ST_LineMerge', types.Geometry,
      'Returns a (set of) LineString(s) formed by sewing together the '
