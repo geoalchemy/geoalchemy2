@@ -186,6 +186,11 @@ _FUNCTIONS = [
      'For ``geometry`` type area is in SRID units. For ``geography`` area is '
      'in square meters.'),
 
+    ('ST_Azimuth', None,
+     'Returns the angle in radians from the horizontal of the '
+     'vector defined by pointA and pointB. Angle is computed clockwise from '
+     'down-to-up: on the clock: 12=0; 3=PI/2; 6=PI; 9=3PI/2.'),
+
     ('ST_Centroid', types.Geometry,
      'Returns the geometric center of a geometry.'),
 
