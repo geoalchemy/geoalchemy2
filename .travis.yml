@@ -1,16 +1,10 @@
 language: python
 
-sudo: required
-
-python:
-  - 2.7
-
 addons:
+  postgresql: 9.3
   apt:
     packages:
-      - devscripts
-      - debhelper
-      - python-setuptools
+      - postgresql-9.3-postgis-2.3
 
 notifications:
   email:
@@ -19,29 +13,22 @@ notifications:
 services:
   - postgresql
 
-env:
-  - TOX_ENV=py27sqla11 POSTGIS_VERSION=1.5
-  - TOX_ENV=py27sqla11 POSTGIS_VERSION=2
-  - TOX_ENV=py33sqla11 POSTGIS_VERSION=1.5
-  - TOX_ENV=py33sqla11 POSTGIS_VERSION=2
-  - TOX_ENV=py34sqla11 POSTGIS_VERSION=1.5
-  - TOX_ENV=py34sqla11 POSTGIS_VERSION=2
-  - TOX_ENV=pypysqla11 POSTGIS_VERSION=1.5
-  - TOX_ENV=pypysqla11 POSTGIS_VERSION=2
-
 matrix:
   include:
+    - python: 2.7
+      env:
+      - TOX_ENV=py27sqla11
+    - python: 3.4
+      env:
+      - TOX_ENV=py34sqla11
     - python: 3.5
       env:
-      - TOX_ENV=py35sqla11 POSTGIS_VERSION=1.5
-    - python: 3.5
+      - TOX_ENV=py35sqla11
+    - python: pypy
       env:
-      - TOX_ENV=py35sqla11 POSTGIS_VERSION=2
+      - TOX_ENV=pypysqla11
 
 install:
-  # Install PostGIS 1.5
-  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then sudo apt-get install -y --force-yes postgresql-9.1-postgis=1.5.3-2 postgis=1.5.3-2; fi
-
   # Install tox
   - pip install tox
 
@@ -65,9 +52,7 @@ before_script:
   - psql -d gis -c 'GRANT USAGE,CREATE ON SCHEMA gis TO "gis";' -U postgres
 
   # Add PostGIS extension to "gis" database
-  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -U postgres -f /usr/share/postgresql/9.1/contrib/postgis-1.5/postgis.sql; fi
-  - if [[ "$POSTGIS_VERSION" == "1.5" ]]; then psql -d gis -U postgres -f /usr/share/postgresql/9.1/contrib/postgis-1.5/spatial_ref_sys.sql; fi
-  - if [[ "$POSTGIS_VERSION" != "1.5" ]]; then psql -d gis -U postgres -c "CREATE EXTENSION postgis;"; fi
+  - psql -d gis -c 'CREATE EXTENSION postgis;' -U postgres
 
 script:
   # Run the library through flake8
@@ -91,5 +76,3 @@ deploy:
     tags: true
     repo: geoalchemy/geoalchemy2
 
-after_success:
-  - debuild -b -uc -us
