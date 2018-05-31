@@ -1,5 +1,5 @@
-python3-geoalchemy2 (0.4.0) stable; urgency=medium
+python3-geoalchemy2 (0.4.2) stable; urgency=medium
 
-  * 0.4.0 release
+  * 0.4.2 release
 
- -- Tom Kralidis <tomkralidis@gmail.com>  Fri, 28 Jul 2017 18:53:41 +0000
+ -- Tom Kralidis <tomkralidis@gmail.com>  Thu, 31 May 2018 00:57:05 +0000
