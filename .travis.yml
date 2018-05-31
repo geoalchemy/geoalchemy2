@@ -75,4 +75,3 @@ deploy:
   on:
     tags: true
     repo: geoalchemy/geoalchemy2
-
