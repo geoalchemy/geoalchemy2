@@ -6,6 +6,7 @@ columns/properties in models.
 Reference
 ---------
 """
+import warnings
 
 from sqlalchemy.types import UserDefinedType, Integer
 from sqlalchemy.sql import func
@@ -14,6 +15,7 @@ from sqlalchemy.dialects.postgresql.base import ischema_names
 
 from .comparator import BaseComparator, Comparator
 from .elements import WKBElement, WKTElement, RasterElement, CompositeElement
+from .exc import ArgumentError
 
 
 class _GISType(UserDefinedType):
@@ -47,10 +49,15 @@ class _GISType(UserDefinedType):
           * ``"MULTILINESTRING"``,
           * ``"MULTIPOLYGON"``,
           * ``"GEOMETRYCOLLECTION"``
-          * ``"CURVE"``.
+          * ``"CURVE"``,
+          * ``None``.
 
        The latter is actually not supported with
        :class:`geoalchemy2.types.Geography`.
+
+       When set to ``None`` then no "geometry type" constraints will be
+       attached to the geometry type declaration. Using ``None`` here
+       is not compatible with setting ``management`` to ``True``.
 
        Default is ``"GEOMETRY"``.
 
@@ -103,8 +110,10 @@ class _GISType(UserDefinedType):
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
                  spatial_index=True, management=False, use_typmod=None):
-        self.geometry_type = geometry_type.upper()
-        self.srid = int(srid)
+        geometry_type, srid = self.check_ctor_args(
+            geometry_type, srid, management, use_typmod)
+        self.geometry_type = geometry_type
+        self.srid = srid
         self.dimension = dimension
         self.spatial_index = spatial_index
         self.management = management
@@ -112,6 +121,8 @@ class _GISType(UserDefinedType):
         self.extended = self.as_binary == 'ST_AsEWKB'
 
     def get_col_spec(self):
+        if not self.geometry_type:
+            return self.name
         return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
 
     def column_expression(self, col):
@@ -134,6 +145,24 @@ class _GISType(UserDefinedType):
             else:
                 return bindvalue
         return process
+
+    @staticmethod
+    def check_ctor_args(geometry_type, srid, management, use_typmod):
+        try:
+            srid = int(srid)
+        except ValueError:
+            raise ArgumentError('srid must be convertible to an integer')
+        if geometry_type:
+            geometry_type = geometry_type.upper()
+        else:
+            if management:
+                raise ArgumentError('geometry_type set to None not compatible '
+                                    'with management')
+            if srid > 0:
+                warnings.warn('srid not enforced when geometry_type is None')
+        if use_typmod and not management:
+            warnings.warn('use_typmod ignored when management is False')
+        return geometry_type, srid
 
 
 class Geometry(_GISType):

@@ -186,6 +186,11 @@ _FUNCTIONS = [
      'For ``geometry`` type area is in SRID units. For ``geography`` area is '
      'in square meters.'),
 
+    ('ST_Azimuth', None,
+     'Returns the angle in radians from the horizontal of the '
+     'vector defined by pointA and pointB. Angle is computed clockwise from '
+     'down-to-up: on the clock: 12=0; 3=PI/2; 6=PI; 9=3PI/2.'),
+
     ('ST_Centroid', types.Geometry,
      'Returns the geometric center of a geometry.'),
 
@@ -252,6 +257,11 @@ _FUNCTIONS = [
      'multilinestring. geometry are in units of spatial reference and '
      'geography are in meters (default spheroid)'),
 
+    ('ST_LineLocatePoint', None,
+     'Returns a float between 0 and 1 representing the location of the '
+     'closest point on LineString to the given Point, as a fraction of '
+     'total 2d line length.'),
+
     ('ST_OrderingEquals', None,
      'Returns ``True`` if the given geometries represent the same geometry '
      'and points are in the same directional order.'),
@@ -312,6 +322,20 @@ _FUNCTIONS = [
      'Returns a geometry that represents the shared portion of geomA and '
      'geomB. The geography implementation does a transform to geometry to do '
      'the intersection and then transform back to WGS84.'),
+
+    ('ST_LineMerge', types.Geometry,
+     'Returns a (set of) LineString(s) formed by sewing together the '
+     'constituent line work of a MULTILINESTRING.'),
+
+    ('ST_LineSubstring', types.Geometry,
+     'Return a linestring being a substring of the input one starting and '
+     'ending at the given fractions of total 2d length. Second and third '
+     'arguments are float8 values between 0 and 1. This only works with '
+     'LINESTRINGs. To use with contiguous MULTILINESTRINGs use in '
+     'conjunction with ST_LineMerge.'
+     ''
+     'If \'start\' and \'end\' have the same value this is equivalent '
+     'to ST_LineInterpolatePoint.'),
 
     ('ST_Union', types.Geometry,
      'Returns a geometry that represents the point set union of the '

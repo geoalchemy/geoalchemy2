@@ -69,6 +69,7 @@ class WKTElement(_SpatialElement, functions.Function):
 
         wkt_element_1 = WKTElement('POINT(5 45)')
         wkt_element_2 = WKTElement('POINT(5 45)', srid=4326)
+        wkt_element_3 = WKTElement('SRID=4326;POINT(5 45)', extended=True)
 
     """
 

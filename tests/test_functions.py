@@ -99,6 +99,10 @@ def test_ST_Area():
     _test_simple_func('ST_Area')
 
 
+def test_ST_Azimuth():
+    _test_simple_func('ST_Azimuth')
+
+
 def test_ST_Centroid():
     _test_geometry_returning_func('ST_Centroid')
 
@@ -153,6 +157,10 @@ def test_ST_Intersects():
 
 def test_ST_Length():
     _test_simple_func('ST_Length')
+
+
+def test_ST_LineLocatePoint():
+    _test_simple_func('ST_LineLocatePoint')
 
 
 def test_ST_OrderingEquals():

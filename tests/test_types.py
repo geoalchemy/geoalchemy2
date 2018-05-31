@@ -2,8 +2,9 @@ import pytest
 import re
 
 from sqlalchemy import Table, MetaData, Column
-from sqlalchemy.sql import select, insert, func
+from sqlalchemy.sql import select, insert, func, text
 from geoalchemy2.types import Geometry, Geography, Raster
+from geoalchemy2.exc import ArgumentError
 
 
 def eq_sql(a, b):
@@ -35,12 +36,32 @@ class TestGeometry():
         g = Geometry(srid=900913)
         assert g.get_col_spec() == 'geometry(GEOMETRY,900913)'
 
+    def test_get_col_spec_no_typmod(self):
+        g = Geometry(geometry_type=None)
+        assert g.get_col_spec() == 'geometry'
+
+    def test_check_ctor_args_bad_srid(self):
+        with pytest.raises(ArgumentError):
+            Geometry(srid='foo')
+
+    def test_check_ctor_args_incompatible_arguments(self):
+        with pytest.raises(ArgumentError):
+            Geometry(geometry_type=None, management=True)
+
+    def test_check_ctor_args_srid_not_enforced(self):
+        with pytest.warns(UserWarning):
+            Geometry(geometry_type=None, srid=4326)
+
+    def test_check_ctor_args_use_typmod_ignored(self):
+        with pytest.warns(UserWarning):
+            Geometry(management=False, use_typmod=True)
+
     def test_column_expression(self, geometry_table):
         s = select([geometry_table.c.geom])
         eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom FROM "table"')
 
     def test_select_bind_expression(self, geometry_table):
-        s = select(['foo']).where(geometry_table.c.geom == 'POINT(1 2)')
+        s = select([text('foo')]).where(geometry_table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE '
                   '"table".geom = ST_GeomFromEWKT(:geom_1)')
         assert s.compile().params == {'geom_1': 'POINT(1 2)'}
@@ -77,12 +98,16 @@ class TestGeography():
         g = Geography(srid=900913)
         assert g.get_col_spec() == 'geography(GEOMETRY,900913)'
 
+    def test_get_col_spec_no_typmod(self):
+        g = Geography(geometry_type=None)
+        assert g.get_col_spec() == 'geography'
+
     def test_column_expression(self, geography_table):
         s = select([geography_table.c.geom])
         eq_sql(s, 'SELECT ST_AsBinary("table".geom) AS geom FROM "table"')
 
     def test_select_bind_expression(self, geography_table):
-        s = select(['foo']).where(geography_table.c.geom == 'POINT(1 2)')
+        s = select([text('foo')]).where(geography_table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE '
                   '"table".geom = ST_GeogFromText(:geom_1)')
         assert s.compile().params == {'geom_1': 'POINT(1 2)'}
