@@ -253,6 +253,38 @@ class TestInsertionORM():
         assert bottom_right is None
 
 
+class TestPickle():
+
+    def setup(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+
+    def teardown(self):
+        session.rollback()
+        metadata.drop_all()
+
+    def _create_one_lake(self):
+        l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        session.add(l)
+        session.flush()
+        return l.id
+
+    def test_pickle_unpickle(self):
+        import pickle
+
+        lake_id = self._create_one_lake()
+
+        lake = session.query(Lake).get(lake_id)
+        assert isinstance(lake.geom, WKBElement)
+        data_desc = str(lake.geom)
+
+        pickled = pickle.dumps(lake)
+        unpickled = pickle.loads(pickled)
+        assert unpickled.geom.extended
+        assert unpickled.geom.srid == 4326
+        assert str(unpickled.geom) == data_desc
+
+
 class TestCallFunction():
 
     def setup(self):
