@@ -37,6 +37,15 @@ class TestWKTElement():
             u'ST_GeomFromText_2': -1
         }
 
+    def test_pickle_unpickle(self):
+        import pickle
+        e = WKTElement('POINT(1 2)', srid=3, extended=True)
+        pickled = pickle.dumps(e)
+        unpickled = pickle.loads(pickled)
+        assert unpickled.srid == 3
+        assert unpickled.extended is True
+        assert unpickled.data == 'POINT(1 2)'
+
 
 class TestExtendedWKTElement():
 
@@ -129,6 +138,15 @@ class TestWKBElement():
     def test_function_str(self):
         e = WKBElement(b'\x01\x02', extended=True)
         assert isinstance(str(e), str)
+
+    def test_pickle_unpickle(self):
+        import pickle
+        e = WKBElement(b'\x01\x02', srid=3, extended=True)
+        pickled = pickle.dumps(e)
+        unpickled = pickle.loads(pickled)
+        assert unpickled.srid == 3
+        assert unpickled.extended is True
+        assert unpickled.data == b'\x01\x02'
 
 
 class TestExtendedWKBElement():

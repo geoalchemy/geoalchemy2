@@ -60,6 +60,23 @@ class _SpatialElement(object):
         func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)
 
+    def __getstate__(self):
+        state = {
+            'data': str(self),
+            'srid': self.srid,
+            'extended': self.extended,
+        }
+        return state
+
+    def __setstate__(self, state):
+        self.srid = state['srid']
+        self.extended = state['extended']
+        self.data = self._data_from_desc(state['data'])
+
+    @staticmethod
+    def _data_from_desc(desc):
+        raise NotImplementedError()
+
 
 class WKTElement(_SpatialElement, functions.Function):
     """
@@ -87,6 +104,10 @@ class WKTElement(_SpatialElement, functions.Function):
         This element's description string.
         """
         return self.data
+
+    @staticmethod
+    def _data_from_desc(desc):
+        return desc
 
 
 class WKBElement(_SpatialElement, functions.Function):
@@ -119,6 +140,12 @@ class WKBElement(_SpatialElement, functions.Function):
             # hexlify returns a bytes object on py3
             desc = str(desc, encoding="utf-8")
         return desc
+
+    @staticmethod
+    def _data_from_desc(desc):
+        if PY3:
+            desc = desc.encode(encoding="utf-8")
+        return binascii.unhexlify(desc)
 
 
 class RasterElement(FunctionElement):
