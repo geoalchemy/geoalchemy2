@@ -5,6 +5,17 @@ addons:
   apt:
     packages:
       - postgresql-9.3-postgis-2.3
+      - python2.7-dev
+      - python3-dev
+      - autotools-dev
+      - libexpat1-dev
+      - libfreexl-dev
+      - libgeos-dev
+      - libproj-dev
+      - libreadline-dev
+      - libsqlite3-dev
+      - libxml2-dev
+      - zlib1g-dev
 
 notifications:
   email:
@@ -12,6 +23,10 @@ notifications:
 
 services:
   - postgresql
+
+cache:
+  directories:
+    - libspatialite-4.3.0a
 
 matrix:
   include:
@@ -28,7 +43,14 @@ matrix:
       env:
       - TOX_ENV=pypysqla11
 
+env:
+  global:
+    - SPATIALITE_LIBRARY_PATH="/usr/local/lib/mod_spatialite.so"
+
 install:
+  # Install Spatialite
+  - ./install-spatialite.sh
+
   # Install tox
   - pip install tox
 
