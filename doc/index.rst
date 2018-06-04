@@ -9,12 +9,8 @@ working with spatial databases.
 GeoAlchemy 2 focuses on `PostGIS <http://postgis.net/>`_. PostGIS 1.5 and
 PostGIS 2 are supported.
 
-.. note::
-
-    GeoAlchemy 2 doesn't currently support other dialects than
-    PostgreSQL/PostGIS.  Supporting Oracle Locator in the previous series was
-    the main contributor to code complexity. So it is currently not clear
-    whether we want to go there again.
+SpatiaLite is also supported, but using GeoAlchemy 2 with SpatiaLite requires some specific
+configuration on the application side. GeoAlchemy 2 works with SpatiaLite 4.3.0 and higher.
 
 GeoAlchemy 2 aims to be simpler than its predecessor, `GeoAlchemy
 <https://pypi.python.org/pypi/GeoAlchemy>`_. Simpler to use, and simpler
@@ -41,7 +37,6 @@ What's New in GeoAlchemy 2
 
 * GeoAlchemy 2 supports PostGIS' ``geometry`` type, as well as the ``geography``
   and ``raster`` types.
-
 * The first series had its own namespace for spatial functions. With GeoAlchemy
   2, spatial functions are called like any other SQLAlchemy function, using
   ``func``, which is SQLAlchemy's `standard way
@@ -78,6 +73,7 @@ system. If you're new to GeoAlchemy 2 start with this.
 
    orm_tutorial
    core_tutorial
+   spatialite_tutorial
 
 Reference Documentation
 -----------------------
