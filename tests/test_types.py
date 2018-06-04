@@ -19,6 +19,12 @@ def geometry_table():
 
 
 @pytest.fixture
+def geometry_table_no_st_prefix():
+    table = Table('table', MetaData(), Column('geom', Geometry(use_st_prefix=False)))
+    return table
+
+
+@pytest.fixture
 def geography_table():
     table = Table('table', MetaData(), Column('geom', Geography))
     return table
@@ -60,15 +66,30 @@ class TestGeometry():
         s = select([geometry_table.c.geom])
         eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom FROM "table"')
 
+    def test_column_expression_no_st_prefix(self, geometry_table_no_st_prefix):
+        s = select([geometry_table_no_st_prefix.c.geom])
+        eq_sql(s, 'SELECT AsEWKB("table".geom) AS geom FROM "table"')
+
     def test_select_bind_expression(self, geometry_table):
         s = select([text('foo')]).where(geometry_table.c.geom == 'POINT(1 2)')
         eq_sql(s, 'SELECT foo FROM "table" WHERE '
                   '"table".geom = ST_GeomFromEWKT(:geom_1)')
         assert s.compile().params == {'geom_1': 'POINT(1 2)'}
 
+    def test_select_bind_expression_no_st_prefix(self, geometry_table_no_st_prefix):
+        s = select([text('foo')]).where(geometry_table_no_st_prefix.c.geom == 'POINT(1 2)')
+        eq_sql(s, 'SELECT foo FROM "table" WHERE '
+                  '"table".geom = GeomFromEWKT(:geom_1)')
+        assert s.compile().params == {'geom_1': 'POINT(1 2)'}
+
     def test_insert_bind_expression(self, geometry_table):
         i = insert(geometry_table).values(geom='POINT(1 2)')
         eq_sql(i, 'INSERT INTO "table" (geom) VALUES (ST_GeomFromEWKT(:geom))')
+        assert i.compile().params == {'geom': 'POINT(1 2)'}
+
+    def test_insert_bind_expression_no_st_prefix(self, geometry_table_no_st_prefix):
+        i = insert(geometry_table_no_st_prefix).values(geom='POINT(1 2)')
+        eq_sql(i, 'INSERT INTO "table" (geom) VALUES (GeomFromEWKT(:geom))')
         assert i.compile().params == {'geom': 'POINT(1 2)'}
 
     def test_function_call(self, geometry_table):
@@ -77,8 +98,14 @@ class TestGeometry():
                'SELECT ST_AsEWKB(ST_Buffer("table".geom, :ST_Buffer_2)) '
                'AS "ST_Buffer_1" FROM "table"')
 
-    def test_non_ST_function_call(self, geometry_table):
+    def test_function_call_no_st_prefix(self, geometry_table):
+        type_ = Geometry(use_st_prefix=False)
+        s = select([geometry_table.c.geom.ST_Buffer(2, type_=type_)])
+        eq_sql(s,
+               'SELECT AsEWKB(ST_Buffer("table".geom, :ST_Buffer_2)) '
+               'AS "ST_Buffer_1" FROM "table"')
 
+    def test_non_ST_function_call(self, geometry_table):
         with pytest.raises(AttributeError):
             geometry_table.c.geom.Buffer(2)
 
