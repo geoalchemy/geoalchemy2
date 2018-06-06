@@ -131,6 +131,7 @@ class _GISType(UserDefinedType):
     def result_processor(self, dialect, coltype):
         def process(value):
             if value is not None:
+                value = str(value)
                 return WKBElement(value, srid=self.srid,
                                   extended=self.extended)
         return process
