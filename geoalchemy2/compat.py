@@ -15,9 +15,10 @@ if sys.version_info[0] == 2:
     PY3 = False
     buffer = getattr(builtins, 'buffer')
     bytes = str
-
+    str = getattr(builtins, 'unicode')
 else:
     PY3 = True
     # Python 2.6 flake8 workaround
     buffer = getattr(builtins, 'memoryview')
     bytes = bytes
+    str = str

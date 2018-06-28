@@ -1,5 +1,5 @@
 import binascii
-from geoalchemy2.compat import PY3
+from geoalchemy2.compat import PY3, str as str_
 
 try:
     from sqlalchemy.sql import functions
@@ -29,14 +29,20 @@ class _SpatialElement(object):
     ``extended``
 
         A boolean indicating whether the extended format (EWKT or EWKB)
-        is used. Default is `False`.
+        is used. Default is ``False``.
+
+    ``use_st_prefix``
+
+        A boolean indicating whether the ST_ versions of the GeomFromEWKT
+        and GeomFromEWKB functions are used. Default is ``True``.
 
     """
 
-    def __init__(self, data, srid=-1, extended=False):
+    def __init__(self, data, srid=-1, extended=False, use_st_prefix=True):
         self.srid = srid
         self.data = data
         self.extended = extended
+        self.use_st_prefix = use_st_prefix
 
     def __str__(self):
         return self.desc
@@ -93,7 +99,8 @@ class WKTElement(_SpatialElement, functions.Function):
     def __init__(self, *args, **kwargs):
         _SpatialElement.__init__(self, *args, **kwargs)
         if self.extended:
-            args = ("ST_GeomFromEWKT", self.data)
+            f = "ST_GeomFromEWKT" if self.use_st_prefix else "GeomFromEWKT"
+            args = (f, self.data)
         else:
             args = ("ST_GeomFromText", self.data, self.srid)
         functions.Function.__init__(self, *args)
@@ -125,7 +132,8 @@ class WKBElement(_SpatialElement, functions.Function):
     def __init__(self, *args, **kwargs):
         _SpatialElement.__init__(self, *args, **kwargs)
         if self.extended:
-            args = ("ST_GeomFromEWKB", self.data)
+            f = "ST_GeomFromEWKB" if self.use_st_prefix else "GeomFromEWKB"
+            args = (f, self.data)
         else:
             args = ("ST_GeomFromWKB", self.data, self.srid)
         functions.Function.__init__(self, *args)
@@ -135,6 +143,8 @@ class WKBElement(_SpatialElement, functions.Function):
         """
         This element's description string.
         """
+        if isinstance(self.data, str_):
+            return self.data
         desc = binascii.hexlify(self.data)
         if PY3:
             # hexlify returns a bytes object on py3
@@ -194,7 +204,7 @@ class RasterElement(FunctionElement):
 
         # We create our own _FunctionGenerator here, and use it in place of
         # SQLAlchemy's "func" object. This is to be able to "bind" the
-        # function to the SQL expression. See also GenericFunction above.
+        # function to the SQL expression. See also GenericFunction.
 
         func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)

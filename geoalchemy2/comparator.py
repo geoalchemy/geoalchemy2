@@ -91,7 +91,7 @@ class BaseComparator(UserDefinedType.Comparator):
 
         # We create our own _FunctionGenerator here, and use it in place of
         # SQLAlchemy's "func" object. This is to be able to "bind" the
-        # function to the SQL expression. See also GenericFunction above.
+        # function to the SQL expression. See also GenericFunction.
 
         func_ = _FunctionGenerator(expr=self.expr)
         return getattr(func_, name)

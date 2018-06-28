@@ -90,6 +90,13 @@ class _GISType(UserDefinedType):
         into account if ``management`` is set to ``True`` and is only available
         for PostGIS 2.x.
 
+    ``use_st_prefix``
+
+        Whether to use the ``ST_`` versions of the from_text and as_binary
+        functions. For example, for Geometry, ``GeomFromEWKT`` will be used
+        if ``use_st_prefix`` is ``False``, otherwise ``ST_GeomFromEWKT`` will
+        be used. Default is ``True``.
+
     """
 
     name = None
@@ -109,7 +116,7 @@ class _GISType(UserDefinedType):
         geometry/geography columns. """
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
-                 spatial_index=True, management=False, use_typmod=None):
+                 spatial_index=True, management=False, use_typmod=None, use_st_prefix=True):
         geometry_type, srid = self.check_ctor_args(
             geometry_type, srid, management, use_typmod)
         self.geometry_type = geometry_type
@@ -118,7 +125,11 @@ class _GISType(UserDefinedType):
         self.spatial_index = spatial_index
         self.management = management
         self.use_typmod = use_typmod
-        self.extended = self.as_binary == 'ST_AsEWKB'
+        self.extended = self.as_binary == 'AsEWKB'
+        self.use_st_prefix = use_st_prefix
+        if use_st_prefix:
+            self.from_text = 'ST_' + self.from_text
+            self.as_binary = 'ST_' + self.as_binary
 
     def get_col_spec(self):
         if not self.geometry_type:
@@ -131,8 +142,8 @@ class _GISType(UserDefinedType):
     def result_processor(self, dialect, coltype):
         def process(value):
             if value is not None:
-                return WKBElement(value, srid=self.srid,
-                                  extended=self.extended)
+                return WKBElement(value, srid=self.srid, extended=self.extended,
+                                  use_st_prefix=self.use_st_prefix)
         return process
 
     def bind_expression(self, bindvalue):
@@ -181,11 +192,11 @@ class Geometry(_GISType):
     name = 'geometry'
     """ Type name used for defining geometry columns in ``CREATE TABLE``. """
 
-    from_text = 'ST_GeomFromEWKT'
+    from_text = 'GeomFromEWKT'
     """ The "from text" geometry constructor. Used by the parent class'
         ``bind_expression`` method. """
 
-    as_binary = 'ST_AsEWKB'
+    as_binary = 'AsEWKB'
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
 
@@ -206,11 +217,11 @@ class Geography(_GISType):
     name = 'geography'
     """ Type name used for defining geography columns in ``CREATE TABLE``. """
 
-    from_text = 'ST_GeogFromText'
+    from_text = 'GeogFromText'
     """ The ``FromText`` geography constructor. Used by the parent class'
         ``bind_expression`` method. """
 
-    as_binary = 'ST_AsBinary'
+    as_binary = 'AsBinary'
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
 

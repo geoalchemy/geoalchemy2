@@ -10,6 +10,8 @@ from .elements import (  # NOQA
     RasterElement
     )
 
+from .exc import ArgumentError
+
 from . import functions  # NOQA
 
 from sqlalchemy import Table, event
@@ -55,12 +57,19 @@ def _setup_ddl_event_listeners():
             table.columns = column_collection
 
             if event == 'before-drop':
-                # Drop the managed Geometry columns with DropGeometryColumn()
+                # Drop the managed Geometry columns
                 table_schema = table.schema or 'public'
                 for c in gis_cols:
-                    stmt = select([
-                        func.DropGeometryColumn(
-                            table_schema, table.name, c.name)])
+                    if bind.dialect.name == 'sqlite':
+                        drop_func = 'DiscardGeometryColumn'
+                    elif bind.dialect.name == 'postgresql':
+                        drop_func = 'DropGeometryColumn'
+                    else:
+                        raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
+                    args = [table.schema] if table.schema else []
+                    args.extend([table.name, c.name])
+
+                    stmt = select([getattr(func, drop_func)(*args)])
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
 
@@ -72,14 +81,14 @@ def _setup_ddl_event_listeners():
             for c in table.c:
                 # Add the managed Geometry columns with AddGeometryColumn()
                 if isinstance(c.type, Geometry) and c.type.management is True:
-                    args = [
-                        table_schema,
+                    args = [table.schema] if table.schema else []
+                    args.extend([
                         table.name,
                         c.name,
                         c.type.srid,
                         c.type.geometry_type,
                         c.type.dimension
-                    ]
+                    ])
                     if c.type.use_typmod is not None:
                         args.append(c.type.use_typmod)
 
@@ -90,10 +99,17 @@ def _setup_ddl_event_listeners():
                 # Add spatial indices for the Geometry and Geography columns
                 if isinstance(c.type, (Geometry, Geography)) and \
                         c.type.spatial_index is True:
-                    bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
-                                 'USING GIST ("%s")' %
-                                 (table.name, c.name, table_schema,
-                                  table.name, c.name))
+                    if bind.dialect.name == 'sqlite':
+                        stmt = select([func.CreateSpatialIndex(table.name, c.name)])
+                        stmt = stmt.execution_options(autocommit=True)
+                        bind.execute(stmt)
+                    elif bind.dialect.name == 'postgresql':
+                        bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
+                                     'USING GIST ("%s")' %
+                                     (table.name, c.name, table_schema,
+                                      table.name, c.name))
+                    else:
+                        raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
 
                 # Add spatial indices for the Raster columns
                 #

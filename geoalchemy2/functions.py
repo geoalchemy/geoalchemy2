@@ -139,7 +139,7 @@ _FUNCTIONS = [
     #
 
     ('ST_Transform', types.Geometry,
-     'Returns a new geometry with its coordinates transformed to the SRID '
+     'Return a new geometry with its coordinates transformed to the SRID '
      'referenced by the integer parameter.'),
 
     #

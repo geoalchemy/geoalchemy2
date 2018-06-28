@@ -6,6 +6,7 @@ from geoalchemy2.types import Geometry
 from geoalchemy2.elements import (
     WKTElement, WKBElement, RasterElement, CompositeElement
 )
+from geoalchemy2.compat import str as str_
 
 
 @pytest.fixture
@@ -123,6 +124,10 @@ class TestWKBElement():
     def test_desc(self):
         e = WKBElement(b'\x01\x02', extended=True)
         assert e.desc == '0102'
+
+    def test_desc_str(self):
+        e = WKBElement(str_('0102'))
+        assert e.desc == str_('0102')
 
     def test_function_call(self):
         e = WKBElement(b'\x01\x02', extended=True)
