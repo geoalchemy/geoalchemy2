@@ -11,7 +11,7 @@ import shapely.wkb
 import shapely.wkt
 
 from .elements import WKBElement, WKTElement
-from .compat import buffer, bytes
+from .compat import buffer, bytes, str
 
 
 def to_shape(element):
@@ -26,7 +26,9 @@ def to_shape(element):
     """
     assert isinstance(element, (WKBElement, WKTElement))
     if isinstance(element, WKBElement):
-        return shapely.wkb.loads(bytes(element.data))
+        data, hex = (element.data, True) if isinstance(element.data, str) else \
+                    (bytes(element.data), False)
+        return shapely.wkb.loads(data, hex=hex)
     elif isinstance(element, WKTElement):
         return shapely.wkt.loads(element.data)
 
