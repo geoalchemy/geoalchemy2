@@ -11,7 +11,8 @@ from sqlalchemy.sql import select, func
 
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement, WKBElement
-from geoalchemy2.shape import from_shape
+from geoalchemy2.shape import from_shape, to_shape
+from geoalchemy2.compat import str as str_
 
 from shapely.geometry import LineString
 
@@ -141,6 +142,37 @@ class TestInsertionORM():
         assert wkt == 'LINESTRING(0 0, 1 1)'
         srid = session.execute(l.geom.ST_SRID()).scalar()
         assert srid == 4326
+
+
+class TestShapely():
+
+    def setup(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+
+    def teardown(self):
+        session.rollback()
+        metadata.drop_all()
+
+    def test_to_shape(self):
+        l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        session.add(l)
+        session.flush()
+        session.expire(l)
+        l = session.query(Lake).one()
+        assert isinstance(l.geom, WKBElement)
+        assert isinstance(l.geom.data, str_)
+        assert l.geom.srid == 4326
+        s = to_shape(l.geom)
+        assert isinstance(s, LineString)
+        assert s.wkt == 'LINESTRING (0 0, 1 1)'
+        l = Lake(l.geom)
+        session.add(l)
+        session.flush()
+        session.expire(l)
+        assert isinstance(l.geom, WKBElement)
+        assert isinstance(l.geom.data, str_)
+        assert l.geom.srid == 4326
 
 
 class TestCallFunction():
