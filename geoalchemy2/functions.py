@@ -138,6 +138,10 @@ _FUNCTIONS = [
     # Geometry Editors
     #
 
+    ('ST_AddPoint', types.Geometry,
+     'Adds a point to a LineString before point <position> (0-based index). '
+     'Third parameter can be omitted or set to -1 for appending.'),
+
     ('ST_Transform', types.Geometry,
      'Returns a new geometry with its coordinates transformed to the SRID '
      'referenced by the integer parameter.'),
