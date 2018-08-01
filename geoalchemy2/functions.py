@@ -95,6 +95,35 @@ class GenericFunction(functions.GenericFunction):
 
 
 _FUNCTIONS = [
+
+    #
+    # Geometry Constructors
+    #
+    ('ST_MakeLine', types.Geometry,
+     'T_MakeLine comes in 3 forms: a spatial aggregate that takes rows of '
+     'point, multipoint, or line geometries and returns a line string, a '
+     'function that takes an array of point, multipoint, or line, and a '
+     'regular function that takes two point, multipoint, or line geometries. '
+     'You might want to use a subselect to order points before feeding them '
+     'to the aggregate version of this function.'
+     ''
+     'Inputs other than point, multipoint, or lines are ignored.'
+     ''
+     'When adding line components common nodes at the beginning of lines are '
+     'removed from the output. Common nodes in point and multipoint inputs are'
+     ' not removed.'
+     ''
+     'This function supports 3d and will not drop the z-index. '
+     ''
+     'Availability: 2.3.0 - Support for multipoint input elements was '
+     'introduced'
+     ''
+     'Availability: 2.0.0 - Support for linestring input elements was '
+     'introduced'
+     ''
+     'Availability: 1.4.0 - ST_MakeLine(geomarray) was introduced. ST_MakeLine'
+     ' aggregate functions was enhanced to handle more points faster.'),
+
     #
     # Geometry Accessors
     #
@@ -331,7 +360,6 @@ _FUNCTIONS = [
      'geomB. The geography implementation does a transform to geometry to do '
      'the intersection and then transform back to WGS84.'),
 
-<<<<<<< HEAD
     ('ST_LineLocatePoint', types.Geometry,
      'Returns a float between 0 and 1 representing the location of the closest'
      'point on LineString to the given Point, as a fraction of total 2d line '
@@ -356,8 +384,6 @@ _FUNCTIONS = [
      'If \'start\' and \'end\' have the same value this is equivalent '
      'to ST_LineInterpolatePoint.'),
 
-=======
->>>>>>> 06dc7a45c5d82df60e741cc7f8611d5c5ca4b147
     ('ST_LineInterpolatePoint', types.Geometry,
      'Returns a point interpolated along a line. First argument must be a '
      'LINESTRING. Second argument is a float8 between 0 and 1 representing '
