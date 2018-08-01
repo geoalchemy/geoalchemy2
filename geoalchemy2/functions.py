@@ -331,6 +331,7 @@ _FUNCTIONS = [
      'geomB. The geography implementation does a transform to geometry to do '
      'the intersection and then transform back to WGS84.'),
 
+<<<<<<< HEAD
     ('ST_LineLocatePoint', types.Geometry,
      'Returns a float between 0 and 1 representing the location of the closest'
      'point on LineString to the given Point, as a fraction of total 2d line '
@@ -355,6 +356,8 @@ _FUNCTIONS = [
      'If \'start\' and \'end\' have the same value this is equivalent '
      'to ST_LineInterpolatePoint.'),
 
+=======
+>>>>>>> 06dc7a45c5d82df60e741cc7f8611d5c5ca4b147
     ('ST_LineInterpolatePoint', types.Geometry,
      'Returns a point interpolated along a line. First argument must be a '
      'LINESTRING. Second argument is a float8 between 0 and 1 representing '
