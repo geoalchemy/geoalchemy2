@@ -395,6 +395,13 @@ _FUNCTIONS = [
     # Raster Accessors
     #
 
+    ('ST_NumPoints', None,
+     'Return the number of points in an ST_LineString or ST_CircularString '
+     'value. Prior to 1.4 only works with Linestrings as the specs state. '
+     'From 1.4 forward this is an alias for ST_NPoints which returns number '
+     'of vertexes for not just line strings. Consider using ST_NPoints '
+     'instead which is multi-purpose and works with many geometry types.'),
+
     ('ST_Height', None,
      ('Returns the height of the raster in pixels.', 'RT_ST_Height')),
 
