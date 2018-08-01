@@ -198,6 +198,10 @@ _FUNCTIONS = [
     ('ST_Centroid', types.Geometry,
      'Returns the geometric center of a geometry.'),
 
+    ('ST_ClosestPoint', types.Geometry,
+     'Returns the 2-dimensional point on g1 that is closest to g2. This is the '
+     'first point of the shortest line..'),
+
     ('ST_Contains', None,
      'Returns ``True`` if and only if no points of B lie in the exterior of '
      'A, and at least one point of the interior of B lies in the interior '
