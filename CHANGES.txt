@@ -1,6 +1,16 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.5.0
+-----
+
+* Add support for function ST_Azimuth @simlmx (#175)
+* Remove Python 3.3 from the test matrix @elemoine (#179)
+* Correct spelling mistakes @EdwardBetts @elemoine (#180)
+* Make WKTElement and WKBElement pickable @elemoine (#182)
+* Add SpatiaLite support @elemoine (#181)
+* Fix to_shape with SpatiaLite @elemoine (#185)
+
 0.4.2
 -----
 
