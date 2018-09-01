@@ -46,6 +46,15 @@ class TestWKTElement():
         assert unpickled.srid == 3
         assert unpickled.extended is True
         assert unpickled.data == 'POINT(1 2)'
+        assert unpickled.name == 'ST_GeomFromEWKT'
+        f = unpickled.ST_Buffer(2)
+        eq_sql(f, 'ST_Buffer('
+               'ST_GeomFromEWKT(:ST_GeomFromEWKT_1), '
+               ':ST_Buffer_1)')
+        assert f.compile().params == {
+            u'ST_Buffer_1': 2,
+            u'ST_GeomFromEWKT_1': 'POINT(1 2)',
+        }
 
 
 class TestExtendedWKTElement():
@@ -152,6 +161,15 @@ class TestWKBElement():
         assert unpickled.srid == 3
         assert unpickled.extended is True
         assert unpickled.data == b'\x01\x02'
+        assert unpickled.name == 'ST_GeomFromEWKB'
+        f = unpickled.ST_Buffer(2)
+        eq_sql(f, 'ST_Buffer('
+               'ST_GeomFromEWKB(:ST_GeomFromEWKB_1), '
+               ':ST_Buffer_1)')
+        assert f.compile().params == {
+            u'ST_Buffer_1': 2,
+            u'ST_GeomFromEWKB_1': b'\x01\x02',
+        }
 
 
 class TestExtendedWKBElement():
