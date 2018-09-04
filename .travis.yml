@@ -1,5 +1,8 @@
 language: python
 
+sudo: true
+dist: trusty
+
 addons:
   postgresql: 9.3
   apt:
