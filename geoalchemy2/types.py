@@ -69,6 +69,10 @@ class _GISType(UserDefinedType):
 
         The dimension of the geometry. Default is ``2``.
 
+        When set to ``3`` then the "geometry_type" is constrained to terminate
+        on either ``"Z"`` or ``"M"``. When set to ``4`` then the
+        "geometry_type" must terminate with ``"ZM"``.
+
     ``spatial_index``
 
         Indicate if a spatial index should be created. Default is ``True``.
