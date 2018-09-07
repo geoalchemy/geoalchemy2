@@ -50,6 +50,38 @@ class TestGeometry():
         with pytest.raises(ArgumentError):
             Geometry(srid='foo')
 
+    def test_get_col_spec_dimension4D(self):
+        g = Geometry(geometry_type='GEOMETRYZM', srid=900913, dimension=4)
+        assert g.get_col_spec() == 'geometry(GEOMETRYZM,900913)'
+
+    def test_get_col_spec_dimension3DZ(self):
+        g = Geometry(geometry_type='GEOMETRYZ', srid=900913, dimension=3)
+        assert g.get_col_spec() == 'geometry(GEOMETRYZ,900913)'
+
+    def test_get_col_spec_dimension3DM(self):
+        g = Geometry(geometry_type='GEOMETRYM', srid=900913, dimension=3)
+        assert g.get_col_spec() == 'geometry(GEOMETRYM,900913)'
+
+    def test_check_ctor_args_bad_geometry_type_dimension4D(self):
+        with pytest.raises(ArgumentError):
+            Geometry(geometry_type='GEOMETRY', dimension=4)
+
+    def test_check_ctor_args_bad_geometry_type_Z_dimension4D(self):
+        with pytest.raises(ArgumentError):
+            Geometry(geometry_type='GEOMETRYZ', dimension=4)
+
+    def test_check_ctor_args_bad_geometry_type_M_dimension4D(self):
+        with pytest.raises(ArgumentError):
+            Geometry(geometry_type='GEOMETRYM', dimension=4)
+
+    def test_check_ctor_args_bad_geometry_type_dimension3D(self):
+        with pytest.raises(ArgumentError):
+            Geometry(geometry_type='GEOMETRY', dimension=3)
+
+    def test_check_ctor_args_bad_geometry_type_ZM_dimension3D(self):
+        with pytest.raises(ArgumentError):
+            Geometry(geometry_type='GEOMETRYZM', dimension=3)
+
     def test_check_ctor_args_incompatible_arguments(self):
         with pytest.raises(ArgumentError):
             Geometry(geometry_type=None, management=True)
