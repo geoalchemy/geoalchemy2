@@ -118,7 +118,7 @@ class _GISType(UserDefinedType):
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
                  spatial_index=True, management=False, use_typmod=None, use_st_prefix=True):
         geometry_type, srid = self.check_ctor_args(
-            geometry_type, srid, management, use_typmod)
+            geometry_type, srid, dimension, management, use_typmod)
         self.geometry_type = geometry_type
         self.srid = srid
         self.dimension = dimension
@@ -158,19 +158,34 @@ class _GISType(UserDefinedType):
         return process
 
     @staticmethod
-    def check_ctor_args(geometry_type, srid, management, use_typmod):
+    def check_ctor_args(geometry_type, srid, dimension, management, use_typmod):
         try:
             srid = int(srid)
         except ValueError:
             raise ArgumentError('srid must be convertible to an integer')
         if geometry_type:
             geometry_type = geometry_type.upper()
+
+            if ((dimension == 4 and not geometry_type.endswith('ZM')) or
+                (dimension == 3 and not (geometry_type.endswith('Z') or
+                                         (geometry_type.endswith('M') and not
+                                          geometry_type.endswith('ZM')))) or
+                (dimension == 2 and (geometry_type.endswith('ZM') or
+                                     geometry_type.endswith('Z') or
+                                     geometry_type.endswith('M')))):
+                raise ArgumentError(
+                    'invalid geometry_type {!r} for dimension {}'.format(
+                        geometry_type, dimension))
         else:
             if management:
                 raise ArgumentError('geometry_type set to None not compatible '
                                     'with management')
             if srid > 0:
                 warnings.warn('srid not enforced when geometry_type is None')
+
+            if dimension > 2:
+                raise ArgumentError('geometry type set to None not compatible '
+                                    'with dimension > 2')
         if use_typmod and not management:
             warnings.warn('use_typmod ignored when management is False')
         return geometry_type, srid
