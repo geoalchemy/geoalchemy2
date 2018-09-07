@@ -11,7 +11,7 @@ from sqlalchemy.types import to_instance
 from sqlalchemy.ext.compiler import compiles
 
 
-class _SpatialElement(object):
+class _SpatialElement(functions.Function):
     """
     The base class for :class:`geoalchemy2.elements.WKTElement` and
     :class:`geoalchemy2.elements.WKBElement`.
@@ -43,6 +43,13 @@ class _SpatialElement(object):
         self.data = data
         self.extended = extended
         self.use_st_prefix = use_st_prefix
+        if self.extended:
+            args = [self.geom_from_extended_version, self.data]
+        else:
+            args = [self.geom_from, self.data, self.srid]
+        if not self.use_st_prefix:
+            args[0] = args[0].lstrip('ST_')
+        functions.Function.__init__(self, *args)
 
     def __str__(self):
         return self.desc
@@ -68,23 +75,30 @@ class _SpatialElement(object):
 
     def __getstate__(self):
         state = {
-            'data': str(self),
             'srid': self.srid,
+            'data': str(self),
             'extended': self.extended,
+            'use_st_prefix': self.use_st_prefix,
+            'name': self.name,
         }
         return state
 
     def __setstate__(self, state):
-        self.srid = state['srid']
-        self.extended = state['extended']
+        self.__dict__.update(state)
         self.data = self._data_from_desc(state['data'])
+        args = [self.name, self.data]
+        if not self.extended:
+            args.append(self.srid)
+        # we need to call Function.__init__ to properly initialize SQLAlchemy's
+        # internal states
+        functions.Function.__init__(self, *args)
 
     @staticmethod
     def _data_from_desc(desc):
         raise NotImplementedError()
 
 
-class WKTElement(_SpatialElement, functions.Function):
+class WKTElement(_SpatialElement):
     """
     Instances of this class wrap a WKT or EWKT value.
 
@@ -93,17 +107,10 @@ class WKTElement(_SpatialElement, functions.Function):
         wkt_element_1 = WKTElement('POINT(5 45)')
         wkt_element_2 = WKTElement('POINT(5 45)', srid=4326)
         wkt_element_3 = WKTElement('SRID=4326;POINT(5 45)', extended=True)
-
     """
 
-    def __init__(self, *args, **kwargs):
-        _SpatialElement.__init__(self, *args, **kwargs)
-        if self.extended:
-            f = "ST_GeomFromEWKT" if self.use_st_prefix else "GeomFromEWKT"
-            args = (f, self.data)
-        else:
-            args = ("ST_GeomFromText", self.data, self.srid)
-        functions.Function.__init__(self, *args)
+    geom_from = 'ST_GeomFromText'
+    geom_from_extended_version = 'ST_GeomFromEWKT'
 
     @property
     def desc(self):
@@ -117,7 +124,7 @@ class WKTElement(_SpatialElement, functions.Function):
         return desc
 
 
-class WKBElement(_SpatialElement, functions.Function):
+class WKBElement(_SpatialElement):
     """
     Instances of this class wrap a WKB or EWKB value.
 
@@ -129,14 +136,8 @@ class WKBElement(_SpatialElement, functions.Function):
     using the :func:`geoalchemy2.shape.from_shape` function.
     """
 
-    def __init__(self, *args, **kwargs):
-        _SpatialElement.__init__(self, *args, **kwargs)
-        if self.extended:
-            f = "ST_GeomFromEWKB" if self.use_st_prefix else "GeomFromEWKB"
-            args = (f, self.data)
-        else:
-            args = ("ST_GeomFromWKB", self.data, self.srid)
-        functions.Function.__init__(self, *args)
+    geom_from = 'ST_GeomFromWKB'
+    geom_from_extended_version = 'ST_GeomFromEWKB'
 
     @property
     def desc(self):
