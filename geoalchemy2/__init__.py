@@ -13,6 +13,7 @@ from .elements import (  # NOQA
 from .exc import ArgumentError
 
 from . import functions  # NOQA
+from . import types  # NOQA
 
 from sqlalchemy import Table, event
 from sqlalchemy.sql import select, func, expression

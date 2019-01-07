@@ -31,24 +31,16 @@ class _SpatialElement(functions.Function):
         A boolean indicating whether the extended format (EWKT or EWKB)
         is used. Default is ``False``.
 
-    ``use_st_prefix``
-
-        A boolean indicating whether the ST_ versions of the GeomFromEWKT
-        and GeomFromEWKB functions are used. Default is ``True``.
-
     """
 
-    def __init__(self, data, srid=-1, extended=False, use_st_prefix=True):
+    def __init__(self, data, srid=-1, extended=False):
         self.srid = srid
         self.data = data
         self.extended = extended
-        self.use_st_prefix = use_st_prefix
         if self.extended:
             args = [self.geom_from_extended_version, self.data]
         else:
             args = [self.geom_from, self.data, self.srid]
-        if not self.use_st_prefix:
-            args[0] = args[0].lstrip('ST_')
         functions.Function.__init__(self, *args)
 
     def __str__(self):
@@ -78,7 +70,6 @@ class _SpatialElement(functions.Function):
             'srid': self.srid,
             'data': str(self),
             'extended': self.extended,
-            'use_st_prefix': self.use_st_prefix,
             'name': self.name,
         }
         return state
@@ -96,6 +87,12 @@ class _SpatialElement(functions.Function):
     @staticmethod
     def _data_from_desc(desc):
         raise NotImplementedError()
+
+
+@compiles(_SpatialElement, 'sqlite')
+def compile_spatialelement(element, compiler, **kw):
+    return "{}({})".format(element.name.lstrip("ST_"),
+                           compiler.process(element.clauses, **kw))
 
 
 class WKTElement(_SpatialElement):

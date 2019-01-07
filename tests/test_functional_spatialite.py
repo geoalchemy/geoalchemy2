@@ -37,15 +37,12 @@ listen(engine, 'connect', load_spatialite)
 metadata = MetaData(engine)
 Base = declarative_base(metadata=metadata)
 
-# geometry type to use when calling geometry-returning functions
-geometry_type = Geometry(use_st_prefix=False)
-
 
 class Lake(Base):
     __tablename__ = 'lake'
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry(geometry_type='LINESTRING', srid=4326,
-                           management=True, use_st_prefix=False))
+                           management=True))
 
     def __init__(self, geom):
         self.geom = geom
@@ -74,7 +71,7 @@ class TestInsertionCore():
         # the Geometry type's bind_processor and bind_expression functions.
         conn.execute(Lake.__table__.insert(), [
             {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'},
-            {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326, use_st_prefix=False)}
+            {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326)}
 
             # Having WKBElement objects as bind values is not supported, so
             # the following does not work:
@@ -213,21 +210,21 @@ class TestCallFunction():
     def test_ST_Buffer(self):
         lake_id = self._create_one_lake()
 
-        s = select([func.ST_Buffer(Lake.__table__.c.geom, 2, type_=geometry_type)])
+        s = select([func.ST_Buffer(Lake.__table__.c.geom, 2)])
         r1 = session.execute(s).scalar()
         assert isinstance(r1, WKBElement)
 
         lake = session.query(Lake).get(lake_id)
-        r2 = session.execute(lake.geom.ST_Buffer(2, type_=geometry_type)).scalar()
+        r2 = session.execute(lake.geom.ST_Buffer(2)).scalar()
         assert isinstance(r2, WKBElement)
 
-        r3 = session.query(Lake.geom.ST_Buffer(2, type_=geometry_type)).scalar()
+        r3 = session.query(Lake.geom.ST_Buffer(2)).scalar()
         assert isinstance(r3, WKBElement)
 
         assert r1.data == r2.data == r3.data
 
         r4 = session.query(Lake).filter(
             func.ST_Within(WKTElement('POINT(0 0)', srid=4326),
-                           Lake.geom.ST_Buffer(2, type_=geometry_type))).one()
+                           Lake.geom.ST_Buffer(2))).one()
         assert isinstance(r4, Lake)
         assert r4.id == lake_id
