@@ -51,6 +51,7 @@ Reference
 """
 
 from sqlalchemy.sql import functions
+from sqlalchemy.ext.compiler import compiles
 
 from . import types
 
@@ -397,3 +398,13 @@ for name, type_, doc in _FUNCTIONS:
         attributes['__doc__'] = '\n\n'.join(docs)
 
     globals()[name] = type(name, (GenericFunction,), attributes)
+
+
+#
+# Defines compiled versions for SpatiaLite
+#
+
+
+@compiles(globals()['ST_AsGeoJSON'], 'sqlite')
+def compile_st_asgeojson(element, compiler, **kw):
+    return 'GeoJSON({})'.format(compiler.process(element.clauses, **kw))
