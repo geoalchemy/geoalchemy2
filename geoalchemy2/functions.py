@@ -404,7 +404,6 @@ for name, type_, doc in _FUNCTIONS:
 # Defines compiled versions for SpatiaLite
 #
 
-
 @compiles(globals()['ST_AsGeoJSON'], 'sqlite')
 def compile_st_asgeojson(element, compiler, **kw):
-    return 'GeoJSON({})'.format(compiler.process(element.clauses, **kw))
+    return 'AsGeoJSON({})'.format(compiler.process(element.clauses, **kw))
