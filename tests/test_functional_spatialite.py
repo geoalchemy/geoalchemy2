@@ -108,37 +108,37 @@ class TestInsertionORM():
         metadata.drop_all()
 
     def test_WKT(self):
-        l = Lake('LINESTRING(0 0,1 1)')
-        session.add(l)
+        lake = Lake('LINESTRING(0 0,1 1)')
+        session.add(lake)
 
         with pytest.raises(IntegrityError):
             session.flush()
 
     def test_WKTElement(self):
-        l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
-        session.add(l)
+        lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        session.add(lake)
         session.flush()
-        session.expire(l)
-        assert isinstance(l.geom, WKBElement)
-        assert str(l.geom) == '0102000020E6100000020000000000000000000000000000000000000000000000' \
-                              '0000F03F000000000000F03F'
-        wkt = session.execute(l.geom.ST_AsText()).scalar()
+        session.expire(lake)
+        assert isinstance(lake.geom, WKBElement)
+        assert str(lake.geom) == '0102000020E6100000020000000000000000000000000000000000000000000' \
+                                 '0000000F03F000000000000F03F'
+        wkt = session.execute(lake.geom.ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0, 1 1)'
-        srid = session.execute(l.geom.ST_SRID()).scalar()
+        srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
     def test_WKBElement(self):
         shape = LineString([[0, 0], [1, 1]])
-        l = Lake(from_shape(shape, srid=4326))
-        session.add(l)
+        lake = Lake(from_shape(shape, srid=4326))
+        session.add(lake)
         session.flush()
-        session.expire(l)
-        assert isinstance(l.geom, WKBElement)
-        assert str(l.geom) == '0102000020E6100000020000000000000000000000000000000000000000000000' \
-                              '0000F03F000000000000F03F'
-        wkt = session.execute(l.geom.ST_AsText()).scalar()
+        session.expire(lake)
+        assert isinstance(lake.geom, WKBElement)
+        assert str(lake.geom) == '0102000020E6100000020000000000000000000000000000000000000000000' \
+                                 '0000000F03F000000000000F03F'
+        wkt = session.execute(lake.geom.ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0, 1 1)'
-        srid = session.execute(l.geom.ST_SRID()).scalar()
+        srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
 
@@ -153,24 +153,24 @@ class TestShapely():
         metadata.drop_all()
 
     def test_to_shape(self):
-        l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
-        session.add(l)
+        lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        session.add(lake)
         session.flush()
-        session.expire(l)
-        l = session.query(Lake).one()
-        assert isinstance(l.geom, WKBElement)
-        assert isinstance(l.geom.data, str_)
-        assert l.geom.srid == 4326
-        s = to_shape(l.geom)
+        session.expire(lake)
+        lake = session.query(Lake).one()
+        assert isinstance(lake.geom, WKBElement)
+        assert isinstance(lake.geom.data, str_)
+        assert lake.geom.srid == 4326
+        s = to_shape(lake.geom)
         assert isinstance(s, LineString)
         assert s.wkt == 'LINESTRING (0 0, 1 1)'
-        l = Lake(l.geom)
-        session.add(l)
+        lake = Lake(lake.geom)
+        session.add(lake)
         session.flush()
-        session.expire(l)
-        assert isinstance(l.geom, WKBElement)
-        assert isinstance(l.geom.data, str_)
-        assert l.geom.srid == 4326
+        session.expire(lake)
+        assert isinstance(lake.geom, WKBElement)
+        assert isinstance(lake.geom.data, str_)
+        assert lake.geom.srid == 4326
 
 
 class TestCallFunction():
@@ -184,10 +184,10 @@ class TestCallFunction():
         metadata.drop_all()
 
     def _create_one_lake(self):
-        l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
-        session.add(l)
+        lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        session.add(lake)
         session.flush()
-        return l.id
+        return lake.id
 
     def test_ST_GeometryType(self):
         lake_id = self._create_one_lake()
