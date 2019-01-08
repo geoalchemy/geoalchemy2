@@ -157,13 +157,15 @@ class _GISType(UserDefinedType):
         if geometry_type:
             geometry_type = geometry_type.upper()
 
-            if ((dimension == 4 and not geometry_type.endswith('ZM')) or
-                (dimension == 3 and not (geometry_type.endswith('Z') or
-                                         (geometry_type.endswith('M') and not
-                                          geometry_type.endswith('ZM')))) or
-                (dimension == 2 and (geometry_type.endswith('ZM') or
-                                     geometry_type.endswith('Z') or
-                                     geometry_type.endswith('M')))):
+            if ((dimension == 4 and not geometry_type.endswith('ZM'))
+                or (dimension == 3
+                    and not (geometry_type.endswith('Z')
+                             or (geometry_type.endswith('M')
+                             and not geometry_type.endswith('ZM'))))
+                or (dimension == 2
+                    and (geometry_type.endswith('ZM')
+                         or geometry_type.endswith('Z')
+                         or geometry_type.endswith('M')))):
                 raise ArgumentError(
                     'invalid geometry_type {!r} for dimension {}'.format(
                         geometry_type, dimension))
