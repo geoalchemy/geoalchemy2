@@ -1,6 +1,7 @@
 import os
 import pytest
 import platform
+import json
 
 from sqlalchemy import create_engine, MetaData, Column, Integer
 from sqlalchemy.orm import sessionmaker
@@ -228,3 +229,22 @@ class TestCallFunction():
                            Lake.geom.ST_Buffer(2))).one()
         assert isinstance(r4, Lake)
         assert r4.id == lake_id
+
+    def test_ST_GeoJSON(self):
+        lake_id = self._create_one_lake()
+
+        def _test(r):
+            r = json.loads(r)
+            assert r["type"] == "LineString"
+            assert r["coordinates"] == [[0, 0], [1, 1]]
+
+        s = select([func.ST_AsGeoJSON(Lake.__table__.c.geom)])
+        r = session.execute(s).scalar()
+        _test(r)
+
+        lake = session.query(Lake).get(lake_id)
+        r = session.execute(lake.geom.ST_AsGeoJSON()).scalar()
+        _test(r)
+
+        r = session.query(Lake.geom.ST_AsGeoJSON()).scalar()
+        _test(r)
