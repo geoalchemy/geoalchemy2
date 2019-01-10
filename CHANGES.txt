@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.6.0
+-----
+
+* Add AsGeoJSON for SpatiaLite @TomGoBravo @elemoine (#204)
+* Remove the use_st_prefix argument and use SpatiaLite-compiled functions @elemoine (#204)
+
 0.5.0
 -----
 
