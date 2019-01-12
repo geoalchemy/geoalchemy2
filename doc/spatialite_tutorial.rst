@@ -75,18 +75,14 @@ a Python class and a database table.
     ...     __tablename__ = 'lake'
     ...     id = Column(Integer, primary_key=True)
     ...     name = Column(String)
-    ...     geom = Column(Geometry(geometry_type='POLYGON', management=True, use_st_prefix=False))
+    ...     geom = Column(Geometry(geometry_type='POLYGON', management=True))
 
-This basically works in the way as with PostGIS. The difference is the ``management`` and
-``use_st_prefix`` arguments that must be set to ``True`` and ``False``, respectively.
+This basically works in the way as with PostGIS. The difference is the ``management``
+argument that must be set to ``True``.
 
 Setting ``management`` to ``True`` indicates that the ``AddGeometryColumn`` and
 ``DiscardGeometryColumn`` management functions will be used for the creation and removal of the
 geometry column. This is required with SpatiaLite.
-
-Setting ``use_st_prefix`` to ``False`` indicates that ``GeomFromEWKT`` and ``AsEWKB`` will be used
-rather than ``ST_GeomFromEWKT`` and ``ST_AsEWKB``. Again this is required with SpatiaLite, as
-SpatiaLite doesn't have ``ST_GeomFromEWKT`` and ``ST_AsEWKB`` functions.
 
 Create the Table in the Database
 --------------------------------
@@ -189,33 +185,6 @@ case).
 
 The value ``1`` indicates that the lake "Garde" does intersects the ``LINESTRING(2 1,4 1)``
 geometry. See the SpatiaLite SQL functions reference list for more information.
-
-Caveats
--------
-
-You may encounter cases where queries will fail with the following error::
-
-    sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such function: ST_AsEWKB [SQL:...
-
-For example the following query will produce this error::
-
-    >>> buffers = session.query(Lake.geom.ST_Buffer(2)).all()
-
-The query fails because GeoAlchemy 2 sets :class:`geoalchemy2.types.Geometry` as the return type
-of ``ST_Buffer``, but ``use_st_prefix`` defaults to ``True`` in the ``Geometry`` class. To work
-around the issue it is required to pass a properly configured ``Geometry`` instance when calling
-``ST_Buffer``::
-
-    >>> geometry_type = Geometry(management=True, use_st_prefix=False)
-    >>> buffers = session.query(Lake.geom.ST_Buffer(2, type_=geometry_type)
-
-This issue applies to all the functions that return geometries: ``ST_Buffer``, ``ST_Difference``,
-``ST_Intersection``, etc.
-
-Here is another example where passing a ``type_`` is required::
-
-    >>> lake = session.query(Lake).filter_by(name='Garde').one()
-    >>> lake_buffer = session.scalar(lake.geom.ST_Buffer(2, type_=geometry_type)
 
 Further Reference
 -----------------

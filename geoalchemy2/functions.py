@@ -51,6 +51,7 @@ Reference
 """
 
 from sqlalchemy.sql import functions
+from sqlalchemy.ext.compiler import compiles
 
 from . import types
 
@@ -343,11 +344,27 @@ _FUNCTIONS = [
 
     ('ST_Simplify', types.Geometry,
      'Returns a "simplified" version of the given geometry using the '
-     'Douglas-Peucker algorithm'),
+     'Douglas-Peucker algorithm.'),
 
     #
     # Raster Constructors
     #
+
+    ('ST_GeomFromText', types.Geometry,
+     'Constructs a PostGIS ST_Geometry object from the OGC Well-Known text '
+     'representation.'),
+
+    ('ST_GeomFromEWKT', types.Geometry,
+     'Constructs a PostGIS ST_Geometry object from the OGC Extended Well-Known '
+     'text (EWKT) representation.'),
+
+    ('ST_GeomFromEWKB', types.Geometry,
+     'Constructs a PostGIS ST_Geometry object from the OGC Extended Well-Known '
+     'binary (EWKB) representation.'),
+
+    ('ST_GeogFromText', types.Geography,
+     'Returns a geography object from the well-known text or extended well-known '
+     'representation.'),
 
     ('ST_AsRaster', types.Raster,
      ('Converts a PostGIS geometry to a PostGIS raster.', 'RT_ST_AsRaster')),
@@ -397,3 +414,28 @@ for name, type_, doc in _FUNCTIONS:
         attributes['__doc__'] = '\n\n'.join(docs)
 
     globals()[name] = type(name, (GenericFunction,), attributes)
+
+
+#
+# Define compiled versions for functions in SpatiaLite whose names don't have
+# the ST_ prefix.
+#
+
+
+_SQLITE_FUNCTIONS = {
+    "ST_GeomFromEWKT": "GeomFromEWKT",
+    "ST_GeomFromEWKB": "GeomFromEWKB",
+    "ST_AsBinary": "AsBinary",
+    "ST_AsEWKB": "AsEWKB",
+    "ST_AsGeoJSON": "AsGeoJSON",
+}
+
+
+def _compiles(cls, fn):
+    def _compile(element, compiler, **kw):
+        return "{}({})".format(fn, compiler.process(element.clauses, **kw))
+    compiles(globals()[cls], "sqlite")(_compile)
+
+
+for cls, fn in _SQLITE_FUNCTIONS.items():
+    _compiles(cls, fn)

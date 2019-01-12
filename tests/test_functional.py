@@ -283,7 +283,6 @@ class TestPickle():
         assert unpickled.geom.srid == 4326
         assert str(unpickled.geom) == data_desc
         assert unpickled.geom.extended
-        assert unpickled.geom.use_st_prefix
         assert unpickled.geom.name == 'ST_GeomFromEWKB'
 
 
