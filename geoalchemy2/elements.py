@@ -1,4 +1,5 @@
 import binascii
+import struct
 from geoalchemy2.compat import PY3, str as str_
 
 try:
@@ -131,10 +132,39 @@ class WKBElement(_SpatialElement):
 
     Note: you can create ``WKBElement`` objects from Shapely geometries
     using the :func:`geoalchemy2.shape.from_shape` function.
+
+    Extended WKB automatically parse unknown SRID.
+    Warning: unicode data are assumed to be hexadecimal value.
+
+    WKB struct {
+        byte    byteOrder;
+        uint32  wkbType;
+        uint32  SRID;
+        struct  geometry;
+    }
+
+    byteOrder enum {
+        WKB_XDR = 0,  // Most Significant Byte First
+        WKB_NDR = 1,  // Least Significant Byte First
+    }
+
     """
 
     geom_from = 'ST_GeomFromWKB'
     geom_from_extended_version = 'ST_GeomFromEWKB'
+
+    def __init__(self, data, srid=-1, extended=False):
+        if extended and srid == -1:  # unpack srid from WKB struct
+            if isinstance(data, str_):  # unicode data assumed to be hex val
+                header = binascii.unhexlify(data[:18])
+            else:
+                header = data[:9]
+            if not PY3:
+                header = bytearray(header)
+            byte_order, srid = header[0], header[5:]
+            srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
+
+        _SpatialElement.__init__(self, data, srid, extended)
 
     @property
     def desc(self):
