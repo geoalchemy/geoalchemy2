@@ -1,12 +1,13 @@
 import re
 import pytest
 
+from shapely import wkb
 from sqlalchemy import Table, MetaData, Column, String, func
 from geoalchemy2.types import Geometry
 from geoalchemy2.elements import (
     WKTElement, WKBElement, RasterElement, CompositeElement
 )
-from geoalchemy2.compat import str as str_
+from geoalchemy2.compat import buffer as buffer_, bytes as bytes_, str as str_
 
 
 @pytest.fixture
@@ -128,39 +129,47 @@ class TestExtendedWKTElementFunction():
         }
 
 
-class TestWKBElement():
+class TestExtendedWKBElement():
+
+    # _bin/_hex computed by following query:
+    # SELECT ST_GeomFromEWKT('SRID=3;POINT(1 2)');
+    _bin = buffer_(b'\x01\x01\x00\x00 \x03\x00\x00\x00\x00\x00\x00'
+                   b'\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@')
+    _hex = str_('010100002003000000000000000000f03f0000000000000040')
+    _srid = 3  # expected srid
+    _wkt = 'POINT (1 2)'  # expected wkt
 
     def test_desc(self):
-        e = WKBElement(b'\x01\x02', extended=True)
-        assert e.desc == '0102'
+        e = WKBElement(self._bin, extended=True)
+        assert e.desc == self._hex
 
     def test_desc_str(self):
-        e = WKBElement(str_('0102'))
-        assert e.desc == str_('0102')
+        e = WKBElement(self._hex)
+        assert e.desc == self._hex
 
     def test_function_call(self):
-        e = WKBElement(b'\x01\x02', extended=True)
+        e = WKBElement(self._bin, extended=True)
         f = e.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromEWKB(:ST_GeomFromEWKB_1), '
                ':ST_Buffer_1)')
         assert f.compile().params == {
             u'ST_Buffer_1': 2,
-            u'ST_GeomFromEWKB_1': b'\x01\x02',
+            u'ST_GeomFromEWKB_1': self._bin,
         }
 
     def test_function_str(self):
-        e = WKBElement(b'\x01\x02', extended=True)
+        e = WKBElement(self._bin, extended=True)
         assert isinstance(str(e), str)
 
     def test_pickle_unpickle(self):
         import pickle
-        e = WKBElement(b'\x01\x02', srid=3, extended=True)
+        e = WKBElement(self._bin, srid=self._srid, extended=True)
         pickled = pickle.dumps(e)
         unpickled = pickle.loads(pickled)
-        assert unpickled.srid == 3
+        assert unpickled.srid == self._srid
         assert unpickled.extended is True
-        assert unpickled.data == b'\x01\x02'
+        assert unpickled.data == bytes_(self._bin)
         assert unpickled.name == 'ST_GeomFromEWKB'
         f = unpickled.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
@@ -168,11 +177,25 @@ class TestWKBElement():
                ':ST_Buffer_1)')
         assert f.compile().params == {
             u'ST_Buffer_1': 2,
-            u'ST_GeomFromEWKB_1': b'\x01\x02',
+            u'ST_GeomFromEWKB_1': bytes_(self._bin),
         }
 
+    def test_unpack_srid_from_bin(self):
+        """
+        Unpack SRID from WKB struct (when it is not provided as arg)
+        to ensure geometry result processor preserves query SRID.
+        """
+        e = WKBElement(self._bin, extended=True)
+        assert e.srid == self._srid
+        assert wkb.loads(bytes_(e.data)).wkt == self._wkt
 
-class TestExtendedWKBElement():
+    def test_unpack_srid_from_hex(self):
+        e = WKBElement(self._hex, extended=True)
+        assert e.srid == self._srid
+        assert wkb.loads(e.data, hex=True).wkt == self._wkt
+
+
+class TestWKBElement():
 
     def test_desc(self):
         e = WKBElement(b'\x01\x02')
