@@ -10,7 +10,7 @@ the :ref:`orm_tutorial`, which you may want to read first.
 Connect to the DB
 -----------------
 
-Just like when using PostGIS connecting to a SpatiaLite database requires an ``Engine``. This is how
+Just like when using PostGIS connecting to a SpatiaLite database requires an ``Engine``. This is how
 you create one for SpatiaLite::
 
     >>> from sqlalchemy import create_engine
@@ -100,7 +100,7 @@ There's nothing specific to SpatiaLite here.
 Create a Session
 ----------------
 
-When using the SQLAlchemy ORM the ORM interacts with the database through a ``Session``.
+When using the SQLAlchemy ORM the ORM interacts with the database through a ``Session``.
 
     >>> from sqlalchemy.orm import sessionmaker
     >>> Session = sessionmaker(bind=engine)

@@ -4,7 +4,7 @@ Release
 This file provides the steps for releasing a new version of GeoAlchemy 2.
 
 Add a new section to CHANGES.txt, change the version number in ``setup.py`` and
-``docs/conf.py``, then create a PR with that. Proceed when the PR is merged.
+``docs/conf.py``, then create a PR with that. Proceed when the PR is merged.
 
 Make sure Travis is all green: https://travis-ci.org/geoalchemy/geoalchemy2.
 
