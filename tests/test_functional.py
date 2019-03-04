@@ -152,7 +152,8 @@ class TestInsertionCore():
         # the Geometry type's bind_processor and bind_expression functions.
         conn.execute(Lake.__table__.insert(), [
             {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'},
-            {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326)}
+            {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326)},
+            {'geom': WKTElement('SRID=4326;LINESTRING(0 0,2 2)', extended=True)}
 
             # Having WKBElement objects as bind values is not supported, so
             # the following does not work:
@@ -170,6 +171,13 @@ class TestInsertionCore():
         assert srid == 4326
 
         row = rows[1]
+        assert isinstance(row[1], WKBElement)
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        assert wkt == 'LINESTRING(0 0,2 2)'
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        assert srid == 4326
+
+        row = rows[2]
         assert isinstance(row[1], WKBElement)
         wkt = session.execute(row[1].ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,2 2)'
