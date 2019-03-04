@@ -130,32 +130,33 @@ class WKBElement(_SpatialElement):
     type. In most cases you won't need to create ``WKBElement`` instances
     yourself.
 
+    If ``extended`` is ``True`` and ``srid`` is ``-1`` at construction time
+    then the SRID will be read from the EWKB data.
+
     Note: you can create ``WKBElement`` objects from Shapely geometries
     using the :func:`geoalchemy2.shape.from_shape` function.
-
-    Extended WKB automatically parse unknown SRID.
-    Warning: unicode data are assumed to be hexadecimal value.
-
-    WKB struct {
-        byte    byteOrder;
-        uint32  wkbType;
-        uint32  SRID;
-        struct  geometry;
-    }
-
-    byteOrder enum {
-        WKB_XDR = 0,  // Most Significant Byte First
-        WKB_NDR = 1,  // Least Significant Byte First
-    }
-
     """
 
     geom_from = 'ST_GeomFromWKB'
     geom_from_extended_version = 'ST_GeomFromEWKB'
 
     def __init__(self, data, srid=-1, extended=False):
-        if extended and srid == -1:  # unpack srid from WKB struct
-            if isinstance(data, str_):  # unicode data assumed to be hex val
+        if extended and srid == -1:
+            # read srid from the EWKB
+            #
+            # WKB struct {
+            #    byte    byteOrder;
+            #    uint32  wkbType;
+            #    uint32  SRID;
+            #    struct  geometry;
+            # }
+            # byteOrder enum {
+            #     WKB_XDR = 0,  // Most Significant Byte First
+            #     WKB_NDR = 1,  // Least Significant Byte First
+            # }
+            if isinstance(data, str_):
+                # SpatiaLite case
+                # assume that the string is an hex value
                 header = binascii.unhexlify(data[:18])
             else:
                 header = data[:9]
@@ -163,7 +164,6 @@ class WKBElement(_SpatialElement):
                 header = bytearray(header)
             byte_order, srid = header[0], header[5:]
             srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
-
         _SpatialElement.__init__(self, data, srid, extended)
 
     @property
@@ -172,6 +172,7 @@ class WKBElement(_SpatialElement):
         This element's description string.
         """
         if isinstance(self.data, str_):
+            # SpatiaLite case
             return self.data
         desc = binascii.hexlify(self.data)
         if PY3:

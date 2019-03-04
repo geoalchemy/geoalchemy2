@@ -195,6 +195,11 @@ class Geometry(_GISType):
     See :class:`geoalchemy2.types._GISType` for the list of arguments that can
     be passed to the constructor.
 
+    If ``srid`` is set then the ``WKBElement` objects resulting from queries will
+    have that SRID, and, when constructing the ``WKBElement`` objects, the SRID
+    won't be read from the data returned by the database. If ``srid`` is not set
+    (meaning it's ``-1``) then the SRID set in ``WKBElement` objects will be read
+    from the data returned by the database.
     """
 
     name = 'geometry'
