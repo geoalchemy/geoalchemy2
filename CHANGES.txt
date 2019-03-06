@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.6.1
+-----
+
+* Change WKBElement to read SRID from the EWKB string @SergeBouchut (#209)
+* Change WKTElement to read SRID from the EWKT string @adrien-berchet-forcity @elemoine (#211)
+
 0.6.0
 -----
 

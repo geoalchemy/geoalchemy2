@@ -94,13 +94,15 @@ The code is available on GitHub: https://github.com/geoalchemy/geoalchemy2.
 
 Contributors:
 
-* Eric Lemoine, Camptocamp SA (https://github.com/elemoine)
+* Adrien Berchet (https://github.com/adrien-berchet-forcity)
+* Éric Lemoine (https://github.com/elemoine)
 * Dolf Andringa (https://github.com/dolfandringa)
 * Frédéric Junod, Camptocamp SA (https://github.com/fredj)
 * ijl (https://github.com/ijl)
 * Loïc Gasser (https://github.com/loicgasser)
 * Marcel Radischat (https://github.com/quiqua)
 * rapto (https://github.com/rapto)
+* Serge Bouchut (https://github.com/SergeBouchut)
 * Tobias Bieniek (https://github.com/Turbo87)
 * Tom Payne (https://github.com/twpayne)
 
