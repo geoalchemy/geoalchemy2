@@ -1,6 +1,5 @@
 import binascii
 import struct
-from geoalchemy2.compat import PY3, str as str_
 
 try:
     from sqlalchemy.sql import functions
@@ -11,6 +10,7 @@ except ImportError:  # SQLA < 0.9  # pragma: no cover
 from sqlalchemy.types import to_instance
 from sqlalchemy.ext.compiler import compiles
 
+from .compat import PY3, str as str_
 from .exc import ArgumentError
 
 
