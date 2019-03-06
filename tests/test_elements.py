@@ -8,6 +8,7 @@ from geoalchemy2.elements import (
     WKTElement, WKBElement, RasterElement, CompositeElement
 )
 from geoalchemy2.compat import buffer as buffer_, bytes as bytes_, str as str_
+from geoalchemy2.exc import ArgumentError
 
 
 @pytest.fixture
@@ -60,20 +61,60 @@ class TestWKTElement():
 
 class TestExtendedWKTElement():
 
+    _srid = 3857  # expected srid
+    _wkt = 'POINT (1 2 3)'  # expected wkt
+    _ewkt = 'SRID=3857;POINT (1 2 3)'  # expected ewkt
+
     def test_desc(self):
-        e = WKTElement('SRID=3857;POINT(1 2 3)', extended=True)
-        assert e.desc == 'SRID=3857;POINT(1 2 3)'
+        e = WKTElement(self._ewkt, extended=True)
+        assert e.desc == self._ewkt
 
     def test_function_call(self):
-        e = WKTElement('SRID=3857;POINT(1 2 3)', extended=True)
+        e = WKTElement(self._ewkt, extended=True)
         f = e.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromEWKT(:ST_GeomFromEWKT_1), '
                ':ST_Buffer_1)')
         assert f.compile().params == {
             u'ST_Buffer_1': 2,
-            u'ST_GeomFromEWKT_1': 'SRID=3857;POINT(1 2 3)'
+            u'ST_GeomFromEWKT_1': self._ewkt
         }
+
+    def test_pickle_unpickle(self):
+        import pickle
+        e = WKTElement(self._ewkt, extended=True)
+        pickled = pickle.dumps(e)
+        unpickled = pickle.loads(pickled)
+        assert unpickled.srid == self._srid
+        assert unpickled.extended is True
+        assert unpickled.data == self._ewkt
+        assert unpickled.name == 'ST_GeomFromEWKT'
+        f = unpickled.ST_Buffer(2)
+        eq_sql(f, 'ST_Buffer('
+               'ST_GeomFromEWKT(:ST_GeomFromEWKT_1), '
+               ':ST_Buffer_1)')
+        assert f.compile().params == {
+            u'ST_Buffer_1': 2,
+            u'ST_GeomFromEWKT_1': self._ewkt,
+        }
+
+    def test_unpack_srid_from_ewkt(self):
+        """
+        Unpack SRID from WKT struct (when it is not provided as arg)
+        to ensure geometry result processor preserves query SRID.
+        """
+        e = WKTElement(self._ewkt, extended=True)
+        assert e.srid == self._srid
+        assert e.desc == self._ewkt
+
+    def test_unpack_srid_from_ewkt_forcing_srid(self):
+        e = WKTElement(self._ewkt, srid=9999, extended=True)
+        assert e.srid == 9999
+        assert e.desc == self._ewkt
+
+    def test_unpack_srid_from_bad_ewkt(self):
+        with pytest.raises(ArgumentError):
+            WKTElement('SRID=BAD SRID;POINT (1 2 3)', extended=True)
 
 
 class TestWKTElementFunction():
@@ -187,6 +228,11 @@ class TestExtendedWKBElement():
         """
         e = WKBElement(self._bin, extended=True)
         assert e.srid == self._srid
+        assert wkb.loads(bytes_(e.data)).wkt == self._wkt
+
+    def test_unpack_srid_from_bin_forcing_srid(self):
+        e = WKBElement(self._bin, srid=9999, extended=True)
+        assert e.srid == 9999
         assert wkb.loads(bytes_(e.data)).wkt == self._wkt
 
     def test_unpack_srid_from_hex(self):

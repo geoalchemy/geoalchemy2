@@ -143,7 +143,10 @@ class _GISType(UserDefinedType):
     def bind_processor(self, dialect):
         def process(bindvalue):
             if isinstance(bindvalue, WKTElement):
-                return 'SRID=%d;%s' % (bindvalue.srid, bindvalue.data)
+                if bindvalue.extended:
+                    return '%s' % (bindvalue.data)
+                else:
+                    return 'SRID=%d;%s' % (bindvalue.srid, bindvalue.data)
             else:
                 return bindvalue
         return process

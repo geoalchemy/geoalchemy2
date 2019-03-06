@@ -1,6 +1,5 @@
 import binascii
 import struct
-from geoalchemy2.compat import PY3, str as str_
 
 try:
     from sqlalchemy.sql import functions
@@ -10,6 +9,9 @@ except ImportError:  # SQLA < 0.9  # pragma: no cover
     from sqlalchemy.sql.expression import FunctionElement
 from sqlalchemy.types import to_instance
 from sqlalchemy.ext.compiler import compiles
+
+from .compat import PY3, str as str_
+from .exc import ArgumentError
 
 
 class _SpatialElement(functions.Function):
@@ -109,6 +111,21 @@ class WKTElement(_SpatialElement):
 
     geom_from = 'ST_GeomFromText'
     geom_from_extended_version = 'ST_GeomFromEWKT'
+
+    def __init__(self, data, srid=-1, extended=False):
+        if extended and srid == -1:
+            # read srid from EWKT
+            if not data.startswith('SRID='):
+                raise ArgumentError('invalid EWKT string {}'.format(data))
+            data_s = data.split(';', 1)
+            if len(data_s) != 2:
+                raise ArgumentError('invalid EWKT string {}'.format(data))
+            header = data_s[0]
+            try:
+                srid = int(header[5:])
+            except ValueError:
+                raise ArgumentError('invalid EWKT string {}'.format(data))
+        _SpatialElement.__init__(self, data, srid, extended)
 
     @property
     def desc(self):
