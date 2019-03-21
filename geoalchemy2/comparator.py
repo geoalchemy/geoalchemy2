@@ -86,7 +86,7 @@ class BaseComparator(UserDefinedType.Comparator):
         # This is not to mess up with SQLAlchemy's use of
         # hasattr/getattr on Column objects.
 
-        if not name.startswith('ST_'):
+        if not name.lower().startswith('st_'):
             raise AttributeError
 
         # We create our own _FunctionGenerator here, and use it in place of
