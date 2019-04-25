@@ -185,14 +185,8 @@ The SQLAlchemy ORM Tutorial's `Querying section
 <http://docs.sqlalchemy.org/en/latest/orm/tutorial.html#querying>`_ provides
 more examples of queries.
 
-Spatial Query
--------------
-
-As spatial database users executing spatial queries is of a great interest to
-us. There comes GeoAlchemy!
-
-Spatial relationship
-~~~~~~~~~~~~~~~~~~~~
+Make Spatial Queries
+--------------------
 
 Using spatial filters in SQL SELECT queries is very common. Such queries are
 performed by using spatial relationship functions, or operators, in the
@@ -259,8 +253,65 @@ the ``intersects`` function for that::
     Garde
     Orta
 
-Processing and Measurement
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Set Spatial Relationships in the Model
+--------------------------------------
+
+Let's assume that in addition to ``lake``  we have another table, ``treasure``, that includes
+treasure locations. And let's say that we are interested in discovering the treasures hidden at the
+bottom of lakes.
+
+The ``Treasure`` class is the following::
+
+
+    >>> class Treasure(Base):
+    ...      __tablename__ = 'treasure'
+    ...      id = Column(Integer, primary_key=True)
+    ...      geom = Column(Geometry('POINT'))
+
+We can now add a ``relationship`` to the ``Lake`` table to automatically load the treasures
+contained by each lake::
+
+    >>> from sqlalchemy.orm import relationship, backref
+    >>> class Lake(Base):
+    ...     __tablename__ = 'lake'
+    ...     id = Column(Integer, primary_key=True)
+    ...     name = Column(String)
+    ...     geom = Column(Geometry('POLYGON'))
+    ...     treasures = relationship(
+    ...         'Treasure',
+    ...         primaryjoin='func.ST_Contains(foreign(Lake.geom), Treasure.geom).as_comparison(1, 2)',
+    ...         backref=backref('lake', uselist=False),
+    ...         viewonly=True,
+    ...         uselist=True,
+    ...     )
+
+Note the use of the ``as_comparison`` function. It is required for using an SQL function
+(``ST_Contains`` here) in a ``primaryjoin`` condition. This only works with SQLAlchemy 1.3, as the
+``as_comparison`` function did not exist before that version. See the `Custom operators based on SQL function
+<https://docs.sqlalchemy.org/en/latest/orm/join_conditions.html#custom-operators-based-on-sql-functions>`_
+section of the SQLAlchemy documentation for more information.
+
+Some information on the parameters used for configuring this ``relationship``:
+
+* ``backref`` is used to provide the name of property to be placed on the class that handles this
+  relationship in the other direction, namely ``Treasure``;
+* ``viewonly=True`` specifies that the relationship is used only for loading objects, and not for
+  persistence operations;
+* ``uselist=True`` indicates that the property should be loaded as a list, as opposed to a scalar.
+
+Also, note that the ``treasures`` property on ``lake`` objects (and the ``lake`` property on
+``treasure`` objects) is loaded "lazily" when the property is first accessed. Another loading
+strategy may be configured in the ``relationship``. For example you'd use ``lazy='joined'`` for
+related items to be loaded "eagerly" in the same query as that of the parent, using a ``JOIN`` or
+``LEFT OUTER JOIN``.
+
+See the `Relationships API
+<https://docs.sqlalchemy.org/en/latest/orm/relationship_api.html#relationships-api>`_ section of the
+SQLAlchemy documention for more detail on the ``relationship`` function, and all the parameters that
+can be used to configure it.
+
+Use Other Spatial Functions
+---------------------------
 
 Here's a ``Query`` that calculates the areas of buffers for our lakes::
 
