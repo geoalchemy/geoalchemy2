@@ -8,7 +8,7 @@ else:
     compat.register()
     del compat
 
-from sqlalchemy import create_engine, Table, MetaData, Column, Integer
+from sqlalchemy import create_engine, Table, MetaData, Column, Integer, bindparam
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import reflection
@@ -148,16 +148,13 @@ class TestInsertionCore():
     def test_insert(self):
         conn = self.conn
 
-        # Issue two inserts using DBAPI's executemany() method. This tests
-        # the Geometry type's bind_processor and bind_expression functions.
+        # Issue inserts using DBAPI's executemany() method. This tests the
+        # Geometry type's bind_processor and bind_expression functions.
         conn.execute(Lake.__table__.insert(), [
             {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'},
             {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326)},
-            {'geom': WKTElement('SRID=4326;LINESTRING(0 0,2 2)', extended=True)}
-
-            # Having WKBElement objects as bind values is not supported, so
-            # the following does not work:
-            # {'geom': from_shape(LineString([[0, 0], [3, 3]], srid=4326)}
+            {'geom': WKTElement('SRID=4326;LINESTRING(0 0,2 2)', extended=True)},
+            {'geom': from_shape(LineString([[0, 0], [3, 3]]), srid=4326)}
         ])
 
         results = conn.execute(Lake.__table__.select())
@@ -181,6 +178,51 @@ class TestInsertionCore():
         assert isinstance(row[1], WKBElement)
         wkt = session.execute(row[1].ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,2 2)'
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        assert srid == 4326
+
+        row = rows[3]
+        assert isinstance(row[1], WKBElement)
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        assert wkt == 'LINESTRING(0 0,3 3)'
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        assert srid == 4326
+
+
+class TestSelectBindParam():
+
+    def setup(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+        self.conn = engine.connect()
+        self.conn.execute(Lake.__table__.insert(), {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'})
+
+    def teardown(self):
+        self.conn.close()
+        metadata.drop_all()
+
+    def test_select_bindparam(self):
+        s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
+        results = self.conn.execute(s, geom='SRID=4326;LINESTRING(0 0,1 1)')
+        rows = results.fetchall()
+
+        row = rows[0]
+        assert isinstance(row[1], WKBElement)
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        assert wkt == 'LINESTRING(0 0,1 1)'
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        assert srid == 4326
+
+    def test_select_bindparam_WKBElement(self):
+        s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
+        wkbelement = from_shape(LineString([[0, 0], [1, 1]]), srid=4326)
+        results = self.conn.execute(s, geom=wkbelement)
+        rows = results.fetchall()
+
+        row = rows[0]
+        assert isinstance(row[1], WKBElement)
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        assert wkt == 'LINESTRING(0 0,1 1)'
         srid = session.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 

@@ -13,6 +13,13 @@ from sqlalchemy.sql import func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
+try:
+    from .shape import to_shape
+    SHAPELY = True
+except ImportError:
+    SHAPELY = False
+
+
 from .comparator import BaseComparator, Comparator
 from .elements import WKBElement, WKTElement, RasterElement, CompositeElement
 from .exc import ArgumentError
@@ -147,6 +154,11 @@ class _GISType(UserDefinedType):
                     return '%s' % (bindvalue.data)
                 else:
                     return 'SRID=%d;%s' % (bindvalue.srid, bindvalue.data)
+            elif isinstance(bindvalue, WKBElement):
+                if not SHAPELY:
+                    raise ArgumentError('Shapely required for handling WKBElement bind values')
+                shape = to_shape(bindvalue)
+                return 'SRID=%d;%s' % (bindvalue.srid, shape.wkt)
             else:
                 return bindvalue
         return process
