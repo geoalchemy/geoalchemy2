@@ -226,6 +226,25 @@ class TestSelectBindParam():
         srid = session.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
+    def test_select_bindparam_WKBElement_extented(self):
+        s = Lake.__table__.select()
+        results = self.conn.execute(s)
+        rows = results.fetchall()
+        geom = rows[0][1]
+        assert isinstance(geom, WKBElement)
+        assert geom.extented
+
+        s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
+        results = self.conn.execute(s, geom=geom)
+        rows = results.fetchall()
+
+        row = rows[0]
+        assert isinstance(row[1], WKBElement)
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        assert wkt == 'LINESTRING(0 0,1 1)'
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        assert srid == 4326
+
 
 class TestInsertionORM():
 
