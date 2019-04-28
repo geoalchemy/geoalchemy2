@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.6.2
+-----
+
+* Support WKBElement objects as bind values @elemoine (#221)
+* Document the use of spatial functions in primaryjoin conditions @elemoine (#222)
+
 0.6.1
 -----
 
