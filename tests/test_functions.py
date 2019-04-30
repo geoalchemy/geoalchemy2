@@ -334,7 +334,7 @@ def test_ST_LineSubstring():
 
 
 def test_ST_M():
-    _test_geometry_returning_func('ST_M')
+    _test_simple_func('ST_M')
 
 
 def test_ST_Multi():

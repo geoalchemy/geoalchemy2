@@ -228,7 +228,7 @@ _FUNCTIONS = [
     ('ST_ForceSFS', types.Geometry,
      'Force the geometries to use SFS 1.1 geometry types only.'),
 
-    ('ST_M', types.Geometry,
+    ('ST_M', None,
      'Return the M coordinate of the point, or ``NULL`` if not available. '
      'Input must be a point.'),
 
