@@ -100,11 +100,21 @@ _FUNCTIONS = [
     # Geometry Accessors
     #
 
+    ('ST_Boundary', types.Geometry,
+     'Returns the closure of the combinatorial boundary of this Geometry.'),
+
+    ('ST_BoundingDiagonal', types.Geometry,
+     'Returns the diagonal of the supplied geometry\'s bounding box.'),
+
+    ('ST_EndPoint', types.Geometry,
+     'Returns the last point of a ``LINESTRING`` or ``CIRCULARLINESTRING`` '
+     'geometry as a ``POINT``.'),
+
     ('ST_Envelope', types.Geometry,
      'Returns a geometry representing the double precision (float8) bounding'
      'box of the supplied geometry.'),
 
-    ('ST_GeometryN', None,
+    ('ST_GeometryN', types.Geometry,
      'Return the 1-based Nth geometry if the geometry is a '
      '``GEOMETRYCOLLECTION``, ``(MULTI)POINT``, ``(MULTI)LINESTRING``, '
      '``MULTICURVE`` or ``(MULTI)POLYGON``, ``POLYHEDRALSURFACE`` Otherwise, '
@@ -113,15 +123,37 @@ _FUNCTIONS = [
     ('ST_GeometryType', None,
      'Return the geometry type of the ``ST_Geometry`` value.'),
 
+    ('ST_InteriorRingN', types.Geometry,
+     'Return the Nth interior linestring ring of the polygon geometry. Return '
+     '``NULL`` if the geometry is not a polygon or the given N is out of '
+     'range.'),
+
     ('ST_IsValid', None,
      'Returns ``True`` if the ``ST_Geometry`` is well formed.'),
 
     ('ST_NPoints', None,
      'Return the number of points (vertices) in a geometry.'),
 
+    ('ST_PatchN', types.Geometry,
+     'Return the 1-based Nth geometry (face) if the geometry is a '
+     '``POLYHEDRALSURFACE``, ``POLYHEDRALSURFACEM``. Otherwise, return '
+     '``NULL``.'),
+
+    ('ST_PointN', types.Geometry,
+     'Return the Nth point in the first LineString or circular LineString in '
+     'the geometry. Negative values are counted backwards from the end of the '
+     'LineString. Returns ``NULL`` if there is no linestring in the geometry.'
+     ),
+
+    ('ST_Points', types.Geometry,
+     'Returns a MultiPoint containing all of the coordinates of a geometry.'),
+
     ('ST_SRID', None,
      'Returns the spatial reference identifier for the ``ST_Geometry`` as '
      'defined in ``spatial_ref_sys`` table.'),
+
+    ('ST_StartPoint', types.Geometry,
+     'Returns the first point of a ``LINESTRING`` geometry as a ``POINT``.'),
 
     ('ST_X', None,
      'Return the X coordinate of the point, or ``None`` if not available. '
@@ -139,9 +171,123 @@ _FUNCTIONS = [
     # Geometry Editors
     #
 
+    ('ST_AddPoint', types.Geometry,
+     'Add a point to a LineString.'),
+
+    ('ST_Affine', types.Geometry,
+     'Apply a 3d affine transformation to a geometry.'),
+
+    ('ST_CollectionExtract', types.Geometry,
+     'Given a (multi)geometry, return a (multi)geometry consisting only of '
+     'elements of the specified type.'),
+
+    ('ST_CollectionHomogenize', types.Geometry,
+     'Given a geometry collection, return the "simplest" representation of '
+     'the contents.'),
+
+    ('ST_ExteriorRing', types.Geometry,
+     'Returns a line string representing the exterior ring of the ``POLYGON`` '
+     'geometry. Return ``NULL`` if the geometry is not a polygon. Will not '
+     'work with ``MULTIPOLYGON``.'),
+
+    ('ST_Force2D', types.Geometry,
+     'Force the geometries into a "2-dimensional mode".'),
+
+    ('ST_Force3D', types.Geometry,
+     ('Force the geometries into XYZ mode. This is an alias for ``ST_Force3DZ``.',
+      'ST_Force_3D')),
+
+    ('ST_Force3DM', types.Geometry,
+     ('Force the geometries into XYM mode.', 'ST_Force_3DM')),
+
+    ('ST_Force3DZ', types.Geometry,
+     ('Force the geometries into XYZ mode.', 'ST_Force_3DZ')),
+
+    ('ST_Force4D', types.Geometry,
+     ('Force the geometries into XYZM mode.', 'ST_Force_4D')),
+
+    ('ST_ForceCollection', types.Geometry,
+     ('Convert the geometry into a ``GEOMETRYCOLLECTION``.',
+      'ST_Force_Collection')),
+
+    ('ST_ForceCurve', types.Geometry,
+     'Upcast a geometry into its curved type, if applicable.'),
+
+    ('ST_ForcePolygonCCW', types.Geometry,
+     'Orients all exterior rings counter-clockwise and all interior rings '
+     'clockwise.'),
+
+    ('ST_ForcePolygonCW', types.Geometry,
+     'Orients all exterior rings clockwise and all interior rings '
+     'counter-clockwise.'),
+
+    ('ST_ForceRHR', types.Geometry,
+     'Force the orientation of the vertices in a polygon to follow the '
+     'Right-Hand-Rule.'),
+
+    ('ST_ForceSFS', types.Geometry,
+     'Force the geometries to use SFS 1.1 geometry types only.'),
+
+    ('ST_M', None,
+     'Return the M coordinate of the point, or ``NULL`` if not available. '
+     'Input must be a point.'),
+
+    ('ST_Multi', types.Geometry,
+     'Return the geometry as a ``MULTI*`` geometry.'),
+
+    ('ST_Normalize', types.Geometry,
+     'Return the geometry in its canonical form.'),
+
+    ('ST_QuantizeCoordinates', types.Geometry,
+     'Sets least significant bits of coordinates to zero.'),
+
+    ('ST_RemovePoint', types.Geometry,
+     'Remove point from a linestring.'),
+
+    ('ST_Reverse', types.Geometry,
+     'Return the geometry with vertex order reversed.'),
+
+    ('ST_Rotate', types.Geometry,
+     'Rotate a geometry rotRadians counter-clockwise about an origin.'),
+
+    ('ST_RotateX', types.Geometry,
+     'Rotate a geometry rotRadians about the X axis.'),
+
+    ('ST_RotateY', types.Geometry,
+     'Rotate a geometry rotRadians about the Y axis.'),
+
+    ('ST_RotateZ', types.Geometry,
+     'Rotate a geometry rotRadians about the Z axis.'),
+
+    ('ST_Scale', types.Geometry,
+     'Scale a geometry by given factors.'),
+
+    ('ST_Segmentize', types.Geometry,
+     'Return a modified geometry/geography having no segment longer than the '
+     'given distance.'),
+
+    ('ST_SetPoint', types.Geometry,
+     'Replace point of a linestring with a given point.'),
+
+    ('ST_SetSRID', types.Geometry,
+     'Set the SRID on a geometry to a particular integer value.'),
+
+    ('ST_Snap', types.Geometry,
+     'Snap segments and vertices of input geometry to vertices of a reference '
+     'geometry.'),
+
+    ('ST_SnapToGrid', types.Geometry,
+     'Snap all points of the input geometry to a regular grid.'),
+
     ('ST_Transform', types.Geometry,
      'Return a new geometry with its coordinates transformed to the SRID '
      'referenced by the integer parameter.'),
+
+    ('ST_Translate', types.Geometry,
+     'Translate a geometry by given offsets.'),
+
+    ('ST_TransScale', types.Geometry,
+     'Translate a geometry by given factors and offsets.'),
 
     #
     # Geometry Outputs
@@ -338,13 +484,13 @@ _FUNCTIONS = [
      'If \'start\' and \'end\' have the same value this is equivalent '
      'to ST_LineInterpolatePoint.'),
 
-    ('ST_Union', types.Geometry,
-     'Returns a geometry that represents the point set union of the '
-     'Geometries.'),
-
     ('ST_Simplify', types.Geometry,
      'Returns a "simplified" version of the given geometry using the '
      'Douglas-Peucker algorithm.'),
+
+    ('ST_Union', types.Geometry,
+     'Returns a geometry that represents the point set union of the '
+     'Geometries.'),
 
     #
     # Raster Constructors
