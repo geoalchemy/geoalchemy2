@@ -1,8 +1,10 @@
+from pkg_resources import parse_version
 import os
 import pytest
 import platform
 import json
 
+from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import create_engine, MetaData, Column, Integer
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -252,3 +254,37 @@ class TestCallFunction():
 
         r = session.query(Lake.geom.ST_AsGeoJSON()).scalar()
         _test(r)
+
+    @pytest.mark.skipif(
+        parse_version(SA_VERSION) < parse_version("1.3.4"),
+        reason='Case-insensitivity is only available for sqlalchemy>=1.3.4')
+    def test_comparator_case_insensitivity(self):
+        lake_id = self._create_one_lake()
+
+        s = select([func.ST_Buffer(Lake.__table__.c.geom, 2)])
+        r1 = session.execute(s).scalar()
+        assert isinstance(r1, WKBElement)
+
+        lake = session.query(Lake).get(lake_id)
+
+        r2 = session.execute(lake.geom.ST_Buffer(2)).scalar()
+        assert isinstance(r2, WKBElement)
+
+        r3 = session.execute(lake.geom.st_buffer(2)).scalar()
+        assert isinstance(r3, WKBElement)
+
+        r4 = session.execute(lake.geom.St_BuFfEr(2)).scalar()
+        assert isinstance(r4, WKBElement)
+
+        r5 = session.query(Lake.geom.ST_Buffer(2)).scalar()
+        assert isinstance(r5, WKBElement)
+
+        r6 = session.query(Lake.geom.st_buffer(2)).scalar()
+        assert isinstance(r6, WKBElement)
+
+        r7 = session.query(Lake.geom.St_BuFfEr(2)).scalar()
+        assert isinstance(r7, WKBElement)
+
+        assert (
+            r1.data == r2.data == r3.data == r4.data == r5.data == r6.data
+            == r7.data)
