@@ -84,6 +84,8 @@ class GenericFunction(functions.GenericFunction):
             type = Geometry
     """
 
+    _register = False
+
     def __init__(self, *args, **kwargs):
         expr = kwargs.pop('expr', None)
         if expr is not None:
