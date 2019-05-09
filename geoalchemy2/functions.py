@@ -84,6 +84,10 @@ class GenericFunction(functions.GenericFunction):
             type = Geometry
     """
 
+    # Set _register to False in order not to register this class in
+    # sqlalchemy.sql.functions._registry. Only its children will be registered.
+    _register = False
+
     def __init__(self, *args, **kwargs):
         expr = kwargs.pop('expr', None)
         if expr is not None:
