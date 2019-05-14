@@ -307,7 +307,7 @@ related items to be loaded "eagerly" in the same query as that of the parent, us
 
 See the `Relationships API
 <https://docs.sqlalchemy.org/en/latest/orm/relationship_api.html#relationships-api>`_ section of the
-SQLAlchemy documention for more detail on the ``relationship`` function, and all the parameters that
+SQLAlchemy documentation for more detail on the ``relationship`` function, and all the parameters that
 can be used to configure it.
 
 Use Other Spatial Functions
