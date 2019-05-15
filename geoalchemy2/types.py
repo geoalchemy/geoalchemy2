@@ -76,9 +76,19 @@ class _GISType(UserDefinedType):
 
         The dimension of the geometry. Default is ``2``.
 
-        When set to ``3`` then the "geometry_type" is constrained to terminate
-        on either ``"Z"`` or ``"M"``. When set to ``4`` then the
-        "geometry_type" must terminate with ``"ZM"``.
+        With ``management`` set to ``True``, that is when ``AddGeometryColumn`` is used
+        to add the geometry column, there are two constraints:
+
+        * The ``geometry_type`` must not end with ``"ZM"``.  This is due to PostGIS'
+          ``AddGeometryColumn`` failing with ZM geometry types. Instead the "simple"
+          geometry type (e.g. POINT rather POINTZM) should be used with ``dimension``
+          set to ``4``.
+        * When the ``geometry_type`` ends with ``"Z"`` or ``"M"`` then ``dimension``
+          must be set to ``3``.
+
+        With ``management`` set to ``False`` (the default) ``dimension`` is not
+        taken into account, and the actual dimension is fully defined with the
+        ``geometry_type``.
 
     ``spatial_index``
 
@@ -181,19 +191,19 @@ class _GISType(UserDefinedType):
             raise ArgumentError('srid must be convertible to an integer')
         if geometry_type:
             geometry_type = geometry_type.upper()
-
-            if ((dimension == 4 and not geometry_type.endswith('ZM'))
-                or (dimension == 3
-                    and not (geometry_type.endswith('Z')
-                             or (geometry_type.endswith('M')
-                             and not geometry_type.endswith('ZM'))))
-                or (dimension == 2
-                    and (geometry_type.endswith('ZM')
-                         or geometry_type.endswith('Z')
-                         or geometry_type.endswith('M')))):
-                raise ArgumentError(
-                    'invalid geometry_type {!r} for dimension {}'.format(
-                        geometry_type, dimension))
+            if management:
+                if geometry_type.endswith('ZM'):
+                    # PostGIS' AddGeometryColumn does not work with ZM geometry types. Instead
+                    # the simple geometry type (e.g. POINT rather POINTZM) should be used with
+                    # dimension set to 4
+                    raise ArgumentError(
+                        'with management=True use geometry_type={!r} and '
+                        'dimension=4 for {!r} geometries'.format(geometry_type[:-2], geometry_type))
+                elif geometry_type[-1] in ('Z', 'M') and dimension != 3:
+                    # If a Z or M geometry type is used then dimension must be set to 3
+                    raise ArgumentError(
+                        'with management=True dimension must be 3 for '
+                        '{!r} geometries'.format(geometry_type))
         else:
             if management:
                 raise ArgumentError('geometry_type set to None not compatible '
@@ -201,9 +211,6 @@ class _GISType(UserDefinedType):
             if srid > 0:
                 warnings.warn('srid not enforced when geometry_type is None')
 
-            if dimension > 2:
-                raise ArgumentError('geometry type set to None not compatible '
-                                    'with dimension > 2')
         if use_typmod and not management:
             warnings.warn('use_typmod ignored when management is False')
         return geometry_type, srid
