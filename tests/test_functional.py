@@ -61,6 +61,21 @@ class Summit(Base):
         self.geom = geom
 
 
+class IndexTestWithSchema(Base):
+    __tablename__ = 'indextestwithschema'
+    __table_args__ = {'schema': 'gis'}
+    id = Column(Integer, primary_key=True)
+    geom1 = Column(Geometry(geometry_type='POINT', srid=4326))
+    geom2 = Column(Geometry(geometry_type='POINT', srid=4326, management=True))
+
+
+class IndexTestWithoutSchema(Base):
+    __tablename__ = 'indextestwithoutschema'
+    id = Column(Integer, primary_key=True)
+    geom1 = Column(Geometry(geometry_type='POINT', srid=4326))
+    geom2 = Column(Geometry(geometry_type='POINT', srid=4326, management=True))
+
+
 session = sessionmaker(bind=engine)()
 
 postgis_version = session.execute(func.postgis_version()).scalar()
@@ -98,16 +113,23 @@ class TestIndex():
         session.rollback()
         metadata.drop_all()
 
-    def test_LakeIndex(self):
-        """ Make sure the Lake table has an index on the geom column """
-
+    def test_index_with_schema(self):
         inspector = reflection.Inspector.from_engine(engine)
-        indices = inspector.get_indexes(Lake.__tablename__, schema='gis')
-        assert len(indices) == 1
+        indices = inspector.get_indexes(IndexTestWithSchema.__tablename__, schema='gis')
+        assert len(indices) == 2
+        assert not indices[0].get('unique')
+        assert indices[0].get('column_names')[0] in (u'geom1', u'geom2')
+        assert not indices[1].get('unique')
+        assert indices[1].get('column_names')[0] in (u'geom1', u'geom2')
 
-        index = indices[0]
-        assert not index.get('unique')
-        assert index.get('column_names') == [u'geom']
+    def test_index_without_schema(self):
+        inspector = reflection.Inspector.from_engine(engine)
+        indices = inspector.get_indexes(IndexTestWithSchema.__tablename__)
+        assert len(indices) == 2
+        assert not indices[0].get('unique')
+        assert indices[0].get('column_names')[0] in (u'geom1', u'geom2')
+        assert not indices[1].get('unique')
+        assert indices[1].get('column_names')[0] in (u'geom1', u'geom2')
 
 
 class TestTypMod():
