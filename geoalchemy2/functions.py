@@ -101,6 +101,161 @@ class GenericFunction(functions.GenericFunction):
 
 _FUNCTIONS = [
     #
+    # Geometry Constructors
+    #
+
+    ('ST_BdPolyFromText', types.Geometry,
+     'Construct a Polygon given an arbitrary collection of closed linestrings'
+     'as a MultiLineString Well-Known text representation.'),
+
+    ('ST_BdMPolyFromText', types.Geometry,
+     'Construct a MultiPolygon given an arbitrary collection of closed '
+     'linestrings as a MultiLineString text representation Well-Known text '
+     'representation.'),
+
+    ('ST_Box2dFromGeoHash', types.Geometry,
+     'Return a BOX2D from a GeoHash string.'),
+
+    ('ST_GeogFromText', types.Geography,
+     'Return a specified geography value from Well-Known Text representation '
+     'or extended (WKT).'),
+
+    ('ST_GeographyFromText', types.Geography,
+     'Return a specified geography value from Well-Known Text representation '
+     'or extended (WKT).'),
+
+    ('ST_GeogFromWKB', types.Geography,
+     'Creates a geography instance from a Well-Known Binary geometry '
+     'representation (WKB) or extended Well Known Binary (EWKB).'),
+
+    ('ST_GeomFromTWKB', types.Geometry,
+     'Creates a geometry instance from a TWKB ("Tiny Well-Known Binary") '
+     'geometry representation.'),
+
+    ('ST_GeomCollFromText', types.Geometry,
+     'Makes a collection Geometry from collection WKT with the given SRID. If '
+     'SRID is not given, it defaults to 0.'),
+
+    ('ST_GeomFromEWKB', types.Geometry,
+     'Return a specified ST_Geometry value from Extended Well-Known Binary '
+     'representation (EWKB).'),
+
+    ('ST_GeomFromEWKT', types.Geometry,
+     'Return a specified ST_Geometry value from Extended Well-Known Text '
+     'representation (EWKT).'),
+
+    ('ST_GeometryFromText', types.Geometry,
+     'Return a specified ST_Geometry value from Well-Known Text representation'
+     ' (WKT). This is an alias name for ST_GeomFromText'),
+
+    ('ST_GeomFromGeoHash', types.Geometry,
+     'Return a geometry from a GeoHash string.'),
+
+    ('ST_GeomFromGML', types.Geometry,
+     'Takes as input GML representation of geometry and outputs a PostGIS '
+     'geometry object'),
+
+    ('ST_GeomFromGeoJSON', types.Geometry,
+     'Takes as input a geojson representation of a geometry and outputs a '
+     'PostGIS geometry object'),
+
+    ('ST_GeomFromKML', types.Geometry,
+     'Takes as input KML representation of geometry and outputs a PostGIS '
+     'geometry object'),
+
+    ('ST_GMLToSQL', types.Geometry,
+     'Return a specified ST_Geometry value from GML representation. This is an'
+     ' alias name for ST_GeomFromGML'),
+
+    ('ST_GeomFromText', types.Geometry,
+     'Return a specified ST_Geometry value from Well-Known Text representation'
+     ' (WKT).'),
+
+    ('ST_GeomFromWKB', types.Geometry,
+     'Creates a geometry instance from a Well-Known Binary geometry '
+     'representation (WKB) and optional SRID.'),
+
+    ('ST_LineFromEncodedPolyline', types.Geometry,
+     'Creates a LineString from an Encoded Polyline.'),
+
+    ('ST_LineFromMultiPoint', types.Geometry,
+     'Creates a LineString from a MultiPoint geometry.'),
+
+    ('ST_LineFromText', types.Geometry,
+     'Makes a Geometry from WKT representation with the given SRID. If SRID is'
+     ' not given, it defaults to 0.'),
+
+    ('ST_LineFromWKB', types.Geometry,
+     'Makes a LINESTRING from WKB with the given SRID'),
+
+    ('ST_LinestringFromWKB', types.Geometry,
+     'Makes a geometry from WKB with the given SRID.'),
+
+    ('ST_MakeBox2D', types.Geometry,
+     'Creates a BOX2D defined by the given point geometries.'),
+
+    ('ST_3DMakeBox', types.Geometry,
+     'Creates a BOX3D defined by the given 3d point geometries.'),
+
+    ('ST_MakeLine', types.Geometry,
+     'Creates a Linestring from point, multipoint, or line geometries.'),
+
+    ('ST_MakeEnvelope', types.Geometry,
+     'Creates a rectangular Polygon formed from the given minimums and '
+     'maximums. Input values must be in SRS specified by the SRID.'),
+
+    ('ST_MakePolygon', types.Geometry,
+     'Creates a Polygon formed by the given shell. Input geometries must be '
+     'closed LINESTRINGS.'),
+
+    ('ST_MakePoint', types.Geometry,
+     'Creates a 2D, 3DZ or 4D point geometry.'),
+
+    ('ST_MakePointM', types.Geometry,
+     'Creates a point geometry with an x y and m coordinate.'),
+
+    ('ST_MLineFromText', types.Geometry,
+     'Return a specified ST_MultiLineString value from WKT representation.'),
+
+    ('ST_MPointFromText', types.Geometry,
+     'Makes a Geometry from WKT with the given SRID. If SRID is not given, it '
+     'defaults to 0.'),
+
+    ('ST_MPolyFromText', types.Geometry,
+     'Makes a MultiPolygon Geometry from WKT with the given SRID. If SRID is '
+     'not given, it defaults to 0.'),
+
+    ('ST_Point', types.Geometry,
+     'Returns an ST_Point with the given coordinate values. OGC alias for '
+     'ST_MakePoint.'),
+
+    ('ST_PointFromGeoHash', types.Geometry,
+     'Return a point from a GeoHash string.'),
+
+    ('ST_PointFromText', types.Geometry,
+     'Makes a point Geometry from WKT with the given SRID. If SRID is not '
+     'given, it defaults to unknown.'),
+
+    ('ST_PointFromWKB', types.Geometry,
+     'Makes a geometry from WKB with the given SRID'),
+
+    ('ST_Polygon', types.Geometry,
+     'Returns a polygon built from the specified linestring and SRID.'),
+
+    ('ST_PolygonFromText', types.Geometry,
+     'Makes a Geometry from WKT with the given SRID. If SRID is not given, it '
+     'defaults to 0.'),
+
+    ('ST_WKBToSQL', types.Geometry,
+     'Return a specified ST_Geometry value from Well-Known Binary '
+     'representation (WKB). This is an alias name for ST_GeomFromWKB that '
+     'takes no srid'),
+
+    ('ST_WKTToSQL', types.Geometry,
+     'Return a specified ST_Geometry value from Well-Known Text representation'
+     ' (WKT). This is an alias name for ST_GeomFromText'),
+
+    #
     # Geometry Accessors
     #
 
@@ -499,22 +654,6 @@ _FUNCTIONS = [
     #
     # Raster Constructors
     #
-
-    ('ST_GeomFromText', types.Geometry,
-     'Constructs a PostGIS ST_Geometry object from the OGC Well-Known text '
-     'representation.'),
-
-    ('ST_GeomFromEWKT', types.Geometry,
-     'Constructs a PostGIS ST_Geometry object from the OGC Extended Well-Known '
-     'text (EWKT) representation.'),
-
-    ('ST_GeomFromEWKB', types.Geometry,
-     'Constructs a PostGIS ST_Geometry object from the OGC Extended Well-Known '
-     'binary (EWKB) representation.'),
-
-    ('ST_GeogFromText', types.Geography,
-     'Returns a geography object from the well-known text or extended well-known '
-     'representation.'),
 
     ('ST_AsRaster', types.Raster,
      ('Converts a PostGIS geometry to a PostGIS raster.', 'RT_ST_AsRaster')),
