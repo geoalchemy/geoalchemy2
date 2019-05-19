@@ -32,10 +32,10 @@ def _test_geography_returning_func(name):
            'SELECT ST_AsBinary(%(name)s(:%(name)s_2)) AS "%(name)s_1"' %
            dict(name=name))
 
+
 #
 # Geometry Constructors
 #
-
 def test_ST_BdPolyFromText():
     _test_geometry_returning_func('ST_BdPolyFromText')
 
@@ -199,10 +199,10 @@ def test_ST_WKBToSQL():
 def test_ST_WKTToSQL():
     _test_geometry_returning_func('ST_WKTToSQL')
 
+
 #
 # Geometry Accessors
 #
-
 def test_ST_Boundary():
     _test_geometry_returning_func('ST_Boundary')
 
@@ -270,10 +270,10 @@ def test_ST_Y():
 def test_ST_Z():
     _test_simple_func('ST_Z')
 
+
 #
 # Geometry Editors
 #
-
 def test_ST_AddPoint():
     _test_geometry_returning_func('ST_AddPoint')
 
@@ -413,10 +413,10 @@ def test_ST_Translate():
 def test_ST_TransScale():
     _test_geometry_returning_func('ST_TransScale')
 
+
 #
 # Geometry Outputs
 #
-
 def test_ST_AsBinary():
     _test_simple_func('ST_AsBinary')
 
@@ -452,10 +452,10 @@ def test_ST_AsText():
 def test_ST_AsEWKT():
     _test_simple_func('ST_AsEWKT')
 
+
 #
 # Spatial Relationships and Measurements
 #
-
 def test_ST_Area():
     _test_simple_func('ST_Area')
 
@@ -551,10 +551,10 @@ def test_ST_Touches():
 def test_ST_Within():
     _test_simple_func('ST_Within')
 
+
 #
 # Geometry Processing
 #
-
 def test_ST_Buffer():
     _test_geometry_returning_func('ST_Buffer')
 
@@ -590,17 +590,17 @@ def test_ST_Simplify():
 def test_ST_Union():
     _test_geometry_returning_func('ST_Union')
 
+
 #
 # Raster Constructors
 #
-
 def test_ST_AsRaster():
     _test_simple_func('ST_AsRaster')
+
 
 #
 # Raster Accessors
 #
-
 def test_ST_Height():
     _test_simple_func('ST_Height')
 
@@ -608,11 +608,9 @@ def test_ST_Height():
 def test_ST_Width():
     _test_simple_func('ST_Width')
 
+
 #
 # Raster Pixel Accessors and Setters
 #
-
 def test_ST_Value():
     _test_simple_func('ST_Value')
-
-
