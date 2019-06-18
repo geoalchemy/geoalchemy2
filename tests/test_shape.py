@@ -38,6 +38,14 @@ def test_to_shape_ExtendedWKBElement():
     assert s.z == 3
 
 
+def test_to_shape_ExtendedWKTElement():
+    e = WKTElement('SRID=3857;POINT(1 2)', extended=True)
+    s = to_shape(e)
+    assert isinstance(s, Point)
+    assert s.x == 1
+    assert s.y == 2
+
+
 def test_to_shape_WKTElement():
     e = WKTElement('POINT(1 2)')
     s = to_shape(e)

@@ -30,7 +30,10 @@ def to_shape(element):
                     (bytes(element.data), False)
         return shapely.wkb.loads(data, hex=hex)
     elif isinstance(element, WKTElement):
-        return shapely.wkt.loads(element.data)
+        if element.extended:
+            return shapely.wkt.loads(element.data.split(';', 1)[1])
+        else:
+            return shapely.wkt.loads(element.data)
 
 
 def from_shape(shape, srid=-1):
