@@ -500,6 +500,10 @@ def test_ST_Distance_Sphere():
     _test_simple_func('ST_Distance_Sphere')
 
 
+def test_ST_DistanceSphere():
+    _test_simple_func('ST_DistanceSphere')
+
+
 def test_ST_DFullyWithin():
     _test_simple_func('ST_DFullyWithin')
 
