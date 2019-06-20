@@ -537,6 +537,15 @@ _FUNCTIONS = [
      '``ST_Distance_Spheroid``, but less accurate. PostGIS versions '
      'prior to 1.5 only implemented for points.'),
 
+    ('ST_DistanceSphere', None,
+     'Returns minimum distance in meters between two lon/lat points. Uses '
+     'a spherical earth and radius derived from the spheroid defined by the '
+     'SRID. Faster than ST_DistanceSpheroid, but less accurate. PostGIS '
+     'Versions prior to 1.5 only implemented for points. Availability: 1.5 - '
+     'support for other geometry types besides points was introduced. Prior '
+     'versions only work with points. Changed: 2.2.0 In prior versions this '
+     'used to be called ST_Distance_Sphere'),
+
     ('ST_DFullyWithin', None,
      'Returns ``True`` if all of the geometries are within the specified '
      'distance of one another'),
