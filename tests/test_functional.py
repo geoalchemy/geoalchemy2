@@ -256,7 +256,7 @@ class TestSelectBindParam():
         rows = results.fetchall()
         geom = rows[0][1]
         assert isinstance(geom, WKBElement)
-        assert geom.extented
+        assert geom.extended
 
         s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
         results = self.conn.execute(s, geom=geom)
