@@ -61,6 +61,14 @@ class _SpatialElement(functions.Function):
         # ST_Buffer(ST_GeomFromWKB(:ST_GeomFromWKB_1), :param_1)
         #
 
+        # Raise an AttributeError when the attribute name doesn't start
+        # with st_. This is to be nice with other librairies that use
+        # some ducktyping (e.g. hasattr(element, "copy")) to determine
+        # the type of the element.
+
+        if not name.lower().startswith('st_'):
+            raise AttributeError
+
         # We create our own _FunctionGenerator here, and use it in place of
         # SQLAlchemy's "func" object. This is to be able to "bind" the
         # function to the SQL expression. See also GenericFunction above.
