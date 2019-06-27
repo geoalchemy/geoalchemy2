@@ -40,6 +40,10 @@ class TestWKTElement():
             u'ST_GeomFromText_2': -1
         }
 
+    def test_attribute_error(self):
+        e = WKTElement('POINT(1 2)')
+        assert not hasattr(e, 'foo')
+
     def test_pickle_unpickle(self):
         import pickle
         e = WKTElement('POINT(1 2)', srid=3, extended=True)
@@ -257,6 +261,10 @@ class TestWKBElement():
             u'ST_Buffer_1': 2, u'ST_GeomFromWKB_1': b'\x01\x02',
             u'ST_GeomFromWKB_2': -1
         }
+
+    def test_attribute_error(self):
+        e = WKBElement(b'\x01\x02')
+        assert not hasattr(e, 'foo')
 
     def test_function_str(self):
         e = WKBElement(b'\x01\x02')
