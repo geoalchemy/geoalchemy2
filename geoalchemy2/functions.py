@@ -729,11 +729,20 @@ _SQLITE_FUNCTIONS = {
 }
 
 
-def _compiles(cls, fn):
-    def _compile(element, compiler, **kw):
+# Default handlers are required for SQLAlchemy < 1.1
+# See more details in https://github.com/geoalchemy/geoalchemy2/issues/213
+def _compiles_default(cls):
+    def _compile_default(element, compiler, **kw):
+        return "{}({})".format(cls, compiler.process(element.clauses, **kw))
+    compiles(globals()[cls])(_compile_default)
+
+
+def _compiles_sqlite(cls, fn):
+    def _compile_sqlite(element, compiler, **kw):
         return "{}({})".format(fn, compiler.process(element.clauses, **kw))
-    compiles(globals()[cls], "sqlite")(_compile)
+    compiles(globals()[cls], "sqlite")(_compile_sqlite)
 
 
 for cls, fn in _SQLITE_FUNCTIONS.items():
-    _compiles(cls, fn)
+    _compiles_default(cls)
+    _compiles_sqlite(cls, fn)

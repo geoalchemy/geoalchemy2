@@ -100,8 +100,16 @@ class _SpatialElement(functions.Function):
         raise NotImplementedError()
 
 
+# Default handlers are required for SQLAlchemy < 1.1
+# See more details in https://github.com/geoalchemy/geoalchemy2/issues/213
+@compiles(_SpatialElement)
+def compile_spatialelement_default(element, compiler, **kw):
+    return "{}({})".format(element.name,
+                           compiler.process(element.clauses, **kw))
+
+
 @compiles(_SpatialElement, 'sqlite')
-def compile_spatialelement(element, compiler, **kw):
+def compile_spatialelement_sqlite(element, compiler, **kw):
     return "{}({})".format(element.name.lstrip("ST_"),
                            compiler.process(element.clauses, **kw))
 
