@@ -203,6 +203,12 @@ class WKBElement(_SpatialElement):
             desc = desc.encode(encoding="utf-8")
         return binascii.unhexlify(desc)
 
+    def __eq__(self, other):
+        return self.desc == other.desc
+
+    def __ne__(self, other):
+        return not self.desc == other.desc
+
 
 class RasterElement(_SpatialElement):
     """
