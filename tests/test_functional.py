@@ -22,7 +22,7 @@ from geoalchemy2 import Geometry, Geography, Raster
 from geoalchemy2.elements import WKTElement, WKBElement, RasterElement
 from geoalchemy2.shape import from_shape
 
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Point
 
 from . import skip_postgis1
 
@@ -208,6 +208,51 @@ class TestInsertionCore():
         assert wkt == 'LINESTRING(0 0,3 3)'
         srid = session.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
+
+    def test_insert_poi(self):
+        conn = self.conn
+
+        conn.execute(Poi.__table__.insert(), [
+            {'geog': 'SRID=4326;POINT(1 1)'},
+            {'geog': WKTElement('POINT(1 1)', srid=4326)},
+            {'geog': WKTElement('SRID=4326;POINT(1 1)', extended=True)},
+            {'geog': from_shape(Point(1, 1), srid=4326)}
+        ])
+
+        results = conn.execute(Poi.__table__.select())
+        rows = results.fetchall()
+
+        row = rows[0]
+        assert isinstance(row[1], WKBElement)
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        assert wkt == 'POINT(1 1)'
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        assert srid == 4326
+        assert row[1] == from_shape(Point(1, 1), srid=4326)
+
+        row = rows[1]
+        assert isinstance(row[1], WKBElement)
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        assert wkt == 'POINT(1 1)'
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        assert srid == 4326
+        assert row[1] == from_shape(Point(1, 1), srid=4326)
+
+        row = rows[2]
+        assert isinstance(row[1], WKBElement)
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        assert wkt == 'POINT(1 1)'
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        assert srid == 4326
+        assert row[1] == from_shape(Point(1, 1), srid=4326)
+
+        row = rows[3]
+        assert isinstance(row[1], WKBElement)
+        wkt = session.execute(row[1].ST_AsText()).scalar()
+        assert wkt == 'POINT(1 1)'
+        srid = session.execute(row[1].ST_SRID()).scalar()
+        assert srid == 4326
+        assert row[1] == from_shape(Point(1, 1), srid=4326)
 
 
 class TestSelectBindParam():
