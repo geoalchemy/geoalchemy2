@@ -59,7 +59,9 @@ class _SpatialElement(HasFunction):
             (self.__class__.__name__, id(self), self)  # pragma: no cover
 
     def __eq__(self, other):
-        return self.desc == other.desc and self.srid == other.srid and self.extended == other.extended
+        return self.desc == other.desc \
+               and self.srid == other.srid \
+               and self.extended == other.extended
 
     def __ne__(self, other):
         return not self.__eq__(other)
