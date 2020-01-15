@@ -58,6 +58,12 @@ class _SpatialElement(HasFunction):
         return "<%s at 0x%x; %s>" % \
             (self.__class__.__name__, id(self), self)  # pragma: no cover
 
+    def __eq__(self, other):
+        return self.desc == other.desc and self.srid == other.srid and self.extended == other.extended
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __getattr__(self, name):
         #
         # This is how things like lake.geom.ST_Buffer(2) creates
@@ -202,12 +208,6 @@ class WKBElement(_SpatialElement):
         if PY3:
             desc = desc.encode(encoding="utf-8")
         return binascii.unhexlify(desc)
-
-    def __eq__(self, other):
-        return self.desc == other.desc
-
-    def __ne__(self, other):
-        return not self.desc == other.desc
 
 
 class RasterElement(_SpatialElement):
