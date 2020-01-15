@@ -60,8 +60,8 @@ class _SpatialElement(HasFunction):
 
     def __eq__(self, other):
         return self.desc == other.desc \
-               and self.srid == other.srid \
-               and self.extended == other.extended
+            and self.srid == other.srid \
+            and self.extended == other.extended
 
     def __ne__(self, other):
         return not self.__eq__(other)
