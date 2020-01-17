@@ -14,7 +14,10 @@ from .compat import PY3, str as str_
 from .exc import ArgumentError
 
 
-class _SpatialElement(functions.Function):
+class HasFunction(object):
+    pass
+
+class _SpatialElement(HasFunction):
     """
     The base class for :class:`geoalchemy2.elements.WKTElement` and
     :class:`geoalchemy2.elements.WKBElement`.
@@ -44,7 +47,7 @@ class _SpatialElement(functions.Function):
             args = [self.geom_from_extended_version, self.data]
         else:
             args = [self.geom_from, self.data, self.srid]
-        functions.Function.__init__(self, *args)
+        self.function_expr = functions.Function(*args)
 
     def __str__(self):
         return self.desc
@@ -73,45 +76,36 @@ class _SpatialElement(functions.Function):
         # SQLAlchemy's "func" object. This is to be able to "bind" the
         # function to the SQL expression. See also GenericFunction above.
 
-        func_ = functions._FunctionGenerator(expr=self)
+        func_ = functions._FunctionGenerator(expr=self.function_expr)
         return getattr(func_, name)
+
+    @property
+    def name(self):
+        return self.function_expr.name
 
     def __getstate__(self):
         state = {
             'srid': self.srid,
             'data': str(self),
             'extended': self.extended,
-            'name': self.name,
+            'name': self.function_expr.name,
         }
         return state
 
     def __setstate__(self, state):
-        self.__dict__.update(state)
+        self.srid = state['srid']
+        self.extended = state['extended']
         self.data = self._data_from_desc(state['data'])
-        args = [self.name, self.data]
+        args = [state['name'], self.data]
         if not self.extended:
             args.append(self.srid)
-        # we need to call Function.__init__ to properly initialize SQLAlchemy's
-        # internal states
-        functions.Function.__init__(self, *args)
+        self.function_expr = functions.Function(*args)
 
     @staticmethod
     def _data_from_desc(desc):
         raise NotImplementedError()
 
 
-# Default handlers are required for SQLAlchemy < 1.1
-# See more details in https://github.com/geoalchemy/geoalchemy2/issues/213
-@compiles(_SpatialElement)
-def compile_spatialelement_default(element, compiler, **kw):
-    return "{}({})".format(element.name,
-                           compiler.process(element.clauses, **kw))
-
-
-@compiles(_SpatialElement, 'sqlite')
-def compile_spatialelement_sqlite(element, compiler, **kw):
-    return "{}({})".format(element.name.lstrip("ST_"),
-                           compiler.process(element.clauses, **kw))
 
 
 class WKTElement(_SpatialElement):
@@ -220,7 +214,7 @@ class WKBElement(_SpatialElement):
         return binascii.unhexlify(desc)
 
 
-class RasterElement(FunctionElement):
+class RasterElement(HasFunction):
     """
     Instances of this class wrap a ``raster`` value. Raster values read
     from the database are converted to instances of this type. In
@@ -232,7 +226,7 @@ class RasterElement(FunctionElement):
 
     def __init__(self, data):
         self.data = data
-        FunctionElement.__init__(self, self.data)
+        self.function_expr = functions.Function(self.name, self.data)
 
     def __str__(self):
         return self.desc  # pragma: no cover
@@ -268,23 +262,9 @@ class RasterElement(FunctionElement):
         # SQLAlchemy's "func" object. This is to be able to "bind" the
         # function to the SQL expression. See also GenericFunction.
 
-        func_ = functions._FunctionGenerator(expr=self)
+        func_ = functions._FunctionGenerator(expr=self.function_expr)
         return getattr(func_, name)
 
-
-@compiles(RasterElement)
-def compile_RasterElement(element, compiler, **kw):
-    """
-    This function makes sure the :class:`geoalchemy2.elements.RasterElement`
-    contents are correctly casted to the ``raster`` type before using it.
-
-    The other elements in this module don't need such a function because
-    they are derived from :class:`functions.Function`. For the
-    :class:`geoalchemy2.elements.RasterElement` class however it would not be
-    of any use to have it compile to ``raster('...')`` so it is compiled to
-    ``'...'::raster`` by this function.
-    """
-    return "%s::raster" % compiler.process(element.clauses)
 
 
 class CompositeElement(FunctionElement):
