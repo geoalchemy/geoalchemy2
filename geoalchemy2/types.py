@@ -21,7 +21,7 @@ except ImportError:
 
 
 from .comparator import BaseComparator, Comparator
-from .elements import WKBElement, WKTElement, RasterElement, CompositeElement
+from .elements import WKBElement, WKTElement, RasterElement, CompositeElement, _SpatialElement
 from .exc import ArgumentError
 
 
@@ -129,11 +129,15 @@ class _GISType(UserDefinedType):
         geometry/geography columns. """
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
-                 spatial_index=True, management=False, use_typmod=None):
+                 spatial_index=True, management=False, use_typmod=None, from_text=None, name=None):
         geometry_type, srid = self.check_ctor_args(
             geometry_type, srid, dimension, management, use_typmod)
         self.geometry_type = geometry_type
         self.srid = srid
+        if name is not None:
+            self.name = name
+        if from_text is not None:
+            self.from_text = from_text
         self.dimension = dimension
         self.spatial_index = spatial_index
         self.management = management
@@ -155,7 +159,10 @@ class _GISType(UserDefinedType):
         return process
 
     def bind_expression(self, bindvalue):
-        return getattr(func, self.from_text)(bindvalue, type_=self)
+        if isinstance(bindvalue.value, _SpatialElement):
+            return bindvalue.value.function_expr
+        else:
+            return getattr(func, self.from_text)(bindvalue, type_=self)
 
     def bind_processor(self, dialect):
         def process(bindvalue):
