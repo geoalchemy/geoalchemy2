@@ -54,7 +54,9 @@ from sqlalchemy.sql import functions
 from sqlalchemy.ext.compiler import compiles
 
 from . import types
+from . import elements
 
+from sqlalchemy import bindparam
 
 class GenericFunction(functions.GenericFunction):
     """
@@ -92,6 +94,14 @@ class GenericFunction(functions.GenericFunction):
         expr = kwargs.pop('expr', None)
         if expr is not None:
             args = (expr,) + args
+
+        args = [
+            bindparam(elem.name, unique=True, value=elem,
+                      type_=types._GISType(from_text=elem.name, name=elem.name))
+            if isinstance(elem, elements.HasFunction) else elem
+            for elem in args
+        ]
+
         functions.GenericFunction.__init__(self, *args, **kwargs)
 
 
