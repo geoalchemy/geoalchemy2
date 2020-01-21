@@ -5,7 +5,7 @@ from shapely import wkb
 from sqlalchemy import Table, MetaData, Column, String, func
 from geoalchemy2.types import Geometry
 from geoalchemy2.elements import (
-    WKTElement, WKBElement, RasterElement, CompositeElement
+    WKTElement, WKBElement, CompositeElement
 )
 from geoalchemy2.compat import buffer as buffer_, bytes as bytes_, str as str_
 from geoalchemy2.exc import ArgumentError
@@ -269,19 +269,6 @@ class TestWKBElement():
     def test_function_str(self):
         e = WKBElement(b'\x01\x02')
         assert isinstance(str(e), str)
-
-
-class TestRasterElement():
-
-    def test_desc(self):
-        e = RasterElement(b'\x01\x02')
-        assert e.desc == '0102'
-
-    def test_function_call(self):
-        e = RasterElement(b'\x01\x02')
-        f = e.ST_Height()
-        eq_sql(f, 'ST_Height(:raster_1::raster)')
-        assert f.compile().params == {u'raster_1': b'\x01\x02'}
 
 
 class TestCompositeElement():

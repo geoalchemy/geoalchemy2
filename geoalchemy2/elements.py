@@ -213,59 +213,6 @@ class WKBElement(_SpatialElement):
         return binascii.unhexlify(desc)
 
 
-class RasterElement(HasFunction):
-    """
-    Instances of this class wrap a ``raster`` value. Raster values read
-    from the database are converted to instances of this type. In
-    most cases you won't need to create ``RasterElement`` instances
-    yourself.
-    """
-
-    name = 'raster'
-
-    def __init__(self, data):
-        self.data = data
-        self.function_expr = functions.Function(self.name, self.data)
-
-    def __str__(self):
-        return self.desc  # pragma: no cover
-
-    def __repr__(self):
-        return "<%s at 0x%x; %r>" % \
-            (self.__class__.__name__, id(self), self.desc)  # pragma: no cover
-
-    @property
-    def desc(self):
-        """
-        This element's description string.
-        """
-        desc = binascii.hexlify(self.data)
-        if PY3:
-            # hexlify returns a bytes object on py3
-            desc = str(desc, encoding="utf-8")
-
-        if len(desc) < 30:
-            return desc
-
-        return desc[:30] + '...'  # pragma: no cover
-
-    def __getattr__(self, name):
-        #
-        # This is how things like ocean.rast.ST_Value(...) creates
-        # SQL expressions of this form:
-        #
-        # ST_Value(:ST_GeomFromWKB_1), :param_1)
-        #
-
-        # We create our own _FunctionGenerator here, and use it in place of
-        # SQLAlchemy's "func" object. This is to be able to "bind" the
-        # function to the SQL expression. See also GenericFunction.
-
-        func_ = functions._FunctionGenerator(expr=self.function_expr)
-        return getattr(func_, name)
-
-
-
 class CompositeElement(FunctionElement):
     """
     Instances of this class wrap a Postgres composite type.

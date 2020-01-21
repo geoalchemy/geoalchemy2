@@ -18,8 +18,8 @@ from sqlalchemy.exc import DataError, IntegrityError, InternalError
 from sqlalchemy.sql import select, func
 from sqlalchemy.sql.expression import type_coerce
 
-from geoalchemy2 import Geometry, Geography, Raster
-from geoalchemy2.elements import WKTElement, WKBElement, RasterElement
+from geoalchemy2 import Geometry, Geography
+from geoalchemy2.elements import WKTElement, WKBElement
 from geoalchemy2.shape import from_shape
 
 from shapely.geometry import LineString
@@ -86,16 +86,6 @@ if postgis_version.startswith('1.'):
 else:
     # parameter use_typmod for AddGeometryColumn was added in PostGIS 2.0
     Summit.__table__.c.geom.type.use_typmod = False
-
-    # The raster type is only available on PostGIS 2.0 and above
-    class Ocean(Base):
-        __tablename__ = 'ocean'
-        __table_args__ = {'schema': 'public'}
-        id = Column(Integer, primary_key=True)
-        rast = Column(Raster)
-
-        def __init__(self, rast):
-            self.rast = rast
 
 postgis2_required = pytest.mark.skipif(
     postgis_version.startswith('1.'),
@@ -316,34 +306,6 @@ class TestInsertionORM():
         assert wkt == 'LINESTRING(0 0,1 1)'
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
-
-    @postgis2_required
-    def test_Raster(self):
-        polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
-        o = Ocean(polygon.ST_AsRaster(5, 5))
-        session.add(o)
-        session.flush()
-        session.expire(o)
-
-        assert isinstance(o.rast, RasterElement)
-
-        height = session.execute(o.rast.ST_Height()).scalar()
-        assert height == 5
-
-        width = session.execute(o.rast.ST_Width()).scalar()
-        assert width == 5
-
-        # The top left corner is covered by the polygon
-        top_left_point = WKTElement('Point(0 1)', srid=4326)
-        top_left = session.execute(
-            o.rast.ST_Value(top_left_point)).scalar()
-        assert top_left == 1
-
-        # The bottom right corner has NODATA
-        bottom_right_point = WKTElement('Point(1 0)', srid=4326)
-        bottom_right = session.execute(
-            o.rast.ST_Value(bottom_right_point)).scalar()
-        assert bottom_right is None
 
 
 class TestPickle():
@@ -572,9 +534,3 @@ class TestReflection():
         else:
             assert type_.geometry_type == 'LINESTRING'
             assert type_.srid == 4326
-
-    @postgis2_required
-    def test_raster_reflection(self):
-        t = Table('ocean', MetaData(), autoload=True, autoload_with=engine)
-        type_ = t.c.rast.type
-        assert isinstance(type_, Raster)
