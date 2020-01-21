@@ -17,6 +17,7 @@ from .exc import ArgumentError
 class HasFunction(object):
     pass
 
+
 class _SpatialElement(HasFunction):
     """
     The base class for :class:`geoalchemy2.elements.WKTElement` and
@@ -76,7 +77,7 @@ class _SpatialElement(HasFunction):
         # SQLAlchemy's "func" object. This is to be able to "bind" the
         # function to the SQL expression. See also GenericFunction above.
 
-        func_ = functions._FunctionGenerator(expr=self.function_expr)
+        func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)
 
     @property
@@ -104,8 +105,6 @@ class _SpatialElement(HasFunction):
     @staticmethod
     def _data_from_desc(desc):
         raise NotImplementedError()
-
-
 
 
 class WKTElement(_SpatialElement):

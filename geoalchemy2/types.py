@@ -21,7 +21,7 @@ except ImportError:
 
 
 from .comparator import BaseComparator, Comparator
-from .elements import WKBElement, WKTElement, RasterElement, CompositeElement, _SpatialElement
+from .elements import WKBElement, WKTElement, RasterElement, CompositeElement
 from .exc import ArgumentError
 
 
@@ -159,10 +159,7 @@ class _GISType(UserDefinedType):
         return process
 
     def bind_expression(self, bindvalue):
-        if isinstance(bindvalue.value, _SpatialElement):
-            return bindvalue.value.function_expr
-        else:
-            return getattr(func, self.from_text)(bindvalue, type_=self)
+        return getattr(func, self.from_text)(bindvalue, type_=self)
 
     def bind_processor(self, dialect):
         def process(bindvalue):
