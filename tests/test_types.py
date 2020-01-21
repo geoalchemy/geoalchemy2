@@ -3,7 +3,7 @@ import re
 
 from sqlalchemy import Table, MetaData, Column
 from sqlalchemy.sql import select, insert, func, text
-from geoalchemy2.types import Geometry, Geography, Raster
+from geoalchemy2.types import Geometry, Geography
 from geoalchemy2.exc import ArgumentError
 
 
@@ -21,12 +21,6 @@ def geometry_table():
 @pytest.fixture
 def geography_table():
     table = Table('table', MetaData(), Column('geom', Geography))
-    return table
-
-
-@pytest.fixture
-def raster_table():
-    table = Table('table', MetaData(), Column('rast', Raster))
     return table
 
 
@@ -213,33 +207,6 @@ class TestGeometryCollection():
     def test_get_col_spec(self):
         g = Geometry(geometry_type='GEOMETRYCOLLECTION', srid=900913)
         assert g.get_col_spec() == 'geometry(GEOMETRYCOLLECTION,900913)'
-
-
-class TestRaster():
-
-    def test_get_col_spec(self):
-        r = Raster()
-        assert r.get_col_spec() == 'raster'
-
-    def test_column_expression(self, raster_table):
-        s = select([raster_table.c.rast])
-        eq_sql(s, 'SELECT "table".rast FROM "table"')
-
-    def test_insert_bind_expression(self, raster_table):
-        i = insert(raster_table).values(rast=b'\x01\x02')
-        eq_sql(i, 'INSERT INTO "table" (rast) VALUES (:rast)')
-        assert i.compile().params == {'rast': b'\x01\x02'}
-
-    def test_function_call(self, raster_table):
-        s = select([raster_table.c.rast.ST_Height()])
-        eq_sql(s,
-               'SELECT ST_Height("table".rast) '
-               'AS "ST_Height_1" FROM "table"')
-
-    def test_non_ST_function_call(self, raster_table):
-
-        with pytest.raises(AttributeError):
-            raster_table.c.geom.Height()
 
 
 class TestCompositeType():

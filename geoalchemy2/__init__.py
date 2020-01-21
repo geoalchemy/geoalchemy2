@@ -1,13 +1,11 @@
 from .types import (  # NOQA
     Geometry,
     Geography,
-    Raster
     )
 
 from .elements import (  # NOQA
     WKTElement,
     WKBElement,
-    RasterElement
     )
 
 from .exc import ArgumentError
@@ -114,22 +112,6 @@ def _setup_ddl_event_listeners():
                                          (table.name, c.name, table.name, c.name))
                     else:
                         raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
-
-                # Add spatial indices for the Raster columns
-                #
-                # Note the use of ST_ConvexHull since most raster operators are
-                # based on the convex hull of the rasters.
-                if isinstance(c.type, Raster) and c.type.spatial_index is True:
-                    if table.schema:
-                        bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
-                                     'USING GIST (ST_ConvexHull("%s"))' %
-                                     (table.name, c.name, table.schema,
-                                      table.name, c.name))
-                    else:
-                        bind.execute('CREATE INDEX "idx_%s_%s" ON "%s" '
-                                     'USING GIST (ST_ConvexHull("%s"))' %
-                                     (table.name, c.name, table.name, c.name))
-
         elif event == 'after-drop':
             # Restore original column list including managed Geometry columns
             table.columns = table.info.pop('_saved_columns')
