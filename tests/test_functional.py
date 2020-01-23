@@ -79,7 +79,7 @@ class IndexTestWithoutSchema(Base):
 session = sessionmaker(bind=engine)()
 
 postgis_version = session.execute(func.postgis_version()).scalar()
-if not postgis_version.startswith('2.'):
+if postgis_version.startswith('1.'):
     # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
     # management functions should be used.
     Lake.__table__.c.geom.type.management = True
@@ -98,8 +98,8 @@ else:
             self.rast = rast
 
 postgis2_required = pytest.mark.skipif(
-    not postgis_version.startswith('2.'),
-    reason="requires PostGIS 2.x",
+    postgis_version.startswith('1.'),
+    reason="requires PostGIS 2 or higher",
 )
 
 
@@ -566,7 +566,7 @@ class TestReflection():
             autoload_with=engine)
         type_ = t.c.geom.type
         assert isinstance(type_, Geometry)
-        if not postgis_version.startswith('2.'):
+        if postgis_version.startswith('1.'):
             assert type_.geometry_type == 'GEOMETRY'
             assert type_.srid == -1
         else:

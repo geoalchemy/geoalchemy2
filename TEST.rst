@@ -11,7 +11,7 @@ Install PostgreSQL and PostGIS::
 
 Install the Python and PostgreSQL development packages::
 
-    $ sudo apt-get install python2.7-dev libpq-dev libgeos-dev
+    $ sudo apt-get install python3-dev libpq-dev libgeos-dev
 
 Install SpatiaLite::
 
@@ -38,7 +38,11 @@ Create the ``gis`` database::
 
 Enable PostGIS for the ``gis`` database::
 
-    $ sudo -u postgres psql -d gis -U postgres -c "CREATE EXTENSION postgis;"
+    $ sudo -u postgres psql -d gis -c "CREATE EXTENSION postgis;"
+
+With PostGIS 3 enable PostGIS Raster as well::
+
+    $ sudo -u postgres psql -d gis -c "CREATE EXTENSION postgis_raster;"
 
 Set the path to the SpatiaLite module
 =====================================
