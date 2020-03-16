@@ -1,13 +1,13 @@
 language: python
 
 sudo: true
-dist: trusty
+dist: xenial
 
 addons:
-  postgresql: 9.3
+  postgresql: 9.6
   apt:
     packages:
-      - postgresql-9.3-postgis-2.3
+      - postgresql-9.6-postgis-2.4
       - python2.7-dev
       - python3-dev
       - autotools-dev
@@ -17,6 +17,7 @@ addons:
       - libproj-dev
       - libreadline-dev
       - libsqlite3-dev
+      - libsqlite3-mod-spatialite
       - libxml2-dev
       - zlib1g-dev
 
@@ -27,33 +28,32 @@ notifications:
 services:
   - postgresql
 
-cache:
-  directories:
-    - libspatialite-4.3.0a
-
 matrix:
   include:
     - python: 2.7
       env:
       - TOX_ENV=py27sqla11
-    - python: 3.4
-      env:
-      - TOX_ENV=py34sqla11
     - python: 3.5
       env:
       - TOX_ENV=py35sqla11
-    - python: pypy
+    - python: 3.6
+      env:
+      - TOX_ENV=py36sqla11
+    - python: 3.7
+      env:
+      - TOX_ENV=py37sqla11
+    - python: 3.8
+      env:
+      - TOX_ENV=py38sqla11
+    - python: pypy3
       env:
       - TOX_ENV=pypysqla11
 
 env:
   global:
-    - SPATIALITE_LIBRARY_PATH="/usr/local/lib/mod_spatialite.so"
+    - SPATIALITE_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu/mod_spatialite.so"
 
 install:
-  # Install Spatialite
-  - ./install-spatialite.sh
-
   # Install tox
   - pip install tox
 
@@ -81,7 +81,7 @@ before_script:
 
 script:
   # Run the library through flake8
-  - flake8 geoalchemy2 tests --ignore=E711 --ignore=W503
+  - flake8 --ignore=W503,W504 geoalchemy2 tests
 
   # Run the unit test suite
   - tox -e $TOX_ENV --sitepackages -- -v --cov geoalchemy2 --cov-report term-missing
