@@ -53,7 +53,7 @@ we create a ``lake_table`` object, which will correspond to the
 This table is composed of three columns, ``id``, ``name`` and ``geom``. The
 ``geom`` column is a :class:`geoalchemy2.types.Geometry` column whose
 ``geometry_type`` is ``POLYGON``.
- 
+
 Any ``Table`` object is added to a ``MetaData`` object, which is a catalog of
 ``Table`` objects (and other related objects).
 
@@ -72,6 +72,21 @@ Calling ``create_all()`` on ``metadata`` would have worked equally well::
 In that case every ``Table`` that's referenced to by ``metadata`` would be
 created in the database. The ``metadata`` object includes one ``Table`` here,
 our now well-known ``lake_table`` object.
+
+Reflecting tables
+-----------------
+
+The `reflection system of SQLAlchemy
+<http://docs.sqlalchemy.org/en/latest/core/schema.html#metadata-reflection>`_ can be
+used on tables containing :class:`geoalchemy2.types.Geometry` or
+:class:`geoalchemy2.types.Geography` columns. In this case, the type must be imported to
+be registered into SQLAlchemy, even if it is not used explicitely.
+
+    >>> from geoalchemy2 import Geometry  # <= not used but must be imported
+    >>> from sqlalchemy import create_engine, MetaData
+    >>> engine = create_engine("postgresql://myuser:mypass@mydb.host.tld/mydbname")
+    >>> meta = MetaData()
+    >>> meta.reflect(bind=engine)
 
 Insertions
 ----------
