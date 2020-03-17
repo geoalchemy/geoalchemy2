@@ -1,6 +1,6 @@
 language: python
 
-sudo: true
+os: linux
 dist: xenial
 
 addons:
@@ -28,7 +28,7 @@ notifications:
 services:
   - postgresql
 
-matrix:
+jobs:
   include:
     - python: 2.7
       env:
@@ -94,7 +94,7 @@ after_script:
 deploy:
   provider: pypi
   distributions: "sdist bdist_wheel"
-  user: erilem
+  username: erilem
   password:
     secure: eYqYIWlsCp/awFekONU9fRKjYeleO49rzf2qWNYG3HxWvp8+1mgjLubnMTIARHiKbB6/iF3PEfGQd7+ICIi6dxWQFxWaBu7HOFaOu0wOXweNbrwhDqKrnJRJ3/2CPRTlYARr7uJhXrVTQVOIC//mEtUX7atF5EVs8fW8BM3/iT0=
   on:
