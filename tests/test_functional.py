@@ -288,33 +288,33 @@ class TestInsertionORM():
         # With PostGIS 2.0:
         # DataError: (DataError) Geometry SRID (0) does not match column SRID
         # (4326)
-        l = Lake('LINESTRING(0 0,1 1)')
-        session.add(l)
+        lake = Lake('LINESTRING(0 0,1 1)')
+        session.add(lake)
 
         with pytest.raises((DataError, IntegrityError)):
             session.flush()
 
     def test_WKTElement(self):
-        l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
-        session.add(l)
+        lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        session.add(lake)
         session.flush()
-        session.expire(l)
-        assert isinstance(l.geom, WKBElement)
-        wkt = session.execute(l.geom.ST_AsText()).scalar()
+        session.expire(lake)
+        assert isinstance(lake.geom, WKBElement)
+        wkt = session.execute(lake.geom.ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,1 1)'
-        srid = session.execute(l.geom.ST_SRID()).scalar()
+        srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
     def test_WKBElement(self):
         shape = LineString([[0, 0], [1, 1]])
-        l = Lake(from_shape(shape, srid=4326))
-        session.add(l)
+        lake = Lake(from_shape(shape, srid=4326))
+        session.add(lake)
         session.flush()
-        session.expire(l)
-        assert isinstance(l.geom, WKBElement)
-        wkt = session.execute(l.geom.ST_AsText()).scalar()
+        session.expire(lake)
+        assert isinstance(lake.geom, WKBElement)
+        wkt = session.execute(lake.geom.ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,1 1)'
-        srid = session.execute(l.geom.ST_SRID()).scalar()
+        srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
     @postgis2_required
@@ -357,10 +357,10 @@ class TestPickle():
         metadata.drop_all()
 
     def _create_one_lake(self):
-        l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
-        session.add(l)
+        lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        session.add(lake)
         session.flush()
-        return l.id
+        return lake.id
 
     def test_pickle_unpickle(self):
         import pickle
@@ -390,10 +390,10 @@ class TestCallFunction():
         metadata.drop_all()
 
     def _create_one_lake(self):
-        l = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
-        session.add(l)
+        lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        session.add(lake)
         session.flush()
-        return l.id
+        return lake.id
 
     def _create_one_poi(self):
         p = Poi('POINT(5 45)')
