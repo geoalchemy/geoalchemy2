@@ -1,6 +1,17 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.7.0
+-----
+
+* Update test matrix removing Python 3.4 and adding 3.6, 3.7, 3.8 @cjmayo (#253)
+* Add reflection example in doc @adrien-berchet (#252)
+* Fix tests with PostGIS 3 @elemoine (#250)
+* Add default compilation rules to elements and functions which are required for SQLAlchemy < 1.1 @adrien-berchet (#242)
+* Raise an AttributeError when a function does not starts with ST_* @adrien-berchet @elemoine (#240)
+* Replace ST_Distance_Sphere by ST_DistanceSphere @borisuvarov (#237)
+* Make shape.to_shape() work for extended WKTElement objects @adrien-berchet (#236)
+
 0.6.3
 -----
 
