@@ -48,7 +48,7 @@ class _SpatialElement(HasFunction):
             args = [self.geom_from_extended_version, self.data]
         else:
             args = [self.geom_from, self.data, self.srid]
-        self.function_expr = functions.Function(*args)
+        self.function_expr = getattr(functions.func, args[0])(*args[1:])
 
     def __str__(self):
         return self.desc
@@ -76,8 +76,7 @@ class _SpatialElement(HasFunction):
         # We create our own _FunctionGenerator here, and use it in place of
         # SQLAlchemy's "func" object. This is to be able to "bind" the
         # function to the SQL expression. See also GenericFunction above.
-
-        func_ = functions._FunctionGenerator(expr=self)
+        func_ = functions._FunctionGenerator(expr=self.function_expr)
         return getattr(func_, name)
 
     @property
