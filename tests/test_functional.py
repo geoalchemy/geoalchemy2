@@ -316,12 +316,14 @@ class TestPickle():
 
     def teardown(self):
         session.rollback()
+        session.expunge_all()
         metadata.drop_all()
 
     def _create_one_lake(self):
         lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(lake)
         session.flush()
+        session.expunge_all()
         return lake.id
 
     def test_pickle_unpickle(self):
@@ -349,18 +351,21 @@ class TestCallFunction():
 
     def teardown(self):
         session.rollback()
+        session.expunge_all()
         metadata.drop_all()
 
     def _create_one_lake(self):
         lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(lake)
         session.flush()
+        session.expunge_all()
         return lake.id
 
     def _create_one_poi(self):
         p = Poi('POINT(5 45)')
         session.add(p)
         session.flush()
+        session.expunge_all()
         return p.id
 
     def test_ST_GeometryType(self):
@@ -390,6 +395,7 @@ class TestCallFunction():
         assert isinstance(r1, WKBElement)
 
         lake = session.query(Lake).get(lake_id)
+        assert isinstance(lake.geom, WKBElement)
         r2 = session.execute(lake.geom.ST_Buffer(2)).scalar()
         assert isinstance(r2, WKBElement)
 
@@ -407,6 +413,7 @@ class TestCallFunction():
     def test_ST_Dump(self):
         lake_id = self._create_one_lake()
         lake = session.query(Lake).get(lake_id)
+        assert isinstance(lake.geom, WKBElement)
 
         s = select([func.ST_Dump(Lake.__table__.c.geom)])
         r1 = session.execute(s).scalar()
@@ -439,6 +446,7 @@ class TestCallFunction():
     def test_ST_DumpPoints(self):
         lake_id = self._create_one_lake()
         lake = session.query(Lake).get(lake_id)
+        assert isinstance(lake.geom, WKBElement)
 
         dump = lake.geom.ST_DumpPoints()
 
@@ -486,6 +494,7 @@ class TestCallFunction():
         assert isinstance(r1, WKBElement)
 
         lake = session.query(Lake).get(lake_id)
+        assert isinstance(lake.geom, WKBElement)
 
         r2 = session.execute(lake.geom.ST_Buffer(2)).scalar()
         assert isinstance(r2, WKBElement)

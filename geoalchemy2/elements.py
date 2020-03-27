@@ -45,10 +45,13 @@ class _SpatialElement(HasFunction):
         self.data = data
         self.extended = extended
         if self.extended:
-            args = [self.geom_from_extended_version, self.data]
+            func_name = self.geom_from_extended_version
+            args = [self.data]
         else:
-            args = [self.geom_from, self.data, self.srid]
-        self.function_expr = getattr(functions.func, args[0])(*args[1:])
+            func_name = self.geom_from
+            args = [self.data, self.srid]
+
+        self.function_expr = getattr(functions.func, func_name)(*args)
 
     def __str__(self):
         return self.desc
@@ -96,10 +99,11 @@ class _SpatialElement(HasFunction):
         self.srid = state['srid']
         self.extended = state['extended']
         self.data = self._data_from_desc(state['data'])
-        args = [state['name'], self.data]
+        func_name = state['name']
+        args = [self.data]
         if not self.extended:
             args.append(self.srid)
-        self.function_expr = functions.Function(*args)
+        self.function_expr = getattr(functions.func, func_name)(*args)
 
     @staticmethod
     def _data_from_desc(desc):
