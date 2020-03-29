@@ -5,7 +5,7 @@ from shapely import wkb
 from sqlalchemy import Table, MetaData, Column, String, func
 from geoalchemy2.types import Geometry
 from geoalchemy2.elements import (
-    WKTElement, WKBElement, CompositeElement
+    WKTElement, WKBElement, RasterElement, CompositeElement
 )
 from geoalchemy2.compat import buffer as buffer_, bytes as bytes_, str as str_
 from geoalchemy2.exc import ArgumentError
@@ -269,6 +269,46 @@ class TestWKBElement():
     def test_function_str(self):
         e = WKBElement(b'\x01\x02')
         assert isinstance(str(e), str)
+
+
+class TestRasterElement():
+
+    rast_data = (
+        b'\x01\x00\x00\x01\x00\x9a\x99\x99\x99\x99\x99\xc9?\x9a\x99\x99\x99\x99\x99'
+        b'\xc9\xbf\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xe6\x10\x00'
+        b'\x00\x05\x00\x05\x00D\x00\x01\x01\x01\x01\x01\x01\x01\x01\x01\x00\x01\x01'
+        b'\x01\x00\x00\x01\x01\x00\x00\x00\x01\x00\x00\x00\x00')
+
+    hex_rast_data = (
+        '01000001009a9999999999c93f9a9999999999c9bf0000000000000000000000000000f03'
+        'f00000000000000000000000000000000e610000005000500440001010101010101010100'
+        '010101000001010000000100000000')
+
+    def test_desc(self):
+        e = RasterElement(self.rast_data)
+        assert e.desc == self.hex_rast_data
+
+    def test_function_call(self):
+        e = RasterElement(self.rast_data)
+        f = e.ST_Height()
+        eq_sql(f, 'ST_Height(ST_RastFromWKB(:ST_RastFromWKB_1))')
+        assert f.compile().params == {u'ST_RastFromWKB_1': self.rast_data}
+
+    def test_pickle_unpickle(self):
+        import pickle
+        e = RasterElement(self.rast_data)
+        pickled = pickle.dumps(e)
+        unpickled = pickle.loads(pickled)
+        assert unpickled.srid == -1
+        assert unpickled.extended is True
+        assert unpickled.data == self.rast_data
+        assert unpickled.name == 'raster'
+        f = unpickled.ST_Height()
+        eq_sql(f, 'ST_Height(ST_RastFromWKB(:ST_RastFromWKB_1))')
+        assert f.compile().params == {
+            u'ST_RastFromWKB_1': self.rast_data,
+        }
 
 
 class TestCompositeElement():

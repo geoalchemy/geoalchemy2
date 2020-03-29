@@ -33,6 +33,12 @@ def _test_geography_returning_func(name):
            dict(name=name))
 
 
+def _test_raster_returning_func(name):
+    eq_sql(getattr(func, name)(1).select(),
+           'SELECT ST_AsBinary(%(name)s(:%(name)s_2)) AS "%(name)s_1"' %
+           dict(name=name))
+
+
 #
 # Geometry Constructors
 #
@@ -599,7 +605,7 @@ def test_ST_Union():
 # Raster Constructors
 #
 def test_ST_AsRaster():
-    _test_simple_func('ST_AsRaster')
+    _test_raster_returning_func('ST_AsRaster')
 
 
 #

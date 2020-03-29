@@ -18,6 +18,28 @@ class HasFunction(object):
     pass
 
 
+class HasBinaryDesc(object):
+    @property
+    def desc(self):
+        """
+        This element's description string.
+        """
+        if isinstance(self.data, str_):
+            # SpatiaLite case
+            return self.data
+        desc = binascii.hexlify(self.data)
+        if PY3:
+            # hexlify returns a bytes object on py3
+            desc = str(desc, encoding="utf-8")
+        return desc
+
+    @staticmethod
+    def _data_from_desc(desc):
+        if PY3:
+            desc = desc.encode(encoding="utf-8")
+        return binascii.unhexlify(desc)
+
+
 class _SpatialElement(HasFunction):
     """
     The base class for :class:`geoalchemy2.elements.WKTElement` and
@@ -151,7 +173,7 @@ class WKTElement(_SpatialElement):
         return desc
 
 
-class WKBElement(_SpatialElement):
+class WKBElement(HasBinaryDesc, _SpatialElement):
     """
     Instances of this class wrap a WKB or EWKB value.
 
@@ -195,31 +217,44 @@ class WKBElement(_SpatialElement):
             srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
         _SpatialElement.__init__(self, data, srid, extended)
 
-    @property
-    def desc(self):
-        """
-        This element's description string.
-        """
-        if isinstance(self.data, str_):
-            # SpatiaLite case
-            return self.data
-        desc = binascii.hexlify(self.data)
-        if PY3:
-            # hexlify returns a bytes object on py3
-            desc = str(desc, encoding="utf-8")
-        return desc
 
-    @staticmethod
-    def _data_from_desc(desc):
-        if PY3:
-            desc = desc.encode(encoding="utf-8")
-        return binascii.unhexlify(desc)
+class RasterElement(HasBinaryDesc, _SpatialElement):
+    """
+    Instances of this class wrap a ``raster`` value. Raster values read
+    from the database are converted to instances of this type. In
+    most cases you won't need to create ``RasterElement`` instances
+    yourself.
+    """
+    geom_from_extended_version = 'ST_RastFromWKB'
+    name = 'raster'
+    srid = -1
+    extended = True
+
+    def __init__(self, data):
+        # read srid from the WKB
+        #
+        # The WKB structure is documented in the file
+        # raster/doc/RFC2-WellKnownBinaryFormat of the PostGIS sources.
+        if isinstance(data, str_):
+            # SpatiaLite case
+            # assume that the string is an hex value
+            byte_order = binascii.unhexlify(data[:2])
+            srid = binascii.unhexlify(data[106:114])
+        else:
+            byte_order = data[0]
+            srid = data[53:57]
+        if not PY3:
+            byte_order = bytearray(byte_order)
+            srid = bytearray(srid)
+        srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
+        _SpatialElement.__init__(self, data, self.srid, self.extended)
 
 
 class CompositeElement(FunctionElement):
     """
     Instances of this class wrap a Postgres composite type.
     """
+
     def __init__(self, base, field, type_):
         self.name = field
         self.type = to_instance(type_)

@@ -665,6 +665,13 @@ _FUNCTIONS = [
      'Geometries.'),
 
     #
+    # Raster Constructors
+    #
+
+    ('ST_AsRaster', types.Raster,
+     ('Converts a PostGIS geometry to a PostGIS raster.', 'RT_ST_AsRaster')),
+
+    #
     # Raster Accessors
     #
 

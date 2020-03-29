@@ -20,8 +20,8 @@ except ImportError:
     SHAPELY = False
 
 
-from .comparator import Comparator
-from .elements import WKBElement, WKTElement, CompositeElement
+from .comparator import BaseComparator, Comparator
+from .elements import WKBElement, WKTElement, RasterElement, CompositeElement
 from .exc import ArgumentError
 
 
@@ -275,6 +275,62 @@ class Geography(_GISType):
         ``column_expression`` method. """
 
 
+class Raster(_GISType):
+    """
+    The Raster column type.
+
+    Creating a raster column is done like this::
+
+        Column(Raster)
+
+    This class defines the ``result_processor`` method, so that raster values
+    received from the database are converted to
+    :class:`geoalchemy2.elements.RasterElement` objects.
+
+    Constructor arguments:
+
+    ``spatial_index``
+
+        Indicate if a spatial index should be created. Default is ``True``.
+
+    """
+
+    comparator_factory = BaseComparator
+    """
+    This is the way by which spatial operators and functions are
+    defined for raster columns.
+    """
+
+    from_text = 'ST_RastFromWKB'
+    """ The "from text" raster constructor. Used by the parent class'
+        ``bind_expression`` method. """
+
+    as_binary = 'ST_AsBinary'
+    """ The "as binary" function to use. Used by the parent class'
+        ``column_expression`` method. """
+
+    name = 'raster'
+    """ Type name used for defining raster columns in ``CREATE TABLE``. """
+
+    def __init__(self, spatial_index=True):
+        self.spatial_index = spatial_index
+
+    def get_col_spec(self):
+        return self.name
+
+    def column_expression(self, col):
+        return getattr(func, self.as_binary)(col, type_=self)
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            if value is not None:
+                return RasterElement(value)
+        return process
+
+    def bind_expression(self, bindvalue):
+        return getattr(func, self.from_text)(bindvalue, type_=self)
+
+
 class CompositeType(UserDefinedType):
     """
     A wrapper for :class:`geoalchemy2.elements.CompositeElement`, that can be
@@ -313,3 +369,4 @@ class GeometryDump(CompositeType):
 # subsystem.
 ischema_names['geometry'] = Geometry
 ischema_names['geography'] = Geography
+ischema_names['raster'] = Raster
