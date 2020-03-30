@@ -14,6 +14,12 @@ from .compat import PY3, str as str_
 from .exc import ArgumentError
 
 
+if PY3:
+    BinasciiError = binascii.Error
+else:
+    BinasciiError = TypeError
+
+
 class HasFunction(object):
     pass
 
@@ -218,7 +224,7 @@ class WKBElement(HasBinaryDesc, _SpatialElement):
         _SpatialElement.__init__(self, data, srid, extended)
 
 
-class RasterElement(HasBinaryDesc, _SpatialElement):
+class RasterElement(_SpatialElement):
     """
     Instances of this class wrap a ``raster`` value. Raster values read
     from the database are converted to instances of this type. In
@@ -231,19 +237,28 @@ class RasterElement(HasBinaryDesc, _SpatialElement):
         # read srid from the WKB (binary or hexadecimal format)
         # The WKB structure is documented in the file
         # raster/doc/RFC2-WellKnownBinaryFormat of the PostGIS sources.
-        if isinstance(data, str_):
-            # SpatiaLite case
-            # assume that the string is an hex value
-            byte_order = binascii.unhexlify(data[:2])
-            srid = binascii.unhexlify(data[106:114])
-        else:
-            byte_order = data[0]
-            srid = data[53:57]
+        try:
+            bin_data = binascii.unhexlify(data[:114])
+        except BinasciiError:
+            bin_data = data
+            data = str(binascii.hexlify(data).decode(encoding='utf-8'))
+        byte_order = bin_data[0]
+        srid = bin_data[53:57]
         if not PY3:
-            byte_order = bytearray(byte_order)
-            srid = bytearray(srid)
+            byte_order = bytearray(byte_order)[0]
         srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
         _SpatialElement.__init__(self, data, srid, True)
+
+    @property
+    def desc(self):
+        """
+        This element's description string.
+        """
+        return self.data
+
+    @staticmethod
+    def _data_from_desc(desc):
+        return desc
 
 
 class CompositeElement(FunctionElement):
