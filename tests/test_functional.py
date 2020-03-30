@@ -80,7 +80,7 @@ class IndexTestWithoutSchema(Base):
 
 session = sessionmaker(bind=engine)()
 
-postgis_version = session.execute(func.postgis_version()).scalar()
+postgis_version = session.execute(func.postgis_lib_version()).scalar()
 if postgis_version.startswith('1.'):
     # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
     # management functions should be used.

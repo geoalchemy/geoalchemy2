@@ -225,14 +225,10 @@ class RasterElement(HasBinaryDesc, _SpatialElement):
     most cases you won't need to create ``RasterElement`` instances
     yourself.
     """
-    geom_from_extended_version = 'ST_RastFromWKB'
-    name = 'raster'
-    srid = -1
-    extended = True
+    geom_from_extended_version = 'raster'
 
     def __init__(self, data):
-        # read srid from the WKB
-        #
+        # read srid from the WKB (binary or hexadecimal format)
         # The WKB structure is documented in the file
         # raster/doc/RFC2-WellKnownBinaryFormat of the PostGIS sources.
         if isinstance(data, str_):
@@ -247,7 +243,7 @@ class RasterElement(HasBinaryDesc, _SpatialElement):
             byte_order = bytearray(byte_order)
             srid = bytearray(srid)
         srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
-        _SpatialElement.__init__(self, data, self.srid, self.extended)
+        _SpatialElement.__init__(self, data, srid, True)
 
 
 class CompositeElement(FunctionElement):

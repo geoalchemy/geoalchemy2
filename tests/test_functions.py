@@ -35,7 +35,7 @@ def _test_geography_returning_func(name):
 
 def _test_raster_returning_func(name):
     eq_sql(getattr(func, name)(1).select(),
-           'SELECT ST_AsBinary(%(name)s(:%(name)s_2)) AS "%(name)s_1"' %
+           'SELECT raster(%(name)s(:%(name)s_2)) AS "%(name)s_1"' %
            dict(name=name))
 
 

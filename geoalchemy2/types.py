@@ -301,11 +301,11 @@ class Raster(_GISType):
     defined for raster columns.
     """
 
-    from_text = 'ST_RastFromWKB'
+    from_text = 'raster'
     """ The "from text" raster constructor. Used by the parent class'
         ``bind_expression`` method. """
 
-    as_binary = 'ST_AsBinary'
+    as_binary = 'raster'
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
 

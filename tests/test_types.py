@@ -223,11 +223,11 @@ class TestRaster():
 
     def test_column_expression(self, raster_table):
         s = select([raster_table.c.rast])
-        eq_sql(s, 'SELECT ST_AsBinary("table".rast) AS rast FROM "table"')
+        eq_sql(s, 'SELECT raster("table".rast) AS rast FROM "table"')
 
     def test_insert_bind_expression(self, raster_table):
         i = insert(raster_table).values(rast=b'\x01\x02')
-        eq_sql(i, 'INSERT INTO "table" (rast) VALUES (ST_RastFromWKB(:rast))')
+        eq_sql(i, 'INSERT INTO "table" (rast) VALUES (raster(:rast))')
         assert i.compile().params == {'rast': b'\x01\x02'}
 
     def test_function_call(self, raster_table):

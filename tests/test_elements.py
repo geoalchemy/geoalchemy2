@@ -288,26 +288,30 @@ class TestRasterElement():
     def test_desc(self):
         e = RasterElement(self.rast_data)
         assert e.desc == self.hex_rast_data
+        assert e.srid == 4326
+        e = RasterElement(self.hex_rast_data)
+        assert e.desc == self.hex_rast_data
+        assert e.srid == 4326
 
     def test_function_call(self):
         e = RasterElement(self.rast_data)
         f = e.ST_Height()
-        eq_sql(f, 'ST_Height(ST_RastFromWKB(:ST_RastFromWKB_1))')
-        assert f.compile().params == {u'ST_RastFromWKB_1': self.rast_data}
+        eq_sql(f, 'ST_Height(raster(:raster_1))')
+        assert f.compile().params == {u'raster_1': self.rast_data}
 
     def test_pickle_unpickle(self):
         import pickle
         e = RasterElement(self.rast_data)
         pickled = pickle.dumps(e)
         unpickled = pickle.loads(pickled)
-        assert unpickled.srid == -1
+        assert unpickled.srid == 4326
         assert unpickled.extended is True
         assert unpickled.data == self.rast_data
         assert unpickled.name == 'raster'
         f = unpickled.ST_Height()
-        eq_sql(f, 'ST_Height(ST_RastFromWKB(:ST_RastFromWKB_1))')
+        eq_sql(f, 'ST_Height(raster(:raster_1))')
         assert f.compile().params == {
-            u'ST_RastFromWKB_1': self.rast_data,
+            u'raster_1': self.rast_data,
         }
 
 
