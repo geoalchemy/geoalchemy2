@@ -24,28 +24,6 @@ class HasFunction(object):
     pass
 
 
-class HasBinaryDesc(object):
-    @property
-    def desc(self):
-        """
-        This element's description string.
-        """
-        if isinstance(self.data, str_):
-            # SpatiaLite case
-            return self.data
-        desc = binascii.hexlify(self.data)
-        if PY3:
-            # hexlify returns a bytes object on py3
-            desc = str(desc, encoding="utf-8")
-        return desc
-
-    @staticmethod
-    def _data_from_desc(desc):
-        if PY3:
-            desc = desc.encode(encoding="utf-8")
-        return binascii.unhexlify(desc)
-
-
 class _SpatialElement(HasFunction):
     """
     The base class for :class:`geoalchemy2.elements.WKTElement` and
@@ -179,7 +157,7 @@ class WKTElement(_SpatialElement):
         return desc
 
 
-class WKBElement(HasBinaryDesc, _SpatialElement):
+class WKBElement(_SpatialElement):
     """
     Instances of this class wrap a WKB or EWKB value.
 
@@ -222,6 +200,26 @@ class WKBElement(HasBinaryDesc, _SpatialElement):
             byte_order, srid = header[0], header[5:]
             srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
         _SpatialElement.__init__(self, data, srid, extended)
+
+    @property
+    def desc(self):
+        """
+        This element's description string.
+        """
+        if isinstance(self.data, str_):
+            # SpatiaLite case
+            return self.data
+        desc = binascii.hexlify(self.data)
+        if PY3:
+            # hexlify returns a bytes object on py3
+            desc = str(desc, encoding="utf-8")
+        return desc
+
+    @staticmethod
+    def _data_from_desc(desc):
+        if PY3:
+            desc = desc.encode(encoding="utf-8")
+        return binascii.unhexlify(desc)
 
 
 class RasterElement(_SpatialElement):
