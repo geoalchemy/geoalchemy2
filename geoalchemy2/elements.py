@@ -50,14 +50,6 @@ class _SpatialElement(HasFunction):
         self.srid = srid
         self.data = data
         self.extended = extended
-        if self.extended:
-            func_name = self.geom_from_extended_version
-            args = [self.data]
-        else:
-            func_name = self.geom_from
-            args = [self.data, self.srid]
-
-        self.function_expr = getattr(functions.func, func_name)(*args)
 
     def __str__(self):
         return self.desc
@@ -85,19 +77,14 @@ class _SpatialElement(HasFunction):
         # We create our own _FunctionGenerator here, and use it in place of
         # SQLAlchemy's "func" object. This is to be able to "bind" the
         # function to the SQL expression. See also GenericFunction above.
-        func_ = functions._FunctionGenerator(expr=self.function_expr)
+        func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)
-
-    @property
-    def name(self):
-        return self.function_expr.name
 
     def __getstate__(self):
         state = {
             'srid': self.srid,
             'data': str(self),
             'extended': self.extended,
-            'name': self.function_expr.name,
         }
         return state
 
@@ -105,11 +92,6 @@ class _SpatialElement(HasFunction):
         self.srid = state['srid']
         self.extended = state['extended']
         self.data = self._data_from_desc(state['data'])
-        func_name = state['name']
-        args = [self.data]
-        if not self.extended:
-            args.append(self.srid)
-        self.function_expr = getattr(functions.func, func_name)(*args)
 
     @staticmethod
     def _data_from_desc(desc):

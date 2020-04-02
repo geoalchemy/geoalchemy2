@@ -129,7 +129,8 @@ class _GISType(UserDefinedType):
         geometry/geography columns. """
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
-                 spatial_index=True, management=False, use_typmod=None, from_text=None, name=None):
+                 spatial_index=True, management=False, use_typmod=None,
+                 from_text=None, name=None):
         geometry_type, srid = self.check_ctor_args(
             geometry_type, srid, dimension, management, use_typmod)
         self.geometry_type = geometry_type
@@ -155,7 +156,12 @@ class _GISType(UserDefinedType):
     def result_processor(self, dialect, coltype):
         def process(value):
             if value is not None:
-                return WKBElement(value, srid=self.srid, extended=self.extended)
+                kwargs = {}
+                if self.srid > 0:
+                    kwargs['srid'] = self.srid
+                if self.extended is not None:
+                    kwargs['extended'] = self.extended
+                return self.ElementType(value, **kwargs)
         return process
 
     def bind_expression(self, bindvalue):
@@ -249,6 +255,8 @@ class Geometry(_GISType):
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
 
+    ElementType = WKBElement
+
 
 class Geography(_GISType):
     """
@@ -273,6 +281,8 @@ class Geography(_GISType):
     as_binary = 'ST_AsBinary'
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
+
+    ElementType = WKBElement
 
 
 class Raster(_GISType):
@@ -312,23 +322,14 @@ class Raster(_GISType):
     name = 'raster'
     """ Type name used for defining raster columns in ``CREATE TABLE``. """
 
-    def __init__(self, spatial_index=True):
-        self.spatial_index = spatial_index
+    ElementType = RasterElement
 
-    def get_col_spec(self):
-        return self.name
-
-    def column_expression(self, col):
-        return getattr(func, self.as_binary)(col, type_=self)
-
-    def result_processor(self, dialect, coltype):
-        def process(value):
-            if value is not None:
-                return RasterElement(value)
-        return process
-
-    def bind_expression(self, bindvalue):
-        return getattr(func, self.from_text)(bindvalue, type_=self)
+    def __init__(self, *args, **kwargs):
+        # Enforce default values
+        kwargs['geometry_type'] = None
+        kwargs['srid'] = -1
+        super(Raster, self).__init__(*args, **kwargs)
+        self.extended = None
 
 
 class CompositeType(UserDefinedType):

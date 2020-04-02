@@ -93,10 +93,20 @@ class GenericFunction(functions.GenericFunction):
         expr = kwargs.pop('expr', None)
         if expr is not None:
             args = (expr,) + args
-        args = [
-            elem.function_expr if isinstance(elem, elements.HasFunction) else elem for elem in args
-        ]
-        functions.GenericFunction.__init__(self, *args, **kwargs)
+        new_args = []
+        for elem in args:
+            if isinstance(elem, elements.HasFunction):
+                if elem.extended:
+                    func_name = elem.geom_from_extended_version
+                    func_args = [elem.data]
+                else:
+                    func_name = elem.geom_from
+                    func_args = [elem.data, elem.srid]
+                new_arg = getattr(functions.func, func_name)(*func_args)
+            else:
+                new_arg = elem
+            new_args.append(new_arg)
+        functions.GenericFunction.__init__(self, *new_args, **kwargs)
 
 
 # Functions are classified as in the PostGIS doc.

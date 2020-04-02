@@ -52,7 +52,6 @@ class TestWKTElement():
         assert unpickled.srid == 3
         assert unpickled.extended is True
         assert unpickled.data == 'POINT(1 2)'
-        assert unpickled.name == 'ST_GeomFromEWKT'
         f = unpickled.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromEWKT(:ST_GeomFromEWKT_1), '
@@ -92,7 +91,6 @@ class TestExtendedWKTElement():
         assert unpickled.srid == self._srid
         assert unpickled.extended is True
         assert unpickled.data == self._ewkt
-        assert unpickled.name == 'ST_GeomFromEWKT'
         f = unpickled.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromEWKT(:ST_GeomFromEWKT_1), '
@@ -215,7 +213,6 @@ class TestExtendedWKBElement():
         assert unpickled.srid == self._srid
         assert unpickled.extended is True
         assert unpickled.data == bytes_(self._bin)
-        assert unpickled.name == 'ST_GeomFromEWKB'
         f = unpickled.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromEWKB(:ST_GeomFromEWKB_1), '
@@ -305,13 +302,11 @@ class TestRasterElement():
         assert e.srid == 4326
         assert e.extended is True
         assert e.data == self.hex_rast_data
-        assert e.name == 'raster'
         pickled = pickle.dumps(e)
         unpickled = pickle.loads(pickled)
         assert unpickled.srid == 4326
         assert unpickled.extended is True
         assert unpickled.data == self.hex_rast_data
-        assert unpickled.name == 'raster'
         f = unpickled.ST_Height()
         eq_sql(f, 'ST_Height(raster(:raster_1))')
         assert f.compile().params == {

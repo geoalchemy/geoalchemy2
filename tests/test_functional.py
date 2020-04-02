@@ -375,7 +375,6 @@ class TestPickle():
         assert unpickled.geom.srid == 4326
         assert str(unpickled.geom) == data_desc
         assert unpickled.geom.extended is True
-        assert unpickled.geom.name == 'ST_GeomFromEWKB'
 
 
 class TestCallFunction():
