@@ -351,14 +351,13 @@ class TestPickle():
 
     def teardown(self):
         session.rollback()
-        session.expunge_all()
         metadata.drop_all()
 
     def _create_one_lake(self):
         lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(lake)
         session.flush()
-        session.expunge_all()
+        session.expire(lake)
         return lake.id
 
     def test_pickle_unpickle(self):
@@ -385,21 +384,20 @@ class TestCallFunction():
 
     def teardown(self):
         session.rollback()
-        session.expunge_all()
         metadata.drop_all()
 
     def _create_one_lake(self):
         lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(lake)
         session.flush()
-        session.expunge_all()
+        session.expire(lake)
         return lake.id
 
     def _create_one_poi(self):
         p = Poi('POINT(5 45)')
         session.add(p)
         session.flush()
-        session.expunge_all()
+        session.expire(p)
         return p.id
 
     def test_ST_GeometryType(self):
