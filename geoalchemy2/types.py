@@ -256,6 +256,8 @@ class Geometry(_GISType):
         ``column_expression`` method. """
 
     ElementType = WKBElement
+    """ The element class to use. Used by the parent class'
+        ``result_processor`` method. """
 
 
 class Geography(_GISType):
@@ -283,6 +285,8 @@ class Geography(_GISType):
         ``column_expression`` method. """
 
     ElementType = WKBElement
+    """ The element class to use. Used by the parent class'
+        ``result_processor`` method. """
 
 
 class Raster(_GISType):
@@ -311,6 +315,9 @@ class Raster(_GISType):
     defined for raster columns.
     """
 
+    name = 'raster'
+    """ Type name used for defining raster columns in ``CREATE TABLE``. """
+
     from_text = 'raster'
     """ The "from text" raster constructor. Used by the parent class'
         ``bind_expression`` method. """
@@ -319,10 +326,9 @@ class Raster(_GISType):
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
 
-    name = 'raster'
-    """ Type name used for defining raster columns in ``CREATE TABLE``. """
-
     ElementType = RasterElement
+    """ The element class to use. Used by the parent class'
+        ``result_processor`` method. """
 
     def __init__(self, *args, **kwargs):
         # Enforce default values

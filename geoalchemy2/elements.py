@@ -211,6 +211,7 @@ class RasterElement(_SpatialElement):
     most cases you won't need to create ``RasterElement`` instances
     yourself.
     """
+
     geom_from_extended_version = 'raster'
 
     def __init__(self, data):
