@@ -14,7 +14,17 @@ from .compat import PY3, str as str_
 from .exc import ArgumentError
 
 
-class _SpatialElement(functions.Function):
+if PY3:
+    BinasciiError = binascii.Error
+else:
+    BinasciiError = TypeError
+
+
+class HasFunction(object):
+    pass
+
+
+class _SpatialElement(HasFunction):
     """
     The base class for :class:`geoalchemy2.elements.WKTElement` and
     :class:`geoalchemy2.elements.WKBElement`.
@@ -40,11 +50,6 @@ class _SpatialElement(functions.Function):
         self.srid = srid
         self.data = data
         self.extended = extended
-        if self.extended:
-            args = [self.geom_from_extended_version, self.data]
-        else:
-            args = [self.geom_from, self.data, self.srid]
-        functions.Function.__init__(self, *args)
 
     def __str__(self):
         return self.desc
@@ -72,7 +77,6 @@ class _SpatialElement(functions.Function):
         # We create our own _FunctionGenerator here, and use it in place of
         # SQLAlchemy's "func" object. This is to be able to "bind" the
         # function to the SQL expression. See also GenericFunction above.
-
         func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)
 
@@ -81,37 +85,17 @@ class _SpatialElement(functions.Function):
             'srid': self.srid,
             'data': str(self),
             'extended': self.extended,
-            'name': self.name,
         }
         return state
 
     def __setstate__(self, state):
-        self.__dict__.update(state)
+        self.srid = state['srid']
+        self.extended = state['extended']
         self.data = self._data_from_desc(state['data'])
-        args = [self.name, self.data]
-        if not self.extended:
-            args.append(self.srid)
-        # we need to call Function.__init__ to properly initialize SQLAlchemy's
-        # internal states
-        functions.Function.__init__(self, *args)
 
     @staticmethod
     def _data_from_desc(desc):
         raise NotImplementedError()
-
-
-# Default handlers are required for SQLAlchemy < 1.1
-# See more details in https://github.com/geoalchemy/geoalchemy2/issues/213
-@compiles(_SpatialElement)
-def compile_spatialelement_default(element, compiler, **kw):
-    return "{}({})".format(element.name,
-                           compiler.process(element.clauses, **kw))
-
-
-@compiles(_SpatialElement, 'sqlite')
-def compile_spatialelement_sqlite(element, compiler, **kw):
-    return "{}({})".format(element.name.lstrip("ST_"),
-                           compiler.process(element.clauses, **kw))
 
 
 class WKTElement(_SpatialElement):
@@ -220,7 +204,7 @@ class WKBElement(_SpatialElement):
         return binascii.unhexlify(desc)
 
 
-class RasterElement(FunctionElement):
+class RasterElement(_SpatialElement):
     """
     Instances of this class wrap a ``raster`` value. Raster values read
     from the database are converted to instances of this type. In
@@ -228,69 +212,41 @@ class RasterElement(FunctionElement):
     yourself.
     """
 
-    name = 'raster'
+    geom_from_extended_version = 'raster'
 
     def __init__(self, data):
-        self.data = data
-        FunctionElement.__init__(self, self.data)
-
-    def __str__(self):
-        return self.desc  # pragma: no cover
-
-    def __repr__(self):
-        return "<%s at 0x%x; %r>" % \
-            (self.__class__.__name__, id(self), self.desc)  # pragma: no cover
+        # read srid from the WKB (binary or hexadecimal format)
+        # The WKB structure is documented in the file
+        # raster/doc/RFC2-WellKnownBinaryFormat of the PostGIS sources.
+        try:
+            bin_data = binascii.unhexlify(data[:114])
+        except BinasciiError:
+            bin_data = data
+            data = str(binascii.hexlify(data).decode(encoding='utf-8'))
+        byte_order = bin_data[0]
+        srid = bin_data[53:57]
+        if not PY3:
+            byte_order = bytearray(byte_order)[0]
+        srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
+        _SpatialElement.__init__(self, data, srid, True)
 
     @property
     def desc(self):
         """
         This element's description string.
         """
-        desc = binascii.hexlify(self.data)
-        if PY3:
-            # hexlify returns a bytes object on py3
-            desc = str(desc, encoding="utf-8")
+        return self.data
 
-        if len(desc) < 30:
-            return desc
-
-        return desc[:30] + '...'  # pragma: no cover
-
-    def __getattr__(self, name):
-        #
-        # This is how things like ocean.rast.ST_Value(...) creates
-        # SQL expressions of this form:
-        #
-        # ST_Value(:ST_GeomFromWKB_1), :param_1)
-        #
-
-        # We create our own _FunctionGenerator here, and use it in place of
-        # SQLAlchemy's "func" object. This is to be able to "bind" the
-        # function to the SQL expression. See also GenericFunction.
-
-        func_ = functions._FunctionGenerator(expr=self)
-        return getattr(func_, name)
-
-
-@compiles(RasterElement)
-def compile_RasterElement(element, compiler, **kw):
-    """
-    This function makes sure the :class:`geoalchemy2.elements.RasterElement`
-    contents are correctly casted to the ``raster`` type before using it.
-
-    The other elements in this module don't need such a function because
-    they are derived from :class:`functions.Function`. For the
-    :class:`geoalchemy2.elements.RasterElement` class however it would not be
-    of any use to have it compile to ``raster('...')`` so it is compiled to
-    ``'...'::raster`` by this function.
-    """
-    return "%s::raster" % compiler.process(element.clauses)
+    @staticmethod
+    def _data_from_desc(desc):
+        return desc
 
 
 class CompositeElement(FunctionElement):
     """
     Instances of this class wrap a Postgres composite type.
     """
+
     def __init__(self, base, field, type_):
         self.name = field
         self.type = to_instance(type_)

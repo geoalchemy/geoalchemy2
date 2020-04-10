@@ -24,6 +24,8 @@ from geoalchemy2.shape import from_shape
 
 from shapely.geometry import LineString
 
+from . import skip_postgis1
+
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
 metadata = MetaData(engine)
@@ -78,7 +80,7 @@ class IndexTestWithoutSchema(Base):
 
 session = sessionmaker(bind=engine)()
 
-postgis_version = session.execute(func.postgis_version()).scalar()
+postgis_version = session.execute(func.postgis_lib_version()).scalar()
 if postgis_version.startswith('1.'):
     # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
     # management functions should be used.
@@ -96,11 +98,6 @@ else:
 
         def __init__(self, rast):
             self.rast = rast
-
-postgis2_required = pytest.mark.skipif(
-    postgis_version.startswith('1.'),
-    reason="requires PostGIS 2 or higher",
-)
 
 
 class TestIndex():
@@ -317,7 +314,7 @@ class TestInsertionORM():
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-    @postgis2_required
+    @skip_postgis1(postgis_version)
     def test_Raster(self):
         polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
         o = Ocean(polygon.ST_AsRaster(5, 5))
@@ -360,6 +357,7 @@ class TestPickle():
         lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(lake)
         session.flush()
+        session.expire(lake)
         return lake.id
 
     def test_pickle_unpickle(self):
@@ -376,7 +374,6 @@ class TestPickle():
         assert unpickled.geom.srid == 4326
         assert str(unpickled.geom) == data_desc
         assert unpickled.geom.extended is True
-        assert unpickled.geom.name == 'ST_GeomFromEWKB'
 
 
 class TestCallFunction():
@@ -393,12 +390,14 @@ class TestCallFunction():
         lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(lake)
         session.flush()
+        session.expire(lake)
         return lake.id
 
     def _create_one_poi(self):
         p = Poi('POINT(5 45)')
         session.add(p)
         session.flush()
+        session.expire(p)
         return p.id
 
     def test_ST_GeometryType(self):
@@ -428,6 +427,7 @@ class TestCallFunction():
         assert isinstance(r1, WKBElement)
 
         lake = session.query(Lake).get(lake_id)
+        assert isinstance(lake.geom, WKBElement)
         r2 = session.execute(lake.geom.ST_Buffer(2)).scalar()
         assert isinstance(r2, WKBElement)
 
@@ -445,6 +445,7 @@ class TestCallFunction():
     def test_ST_Dump(self):
         lake_id = self._create_one_lake()
         lake = session.query(Lake).get(lake_id)
+        assert isinstance(lake.geom, WKBElement)
 
         s = select([func.ST_Dump(Lake.__table__.c.geom)])
         r1 = session.execute(s).scalar()
@@ -477,6 +478,7 @@ class TestCallFunction():
     def test_ST_DumpPoints(self):
         lake_id = self._create_one_lake()
         lake = session.query(Lake).get(lake_id)
+        assert isinstance(lake.geom, WKBElement)
 
         dump = lake.geom.ST_DumpPoints()
 
@@ -524,6 +526,7 @@ class TestCallFunction():
         assert isinstance(r1, WKBElement)
 
         lake = session.query(Lake).get(lake_id)
+        assert isinstance(lake.geom, WKBElement)
 
         r2 = session.execute(lake.geom.ST_Buffer(2)).scalar()
         assert isinstance(r2, WKBElement)
@@ -573,7 +576,7 @@ class TestReflection():
             assert type_.geometry_type == 'LINESTRING'
             assert type_.srid == 4326
 
-    @postgis2_required
+    @skip_postgis1(postgis_version)
     def test_raster_reflection(self):
         t = Table('ocean', MetaData(), autoload=True, autoload_with=engine)
         type_ = t.c.rast.type

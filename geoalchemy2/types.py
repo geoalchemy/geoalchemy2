@@ -129,11 +129,16 @@ class _GISType(UserDefinedType):
         geometry/geography columns. """
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
-                 spatial_index=True, management=False, use_typmod=None):
+                 spatial_index=True, management=False, use_typmod=None,
+                 from_text=None, name=None):
         geometry_type, srid = self.check_ctor_args(
             geometry_type, srid, dimension, management, use_typmod)
         self.geometry_type = geometry_type
         self.srid = srid
+        if name is not None:
+            self.name = name
+        if from_text is not None:
+            self.from_text = from_text
         self.dimension = dimension
         self.spatial_index = spatial_index
         self.management = management
@@ -151,7 +156,12 @@ class _GISType(UserDefinedType):
     def result_processor(self, dialect, coltype):
         def process(value):
             if value is not None:
-                return WKBElement(value, srid=self.srid, extended=self.extended)
+                kwargs = {}
+                if self.srid > 0:
+                    kwargs['srid'] = self.srid
+                if self.extended is not None:
+                    kwargs['extended'] = self.extended
+                return self.ElementType(value, **kwargs)
         return process
 
     def bind_expression(self, bindvalue):
@@ -245,6 +255,10 @@ class Geometry(_GISType):
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
 
+    ElementType = WKBElement
+    """ The element class to use. Used by the parent class'
+        ``result_processor`` method. """
+
 
 class Geography(_GISType):
     """
@@ -270,8 +284,12 @@ class Geography(_GISType):
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
 
+    ElementType = WKBElement
+    """ The element class to use. Used by the parent class'
+        ``result_processor`` method. """
 
-class Raster(UserDefinedType):
+
+class Raster(_GISType):
     """
     The Raster column type.
 
@@ -297,17 +315,27 @@ class Raster(UserDefinedType):
     defined for raster columns.
     """
 
-    def __init__(self, spatial_index=True):
-        self.spatial_index = spatial_index
+    name = 'raster'
+    """ Type name used for defining raster columns in ``CREATE TABLE``. """
 
-    def get_col_spec(self):
-        return 'raster'
+    from_text = 'raster'
+    """ The "from text" raster constructor. Used by the parent class'
+        ``bind_expression`` method. """
 
-    def result_processor(self, dialect, coltype):
-        def process(value):
-            if value is not None:
-                return RasterElement(value)
-        return process
+    as_binary = 'raster'
+    """ The "as binary" function to use. Used by the parent class'
+        ``column_expression`` method. """
+
+    ElementType = RasterElement
+    """ The element class to use. Used by the parent class'
+        ``result_processor`` method. """
+
+    def __init__(self, *args, **kwargs):
+        # Enforce default values
+        kwargs['geometry_type'] = None
+        kwargs['srid'] = -1
+        super(Raster, self).__init__(*args, **kwargs)
+        self.extended = None
 
 
 class CompositeType(UserDefinedType):

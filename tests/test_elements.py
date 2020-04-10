@@ -52,7 +52,6 @@ class TestWKTElement():
         assert unpickled.srid == 3
         assert unpickled.extended is True
         assert unpickled.data == 'POINT(1 2)'
-        assert unpickled.name == 'ST_GeomFromEWKT'
         f = unpickled.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromEWKT(:ST_GeomFromEWKT_1), '
@@ -92,7 +91,6 @@ class TestExtendedWKTElement():
         assert unpickled.srid == self._srid
         assert unpickled.extended is True
         assert unpickled.data == self._ewkt
-        assert unpickled.name == 'ST_GeomFromEWKT'
         f = unpickled.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromEWKT(:ST_GeomFromEWKT_1), '
@@ -215,7 +213,6 @@ class TestExtendedWKBElement():
         assert unpickled.srid == self._srid
         assert unpickled.extended is True
         assert unpickled.data == bytes_(self._bin)
-        assert unpickled.name == 'ST_GeomFromEWKB'
         f = unpickled.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromEWKB(:ST_GeomFromEWKB_1), '
@@ -273,15 +270,48 @@ class TestWKBElement():
 
 class TestRasterElement():
 
+    rast_data = (
+        b'\x01\x00\x00\x01\x00\x9a\x99\x99\x99\x99\x99\xc9?\x9a\x99\x99\x99\x99\x99'
+        b'\xc9\xbf\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xe6\x10\x00'
+        b'\x00\x05\x00\x05\x00D\x00\x01\x01\x01\x01\x01\x01\x01\x01\x01\x00\x01\x01'
+        b'\x01\x00\x00\x01\x01\x00\x00\x00\x01\x00\x00\x00\x00')
+
+    hex_rast_data = (
+        '01000001009a9999999999c93f9a9999999999c9bf0000000000000000000000000000f03'
+        'f00000000000000000000000000000000e610000005000500440001010101010101010100'
+        '010101000001010000000100000000')
+
     def test_desc(self):
-        e = RasterElement(b'\x01\x02')
-        assert e.desc == '0102'
+        e = RasterElement(self.rast_data)
+        assert e.desc == self.hex_rast_data
+        assert e.srid == 4326
+        e = RasterElement(self.hex_rast_data)
+        assert e.desc == self.hex_rast_data
+        assert e.srid == 4326
 
     def test_function_call(self):
-        e = RasterElement(b'\x01\x02')
+        e = RasterElement(self.rast_data)
         f = e.ST_Height()
-        eq_sql(f, 'ST_Height(:raster_1::raster)')
-        assert f.compile().params == {u'raster_1': b'\x01\x02'}
+        eq_sql(f, 'ST_Height(raster(:raster_1))')
+        assert f.compile().params == {u'raster_1': self.hex_rast_data}
+
+    def test_pickle_unpickle(self):
+        import pickle
+        e = RasterElement(self.rast_data)
+        assert e.srid == 4326
+        assert e.extended is True
+        assert e.data == self.hex_rast_data
+        pickled = pickle.dumps(e)
+        unpickled = pickle.loads(pickled)
+        assert unpickled.srid == 4326
+        assert unpickled.extended is True
+        assert unpickled.data == self.hex_rast_data
+        f = unpickled.ST_Height()
+        eq_sql(f, 'ST_Height(raster(:raster_1))')
+        assert f.compile().params == {
+            u'raster_1': self.hex_rast_data,
+        }
 
 
 class TestCompositeElement():

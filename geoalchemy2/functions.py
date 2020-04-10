@@ -54,6 +54,7 @@ from sqlalchemy.sql import functions
 from sqlalchemy.ext.compiler import compiles
 
 from . import types
+from . import elements
 
 
 class GenericFunction(functions.GenericFunction):
@@ -90,8 +91,18 @@ class GenericFunction(functions.GenericFunction):
 
     def __init__(self, *args, **kwargs):
         expr = kwargs.pop('expr', None)
+        args = list(args)
         if expr is not None:
-            args = (expr,) + args
+            args = [expr] + args
+        for idx, elem in enumerate(args):
+            if isinstance(elem, elements.HasFunction):
+                if elem.extended:
+                    func_name = elem.geom_from_extended_version
+                    func_args = [elem.data]
+                else:
+                    func_name = elem.geom_from
+                    func_args = [elem.data, elem.srid]
+                args[idx] = getattr(functions.func, func_name)(*func_args)
         functions.GenericFunction.__init__(self, *args, **kwargs)
 
 
