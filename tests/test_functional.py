@@ -46,6 +46,7 @@ class Poi(Base):
     __tablename__ = 'poi'
     __table_args__ = {'schema': 'gis'}
     id = Column(Integer, primary_key=True)
+    geom = Column(Geometry(geometry_type='POINT', srid=4326))
     geog = Column(Geography(geometry_type='POINT', srid=4326))
 
     def __init__(self, geog):
@@ -209,7 +210,29 @@ class TestInsertionCore():
         srid = session.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
-    def test_insert_poi(self):
+    def test_insert_geom_poi(self):
+        conn = self.conn
+
+        conn.execute(Poi.__table__.insert(), [
+            {'geom': 'SRID=4326;POINT(1 1)'},
+            {'geom': WKTElement('POINT(1 1)', srid=4326)},
+            {'geom': WKTElement('SRID=4326;POINT(1 1)', extended=True)},
+            {'geom': from_shape(Point(1, 1), srid=4326)},
+            {'geom': from_shape(Point(1, 1), srid=4326, extended=True)}
+        ])
+
+        results = conn.execute(Poi.__table__.select())
+        rows = results.fetchall()
+
+        for row in rows:
+            assert isinstance(row[1], WKBElement)
+            wkt = session.execute(row[1].ST_AsText()).scalar()
+            assert wkt == 'POINT(1 1)'
+            srid = session.execute(row[1].ST_SRID()).scalar()
+            assert srid == 4326
+            assert row[1] == from_shape(Point(1, 1), srid=4326, extended=True)
+
+    def test_insert_geog_poi(self):
         conn = self.conn
 
         conn.execute(Poi.__table__.insert(), [
@@ -222,37 +245,13 @@ class TestInsertionCore():
         results = conn.execute(Poi.__table__.select())
         rows = results.fetchall()
 
-        row = rows[0]
-        assert isinstance(row[1], WKBElement)
-        wkt = session.execute(row[1].ST_AsText()).scalar()
-        assert wkt == 'POINT(1 1)'
-        srid = session.execute(row[1].ST_SRID()).scalar()
-        assert srid == 4326
-        assert row[1] == from_shape(Point(1, 1), srid=4326)
-
-        row = rows[1]
-        assert isinstance(row[1], WKBElement)
-        wkt = session.execute(row[1].ST_AsText()).scalar()
-        assert wkt == 'POINT(1 1)'
-        srid = session.execute(row[1].ST_SRID()).scalar()
-        assert srid == 4326
-        assert row[1] == from_shape(Point(1, 1), srid=4326)
-
-        row = rows[2]
-        assert isinstance(row[1], WKBElement)
-        wkt = session.execute(row[1].ST_AsText()).scalar()
-        assert wkt == 'POINT(1 1)'
-        srid = session.execute(row[1].ST_SRID()).scalar()
-        assert srid == 4326
-        assert row[1] == from_shape(Point(1, 1), srid=4326)
-
-        row = rows[3]
-        assert isinstance(row[1], WKBElement)
-        wkt = session.execute(row[1].ST_AsText()).scalar()
-        assert wkt == 'POINT(1 1)'
-        srid = session.execute(row[1].ST_SRID()).scalar()
-        assert srid == 4326
-        assert row[1] == from_shape(Point(1, 1), srid=4326)
+        for row in rows:
+            assert isinstance(row[2], WKBElement)
+            wkt = session.execute(row[2].ST_AsText()).scalar()
+            assert wkt == 'POINT(1 1)'
+            srid = session.execute(row[2].ST_SRID()).scalar()
+            assert srid == 4326
+            assert row[2] == from_shape(Point(1, 1), srid=4326)
 
 
 class TestSelectBindParam():
