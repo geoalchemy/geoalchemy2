@@ -518,12 +518,16 @@ class TestCallFunction():
 
     def test_ST_AsGeoJson(self):
         self._create_one_lake()
+
+        # Test geometry
         s1 = select([func.ST_AsGeoJson(Lake.__table__.c.geom)])
         r1 = session.execute(s1).scalar()
         assert loads(r1) == {
             "type": "LineString",
             "coordinates": [[0, 0], [1, 1]]
         }
+
+        # Test feature
         s2 = select([func.ST_AsGeoJson(Lake)])
         r2 = session.execute(s2).scalar()
         assert loads(r2) == {
