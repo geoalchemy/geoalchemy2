@@ -6,6 +6,7 @@ This module provides utility functions for integrating with Shapely.
     As GeoAlchemy 2 itself has no dependency on `Shapely`, applications using
     functions of this module have to ensure that `Shapely` is available.
 """
+from pkg_resources import parse_version
 
 import shapely.wkb
 import shapely.wkt
@@ -13,7 +14,7 @@ import shapely.wkt
 from .elements import WKBElement, WKTElement
 from .compat import buffer, bytes, str
 
-if [int(i) for i in shapely.__version__.split(".")[:2]] < [1, 7]:
+if parse_version(shapely.__version__) < parse_version("1.7"):
     ######################################################################
     # Backport function from Shapely 1.7
     from shapely.geos import WKBWriter, lgeos
