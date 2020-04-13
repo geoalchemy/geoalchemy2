@@ -9,6 +9,7 @@ else:
     compat.register()
     del compat
 
+from json import loads
 from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer, bindparam
 from sqlalchemy.orm import sessionmaker
@@ -514,6 +515,25 @@ class TestCallFunction():
             .filter(Poi.geog.ST_Distance(
                 type_coerce('POINT(5 45)', Geography)) < 1000).one()
         assert poi.id == poi_id
+
+    def test_ST_AsGeoJson(self):
+        self._create_one_lake()
+        s1 = select([func.ST_AsGeoJson(Lake.__table__.c.geom)])
+        r1 = session.execute(s1).scalar()
+        assert loads(r1) == {
+            "type": "LineString",
+            "coordinates": [[0, 0], [1, 1]]
+        }
+        s2 = select([func.ST_AsGeoJson(Lake)])
+        r2 = session.execute(s2).scalar()
+        assert loads(r2) == {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [[0, 0], [1, 1]]
+            },
+            "properties": {"id": 1}
+        }
 
     @pytest.mark.skipif(
         parse_version(SA_VERSION) < parse_version("1.3.4"),

@@ -50,11 +50,36 @@ Reference
 
 """
 
+from sqlalchemy import inspect
 from sqlalchemy.sql import functions
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.types import UserDefinedType
 
 from . import types
 from . import elements
+
+
+class Feature(UserDefinedType):
+    pass
+
+
+class GeoJsonGeometry(UserDefinedType):
+    pass
+
+
+class ST_AsGeoJson_Func(functions.GenericFunction):
+
+    def __init__(self, *args, **kwargs):
+        args = list(args)
+        self.type = GeoJsonGeometry
+        for idx, elem in enumerate(args):
+            insp = inspect(elem)
+            if hasattr(insp, "selectable"):
+                self.type = Feature
+                args[idx] = functions.func.row(*insp.selectable.c)
+        functions.GenericFunction.__init__(self, *args, **kwargs)
+
+    name = "ST_AsGeoJson"
 
 
 class GenericFunction(functions.GenericFunction):
