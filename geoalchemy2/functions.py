@@ -49,38 +49,60 @@ Reference
 ---------
 
 """
+import re
 
 from sqlalchemy import inspect
 from sqlalchemy.sql import functions
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.types import UserDefinedType
 
 from . import types
 from . import elements
 
 
-class Feature(UserDefinedType):
-    pass
+class TableRowThing(ColumnElement):
+    def __init__(self, selectable):
+        self.selectable = selectable
 
-
-class GeoJsonGeometry(UserDefinedType):
-    pass
+    @property
+    def _from_objects(self):
+        return [self.selectable]
 
 
 class ST_AsGeoJSON(functions.GenericFunction):
-
     def __init__(self, *args, **kwargs):
         args = list(args)
-        self.type = GeoJsonGeometry
-        for idx, elem in enumerate(args):
+        for idx, element in enumerate(args):
             try:
-                insp = inspect(elem)
+                insp = inspect(element)
                 if hasattr(insp, "selectable"):
-                    self.type = Feature
-                    args[idx] = functions.func.row(*insp.selectable.c)
+                    args[idx] = TableRowThing(insp.selectable)
             except Exception:
                 continue
         functions.GenericFunction.__init__(self, *args, **kwargs)
+
+
+@compiles(TableRowThing)
+def _compile_table_row_thing(element, compiler, **kw):
+    # in order to get a name as reliably as possible, noting that some
+    # SQL compilers don't say "table AS name" and might not have the "AS",
+    # table and alias names can have spaces in them, etc., get it from
+    # a column instead because that's what we want to be showing here anyway
+
+    compiled = compiler.process(list(element.selectable.columns)[0], **kw)
+
+    # 1. check for exact name of the selectable is here, use that.
+    # this way if it has dots and spaces and anything else in it, we
+    # can get it w/ correct quoting
+    schema = getattr(element.selectable, "schema", "")
+    name = element.selectable.name
+    pattern = r"(.?%s.?\.)?(.?%s.?)\." % (schema, name)
+    m = re.match(pattern, compiled)
+    if m:
+        return m.group(2)
+
+    # 2. just split on the dot, assume anonymized name
+    return compiled.split(".")[0]
 
 
 class GenericFunction(functions.GenericFunction):

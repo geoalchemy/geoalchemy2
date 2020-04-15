@@ -11,7 +11,8 @@ else:
 
 from json import loads
 from sqlalchemy import __version__ as SA_VERSION
-from sqlalchemy import create_engine, Table, MetaData, Column, Integer, bindparam
+from sqlalchemy import create_engine
+from sqlalchemy import Table, MetaData, Column, Integer, bindparam, String
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import reflection
@@ -28,7 +29,7 @@ from shapely.geometry import LineString
 from . import skip_postgis1
 
 
-engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
+engine = create_engine('postgresql://gis:gis@localhost/gis', echo=False)
 metadata = MetaData(engine)
 Base = declarative_base(metadata=metadata)
 
@@ -520,7 +521,7 @@ class TestCallFunction():
         self._create_one_lake()
 
         # Test geometry
-        s1 = select([func.ST_AsGeoJson(Lake.__table__.c.geom)])
+        s1 = select([func.ST_AsGeoJSON(Lake.__table__.c.geom)])
         r1 = session.execute(s1).scalar()
         assert loads(r1) == {
             "type": "LineString",
@@ -528,7 +529,7 @@ class TestCallFunction():
         }
 
         # Test feature
-        s2 = select([func.ST_AsGeoJson(Lake)])
+        s2 = select([func.ST_AsGeoJSON(Lake, 'geom')])
         r2 = session.execute(s2).scalar()
         assert loads(r2) == {
             "type": "Feature",
@@ -537,6 +538,19 @@ class TestCallFunction():
                 "coordinates": [[0, 0], [1, 1]]
             },
             "properties": {"id": 1}
+        }
+
+        # Test feature with subquery
+        ss3 = select([Lake, bindparam('dummy_val', 10).label('dummy_attr')]).alias()
+        s3 = select([func.ST_AsGeoJSON(ss3, 'geom')])
+        r3 = session.execute(s3).scalar()
+        assert loads(r3) == {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [[0, 0], [1, 1]]
+            },
+            "properties": {"dummy_attr": 10, "id": 1}
         }
 
     @pytest.mark.skipif(
@@ -605,3 +619,68 @@ class TestReflection():
         t = Table('ocean', MetaData(), autoload=True, autoload_with=engine)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
+
+
+class TestSTAsGeoJson():
+    InternalBase = declarative_base()
+
+    class TblWSpacesAndDots(InternalBase):
+        """
+        Dummy class to test names with dots and spaces.
+        No metadata is attached so the dialect is default SQL, not postgresql.
+        """
+        __tablename__ = "this is.an AWFUL.name"
+        __table_args__ = {'schema': 'another AWFUL.name for.schema'}
+
+        id = Column(Integer, primary_key=True)
+        geom = Column(String)
+
+    @staticmethod
+    def _assert_stmt(stmt, expected):
+        strstmt = str(stmt)
+        strstmt = strstmt.replace("\n", "")
+        assert strstmt == expected
+
+    def test_one(self):
+        stmt = select([func.ST_AsGeoJSON(Lake.__table__.c.geom)])
+
+        self._assert_stmt(
+            stmt, 'SELECT ST_AsGeoJSON(gis.lake.geom) AS "ST_AsGeoJSON_1" FROM gis.lake'
+        )
+
+    def test_two(self):
+        stmt = select([func.ST_AsGeoJSON(Lake, "geom")])
+        self._assert_stmt(
+            stmt,
+            'SELECT ST_AsGeoJSON(lake, %(ST_AsGeoJSON_2)s) AS '
+            '"ST_AsGeoJSON_1" FROM gis.lake',
+        )
+
+    def test_three(self):
+        sq = select([Lake, bindparam("dummy_val", 10).label("dummy_attr")]).alias()
+        stmt = select([func.ST_AsGeoJSON(sq, "geom")])
+        self._assert_stmt(
+            stmt,
+            'SELECT ST_AsGeoJSON(anon_1, %(ST_AsGeoJSON_2)s) AS "ST_AsGeoJSON_1" '
+            "FROM (SELECT gis.lake.id AS id, gis.lake.geom AS geom, %(dummy_val)s AS "
+            "dummy_attr FROM gis.lake) AS anon_1",
+        )
+
+    def test_four(self):
+        stmt = select([func.ST_AsGeoJSON(TestSTAsGeoJson.TblWSpacesAndDots, "geom")])
+        self._assert_stmt(
+            stmt,
+            'SELECT ST_AsGeoJSON("this is.an AWFUL.name", :ST_AsGeoJSON_2) '
+            'AS "ST_AsGeoJSON_1" FROM "another AWFUL.name for.schema".'
+            '"this is.an AWFUL.name"',
+        )
+
+    def test_five(self):
+        stmt = select([func.ST_AsGeoJSON(TestSTAsGeoJson.TblWSpacesAndDots, "geom", 3)])
+        self._assert_stmt(
+            stmt,
+            'SELECT ST_AsGeoJSON("this is.an AWFUL.name", '
+            ':ST_AsGeoJSON_2, :ST_AsGeoJSON_3) '
+            'AS "ST_AsGeoJSON_1" FROM "another AWFUL.name for.schema".'
+            '"this is.an AWFUL.name"',
+        )
