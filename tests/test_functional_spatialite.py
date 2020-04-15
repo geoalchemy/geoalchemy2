@@ -1,11 +1,11 @@
-from pkg_resources import parse_version
+from json import loads
 import os
+from pkg_resources import parse_version
 import pytest
 import platform
-import json
 
 from sqlalchemy import __version__ as SA_VERSION
-from sqlalchemy import create_engine, MetaData, Column, Integer
+from sqlalchemy import create_engine, MetaData, Column, Integer, bindparam
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.event import listen
@@ -240,7 +240,7 @@ class TestCallFunction():
         lake_id = self._create_one_lake()
 
         def _test(r):
-            r = json.loads(r)
+            r = loads(r)
             assert r["type"] == "LineString"
             assert r["coordinates"] == [[0, 0], [1, 1]]
 
@@ -254,6 +254,18 @@ class TestCallFunction():
 
         r = session.query(Lake.geom.ST_AsGeoJSON()).scalar()
         _test(r)
+
+        ss3 = select([Lake, bindparam('dummy_val', 10).label('dummy_attr')]).alias()
+        s3 = select([func.ST_AsGeoJSON(ss3, 'geom')])
+        r3 = session.execute(s3).scalar()
+        assert loads(r3) == {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [[0, 0], [1, 1]]
+            },
+            "properties": {"dummy_attr": 10, "id": 1}
+        }
 
     @pytest.mark.skipif(
         parse_version(SA_VERSION) < parse_version("1.3.4"),

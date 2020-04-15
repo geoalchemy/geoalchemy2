@@ -1,3 +1,4 @@
+from json import loads
 from pkg_resources import parse_version
 import pytest
 
@@ -9,10 +10,9 @@ else:
     compat.register()
     del compat
 
-from json import loads
 from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import create_engine
-from sqlalchemy import Table, MetaData, Column, Integer, bindparam, String
+from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import reflection
