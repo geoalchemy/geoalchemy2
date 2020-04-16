@@ -70,16 +70,41 @@ class TableRowThing(ColumnElement):
 
 
 class ST_AsGeoJSON(functions.GenericFunction):
+    """Special process for the ST_AsGeoJSON process to be able to work with the
+    feature version introduced in PostGIS 3."""
+
+    name = "ST_AsGeoJSON"
+
     def __init__(self, *args, **kwargs):
+        expr = kwargs.pop('expr', None)
         args = list(args)
+        if expr is not None:
+            args = [expr] + args
         for idx, element in enumerate(args):
-            try:
-                insp = inspect(element)
-                if hasattr(insp, "selectable"):
-                    args[idx] = TableRowThing(insp.selectable)
-            except Exception:
-                continue
+            if isinstance(element, elements.HasFunction):
+                if element.extended:
+                    func_name = element.geom_from_extended_version
+                    func_args = [element.data]
+                else:
+                    func_name = element.geom_from
+                    func_args = [element.data, element.srid]
+                args[idx] = getattr(functions.func, func_name)(*func_args)
+            else:
+                try:
+                    insp = inspect(element)
+                    if hasattr(insp, "selectable"):
+                        args[idx] = TableRowThing(insp.selectable)
+                except Exception:
+                    continue
+
         functions.GenericFunction.__init__(self, *args, **kwargs)
+
+    __doc__ = (
+        'Return the geometry as a GeoJSON "geometry" object, or the row as a '
+        'GeoJSON feature" object (PostGIS 3 only). (Cf GeoJSON specifications RFC '
+        '7946). 2D and 3D Geometries are both supported. GeoJSON only support SFS '
+        '1.1 geometry types (no curve support for example). '
+        'See https://postgis.net/docs/ST_AsGeoJSON.html')
 
 
 @compiles(TableRowThing)

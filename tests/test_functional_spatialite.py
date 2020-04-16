@@ -34,7 +34,8 @@ def load_spatialite(dbapi_conn, connection_record):
     dbapi_conn.enable_load_extension(False)
 
 
-engine = create_engine('sqlite:///spatialdb', echo=True)
+engine = create_engine(
+    os.environ.get('SPATIALITE_DB_PATH', 'sqlite:///spatialdb'), echo=False)
 listen(engine, 'connect', load_spatialite)
 
 metadata = MetaData(engine)
@@ -255,6 +256,10 @@ class TestCallFunction():
         r = session.query(Lake.geom.ST_AsGeoJSON()).scalar()
         _test(r)
 
+    @pytest.mark.skipif(
+        True,
+        reason='Spatialite does not support the feature version of AsGeoJson() yet')
+    def test_ST_GeoJSON_feature(self):
         ss3 = select([Lake, bindparam('dummy_val', 10).label('dummy_attr')]).alias()
         s3 = select([func.ST_AsGeoJSON(ss3, 'geom')])
         r3 = session.execute(s3).scalar()
