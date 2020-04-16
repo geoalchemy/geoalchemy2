@@ -539,6 +539,11 @@ class TestCallFunction():
             "coordinates": [[0, 0], [1, 1]]
         }
 
+    @skip_postgis1(postgis_version)
+    @skip_postgis2(postgis_version)
+    def test_ST_AsGeoJson_feature(self):
+        self._create_one_lake()
+
         # Test feature
         s2 = select([func.ST_AsGeoJSON(Lake, 'geom')])
         r2 = session.execute(s2).scalar()
