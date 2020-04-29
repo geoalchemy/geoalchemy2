@@ -54,6 +54,12 @@ class Point(Base):
 session = sessionmaker(bind=engine)()
 
 
+def check_wkb(wkb, x, y):
+    pt = shape.to_shape(wkb)
+    assert round(pt.x, 5) == x
+    assert round(pt.y, 5) == y
+
+
 class TestTypeDecorator():
 
     def setup(self):
@@ -81,9 +87,7 @@ class TestTypeDecorator():
         pt = session.query(Point).one()
         assert pt.id == 1
         assert pt.geom.srid == 4326
-        pt_shape = shape.to_shape(pt.geom)
-        assert round(pt_shape.x, 5) == 5
-        assert round(pt_shape.y, 5) == 45
+        check_wkb(pt.geom, 5, 45)
         pt_shape_three_d = shape.to_shape(pt.three_d_geom)
         assert pt.three_d_geom.srid == 4326
         assert pt_shape_three_d.wkt == "POINT Z (5 45 0)"
@@ -103,14 +107,10 @@ class TestTypeDecorator():
 
         assert pt_trans[0].id == 1
         assert pt_trans[0].geom.srid == 4326
-        assert pt_trans[0].geom.desc == (
-            "0101000020E61000000100000000001440F3FFFFFFFF7F4640")
+        check_wkb(pt_trans[0].geom, 5, 45)
         assert pt_trans[0].raw_geom.srid == 4326
-        assert pt_trans[0].raw_geom.desc == (
-            "0101000020e610000000000000000014400000000000804640")
+        check_wkb(pt_trans[0].raw_geom, 5, 45)
         assert pt_trans[1].srid == 4326
-        assert pt_trans[1].desc == (
-            "0101000020e610000000000000000014400000000000804640")
+        check_wkb(pt_trans[1], 5, 45)
         assert pt_trans[2].srid == 2154
-        assert pt_trans[2].desc == (
-            "01010000206a080000a6a073ccdb2b2a410289dcaf958c5841")
+        check_wkb(pt_trans[2], 857581.89932, 6435414.74784)
