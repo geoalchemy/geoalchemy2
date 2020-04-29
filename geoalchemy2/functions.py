@@ -60,7 +60,7 @@ from . import types
 from . import elements
 
 
-class TableRowThing(ColumnElement):
+class TableRowElement(ColumnElement):
     def __init__(self, selectable):
         self.selectable = selectable
 
@@ -70,7 +70,7 @@ class TableRowThing(ColumnElement):
 
 
 class ST_AsGeoJSON(functions.GenericFunction):
-    """Special process for the ST_AsGeoJSON process to be able to work with the
+    """Special process for the ST_AsGeoJSON() function to be able to work with its
     feature version introduced in PostGIS 3."""
 
     name = "ST_AsGeoJSON"
@@ -93,7 +93,7 @@ class ST_AsGeoJSON(functions.GenericFunction):
                 try:
                     insp = inspect(element)
                     if hasattr(insp, "selectable"):
-                        args[idx] = TableRowThing(insp.selectable)
+                        args[idx] = TableRowElement(insp.selectable)
                 except Exception:
                     continue
 
@@ -107,17 +107,17 @@ class ST_AsGeoJSON(functions.GenericFunction):
         'See https://postgis.net/docs/ST_AsGeoJSON.html')
 
 
-@compiles(TableRowThing)
+@compiles(TableRowElement)
 def _compile_table_row_thing(element, compiler, **kw):
-    # in order to get a name as reliably as possible, noting that some
+    # In order to get a name as reliably as possible, noting that some
     # SQL compilers don't say "table AS name" and might not have the "AS",
     # table and alias names can have spaces in them, etc., get it from
-    # a column instead because that's what we want to be showing here anyway
+    # a column instead because that's what we want to be showing here anyway.
 
     compiled = compiler.process(list(element.selectable.columns)[0], **kw)
 
     # 1. check for exact name of the selectable is here, use that.
-    # this way if it has dots and spaces and anything else in it, we
+    # This way if it has dots and spaces and anything else in it, we
     # can get it w/ correct quoting
     schema = getattr(element.selectable, "schema", "")
     name = element.selectable.name
