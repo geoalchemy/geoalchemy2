@@ -361,6 +361,18 @@ measurement functions can be applied to
     >>> print '%s: %f' % (lake.name, bufferarea)
     Majeur: 21.485781
 
+Use a function automatically at insert or select
+------------------------------------------------
+
+Sometimes the application always want to apply a function in an insert or in a select.
+For example, the application might need the geometry with lat/lon coordinates while they
+are projected in the DB. To avoid having to always tweak the query with a
+``ST_Transform()``, it is possible to define a ``TypeDecorator``.
+
+.. literalinclude:: ../tests/test_type_decorator.py
+   :language: python
+   :lines: 19-34,43-49
+
 Further Reference
 -----------------
 
