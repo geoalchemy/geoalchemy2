@@ -72,16 +72,10 @@ class TestTypeDecorator():
         p.geom = "SRID=4326;POINT(5 45)"
         p.three_d_geom = "SRID=4326;POINT(5 45)"  # Insert 2D geometry into 3D column
 
-        # Create session
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
         # Insert point
         session.add(p)
-        session.commit()
-
-        # Reset session
-        session = Session()
+        session.flush()
+        session.expire(p)
 
         # Query the point and check the result
         pt = session.query(Point).one()
@@ -109,10 +103,14 @@ class TestTypeDecorator():
 
         assert pt_trans[0].id == 1
         assert pt_trans[0].geom.srid == 4326
-        assert pt_trans[0].geom.desc == "0101000020E61000000100000000001440F3FFFFFFFF7F4640"
+        assert pt_trans[0].geom.desc == (
+            "0101000020E61000000100000000001440F3FFFFFFFF7F4640")
         assert pt_trans[0].raw_geom.srid == 4326
-        assert pt_trans[0].raw_geom.desc == "0101000020e610000000000000000014400000000000804640"
+        assert pt_trans[0].raw_geom.desc == (
+            "0101000020e610000000000000000014400000000000804640")
         assert pt_trans[1].srid == 4326
-        assert pt_trans[1].desc == "0101000020e610000000000000000014400000000000804640"
+        assert pt_trans[1].desc == (
+            "0101000020e610000000000000000014400000000000804640")
         assert pt_trans[2].srid == 2154
-        assert pt_trans[2].desc == "01010000206a080000a6a073ccdb2b2a410289dcaf958c5841"
+        assert pt_trans[2].desc == (
+            "01010000206a080000a6a073ccdb2b2a410289dcaf958c5841")
