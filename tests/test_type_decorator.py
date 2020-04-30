@@ -1,3 +1,5 @@
+import pytest
+
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy import Column
@@ -8,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import TypeDecorator
 from geoalchemy2 import Geometry
 from geoalchemy2 import shape
+from shapely.errors import DimensionError
 
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
@@ -26,11 +29,18 @@ class TransformedGeometry(TypeDecorator):
         self.db_srid = db_srid
 
     def column_expression(self, col):
-        return func.ST_Transform(col, self.app_srid)
+        """The column_expression() method is overrided to ensure that the
+        SRID of the resulting WKBElement is correct"""
+        return getattr(func, self.impl.as_binary)(
+            func.ST_Transform(col, self.app_srid),
+            type_=self.__class__.impl(srid=self.app_srid)
+            # srid could also be -1 so that the SRID is deduced from the
+            # WKB data
+        )
 
     def bind_expression(self, bindvalue):
         return func.ST_Transform(
-            self.impl.bind_expression(bindvalue), self.impl.srid)
+            self.impl.bind_expression(bindvalue), self.db_srid)
 
 
 class ThreeDGeometry(TypeDecorator):
@@ -54,10 +64,15 @@ class Point(Base):
 session = sessionmaker(bind=engine)()
 
 
-def check_wkb(wkb, x, y):
+def check_wkb(wkb, x, y, z=None):
     pt = shape.to_shape(wkb)
     assert round(pt.x, 5) == x
     assert round(pt.y, 5) == y
+    if z is None:
+        with pytest.raises(DimensionError):
+            round(pt.z, 5)
+    else:
+        assert round(pt.z, 5) == z
 
 
 class TestTypeDecorator():
@@ -84,13 +99,18 @@ class TestTypeDecorator():
         session.expire(p)
 
         # Query the point and check the result
+        pt = session.query(func.ST_Transform(Point.raw_geom, 2154).label("trans")).one()
         pt = session.query(Point).one()
         assert pt.id == 1
+        assert pt.raw_geom.srid == 4326
+        check_wkb(pt.raw_geom, 5, 45)
+
         assert pt.geom.srid == 4326
         check_wkb(pt.geom, 5, 45)
-        pt_shape_three_d = shape.to_shape(pt.three_d_geom)
+
         assert pt.three_d_geom.srid == 4326
-        assert pt_shape_three_d.wkt == "POINT Z (5 45 0)"
+        check_wkb(pt.three_d_geom, 5, 45, 0)
+        assert shape.to_shape(pt.three_d_geom).wkt == "POINT Z (5 45 0)"
 
         # Check that the data is correct in DB using raw query
         q = "SELECT id, ST_AsEWKT(geom) AS geom FROM point;"
@@ -106,11 +126,15 @@ class TestTypeDecorator():
         ).one()
 
         assert pt_trans[0].id == 1
+
         assert pt_trans[0].geom.srid == 4326
         check_wkb(pt_trans[0].geom, 5, 45)
+
         assert pt_trans[0].raw_geom.srid == 4326
         check_wkb(pt_trans[0].raw_geom, 5, 45)
+
         assert pt_trans[1].srid == 4326
         check_wkb(pt_trans[1], 5, 45)
+
         assert pt_trans[2].srid == 2154
         check_wkb(pt_trans[2], 857581.89932, 6435414.74784)
