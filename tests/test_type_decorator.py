@@ -1,3 +1,6 @@
+import pytest
+import sys
+
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy import Column
@@ -77,8 +80,7 @@ class TestTypeDecorator():
         session.rollback()
         metadata.drop_all()
 
-    def test_decorator(self):
-
+    def _create_one_point(self):
         # Create new point instance
         p = Point()
         p.raw_geom = "SRID=4326;POINT(5 45)"
@@ -90,8 +92,12 @@ class TestTypeDecorator():
         session.flush()
         session.expire(p)
 
+        return p.id
+
+    def test_transform(self):
+        self._create_one_point()
+
         # Query the point and check the result
-        pt = session.query(func.ST_Transform(Point.raw_geom, 2154).label("trans")).one()
         pt = session.query(Point).one()
         assert pt.id == 1
         assert pt.raw_geom.srid == 4326
@@ -99,10 +105,6 @@ class TestTypeDecorator():
 
         assert pt.geom.srid == 4326
         check_wkb(pt.geom, 5, 45)
-
-        assert pt.three_d_geom.srid == 4326
-        assert pt.three_d_geom.desc == (
-            '01010000a0e6100000000000000000144000000000008046400000000000000000')
 
         # Check that the data is correct in DB using raw query
         q = "SELECT id, ST_AsEWKT(geom) AS geom FROM point;"
@@ -130,3 +132,15 @@ class TestTypeDecorator():
 
         assert pt_trans[2].srid == 2154
         check_wkb(pt_trans[2], 857581.89932, 6435414.74784)
+
+    @pytest.mark.xfail(sys.version_info[0] == 2, reason="CI should be updated")
+    def test_force_3d(self):
+        self._create_one_point()
+
+        # Query the point and check the result
+        pt = session.query(Point).one()
+
+        assert pt.id == 1
+        assert pt.three_d_geom.srid == 4326
+        assert pt.three_d_geom.desc.lower() == (
+            '01010000a0e6100000000000000000144000000000008046400000000000000000')
