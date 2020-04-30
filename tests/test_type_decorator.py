@@ -1,5 +1,3 @@
-import pytest
-
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy import Column
@@ -10,7 +8,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import TypeDecorator
 from geoalchemy2 import Geometry
 from geoalchemy2 import shape
-from shapely.errors import DimensionError
 
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
@@ -64,15 +61,10 @@ class Point(Base):
 session = sessionmaker(bind=engine)()
 
 
-def check_wkb(wkb, x, y, z=None):
+def check_wkb(wkb, x, y):
     pt = shape.to_shape(wkb)
     assert round(pt.x, 5) == x
     assert round(pt.y, 5) == y
-    if z is None:
-        with pytest.raises(DimensionError):
-            round(pt.z, 5)
-    else:
-        assert round(pt.z, 5) == z
 
 
 class TestTypeDecorator():
@@ -109,8 +101,8 @@ class TestTypeDecorator():
         check_wkb(pt.geom, 5, 45)
 
         assert pt.three_d_geom.srid == 4326
-        check_wkb(pt.three_d_geom, 5, 45, 0)
-        assert shape.to_shape(pt.three_d_geom).wkt == "POINT Z (5 45 0)"
+        assert pt.three_d_geom.desc == (
+            '01010000a0e6100000000000000000144000000000008046400000000000000000')
 
         # Check that the data is correct in DB using raw query
         q = "SELECT id, ST_AsEWKT(geom) AS geom FROM point;"
@@ -118,7 +110,7 @@ class TestTypeDecorator():
         assert res_q.id == 1
         assert res_q.geom == "SRID=2154;POINT(857581.899319668 6435414.7478354)"
 
-        # Compare geom, raw_geom with auto transform and manual transform
+        # Compare geom, raw_geom with auto transform and explicit transform
         pt_trans = session.query(
             Point,
             Point.raw_geom,
