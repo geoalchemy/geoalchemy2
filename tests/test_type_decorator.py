@@ -1,6 +1,7 @@
+from pkg_resources import parse_version
 import pytest
-import sys
 
+import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy import Column
@@ -133,7 +134,9 @@ class TestTypeDecorator():
         assert pt_trans[2].srid == 2154
         check_wkb(pt_trans[2], 857581.89932, 6435414.74784)
 
-    @pytest.mark.xfail(sys.version_info[0] == 2, reason="CI should be updated")
+    @pytest.mark.skipif(
+        parse_version(str(sqlalchemy.__version__)) < parse_version("1.3"),
+        reason="Need sqlalchemy >= 1.3")
     def test_force_3d(self):
         self._create_one_point()
 
