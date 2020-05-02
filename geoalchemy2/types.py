@@ -55,7 +55,7 @@ class _GISType(UserDefinedType):
           * ``"MULTIPOINT"``,
           * ``"MULTILINESTRING"``,
           * ``"MULTIPOLYGON"``,
-          * ``"GEOMETRYCOLLECTION"``
+          * ``"GEOMETRYCOLLECTION"``,
           * ``"CURVE"``,
           * ``None``.
 

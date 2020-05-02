@@ -26,7 +26,7 @@ sys.path.append(os.path.abspath('_themes'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx_gallery.gen_gallery']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -235,3 +235,14 @@ class Mock(MagicMock):
 
 MOCK_MODULES = ['shapely', 'shapely.wkt', 'shapely.wkb']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+# -- Options gallery generation ------------------------------------------------
+sphinx_gallery_conf = {
+    'examples_dirs': '../tests/gallery',
+    'gallery_dirs': 'gallery',
+    'line_numbers': True,
+    'download_all_examples': False,
+    'plot_gallery': False,
+    'default_thumb_file': '_static/geoalchemy_small.png',
+    'thumbnail_size': (100, 100),
+}

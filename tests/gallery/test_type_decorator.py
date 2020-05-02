@@ -1,3 +1,13 @@
+"""
+Automatically use a function at insert or select
+================================================
+
+Sometimes the application wants to apply a function in an insert or in a select.
+For example, the application might need the geometry with lat/lon coordinates while they
+are projected in the DB. To avoid having to always tweak the query with a
+``ST_Transform()``, it is possible to define a `TypeDecorator
+<https://docs.sqlalchemy.org/en/13/core/custom_types.html#sqlalchemy.types.TypeDecorator>`_
+"""
 from pkg_resources import parse_version
 import pytest
 
@@ -21,6 +31,7 @@ Base = declarative_base(metadata=metadata)
 
 
 class TransformedGeometry(TypeDecorator):
+    """This class is used to insert a ST_Transform() in each insert or select."""
     impl = Geometry
 
     def __init__(self, db_srid, app_srid, **kwargs):
@@ -45,6 +56,7 @@ class TransformedGeometry(TypeDecorator):
 
 
 class ThreeDGeometry(TypeDecorator):
+    """This class is used to insert a ST_Force3D() in each insert."""
     impl = Geometry
 
     def bind_expression(self, bindvalue):

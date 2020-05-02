@@ -75,6 +75,18 @@ system. If you're new to GeoAlchemy 2 start with this.
    core_tutorial
    spatialite_tutorial
 
+
+Gallery
+---------
+
+.. toctree::
+   :hidden:
+
+   gallery/index
+
+The :ref:`gallery` page shows examples of the functionalities of GeoAlchemy 2.
+
+
 Reference Documentation
 -----------------------
 
