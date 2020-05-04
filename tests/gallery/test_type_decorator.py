@@ -20,6 +20,8 @@ from sqlalchemy import func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import TypeDecorator
+
+from geoalchemy2.compat import PY3
 from geoalchemy2 import Geometry
 from geoalchemy2 import shape
 
@@ -147,7 +149,7 @@ class TestTypeDecorator():
         check_wkb(pt_trans[2], 857581.89932, 6435414.74784)
 
     @pytest.mark.skipif(
-        parse_version(str(sqlalchemy.__version__)) < parse_version("1.3"),
+        not PY3 and parse_version(str(sqlalchemy.__version__)) < parse_version("1.3"),
         reason="Need sqlalchemy >= 1.3")
     def test_force_3d(self):
         self._create_one_point()

@@ -237,6 +237,7 @@ MOCK_MODULES = ['shapely', 'shapely.wkt', 'shapely.wkb']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Options gallery generation ------------------------------------------------
+from sphinx_gallery.sorting import ExampleTitleSortKey
 sphinx_gallery_conf = {
     'examples_dirs': '../tests/gallery',
     'gallery_dirs': 'gallery',
@@ -245,4 +246,5 @@ sphinx_gallery_conf = {
     'plot_gallery': False,
     'default_thumb_file': '_static/geoalchemy_small.png',
     'thumbnail_size': (100, 100),
+    'within_subsection_order': ExampleTitleSortKey,
 }
