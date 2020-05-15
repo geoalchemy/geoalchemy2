@@ -1,3 +1,4 @@
+from itertools import permutations
 import re
 import pytest
 
@@ -286,6 +287,44 @@ class TestWKBElement():
         a = WKBElement(b'\x01\x02')
         b = WKBElement(b'\x01\x02')
         assert a == b
+
+
+class TestNotEqualSpatialElement():
+
+    # _bin/_hex computed by following query:
+    # SELECT ST_GeomFromEWKT('SRID=3;POINT(1 2)');
+    _ewkb = buffer_(b'\x01\x01\x00\x00 \x03\x00\x00\x00\x00\x00\x00'
+                    b'\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@')
+    _wkb = wkb.loads(bytes_(_ewkb)).wkb
+    _hex = str_('010100002003000000000000000000f03f0000000000000040')
+    _srid = 3
+    _wkt = 'POINT (1 2)'
+    _ewkt = 'SRID=3;POINT (1 2)'
+
+    def test_eq(self):
+        a = WKBElement(self._ewkb, extended=True)
+        b = WKBElement(self._wkb, srid=self._srid)
+        c = WKTElement(self._wkt, srid=self._srid)
+        d = WKTElement(self._ewkt, extended=True)
+        e = WKBElement(self._hex, extended=True)
+        assert a == a
+        assert b == b
+        assert c == c
+        assert d == d
+        assert e == e
+        assert a == e and e == a
+
+    def test_neq_other_types(self):
+        a = WKBElement(self._ewkb, extended=True)
+        b = WKBElement(self._wkb, srid=self._srid)
+        c = WKTElement(self._wkt, srid=self._srid)
+        d = WKTElement(self._ewkt, extended=True)
+        e = WKBElement(self._hex, extended=True)
+        all_elements = [a, b, c, d, None, 1, "test"]
+        for i, j in permutations(all_elements, 2):
+            assert i != j
+        for i in all_elements[1:]:
+            assert i != e and e != i
 
 
 class TestRasterElement():
