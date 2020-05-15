@@ -61,6 +61,11 @@ class TestWKTElement():
             u'ST_GeomFromEWKT_1': 'POINT(1 2)',
         }
 
+    def test_eq(self):
+        a = WKTElement('POINT(1 2)')
+        b = WKTElement('POINT(1 2)')
+        assert a == b
+
 
 class TestExtendedWKTElement():
 
@@ -117,6 +122,11 @@ class TestExtendedWKTElement():
     def test_unpack_srid_from_bad_ewkt(self):
         with pytest.raises(ArgumentError):
             WKTElement('SRID=BAD SRID;POINT (1 2 3)', extended=True)
+
+    def test_eq(self):
+        a = WKTElement(self._ewkt, extended=True)
+        b = WKTElement(self._ewkt, extended=True)
+        assert a == b
 
 
 class TestWKTElementFunction():
@@ -241,6 +251,11 @@ class TestExtendedWKBElement():
         assert e.srid == self._srid
         assert wkb.loads(e.data, hex=True).wkt == self._wkt
 
+    def test_eq(self):
+        a = WKBElement(self._bin, extended=True)
+        b = WKBElement(self._bin, extended=True)
+        assert a == b
+
 
 class TestWKBElement():
 
@@ -266,6 +281,11 @@ class TestWKBElement():
     def test_function_str(self):
         e = WKBElement(b'\x01\x02')
         assert isinstance(str(e), str)
+
+    def test_eq(self):
+        a = WKBElement(b'\x01\x02')
+        b = WKBElement(b'\x01\x02')
+        assert a == b
 
 
 class TestRasterElement():
