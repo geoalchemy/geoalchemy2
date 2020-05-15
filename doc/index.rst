@@ -84,7 +84,7 @@ Gallery
 
    gallery/index
 
-The :ref:`gallery` page shows examples of the functionalities of GeoAlchemy 2.
+The :ref:`gallery` page shows examples of the GeoAlchemy 2's functionalities.
 
 
 Reference Documentation

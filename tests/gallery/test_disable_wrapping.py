@@ -2,8 +2,8 @@
 Disable wrapping in select
 ==========================
 
-If the application wants to build queries with GeoAlchemy 2 and get them as strings,
-the wrapping of geometry columns by a `ST_AsEWKB()` function might be annoying. In
+If the application wants to build queries with GeoAlchemy 2 and gets them as strings,
+the wrapping of geometry columns with a `ST_AsEWKB()` function might be annoying. In
 this case it is possible to disable this wrapping.
 This example uses SQLAlchemy ORM queries.
 """
