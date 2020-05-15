@@ -1,0 +1,4 @@
+# Additional requirements for building the documentation
+sphinx
+sphinx-gallery
+pillow
