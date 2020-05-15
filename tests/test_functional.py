@@ -1,3 +1,5 @@
+from json import loads
+import os
 from pkg_resources import parse_version
 import pytest
 
@@ -10,7 +12,8 @@ else:
     del compat
 
 from sqlalchemy import __version__ as SA_VERSION
-from sqlalchemy import create_engine, Table, MetaData, Column, Integer, bindparam
+from sqlalchemy import create_engine
+from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import reflection
@@ -24,10 +27,11 @@ from geoalchemy2.shape import from_shape
 
 from shapely.geometry import LineString, Point
 
-from . import skip_postgis1
+from . import skip_postgis1, skip_postgis2
 
 
-engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
+engine = create_engine(
+    os.environ.get('PYTEST_DB_URL', 'postgresql://gis:gis@localhost/gis'), echo=False)
 metadata = MetaData(engine)
 Base = declarative_base(metadata=metadata)
 
@@ -559,6 +563,56 @@ class TestCallFunction():
                 type_coerce('POINT(5 45)', Geography)) < 1000).one()
         assert poi.id == poi_id
 
+    def test_ST_AsGeoJson(self):
+        lake_id = self._create_one_lake()
+        lake = session.query(Lake).get(lake_id)
+
+        # Test geometry
+        s1 = select([func.ST_AsGeoJSON(Lake.__table__.c.geom)])
+        r1 = session.execute(s1).scalar()
+        assert loads(r1) == {
+            "type": "LineString",
+            "coordinates": [[0, 0], [1, 1]]
+        }
+
+        # Test geometry ORM
+        s1_orm = lake.geom.ST_AsGeoJSON()
+        r1_orm = session.execute(s1_orm).scalar()
+        assert loads(r1_orm) == {
+            "type": "LineString",
+            "coordinates": [[0, 0], [1, 1]]
+        }
+
+    @skip_postgis1(postgis_version)
+    @skip_postgis2(postgis_version)
+    def test_ST_AsGeoJson_feature(self):
+        self._create_one_lake()
+
+        # Test feature
+        s2 = select([func.ST_AsGeoJSON(Lake, 'geom')])
+        r2 = session.execute(s2).scalar()
+        assert loads(r2) == {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [[0, 0], [1, 1]]
+            },
+            "properties": {"id": 1}
+        }
+
+        # Test feature with subquery
+        ss3 = select([Lake, bindparam('dummy_val', 10).label('dummy_attr')]).alias()
+        s3 = select([func.ST_AsGeoJSON(ss3, 'geom')])
+        r3 = session.execute(s3).scalar()
+        assert loads(r3) == {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [[0, 0], [1, 1]]
+            },
+            "properties": {"dummy_attr": 10, "id": 1}
+        }
+
     @pytest.mark.skipif(
         parse_version(SA_VERSION) < parse_version("1.3.4"),
         reason='Case-insensitivity is only available for sqlalchemy>=1.3.4')
@@ -625,3 +679,74 @@ class TestReflection():
         t = Table('ocean', MetaData(), autoload=True, autoload_with=engine)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
+
+
+class TestSTAsGeoJson():
+    InternalBase = declarative_base()
+
+    class TblWSpacesAndDots(InternalBase):
+        """
+        Dummy class to test names with dots and spaces.
+        No metadata is attached so the dialect is default SQL, not postgresql.
+        """
+        __tablename__ = "this is.an AWFUL.name"
+        __table_args__ = {'schema': 'another AWFUL.name for.schema'}
+
+        id = Column(Integer, primary_key=True)
+        geom = Column(String)
+
+    @staticmethod
+    def _assert_stmt(stmt, expected):
+        strstmt = str(stmt)
+        strstmt = strstmt.replace("\n", "")
+        assert strstmt == expected
+
+    def test_one(self):
+        stmt = select([func.ST_AsGeoJSON(Lake.__table__.c.geom)])
+
+        self._assert_stmt(
+            stmt, 'SELECT ST_AsGeoJSON(gis.lake.geom) AS "ST_AsGeoJSON_1" FROM gis.lake'
+        )
+
+    def test_two(self):
+        stmt = select([func.ST_AsGeoJSON(Lake, "geom")])
+        self._assert_stmt(
+            stmt,
+            'SELECT ST_AsGeoJSON(lake, %(ST_AsGeoJSON_2)s) AS '
+            '"ST_AsGeoJSON_1" FROM gis.lake',
+        )
+
+    @skip_postgis1(postgis_version)
+    @skip_postgis2(postgis_version)
+    def test_three(self):
+        sq = select([Lake, bindparam("dummy_val", 10).label("dummy_attr")]).alias()
+        stmt = select([func.ST_AsGeoJSON(sq, "geom")])
+        self._assert_stmt(
+            stmt,
+            'SELECT ST_AsGeoJSON(anon_1, %(ST_AsGeoJSON_2)s) AS "ST_AsGeoJSON_1" '
+            "FROM (SELECT gis.lake.id AS id, gis.lake.geom AS geom, %(dummy_val)s AS "
+            "dummy_attr FROM gis.lake) AS anon_1",
+        )
+
+    @skip_postgis1(postgis_version)
+    @skip_postgis2(postgis_version)
+    def test_four(self):
+        stmt = select([func.ST_AsGeoJSON(TestSTAsGeoJson.TblWSpacesAndDots, "geom")])
+        self._assert_stmt(
+            stmt,
+            'SELECT ST_AsGeoJSON("this is.an AWFUL.name", :ST_AsGeoJSON_2) '
+            'AS "ST_AsGeoJSON_1" FROM "another AWFUL.name for.schema".'
+            '"this is.an AWFUL.name"',
+        )
+
+    @skip_postgis1(postgis_version)
+    @skip_postgis2(postgis_version)
+    def test_five(self):
+        stmt = select([func.ST_AsGeoJSON(TestSTAsGeoJson.TblWSpacesAndDots, "geom", 3)])
+        self._assert_stmt(
+            stmt,
+            'SELECT ST_AsGeoJSON("this is.an AWFUL.name", '
+            ':ST_AsGeoJSON_2, :ST_AsGeoJSON_3) '
+            'AS "ST_AsGeoJSON_1" FROM "another AWFUL.name for.schema".'
+            '"this is.an AWFUL.name"',
+        )
