@@ -1,6 +1,15 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.8.0
+-----
+
+* Fix Shapely requirements for Pypy @adrien-berchet (#262)
+* Add a gallery with tests and doc based on examples given in #219, #244 and #251 @adrien-berchet (#260)
+* Add support of the feature version of St_AsGeoJson() @adrien-berchet @zzzeek (#258)
+* Add __eq__ to WKBElement and make shape.from_shape() able to create extended elements @adrien-berchet matthew-emw (#247)
+* Extract all SQL concepts from Elements and refactor Raster type @adrien-berchet @elemoine @zzzeek (#256)
+
 0.7.0
 -----
 
@@ -32,7 +41,7 @@ GeoAlchemy 2 Changelog
 -----
 
 * Change WKBElement to read SRID from the EWKB string @SergeBouchut (#209)
-* Change WKTElement to read SRID from the EWKT string @adrien-berchet-forcity @elemoine (#211)
+* Change WKTElement to read SRID from the EWKT string @adrien-berchet @elemoine (#211)
 
 0.6.0
 -----

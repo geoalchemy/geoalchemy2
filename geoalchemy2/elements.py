@@ -66,6 +66,9 @@ class _SpatialElement(HasFunction):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __hash__(self):
+        return hash((self.desc, self.srid, self.extended))
+
     def __getattr__(self, name):
         #
         # This is how things like lake.geom.ST_Buffer(2) creates
