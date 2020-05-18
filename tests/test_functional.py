@@ -17,7 +17,7 @@ from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import reflection
-from sqlalchemy.exc import DataError, IntegrityError, InternalError
+from sqlalchemy.exc import DataError, IntegrityError, InternalError, ProgrammingError
 from sqlalchemy.sql import select, func
 from sqlalchemy.sql.expression import type_coerce
 
@@ -389,6 +389,109 @@ class TestInsertionORM():
         bottom_right = session.execute(
             o.rast.ST_Value(bottom_right_point)).scalar()
         assert bottom_right is None
+
+
+class TestUpdateORM():
+
+    def setup(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+
+    def teardown(self):
+        session.rollback()
+        metadata.drop_all()
+
+    def test_WKTElement(self):
+        raw_wkt = 'LINESTRING(0 0,1 1)'
+        lake = Lake(WKTElement(raw_wkt, srid=4326))
+        session.add(lake)
+
+        # Insert in DB
+        session.flush()
+
+        # Check what was inserted in DB
+        assert isinstance(lake.geom, WKTElement)
+        wkt = session.execute(lake.geom.ST_AsText()).scalar()
+        assert wkt == raw_wkt
+        srid = session.execute(lake.geom.ST_SRID()).scalar()
+        assert srid == 4326
+
+        # Set geometry to None
+        lake.geom = None
+
+        # Update in DB
+        session.flush()
+
+        # Check what was updated in DB
+        assert lake.geom is None
+        assert session.execute(select([Lake])).fetchall() == [(1, None)]
+
+        # Reset geometry to initial value
+        lake.geom = WKTElement(raw_wkt, srid=4326)
+
+        # Update in DB
+        session.flush()
+
+        # Check what was inserted in DB
+        assert isinstance(lake.geom, WKTElement)
+        wkt = session.execute(lake.geom.ST_AsText()).scalar()
+        assert wkt == raw_wkt
+        srid = session.execute(lake.geom.ST_SRID()).scalar()
+        assert srid == 4326
+
+    def test_WKBElement(self):
+        shape = LineString([[0, 0], [1, 1]])
+        lake = Lake(from_shape(shape, srid=4326))
+        session.add(lake)
+
+        # Insert in DB
+        session.flush()
+
+        # Check what was inserted in DB
+        assert isinstance(lake.geom, WKBElement)
+        wkt = session.execute(lake.geom.ST_AsText()).scalar()
+        assert wkt == 'LINESTRING(0 0,1 1)'
+        srid = session.execute(lake.geom.ST_SRID()).scalar()
+        assert srid == 4326
+
+        # Set geometry to None
+        lake.geom = None
+
+        # Update in DB
+        session.flush()
+
+        # Check what was updated in DB
+        assert lake.geom is None
+        assert session.execute(select([Lake])).fetchall() == [(1, None)]
+
+        # Reset geometry to initial value
+        lake.geom = from_shape(shape, srid=4326)
+
+        # Insert in DB
+        session.flush()
+
+        # Check what was inserted in DB
+        assert isinstance(lake.geom, WKBElement)
+        wkt = session.execute(lake.geom.ST_AsText()).scalar()
+        assert wkt == 'LINESTRING(0 0,1 1)'
+        srid = session.execute(lake.geom.ST_SRID()).scalar()
+        assert srid == 4326
+
+    def test_other_type_fail(self):
+        shape = LineString([[0, 0], [1, 1]])
+        lake = Lake(from_shape(shape, srid=4326))
+        session.add(lake)
+
+        # Insert in DB
+        session.flush()
+
+        # Set geometry to 1, which is of wrong type
+        lake.geom = 1
+
+        # Update in DB
+        with pytest.raises(ProgrammingError):
+            # Call __eq__() operator of _SpatialElement with 'other' argument equal to 1
+            session.flush()
 
 
 class TestPickle():
