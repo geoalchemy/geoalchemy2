@@ -686,6 +686,14 @@ class TestCallFunction():
             "coordinates": [[0, 0], [1, 1]]
         }
 
+        # Test with function inside
+        s1_func = select([func.ST_AsGeoJSON(func.ST_MakeValid(Lake.__table__.c.geom))])
+        r1_func = session.execute(s1_func).scalar()
+        assert loads(r1_func) == {
+            "type": "LineString",
+            "coordinates": [[0, 0], [1, 1]]
+        }
+
     @skip_postgis1(postgis_version)
     @skip_postgis2(postgis_version)
     def test_ST_AsGeoJson_feature(self):
@@ -852,4 +860,15 @@ class TestSTAsGeoJson():
             ':ST_AsGeoJSON_2, :ST_AsGeoJSON_3) '
             'AS "ST_AsGeoJSON_1" FROM "another AWFUL.name for.schema".'
             '"this is.an AWFUL.name"',
+        )
+
+    @skip_postgis1(postgis_version)
+    def test_nested_funcs(self):
+        stmt = select([func.ST_AsGeoJSON(func.ST_MakeValid(func.ST_MakePoint(1, 2)))])
+        self._assert_stmt(
+            stmt,
+            'SELECT '
+            'ST_AsGeoJSON(ST_MakeValid('
+            'ST_MakePoint(:ST_MakePoint_1, :ST_MakePoint_2)'
+            ')) AS "ST_AsGeoJSON_1"',
         )
