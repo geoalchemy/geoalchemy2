@@ -585,6 +585,10 @@ def test_ST_Intersection():
     _test_geometry_returning_func('ST_Intersection')
 
 
+def test_ST_MakeValid():
+    _test_geometry_returning_func('ST_MakeValid')
+
+
 def test_ST_LineMerge():
     _test_geometry_returning_func('ST_LineMerge')
 
