@@ -81,7 +81,9 @@ class ST_AsGeoJSON(functions.GenericFunction):
         if expr is not None:
             args = [expr] + args
         for idx, element in enumerate(args):
-            if isinstance(element, elements.HasFunction):
+            if isinstance(element, functions.GenericFunction):
+                continue
+            elif isinstance(element, elements.HasFunction):
                 if element.extended:
                     func_name = element.geom_from_extended_version
                     func_args = [element.data]
@@ -719,6 +721,9 @@ _FUNCTIONS = [
      'Returns a geometry that represents the shared portion of geomA and '
      'geomB. The geography implementation does a transform to geometry to do '
      'the intersection and then transform back to WGS84.'),
+
+    ('ST_MakeValid', types.Geometry,
+     'Attempts to make an invalid geometry valid without losing vertices.'),
 
     ('ST_LineMerge', types.Geometry,
      'Returns a (set of) LineString(s) formed by sewing together the '
