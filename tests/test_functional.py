@@ -493,6 +493,53 @@ class TestUpdateORM():
             # Call __eq__() operator of _SpatialElement with 'other' argument equal to 1
             session.flush()
 
+    @skip_postgis1(postgis_version)
+    def test_Raster(self):
+        polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
+        o = Ocean(polygon.ST_AsRaster(5, 5))
+        session.add(o)
+        session.flush()
+        session.expire(o)
+
+        assert isinstance(o.rast, RasterElement)
+
+        rast_data = (
+            '01000001009A9999999999C93F9A9999999999C9BF0000000000000000000000000000F03'
+            'F00000000000000000000000000000000E610000005000500440001010101010101010100'
+            '010101000001010000000100000000'
+        )
+
+        assert o.rast.data == rast_data
+
+        assert session.execute(
+            select([Ocean.rast.ST_Height(), Ocean.rast.ST_Width()])
+        ).fetchall() == [(5, 5)]
+
+        # Set rast to None
+        o.rast = None
+
+        # Insert in DB
+        session.flush()
+        session.expire(o)
+
+        # Check what was updated in DB
+        assert o.rast is None
+        assert session.execute(select([Ocean])).fetchall() == [(1, None)]
+
+        # Reset rast to initial value
+        o.rast = RasterElement(rast_data)
+
+        # Insert in DB
+        session.flush()
+        session.expire(o)
+
+        # Check what was updated in DB
+        assert o.rast.data == rast_data
+
+        assert session.execute(
+            select([Ocean.rast.ST_Height(), Ocean.rast.ST_Width()])
+        ).fetchall() == [(5, 5)]
+
 
 class TestPickle():
 

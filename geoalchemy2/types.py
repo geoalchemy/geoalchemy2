@@ -189,6 +189,8 @@ class _GISType(UserDefinedType):
                     # PostGIS ST_GeomFromEWKT works with EWKT strings as well
                     # as EWKB hex strings
                     return bindvalue.desc
+            elif isinstance(bindvalue, RasterElement):
+                return '%s' % (bindvalue.data)
             else:
                 return bindvalue
         return process
