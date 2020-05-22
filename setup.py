@@ -1,11 +1,9 @@
 from setuptools import setup, find_packages
 
 
-version = '0.8.2'
-
 setup(
     name='GeoAlchemy2',
-    version=version,
+    use_scm_version=True,
     description="Using SQLAlchemy with Spatial Databases",
     long_description=open('README.rst').read(),
     classifiers=[
@@ -27,9 +25,10 @@ setup(
     author_email='eric.lemoine@gmail.com',
     url='http://geoalchemy.org/',
     license='MIT',
-    packages=find_packages(exclude=['ez_setup', 'examples', 'tests', "doc"]),
+    packages=find_packages(exclude=['ez_setup', 'examples', 'tests', 'doc']),
     include_package_data=True,
     zip_safe=False,
+    setup_requires=["setuptools_scm"],
     install_requires=[
         'SQLAlchemy>=0.8',
     ],
