@@ -143,7 +143,7 @@ try:
     from pkg_resources import get_distribution, DistributionNotFound
     try:
         __version__ = get_distribution('GeoAlchemy2').version
-    except DistributionNotFound:
-        pass
-except ImportError:
-    pass
+    except DistributionNotFound:  # pragma: no cover
+        pass  # pragma: no cover
+except ImportError:  # pragma: no cover
+    pass  # pragma: no cover
