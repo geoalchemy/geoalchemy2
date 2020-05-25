@@ -16,6 +16,8 @@ GeoAlchemy 2 aims to be simpler than its predecessor, `GeoAlchemy
 <https://pypi.python.org/pypi/GeoAlchemy>`_. Simpler to use, and simpler
 to maintain.
 
+The current version of this documentation applies to the version |version| of GeoAlchemy 2.
+
 
 Requirements
 ------------

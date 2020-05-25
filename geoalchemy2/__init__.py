@@ -136,3 +136,14 @@ def _setup_ddl_event_listeners():
 
 
 _setup_ddl_event_listeners()
+
+# Get version number
+__version__ = "UNKNOWN VERSION"
+try:
+    from pkg_resources import get_distribution, DistributionNotFound
+    try:
+        __version__ = get_distribution('GeoAlchemy2').version
+    except DistributionNotFound:  # pragma: no cover
+        pass  # pragma: no cover
+except ImportError:  # pragma: no cover
+    pass  # pragma: no cover
