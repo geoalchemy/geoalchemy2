@@ -190,6 +190,9 @@ _FUNCTIONS = [
     # Geometry Constructors
     #
 
+    ('ST_Collect', types.Geometry,
+     'Return a specified ST_Geometry value from a collection of other geometries.'),
+
     ('ST_BdPolyFromText', types.Geometry,
      'Construct a Polygon given an arbitrary collection of closed linestrings'
      'as a MultiLineString Well-Known text representation.'),
@@ -331,6 +334,10 @@ _FUNCTIONS = [
     ('ST_PolygonFromText', types.Geometry,
      'Makes a Geometry from WKT with the given SRID. If SRID is not given, it '
      'defaults to 0.'),
+
+    ('ST_TileEnvelope', types.Geometry,
+     'Creates a rectangular Polygon in Web Mercator (SRID:3857) using the XYZ tile '
+     'system.'),
 
     ('ST_WKBToSQL', types.Geometry,
      'Return a specified ST_Geometry value from Well-Known Binary '
@@ -524,6 +531,9 @@ _FUNCTIONS = [
     ('ST_SnapToGrid', types.Geometry,
      'Snap all points of the input geometry to a regular grid.'),
 
+    ('ST_SwapOrdinates', types.Geometry,
+     'Returns a version of the given geometry with given ordinate values swapped.'),
+
     ('ST_Transform', types.Geometry,
      'Return a new geometry with its coordinates transformed to the SRID '
      'referenced by the integer parameter.'),
@@ -567,6 +577,9 @@ _FUNCTIONS = [
      'Return the Well-Known Text (WKT) representation of the geometry/'
      'geography with SRID metadata.'),
 
+    ('ST_AsMVTGeom', types.Geometry,
+     'Transform a geometry into the coordinate space of a Mapbox Vector Tile.'),
+
     #
     # Spatial Relationships and Measurements
     #
@@ -583,6 +596,14 @@ _FUNCTIONS = [
 
     ('ST_Centroid', types.Geometry,
      'Returns the geometric center of a geometry.'),
+
+    ('ST_ClosestPoint', types.Geometry,
+     'Returns the 2-dimensional point on g1 that is closest to g2. This is '
+     'the first point of the shortest line.'),
+
+    ('ST_3DClosestPoint', types.Geometry,
+     'Returns the 3-dimensional point on g1 that is closest to g2. This is '
+     'the first point of the 3D shortest line.'),
 
     ('ST_Contains', None,
      'Returns ``True`` if and only if no points of B lie in the exterior of '
@@ -661,6 +682,19 @@ _FUNCTIONS = [
      'closest point on LineString to the given Point, as a fraction of '
      'total 2d line length.'),
 
+    ('ST_LongestLine', types.Geometry,
+     'Returns the 2-dimensional longest line points of two geometries. The function '
+     'will only return the first longest line if more than one, that the function '
+     'finds. The line returned will always start in g1 and end in g2. The length of '
+     'the line this function returns will always be the same as st_maxdistance '
+     'returns for g1 and g2.'),
+
+    ('ST_3DLongestLine', types.Geometry,
+     'Returns the 3-dimensional longest line between two geometries'),
+
+    ('ST_MinimumClearanceLine', types.Geometry,
+     'Returns the two-point LineString spanning a geometry\'s minimum clearance.'),
+
     ('ST_OrderingEquals', None,
      'Returns ``True`` if the given geometries represent the same geometry '
      'and points are in the same directional order.'),
@@ -687,6 +721,12 @@ _FUNCTIONS = [
      'passed in, then returns the maximum intersectionMatrixPattern that '
      'relates the 2 geometries.'),
 
+    ('ST_ShortestLine', types.Geometry,
+     'Returns the 2-dimensional shortest line between two geometries'),
+
+    ('ST_3DShortestLine', types.Geometry,
+     'Returns the 3-dimensional shortest line between two geometries'),
+
     ('ST_Touches', None,
      'Returns ``True`` if the geometries have at least one point in common, '
      'but their interiors do not intersect.'),
@@ -705,6 +745,32 @@ _FUNCTIONS = [
      'For geography: Uses a planar transform wrapper. Introduced in 1.5 '
      'support for different end cap and mitre settings to control shape.'),
 
+    ('ST_BuildArea', types.Geometry,
+     'Creates an areal geometry formed by the constituent linework of given '
+     'geometry'),
+
+    ('ST_ClipByBox2D', types.Geometry,
+     'Returns the portion of a geometry falling within a rectangle.'),
+
+    ('ST_ChaikinSmoothing', types.Geometry,
+     'Returns a "smoothed" version of the given geometry using the Chaikin '
+     'algorithm'),
+
+    ('ST_ConcaveHull', types.Geometry,
+     'The concave hull of a geometry represents a possibly concave geometry that '
+     'encloses all geometries within the set. You can think of it as shrink wrapping.'),
+
+    ('ST_ConvexHull', types.Geometry,
+     'The convex hull of a geometry represents the minimum convex geometry '
+     'that encloses all geometries within the set.'),
+
+    ('ST_CurveToLine', types.Geometry,
+     'Converts a CIRCULARSTRING/CURVEPOLYGON/MULTISURFACE to a '
+     'LINESTRING/POLYGON/MULTIPOLYGON'),
+
+    ('ST_DelaunayTriangles', types.Geometry,
+     'Return a Delaunay triangulation around the given input points.'),
+
     ('ST_Difference', types.Geometry,
      'Returns a geometry that represents that part of geometry A that does '
      'not intersect with geometry B.'),
@@ -717,13 +783,27 @@ _FUNCTIONS = [
      'Returns a set of geometry_dump (geom,path) rows of all points that '
      'make up a geometry.'),
 
+    ('ST_FilterByM', types.Geometry,
+     'Filters vertex points based on their m-value'),
+
+    ('ST_FlipCoordinates', types.Geometry,
+     'Returns a version of the given geometry with X and Y axis flipped. Useful '
+     'for people who have built latitude/longitude features and need to fix them.'),
+
+    ('ST_GeneratePoints', types.Geometry,
+     'Converts a polygon or multi-polygon into a multi-point composed of randomly '
+     'location points within the original areas.'),
+
+    ('ST_GeometricMedian', types.Geometry,
+     'Returns the geometric median of a MultiPoint.'),
+
     ('ST_Intersection', types.Geometry,
      'Returns a geometry that represents the shared portion of geomA and '
      'geomB. The geography implementation does a transform to geometry to do '
      'the intersection and then transform back to WGS84.'),
 
-    ('ST_MakeValid', types.Geometry,
-     'Attempts to make an invalid geometry valid without losing vertices.'),
+    ('ST_LineToCurve', types.Geometry,
+     'Converts a LINESTRING/POLYGON to a CIRCULARSTRING, CURVEPOLYGON'),
 
     ('ST_LineMerge', types.Geometry,
      'Returns a (set of) LineString(s) formed by sewing together the '
@@ -739,20 +819,174 @@ _FUNCTIONS = [
      'If \'start\' and \'end\' have the same value this is equivalent '
      'to ST_LineInterpolatePoint.'),
 
+    ('ST_MakeValid', types.Geometry,
+     'Attempts to make an invalid geometry valid without losing vertices.'),
+
+    ('ST_MemUnion', types.Geometry,
+     'Same as ST_Union, only memory-friendly (uses less memory and more processor '
+     'time).'),
+
+    ('ST_MinimumBoundingCircle', types.Geometry,
+     'Returns the smallest circle polygon that can fully contain a geometry. '
+     'Default uses 48 segments per quarter circle.'),
+
+    ('ST_Node', types.Geometry,
+     'Node a set of linestrings.'),
+
+    ('ST_OffsetCurve', types.Geometry,
+     'Return an offset line at a given distance and side from an input line. '
+     'Useful for computing parallel lines about a center line'),
+
+    ('ST_OrientedEnvelope', types.Geometry,
+     'Returns a minimum rotated rectangle enclosing a geometry.'),
+
+    ('ST_PointOnSurface', types.Geometry,
+     'Returns a POINT guaranteed to lie on the surface.'),
+
+    ('ST_Polygonize', types.Geometry,
+     'Aggregate. Creates a GeometryCollection containing possible polygons formed '
+     'from the constituent linework of a set of geometries.'),
+
+    ('ST_RemoveRepeatedPoints', types.Geometry,
+     'Returns a version of the given geometry with duplicated points removed.'),
+
+    ('ST_SetEffectiveArea', types.Geometry,
+     'Sets the effective area for each vertex, storing the value in the M ordinate. '
+     'A simplified geometry can then be generated by filtering on the M ordinate.'),
+
+    ('ST_SharedPaths', types.Geometry,
+     'Returns a collection containing paths shared by the two input '
+     'linestrings/multilinestrings.'),
+
+    ('ST_ShiftLongitude', types.Geometry,
+     'Toggle geometry coordinates between -180..180 and 0..360 ranges.'),
+
     ('ST_Simplify', types.Geometry,
      'Returns a "simplified" version of the given geometry using the '
      'Douglas-Peucker algorithm.'),
+
+    ('ST_SimplifyPreserveTopology', types.Geometry,
+     'Returns a "simplified" version of the given geometry using the '
+     'Douglas-Peucker algorithm. Will avoid creating derived geometries (polygons '
+     'in particular) that are invalid.'),
+
+    ('ST_SimplifyVW', types.Geometry,
+     'Returns a "simplified" version of the given geometry using the '
+     'Visvalingam-Whyatt algorithm'),
+
+    ('ST_Split', types.Geometry,
+     'Returns a collection of geometries resulting by splitting a geometry.'),
+
+    ('ST_Subdivide', types.Geometry,
+     'Returns a set of geometry where no geometry in the set has more than the '
+     'specified number of vertices.'),
+
+    ('ST_SymDifference', types.Geometry,
+     'Returns a geometry that represents the portions of A and B that do not '
+     'intersect. It is called a symmetric difference because ST_SymDifference(A,B) '
+     '= ST_SymDifference(B,A).'),
 
     ('ST_Union', types.Geometry,
      'Returns a geometry that represents the point set union of the '
      'Geometries.'),
 
+    ('ST_UnaryUnion', types.Geometry,
+     'Like ST_Union, but working at the geometry component level.'),
+
+    ('ST_VoronoiLines', types.Geometry,
+     'Returns the boundaries between the cells of the Voronoi diagram constructed '
+     'from the vertices of a geometry.'),
+
+    ('ST_VoronoiPolygons', types.Geometry,
+     'Returns the cells of the Voronoi diagram constructed from the vertices '
+     'of a geometry.'),
+
+    ('ST_WrapX', types.Geometry,
+     'Wrap a geometry around an X value.'),
+
+    #
+    # Bounding Box Functions
+    #
+
+    ('ST_Expand', types.Geometry,
+     'Returns bounding box expanded in all directions from the bounding box of '
+     'the input geometry. Uses double-precision'),
+
+    #
+    # Linear Referencing
+    #
+    ('ST_AddMeasure', types.Geometry,
+     'Return a derived geometry with measure elements linearly interpolated '
+     'between the start and end points.'),
+
+    ('ST_LineInterpolatePoint', types.Geometry,
+     'Returns a point interpolated along a line. Second argument is a float8 '
+     'between 0 and 1 representing fraction of total length of linestring the point '
+     'has to be located.'),
+
+    ('ST_LineInterpolatePoints', types.Geometry,
+     'Returns one or more points interpolated along a line.'),
+
+    ('ST_LocateAlong', types.Geometry,
+     'Return a derived geometry collection value with elements that match the '
+     'specified measure. Polygonal elements are not supported.'),
+
+    ('ST_LocateBetween', types.Geometry,
+     'Return a derived geometry collection value with elements that match the '
+     'specified range of measures inclusively. Polygonal elements are not supported.'),
+
+    ('ST_LocateBetweenElevations', types.Geometry,
+     'Return a derived geometry (collection) value with elements that intersect '
+     'the specified range of elevations inclusively. Only 3D, 4D LINESTRINGS '
+     'and MULTILINESTRINGS are supported.'),
+
+    ('ST_3DLineInterpolatePoint', types.Geometry,
+     'Returns a point interpolated along a line in 3D. Second argument is a float8'
+     ' between 0 and 1 representing fraction of total length of linestring the point '
+     'has to be located.'),
+
     #
     # Raster Constructors
     #
 
+    ('ST_AddBand', types.Raster,
+     ('Returns a raster with the new band(s) of given type added with given initial '
+      'value in the given index location. If no index is specified, the band is added '
+      'to the end.', 'RT_ST_AddBand')),
+
     ('ST_AsRaster', types.Raster,
      ('Converts a PostGIS geometry to a PostGIS raster.', 'RT_ST_AsRaster')),
+
+    #
+    # Raster Editors
+    #
+
+    ('ST_Resample', types.Raster,
+     ('Resample a raster using a specified resampling algorithm, new dimensions, an '
+      'arbitrary grid corner and a set of raster georeferencing attributes defined or '
+      'borrowed from another raster.', 'RT_ST_Resample')),
+
+    ('ST_Rescale', types.Raster,
+     ('Resample a raster by adjusting only its scale (or pixel size). New pixel values '
+      'are computed using the NearestNeighbor (english or american spelling), '
+      'Bilinear, Cubic, CubicSpline or Lanczos resampling algorithm. Default is '
+      'NearestNeighbor.', 'RT_ST_Rescale')),
+
+    ('ST_Reskew', types.Raster,
+     ('Resample a raster by adjusting only its skew (or rotation parameters). New '
+      'pixel values are computed using the NearestNeighbor (english or american '
+      'spelling), Bilinear, Cubic, CubicSpline or Lanczos resampling algorithm. '
+      'Default is NearestNeighbor.', 'RT_ST_Reskew')),
+
+    # ST_SnapToGrid already exists for Geometry type so it can not be duplicated
+    # ('ST_SnapToGrid', types.Raster,
+    #  ('Resample a raster by snapping it to a grid. New pixel values are computed '
+    #   'using the NearestNeighbor (english or american spelling), Bilinear, Cubic, '
+    #   'CubicSpline or Lanczos resampling algorithm. Default is '
+    #   'NearestNeighbor.', 'RT_ST_SnapToGrid')),
+
+    ('ST_Resize', types.Raster,
+     ('Resize a raster to a new width/height', 'RT_ST_Resize')),
 
     #
     # Raster Accessors
@@ -775,6 +1009,25 @@ _FUNCTIONS = [
       '``false``, then all pixels include nodata pixels are considered to '
       'intersect and return value. If ``exclude_nodata_value`` is not passed '
       'in then reads it from metadata of raster.', 'RT_ST_Value')),
+
+    #
+    # Raster Band Statistics and Analytics
+    #
+
+    ('ST_ValueCount', types.Raster,
+     ('Returns a set of records containing a pixel band value and count of the number '
+      'of pixels in a given band of a raster (or a raster coverage) that have a '
+      'given set of values. If no band is specified defaults to band 1. By default '
+      'nodata value pixels are not counted. and all other values in the pixel are '
+      'output and pixel band values are rounded to the nearest integer.')),
+
+    #
+    # DEM (Elevation)
+    #
+
+    ('ST_HillShade', types.Raster,
+     ('Returns the hypothetical illumination of an elevation raster band using '
+      'provided azimuth, altitude, brightness and scale inputs.', 'RT_ST_HillShade')),
 ]
 
 # Iterate through _FUNCTION and create GenericFunction classes dynamically

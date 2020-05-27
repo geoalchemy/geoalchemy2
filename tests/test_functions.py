@@ -42,6 +42,10 @@ def _test_raster_returning_func(name):
 #
 # Geometry Constructors
 #
+def test_ST_Collect():
+    _test_geometry_returning_func('ST_Collect')
+
+
 def test_ST_BdPolyFromText():
     _test_geometry_returning_func('ST_BdPolyFromText')
 
@@ -196,6 +200,10 @@ def test_ST_Polygon():
 
 def test_ST_PolygonFromText():
     _test_geometry_returning_func('ST_PolygonFromText')
+
+
+def test_ST_TileEnvelope():
+    _test_geometry_returning_func('ST_TileEnvelope')
 
 
 def test_ST_WKBToSQL():
@@ -408,6 +416,10 @@ def test_ST_SnapToGrid():
     _test_geometry_returning_func('ST_SnapToGrid')
 
 
+def test_ST_SwapOrdinates():
+    _test_geometry_returning_func('ST_SwapOrdinates')
+
+
 def test_ST_Transform():
     _test_geometry_returning_func('ST_Transform')
 
@@ -459,6 +471,10 @@ def test_ST_AsEWKT():
     _test_simple_func('ST_AsEWKT')
 
 
+def test_ST_AsMVTGeom():
+    _test_geometry_returning_func('ST_AsMVTGeom')
+
+
 #
 # Spatial Relationships and Measurements
 #
@@ -472,6 +488,14 @@ def test_ST_Azimuth():
 
 def test_ST_Centroid():
     _test_geometry_returning_func('ST_Centroid')
+
+
+def test_ST_ClosestPoint():
+    _test_geometry_returning_func('ST_ClosestPoint')
+
+
+def test_ST_3DClosestPoint():
+    _test_geometry_returning_func('ST_3DClosestPoint')
 
 
 def test_ST_Contains():
@@ -534,6 +558,18 @@ def test_ST_LineLocatePoint():
     _test_simple_func('ST_LineLocatePoint')
 
 
+def test_ST_LongestLine():
+    _test_geometry_returning_func('ST_LongestLine')
+
+
+def test_ST_3DLongestLine():
+    _test_geometry_returning_func('ST_3DLongestLine')
+
+
+def test_ST_MinimumClearanceLine():
+    _test_geometry_returning_func('ST_MinimumClearanceLine')
+
+
 def test_ST_OrderingEquals():
     _test_simple_func('ST_OrderingEquals')
 
@@ -554,6 +590,14 @@ def test_ST_Relate():
     _test_simple_func('ST_Relate')
 
 
+def test_ST_ShortestLine():
+    _test_geometry_returning_func('ST_ShortestLine')
+
+
+def test_ST_3DShortestLine():
+    _test_geometry_returning_func('ST_3DShortestLine')
+
+
 def test_ST_Touches():
     _test_simple_func('ST_Touches')
 
@@ -569,6 +613,34 @@ def test_ST_Buffer():
     _test_geometry_returning_func('ST_Buffer')
 
 
+def test_ST_BuildArea():
+    _test_geometry_returning_func('ST_BuildArea')
+
+
+def test_ST_ClipByBox2D():
+    _test_geometry_returning_func('ST_ClipByBox2D')
+
+
+def test_ST_ChaikinSmoothing():
+    _test_geometry_returning_func('ST_ChaikinSmoothing')
+
+
+def test_ST_ConcaveHull():
+    _test_geometry_returning_func('ST_ConcaveHull')
+
+
+def test_ST_ConvexHull():
+    _test_geometry_returning_func('ST_ConvexHull')
+
+
+def test_ST_CurveToLine():
+    _test_geometry_returning_func('ST_CurveToLine')
+
+
+def test_ST_DelaunayTriangles():
+    _test_geometry_returning_func('ST_DelaunayTriangles')
+
+
 def test_ST_Difference():
     _test_geometry_returning_func('ST_Difference')
 
@@ -581,12 +653,28 @@ def test_ST_DumpPoints():
     _test_simple_func('ST_DumpPoints')
 
 
+def test_ST_FilterByM():
+    _test_geometry_returning_func('ST_FilterByM')
+
+
+def test_ST_FlipCoordinates():
+    _test_geometry_returning_func('ST_FlipCoordinates')
+
+
+def test_ST_GeneratePoints():
+    _test_geometry_returning_func('ST_GeneratePoints')
+
+
+def test_ST_GeometricMedian():
+    _test_geometry_returning_func('ST_GeometricMedian')
+
+
 def test_ST_Intersection():
     _test_geometry_returning_func('ST_Intersection')
 
 
-def test_ST_MakeValid():
-    _test_geometry_returning_func('ST_MakeValid')
+def test_ST_LineToCurve():
+    _test_geometry_returning_func('ST_LineToCurve')
 
 
 def test_ST_LineMerge():
@@ -597,19 +685,169 @@ def test_ST_LineSubstring():
     _test_geometry_returning_func('ST_LineSubstring')
 
 
+def test_ST_MakeValid():
+    _test_geometry_returning_func('ST_MakeValid')
+
+
+def test_ST_MemUnion():
+    _test_geometry_returning_func('ST_MemUnion')
+
+
+def test_ST_MinimumBoundingCircle():
+    _test_geometry_returning_func('ST_MinimumBoundingCircle')
+
+
+def test_ST_Node():
+    _test_geometry_returning_func('ST_Node')
+
+
+def test_ST_OffsetCurve():
+    _test_geometry_returning_func('ST_OffsetCurve')
+
+
+def test_ST_OrientedEnvelope():
+    _test_geometry_returning_func('ST_OrientedEnvelope')
+
+
+def test_ST_PointOnSurface():
+    _test_geometry_returning_func('ST_PointOnSurface')
+
+
+def test_ST_Polygonize():
+    _test_geometry_returning_func('ST_Polygonize')
+
+
+def test_ST_RemoveRepeatedPoints():
+    _test_geometry_returning_func('ST_RemoveRepeatedPoints')
+
+
+def test_ST_SetEffectiveArea():
+    _test_geometry_returning_func('ST_SetEffectiveArea')
+
+
+def test_ST_SharedPaths():
+    _test_geometry_returning_func('ST_SharedPaths')
+
+
+def test_ST_ShiftLongitude():
+    _test_geometry_returning_func('ST_ShiftLongitude')
+
+
 def test_ST_Simplify():
     _test_geometry_returning_func('ST_Simplify')
+
+
+def test_ST_SimplifyPreserveTopology():
+    _test_geometry_returning_func('ST_SimplifyPreserveTopology')
+
+
+def test_ST_SimplifyVW():
+    _test_geometry_returning_func('ST_SimplifyVW')
+
+
+def test_ST_Split():
+    _test_geometry_returning_func('ST_Split')
+
+
+def test_ST_Subdivide():
+    _test_geometry_returning_func('ST_Subdivide')
+
+
+def test_ST_SymDifference():
+    _test_geometry_returning_func('ST_SymDifference')
 
 
 def test_ST_Union():
     _test_geometry_returning_func('ST_Union')
 
 
+def test_ST_UnaryUnion():
+    _test_geometry_returning_func('ST_UnaryUnion')
+
+
+def test_ST_VoronoiLines():
+    _test_geometry_returning_func('ST_VoronoiLines')
+
+
+def test_ST_VoronoiPolygons():
+    _test_geometry_returning_func('ST_VoronoiPolygons')
+
+
+def test_ST_WrapX():
+    _test_geometry_returning_func('ST_WrapX')
+
+
+#
+# Bounding Box Functions
+#
+def test_ST_Expand():
+    _test_geometry_returning_func('ST_Expand')
+
+
+#
+# Linear Referencing
+#
+def test_ST_AddMeasure():
+    _test_geometry_returning_func('ST_AddMeasure')
+
+
+def test_ST_LineInterpolatePoint():
+    _test_geometry_returning_func('ST_LineInterpolatePoint')
+
+
+def test_ST_LineInterpolatePoints():
+    _test_geometry_returning_func('ST_LineInterpolatePoints')
+
+
+def test_ST_LocateAlong():
+    _test_geometry_returning_func('ST_LocateAlong')
+
+
+def test_ST_LocateBetween():
+    _test_geometry_returning_func('ST_LocateBetween')
+
+
+def test_ST_LocateBetweenElevations():
+    _test_geometry_returning_func('ST_LocateBetweenElevations')
+
+
+def test_ST_3DLineInterpolatePoint():
+    _test_geometry_returning_func('ST_3DLineInterpolatePoint')
+
+
 #
 # Raster Constructors
 #
+def test_ST_AddBand():
+    _test_raster_returning_func('ST_AddBand')
+
+
 def test_ST_AsRaster():
     _test_raster_returning_func('ST_AsRaster')
+
+
+#
+# Raster Editors
+#
+def test_ST_Resample():
+    _test_raster_returning_func('ST_Resample')
+
+
+def test_ST_Rescale():
+    _test_raster_returning_func('ST_Rescale')
+
+
+def test_ST_Reskew():
+    _test_raster_returning_func('ST_Reskew')
+
+
+# ST_SnapToGrid already exists for Geometry type so it can not be duplicated
+# def test_ST_SnapToGrid():
+#     _test_raster_returning_func('ST_SnapToGrid')
+
+
+def test_ST_Resize():
+    _test_raster_returning_func('ST_Resize')
 
 
 #
@@ -628,3 +866,17 @@ def test_ST_Width():
 #
 def test_ST_Value():
     _test_simple_func('ST_Value')
+
+
+#
+# Raster Band Statistics and Analytics
+#
+def test_ST_ValueCount():
+    _test_raster_returning_func('ST_ValueCount')
+
+
+#
+# DEM (Elevation)
+#
+def test_ST_HillShade():
+    _test_raster_returning_func('ST_HillShade')
