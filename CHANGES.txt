@@ -4,6 +4,12 @@ GeoAlchemy 2 Changelog
 0.8.3
 -----
 
+* Fix ST_AsGeoJSON function @adrien-berchet (#279)
+* Add many missing functions @adrien-berchet (#276)
+
+0.8.3
+-----
+
 * Use setuptools_scm to manage versions @adrien-berchet (#271)
 * Fix insert/update for RasterElement @adrien-berchet (#270)
 
