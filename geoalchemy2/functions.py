@@ -81,7 +81,7 @@ class ST_AsGeoJSON(functions.GenericFunction):
         if expr is not None:
             args = [expr] + args
         for idx, element in enumerate(args):
-            if isinstance(element, functions.GenericFunction):
+            if isinstance(element, functions.Function):
                 continue
             elif isinstance(element, elements.HasFunction):
                 if element.extended:

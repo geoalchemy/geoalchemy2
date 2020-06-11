@@ -937,3 +937,16 @@ class TestSTAsGeoJson():
             'ST_MakePoint(:ST_MakePoint_1, :ST_MakePoint_2)'
             ')) AS "ST_AsGeoJSON_1"',
         )
+
+    @skip_postgis1(postgis_version)
+    def test_unknown_func(self):
+        stmt = select([
+            func.ST_AsGeoJSON(func.ST_UnknownFunction(func.ST_MakePoint(1, 2)))
+        ])
+        self._assert_stmt(
+            stmt,
+            'SELECT '
+            'ST_AsGeoJSON(ST_UnknownFunction('
+            'ST_MakePoint(:ST_MakePoint_1, :ST_MakePoint_2)'
+            ')) AS "ST_AsGeoJSON_1"',
+        )
