@@ -1,0 +1,65 @@
+"""
+Reproject a Raster using ST_Transform
+=====================================
+
+The `ST_Transform()` function (and a few others like `ST_SnapToGrid()`) can be used on
+both `Geometry` and `Raster` types. In `GeoAlchemy2`, this function is only defined for
+`Geometry` as it can not be defined for several types at the same time. Thus using this
+function on `Raster` requires minor tweaking.
+
+This example uses SQLAlchemy core queries.
+"""
+from sqlalchemy import Column
+from sqlalchemy import func
+from sqlalchemy import Integer
+from sqlalchemy import MetaData
+from sqlalchemy import select
+from sqlalchemy import Table
+
+from geoalchemy2 import Geometry
+from geoalchemy2 import Raster
+
+
+metadata = MetaData()
+
+table = Table(
+    "raster_table",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("geom", Geometry("POLYGON", 4326)),
+    Column("rast", Raster(srid=4326)),
+)
+
+
+def test_transform():
+    # Define the transform query for both the geometry and the raster in a naive way
+    wrong_query = select([
+        func.ST_Transform(table.c.geom, 2154),
+        func.ST_Transform(table.c.rast, 2154)
+    ])
+
+    # Check the query
+    assert str(wrong_query) == (
+        "SELECT "
+        "ST_AsEWKB("
+        "ST_Transform(raster_table.geom, :ST_Transform_2)) AS \"ST_Transform_1\", "
+        "ST_AsEWKB("  # <= Note that the raster is processed as a Geometry here
+        "ST_Transform(raster_table.rast, :ST_Transform_4)) AS \"ST_Transform_3\" \n"
+        "FROM raster_table"
+    )
+
+    # Define the transform query for both the geometry and the raster in the correct way
+    correct_query = select([
+        func.ST_Transform(table.c.geom, 2154),
+        func.ST_Transform(table.c.rast, 2154, type_=Raster)
+    ])
+
+    # Check the query
+    assert str(correct_query) == (
+        "SELECT "
+        "ST_AsEWKB("
+        "ST_Transform(raster_table.geom, :ST_Transform_2)) AS \"ST_Transform_1\", "
+        "raster("  # <= This time the raster is correctly processed as a Raster
+        "ST_Transform(raster_table.rast, :ST_Transform_4)) AS \"ST_Transform_3\" \n"
+        "FROM raster_table"
+    )
