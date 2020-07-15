@@ -32,22 +32,22 @@ jobs:
   include:
     - python: 2.7
       env:
-      - TOX_ENV=py27sqla11
+      - TOX_ENV=py27
     - python: 3.5
       env:
-      - TOX_ENV=py35sqla11
+      - TOX_ENV=py35
     - python: 3.6
       env:
-      - TOX_ENV=py36sqla11
+      - TOX_ENV=py36
     - python: 3.7
       env:
-      - TOX_ENV=py37sqla11
+      - TOX_ENV=py37
     - python: 3.8
       env:
-      - TOX_ENV=py38sqla11
+      - TOX_ENV=py38
     - python: pypy3
       env:
-      - TOX_ENV=pypysqla11
+      - TOX_ENV=pypy
 
 env:
   global:
@@ -83,8 +83,11 @@ script:
   # Run the library through flake8
   - flake8 --ignore=W503,W504 geoalchemy2 tests
 
-  # Run the unit test suite
-  - tox -e $TOX_ENV --sitepackages -- -v --cov geoalchemy2 --cov-report term-missing
+  # Run the unit test suite with SQLAlchemy=1.1.2
+  - tox -e $TOX_ENV-sqla11 --sitepackages -- -v --cov geoalchemy2 --cov-report term-missing
+
+  # Run the unit test suite with the latest version of SQLAlchemy
+  - tox -e $TOX_ENV-sqlalatest --sitepackages -- -v --cov geoalchemy2 --cov-report term-missing
 
 after_script:
   # Report coverage results to coveralls.io
