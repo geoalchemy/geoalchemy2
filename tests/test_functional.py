@@ -1,7 +1,7 @@
 from json import loads
 import os
-from pkg_resources import parse_version
 import pytest
+import re
 
 try:
     from psycopg2cffi import compat
@@ -11,7 +11,6 @@ else:
     compat.register()
     del compat
 
-from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import create_engine
 from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam
 from sqlalchemy.orm import sessionmaker
@@ -27,7 +26,7 @@ from geoalchemy2.shape import from_shape
 
 from shapely.geometry import LineString, Point
 
-from . import skip_postgis1, skip_postgis2
+from . import skip_postgis1, skip_postgis2, skip_case_insensitivity, skip_pg12_sa1217
 
 
 engine = create_engine(
@@ -86,6 +85,9 @@ class IndexTestWithoutSchema(Base):
 session = sessionmaker(bind=engine)()
 
 postgis_version = session.execute(func.postgis_lib_version()).scalar()
+postgres_major_version = re.match(r"([0-9]*)\.([0-9]*).*", session.execute(
+    """SELECT current_setting('server_version');""").scalar()).group(1)
+
 if postgis_version.startswith('1.'):
     # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
     # management functions should be used.
@@ -144,6 +146,7 @@ class TestTypMod():
         session.rollback()
         metadata.drop_all()
 
+    @skip_pg12_sa1217(postgres_major_version)
     def test_SummitConstraints(self):
         """ Make sure the geometry column of table Summit is created with
         `use_typmod=false` (explicit constraints are created).
@@ -771,9 +774,7 @@ class TestCallFunction():
             "properties": {"dummy_attr": 10, "id": 1}
         }
 
-    @pytest.mark.skipif(
-        parse_version(SA_VERSION) < parse_version("1.3.4"),
-        reason='Case-insensitivity is only available for sqlalchemy>=1.3.4')
+    @skip_case_insensitivity()
     def test_comparator_case_insensitivity(self):
         lake_id = self._create_one_lake()
 
@@ -834,6 +835,7 @@ class TestReflection():
     def teardown(self):
         metadata.drop_all()
 
+    @skip_pg12_sa1217(postgres_major_version)
     def test_reflection(self):
         t = Table(
             'lake',
@@ -851,6 +853,7 @@ class TestReflection():
             assert type_.srid == 4326
 
     @skip_postgis1(postgis_version)
+    @skip_pg12_sa1217(postgres_major_version)
     def test_raster_reflection(self):
         t = Table('ocean', MetaData(), autoload=True, autoload_with=engine)
         type_ = t.c.rast.type
