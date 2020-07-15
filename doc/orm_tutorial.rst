@@ -360,6 +360,20 @@ measurement functions can be applied to
     >>> bufferarea = session.scalar(lake.geom.ST_Buffer(2).ST_Area())
     >>> print '%s: %f' % (lake.name, bufferarea)
     Majeur: 21.485781
+    Majeur: 21.485781
+
+Use Raster functions
+--------------------
+
+A few functions (like `ST_Transform()`, `ST_Union()`, `ST_SnapToGrid()`, ...) can be
+used on both :class:`geoalchemy2.types.Geometry` and :class:`geoalchemy2.types.Raster`
+types. In GeoAlchemy2, these functions are only defined for
+:class:`Geometry` as it can not be defined for several types at the
+same time. Thus using these functions on :class:`Raster` requires
+minor tweaking to enforce the type by passing the `type_=Raster` argument to the
+function:
+
+    >>> query = session.query(Lake.raster.ST_Transform(2154, type_=Raster))
 
 Further Reference
 -----------------
