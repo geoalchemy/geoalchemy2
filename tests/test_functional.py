@@ -811,7 +811,7 @@ class TestCallFunction():
         self._create_one_lake()
 
         s = select([func.ST_UnknownFunction(Lake.__table__.c.geom, 2)])
-        with pytest.raises(ProgrammingError):
+        with pytest.raises(ProgrammingError, match="ST_UnknownFunction"):
             session.execute(s)
 
     def test_unknown_function_element(self):
@@ -824,6 +824,13 @@ class TestCallFunction():
             # "(psycopg2.ProgrammingError) can't adapt type 'WKBElement'"
             # It would be better if it could fail because of a "UndefinedFunction" error
             session.execute(s)
+
+    def test_unknown_function_element_ORM(self):
+        lake_id = self._create_one_lake()
+        lake = session.query(Lake).get(lake_id)
+
+        with pytest.raises(AttributeError):
+            select([lake.geom.ST_UnknownFunction(2)])
 
 
 class TestReflection():

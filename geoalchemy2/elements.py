@@ -20,6 +20,9 @@ else:
     BinasciiError = TypeError
 
 
+function_registry = set()
+
+
 class HasFunction(object):
     pass
 
@@ -87,7 +90,7 @@ class _SpatialElement(HasFunction):
         # some ducktyping (e.g. hasattr(element, "copy")) to determine
         # the type of the element.
 
-        if not name.lower().startswith('st_'):
+        if name.lower() not in function_registry:
             raise AttributeError
 
         # We create our own _FunctionGenerator here, and use it in place of
