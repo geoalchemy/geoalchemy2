@@ -55,9 +55,23 @@ from sqlalchemy import inspect
 from sqlalchemy.sql import functions
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.util import with_metaclass
 
 from . import types
 from . import elements
+
+
+class _GenericMeta(functions._GenericMeta):
+    """Extend the metaclass mechanism of sqlalchemy to register the functions in
+    a specific registry for geoalchemy2"""
+
+    _register = False
+
+    def __init__(cls, clsname, bases, clsdict):
+        # Register the function
+        elements.function_registry.add(clsname.lower())
+
+        super(_GenericMeta, cls).__init__(clsname, bases, clsdict)
 
 
 class TableRowElement(ColumnElement):
@@ -69,7 +83,7 @@ class TableRowElement(ColumnElement):
         return [self.selectable]
 
 
-class ST_AsGeoJSON(functions.GenericFunction):
+class ST_AsGeoJSON(with_metaclass(_GenericMeta, functions.GenericFunction)):
     """Special process for the ST_AsGeoJSON() function to be able to work with its
     feature version introduced in PostGIS 3."""
 
@@ -132,7 +146,7 @@ def _compile_table_row_thing(element, compiler, **kw):
     return compiled.split(".")[0]
 
 
-class GenericFunction(functions.GenericFunction):
+class GenericFunction(with_metaclass(_GenericMeta, functions.GenericFunction)):
     """
     The base class for GeoAlchemy functions.
 
