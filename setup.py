@@ -23,7 +23,7 @@ setup(
     keywords='geo gis sqlalchemy orm',
     author='Eric Lemoine',
     author_email='eric.lemoine@gmail.com',
-    url='http://geoalchemy.org/',
+    url='https://geoalchemy-2.readthedocs.io/en/latest/',
     license='MIT',
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests', 'doc']),
     include_package_data=True,
