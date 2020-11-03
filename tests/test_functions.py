@@ -8,6 +8,7 @@ from sqlalchemy.sql import func
 #
 
 import geoalchemy2.functions  # NOQA
+from geoalchemy2.types import Raster  # NOQA
 
 
 def eq_sql(a, b):
@@ -33,8 +34,8 @@ def _test_geography_returning_func(name):
            dict(name=name))
 
 
-def _test_raster_returning_func(name):
-    eq_sql(getattr(func, name)(1).select(),
+def _test_raster_returning_func(name, *args, **kwargs):
+    eq_sql(getattr(func, name)(1, *args, **kwargs).select(),
            'SELECT raster(%(name)s(:%(name)s_2)) AS "%(name)s_1"' %
            dict(name=name))
 
@@ -842,8 +843,8 @@ def test_ST_Reskew():
 
 
 # ST_SnapToGrid already exists for Geometry type so it can not be duplicated
-# def test_ST_SnapToGrid():
-#     _test_raster_returning_func('ST_SnapToGrid')
+def test_ST_SnapToGrid_raster():
+    _test_raster_returning_func('ST_SnapToGrid', type_=Raster)
 
 
 def test_ST_Resize():
@@ -872,7 +873,7 @@ def test_ST_Value():
 # Raster Band Statistics and Analytics
 #
 def test_ST_ValueCount():
-    _test_raster_returning_func('ST_ValueCount')
+    _test_simple_func('ST_ValueCount')
 
 
 #
