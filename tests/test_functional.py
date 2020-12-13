@@ -11,14 +11,15 @@ else:
     compat.register()
     del compat
 
+from pkg_resources import parse_version
 from sqlalchemy import create_engine
 from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.engine import reflection
 from sqlalchemy.exc import DataError, IntegrityError, InternalError, ProgrammingError
 from sqlalchemy.sql import select, func
 from sqlalchemy.sql.expression import type_coerce
+from sqlalchemy import __version__ as SA_VERSION
 
 from geoalchemy2 import Geometry, Geography, Raster
 from geoalchemy2.elements import WKTElement, WKBElement, RasterElement
@@ -28,6 +29,12 @@ from shapely.geometry import LineString, Point
 
 from . import skip_postgis1, skip_postgis2, skip_case_insensitivity, skip_pg12_sa1217
 
+SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("2")
+if SQLA_LT_2:
+    from sqlalchemy.engine.reflection import Inspector
+    get_inspector = Inspector.from_engine
+else:
+    from sqlalchemy import inspect as get_inspector
 
 engine = create_engine(
     os.environ.get('PYTEST_DB_URL', 'postgresql://gis:gis@localhost/gis'), echo=False)
@@ -118,7 +125,7 @@ class TestIndex():
         metadata.drop_all()
 
     def test_index_with_schema(self):
-        inspector = reflection.Inspector.from_engine(engine)
+        inspector = get_inspector(engine)
         indices = inspector.get_indexes(IndexTestWithSchema.__tablename__, schema='gis')
         assert len(indices) == 2
         assert not indices[0].get('unique')
@@ -127,7 +134,7 @@ class TestIndex():
         assert indices[1].get('column_names')[0] in (u'geom1', u'geom2')
 
     def test_index_without_schema(self):
-        inspector = reflection.Inspector.from_engine(engine)
+        inspector = get_inspector(engine)
         indices = inspector.get_indexes(IndexTestWithSchema.__tablename__)
         assert len(indices) == 2
         assert not indices[0].get('unique')
@@ -152,7 +159,7 @@ class TestTypMod():
         `use_typmod=false` (explicit constraints are created).
          """
 
-        inspector = reflection.Inspector.from_engine(engine)
+        inspector = get_inspector(engine)
         constraints = inspector.get_check_constraints(
             Summit.__tablename__, schema='gis')
         assert len(constraints) == 3
@@ -275,7 +282,11 @@ class TestSelectBindParam():
 
     def test_select_bindparam(self):
         s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
-        results = self.conn.execute(s, geom='SRID=4326;LINESTRING(0 0,1 1)')
+        params = {"geom": "SRID=4326;LINESTRING(0 0,1 1)"}
+        if SQLA_LT_2:
+            results = self.conn.execute(s, **params)
+        else:
+            results = self.conn.execute(s, parameters=params)
         rows = results.fetchall()
 
         row = rows[0]
@@ -288,7 +299,11 @@ class TestSelectBindParam():
     def test_select_bindparam_WKBElement(self):
         s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
         wkbelement = from_shape(LineString([[0, 0], [1, 1]]), srid=4326)
-        results = self.conn.execute(s, geom=wkbelement)
+        params = {"geom": wkbelement}
+        if SQLA_LT_2:
+            results = self.conn.execute(s, **params)
+        else:
+            results = self.conn.execute(s, parameters=params)
         rows = results.fetchall()
 
         row = rows[0]
@@ -307,7 +322,11 @@ class TestSelectBindParam():
         assert geom.extended is True
 
         s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
-        results = self.conn.execute(s, geom=geom)
+        params = {"geom": geom}
+        if SQLA_LT_2:
+            results = self.conn.execute(s, **params)
+        else:
+            results = self.conn.execute(s, parameters=params)
         rows = results.fetchall()
 
         row = rows[0]
@@ -427,7 +446,11 @@ class TestUpdateORM():
 
         # Check what was updated in DB
         assert lake.geom is None
-        assert session.execute(select([Lake])).fetchall() == [(1, None)]
+        cols = [Lake.id, Lake.geom]
+        if SQLA_LT_2:
+            assert session.execute(select(cols)).fetchall() == [(1, None)]
+        else:
+            assert session.execute(select(*cols)).fetchall() == [(1, None)]
 
         # Reset geometry to initial value
         lake.geom = WKTElement(raw_wkt, srid=4326)
@@ -465,7 +488,11 @@ class TestUpdateORM():
 
         # Check what was updated in DB
         assert lake.geom is None
-        assert session.execute(select([Lake])).fetchall() == [(1, None)]
+        cols = [Lake.id, Lake.geom]
+        if SQLA_LT_2:
+            assert session.execute(select(cols)).fetchall() == [(1, None)]
+        else:
+            assert session.execute(select(*cols)).fetchall() == [(1, None)]
 
         # Reset geometry to initial value
         lake.geom = from_shape(shape, srid=4326)
@@ -527,7 +554,11 @@ class TestUpdateORM():
 
         # Check what was updated in DB
         assert o.rast is None
-        assert session.execute(select([Ocean])).fetchall() == [(1, None)]
+        cols = [Ocean.id, Ocean.rast]
+        if SQLA_LT_2:
+            assert session.execute(select(cols)).fetchall() == [(1, None)]
+        else:
+            assert session.execute(select(*cols)).fetchall() == [(1, None)]
 
         # Reset rast to initial value
         o.rast = RasterElement(rast_data)
