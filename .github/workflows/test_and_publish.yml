@@ -1,0 +1,135 @@
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch.
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - '*'
+  pull_request:
+
+env:
+  PGPASSWORD: gis
+
+jobs:
+  # This workflow runs the tests
+  tests:
+
+    # Setup test matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [2.7, 3.5, 3.6, 3.7, 3.8, pypy3]
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-18.04
+
+    services:
+      postgres:
+        image: mdillon/postgis:11
+        env:
+          POSTGRES_DB: gis
+          POSTGRES_PASSWORD: gis
+          POSTGRES_USER: gis
+        ports:
+          - 5432:5432
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    # Setup Python
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: x64
+
+    # Config PostgreSQL
+    - name: Configure PostgreSQL
+      run: |
+        # Create schema "gis" into database "gis"
+        psql -h localhost -p 5432 -U gis -d gis -c 'CREATE SCHEMA gis;'
+
+        # Add PostGIS extension to "gis" database
+        psql -h localhost -p 5432 -U gis -d gis -c 'CREATE EXTENSION IF NOT EXISTS postgis;'
+
+    # Check python version
+    - name: Display Python version
+      run: python -c "import sys; print(sys.version)"
+
+    # Install dependencies
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y autotools-dev \
+                                git \
+                                libexpat1-dev \
+                                libfreexl-dev \
+                                libgeos-dev \
+                                libproj-dev \
+                                libreadline-dev \
+                                libsqlite3-dev \
+                                libsqlite3-mod-spatialite \
+                                libxml2-dev \
+                                zlib1g-dev
+        pip install --upgrade pip setuptools
+        pip install tox-gh-actions flake8==3.7.9
+
+    # Run Flake8
+    - name: Run Flake8
+      run: |
+        # Run the library through flake8
+        flake8 --ignore=W503,W504 geoalchemy2 tests
+
+    # Run the test suite
+    - name: Run the tests
+      env:
+        SPATIALITE_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/mod_spatialite.so
+      run: |
+        # Run the unit test suite with SQLAlchemy=1.1.2 and then with the latest version of SQLAlchemy
+        tox -vv
+
+    # Export coverage to Coveralls
+    - name: Run coverage
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Use python3.6 for all python version
+      run: |
+        python3.6 -m pip install --upgrade pip setuptools
+        python3.6 -m pip install coveralls
+        python3.6 -m coveralls
+
+  # This workflow deploys the package
+  deploy:
+
+    needs: tests
+    runs-on: ubuntu-18.04
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+
+    # Build distribution and deploy to Pypi
+    - name: Build and deploy package
+      env:
+        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        pip install --upgrade pip setuptools wheel twine
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
