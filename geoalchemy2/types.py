@@ -151,6 +151,7 @@ class _GISType(UserDefinedType):
         return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
 
     def column_expression(self, col):
+        """Specific column_expression that automatically adds a conversion function"""
         return getattr(func, self.as_binary)(col, type_=self)
 
     def result_processor(self, dialect, coltype):
@@ -165,6 +166,7 @@ class _GISType(UserDefinedType):
         return process
 
     def bind_expression(self, bindvalue):
+        """Specific bind_expression that automatically adds a conversion function"""
         return getattr(func, self.from_text)(bindvalue, type_=self)
 
     def bind_processor(self, dialect):
