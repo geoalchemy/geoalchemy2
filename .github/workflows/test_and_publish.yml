@@ -98,13 +98,11 @@ jobs:
         # Run the unit test suite with SQLAlchemy=1.1.2 and then with the latest version of SQLAlchemy
         tox -vv
 
-    # Export coverage to Coveralls
-    - name: Coveralls Parallel
-      uses: coverallsapp/github-action@master
+    - name: Coveralls
+      uses: AndreMiras/coveralls-python-action@develop
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        flag-name: run-${{ matrix.python-version }}
         parallel: true
+        flag-name: run-${{ matrix.python-version }}
 
   # This workflow aggregates coverages from all jobs and export it to Coveralls
   finish:
@@ -112,10 +110,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Coveralls Finished
-      uses: coverallsapp/github-action@master
+      uses: AndreMiras/coveralls-python-action@develop
       with:
-        github-token: ${{ secrets.github_token }}
         parallel-finished: true
+        github-token: ${{ secrets.github_token }}
 
   # This workflow deploys the package
   deploy:
