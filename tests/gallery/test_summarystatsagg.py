@@ -78,21 +78,21 @@ class TestSTSummaryStatsAgg():
 
         # Use these stats
         query = select([
-            stats_agg_alias.c.stats.count,
-            stats_agg_alias.c.stats.sum,
-            stats_agg_alias.c.stats.stddev,
-            stats_agg_alias.c.stats.min,
-            stats_agg_alias.c.stats.max
+            stats_agg_alias.c.stats.count.label("count"),
+            stats_agg_alias.c.stats.sum.label("sum"),
+            stats_agg_alias.c.stats.stddev.label("stddev"),
+            stats_agg_alias.c.stats.min.label("min"),
+            stats_agg_alias.c.stats.max.label("max")
         ])
 
         # Check the query
         assert str(query) == (
             "SELECT "
-            "(stats_agg.stats).count, "
-            "(stats_agg.stats).sum, "
-            "(stats_agg.stats).stddev, "
-            "(stats_agg.stats).min, "
-            "(stats_agg.stats).max \n"
+            "(stats_agg.stats).count AS count, "
+            "(stats_agg.stats).sum AS sum, "
+            "(stats_agg.stats).stddev AS stddev, "
+            "(stats_agg.stats).min AS min, "
+            "(stats_agg.stats).max AS max \n"
             "FROM ("
             "SELECT "
             "ST_SummaryStatsAgg("

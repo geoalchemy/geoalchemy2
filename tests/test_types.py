@@ -245,7 +245,8 @@ class TestRaster():
 class TestCompositeType():
 
     def test_ST_Dump(self, geography_table):
-        s = select([func.ST_Dump(geography_table.c.geom).geom])
+        s = select([func.ST_Dump(geography_table.c.geom).geom.label("geom")])
+
         eq_sql(s,
                'SELECT ST_AsEWKB((ST_Dump("table".geom)).geom) AS geom '
                'FROM "table"')

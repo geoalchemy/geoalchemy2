@@ -30,7 +30,7 @@ setup(
     zip_safe=False,
     setup_requires=["setuptools_scm"],
     install_requires=[
-        'SQLAlchemy>=0.8',
+        'SQLAlchemy>=1.1',
     ],
     entry_points="""
     # -*- Entry points: -*-

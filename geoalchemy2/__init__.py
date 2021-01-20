@@ -16,7 +16,7 @@ from . import functions  # NOQA
 from . import types  # NOQA
 
 from sqlalchemy import Table, event
-from sqlalchemy.sql import select, func, expression
+from sqlalchemy.sql import select, func, expression, text
 
 
 def _setup_ddl_event_listeners():
@@ -104,14 +104,15 @@ def _setup_ddl_event_listeners():
                         bind.execute(stmt)
                     elif bind.dialect.name == 'postgresql':
                         if table.schema:
-                            bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
-                                         'USING GIST ("%s")' %
-                                         (table.name, c.name, table.schema,
-                                          table.name, c.name))
+                            q = text('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
+                                     'USING GIST ("%s")' %
+                                     (table.name, c.name, table.schema,
+                                      table.name, c.name))
                         else:
-                            bind.execute('CREATE INDEX "idx_%s_%s" ON "%s" '
-                                         'USING GIST ("%s")' %
-                                         (table.name, c.name, table.name, c.name))
+                            q = text('CREATE INDEX "idx_%s_%s" ON "%s" '
+                                     'USING GIST ("%s")' %
+                                     (table.name, c.name, table.name, c.name))
+                        bind.execute(q)
                     else:
                         raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
 
@@ -121,14 +122,15 @@ def _setup_ddl_event_listeners():
                 # based on the convex hull of the rasters.
                 if isinstance(c.type, Raster) and c.type.spatial_index is True:
                     if table.schema:
-                        bind.execute('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
-                                     'USING GIST (ST_ConvexHull("%s"))' %
-                                     (table.name, c.name, table.schema,
-                                      table.name, c.name))
+                        q = text('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
+                                 'USING GIST (ST_ConvexHull("%s"))' %
+                                 (table.name, c.name, table.schema,
+                                  table.name, c.name))
                     else:
-                        bind.execute('CREATE INDEX "idx_%s_%s" ON "%s" '
-                                     'USING GIST (ST_ConvexHull("%s"))' %
-                                     (table.name, c.name, table.name, c.name))
+                        q = text('CREATE INDEX "idx_%s_%s" ON "%s" '
+                                 'USING GIST (ST_ConvexHull("%s"))' %
+                                 (table.name, c.name, table.name, c.name))
+                    bind.execute(q)
 
         elif event == 'after-drop':
             # Restore original column list including managed Geometry columns
