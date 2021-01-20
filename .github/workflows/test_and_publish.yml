@@ -82,7 +82,7 @@ jobs:
                                 libxml2-dev \
                                 zlib1g-dev
         pip install --upgrade pip setuptools
-        pip install tox-gh-actions flake8==3.7.9 coveralls
+        pip install tox-gh-actions flake8==3.7.9
 
     # Run Flake8
     - name: Run Flake8
@@ -100,12 +100,11 @@ jobs:
 
     # Export coverage to Coveralls
     - name: Coveralls
-      # uses: AndreMiras/coveralls-python-action@develop
-      # with:
-      #   parallel: true
-      #   flag-name: run-${{ matrix.python-version }}
-      run: |
-        coveralls --service=github --rcfile=tests/.coveragerc
+      uses: AndreMiras/coveralls-python-action@v20201129
+      with:
+        parallel: true
+        flag-name: run-${{ matrix.python-version }}
+
 
   # This workflow aggregates coverages from all jobs and export it to Coveralls
   coveralls:
@@ -113,12 +112,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Coveralls Finished
-      env:
-        GITHUB-TOKEN: ${{ secrets.github_token }}
-      run: |
-        pip install --upgrade pip setuptools
-        pip install --upgrade coveralls
-        coveralls --finish
+      uses: AndreMiras/coveralls-python-action@v20201129
+      with:
+        parallel-finished: true
+        github-token: ${{ secrets.github_token }}
 
   # This workflow deploys the package
   deploy:
