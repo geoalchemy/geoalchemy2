@@ -1,7 +1,17 @@
 GeoAlchemy 2 Changelog
 ======================
 
-0.8.3
+0.8.5
+-----
+
+* Add dosctrings to remove sphinx warnings @adrien-berchet (#300)
+* Update setup.py to point to new home page location @EdwardBetts (#296)
+* Add an internal function registry @adrien-berchet (#293)
+* Update CI and tests @adrien-berchet (#286, #287, #303, #307)
+* Add doc for functions that are defined for both Geometry and Raster @adrien-berchet (#285)
+* Add new examples in the gallery @adrien-berchet (#282, #283, #299)
+
+0.8.4
 -----
 
 * Fix ST_AsGeoJSON function @adrien-berchet (#279)
