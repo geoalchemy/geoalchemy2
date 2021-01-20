@@ -99,14 +99,23 @@ jobs:
         tox -vv
 
     # Export coverage to Coveralls
-    - name: Run coverage
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Use python3.6 for all python version
-      run: |
-        python3.6 -m pip install --upgrade pip setuptools
-        python3.6 -m pip install coveralls
-        python3.6 -m coveralls
+    - name: Coveralls
+      uses: AndreMiras/coveralls-python-action@v20201129
+      with:
+        parallel: true
+        flag-name: run-${{ matrix.python-version }}
+
+
+  # This workflow aggregates coverages from all jobs and export it to Coveralls
+  coveralls:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: AndreMiras/coveralls-python-action@v20201129
+      with:
+        parallel-finished: true
+        github-token: ${{ secrets.github_token }}
 
   # This workflow deploys the package
   deploy:

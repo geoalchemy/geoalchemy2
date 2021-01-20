@@ -1,2 +1,3 @@
 [run]
-source=geoalchemy2
+source = geoalchemy2
+relative_files = True
