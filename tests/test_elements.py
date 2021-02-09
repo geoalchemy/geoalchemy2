@@ -230,7 +230,7 @@ class TestExtendedWKBElement():
                ':ST_Buffer_1)')
         assert f.compile().params == {
             u'ST_Buffer_1': 2,
-            u'ST_GeomFromEWKB_1': bytes_(self._bin),
+            u'ST_GeomFromEWKB_1': bytes_(self._hex),
         }
 
     def test_unpack_srid_from_bin(self):
