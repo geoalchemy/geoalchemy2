@@ -271,7 +271,7 @@ class TestWKBElement():
                'ST_GeomFromWKB(:ST_GeomFromWKB_1, :ST_GeomFromWKB_2), '
                ':ST_Buffer_1)')
         assert f.compile().params == {
-            u'ST_Buffer_1': 2, u'ST_GeomFromWKB_1': b'\x01\x02',
+            u'ST_Buffer_1': 2, u'ST_GeomFromWKB_1': '0102',
             u'ST_GeomFromWKB_2': -1
         }
 
