@@ -100,10 +100,10 @@ class ST_AsGeoJSON(with_metaclass(_GenericMeta, functions.GenericFunction)):
             elif isinstance(element, elements.HasFunction):
                 if element.extended:
                     func_name = element.geom_from_extended_version
-                    func_args = [element.data]
+                    func_args = [element.desc]
                 else:
                     func_name = element.geom_from
-                    func_args = [element.data, element.srid]
+                    func_args = [element.desc, element.srid]
                 args[idx] = getattr(functions.func, func_name)(*func_args)
             else:
                 try:
@@ -187,10 +187,10 @@ class GenericFunction(with_metaclass(_GenericMeta, functions.GenericFunction)):
             if isinstance(elem, elements.HasFunction):
                 if elem.extended:
                     func_name = elem.geom_from_extended_version
-                    func_args = [elem.data]
+                    func_args = [elem.desc]
                 else:
                     func_name = elem.geom_from
-                    func_args = [elem.data, elem.srid]
+                    func_args = [elem.desc, elem.srid]
                 args[idx] = getattr(functions.func, func_name)(*func_args)
         functions.GenericFunction.__init__(self, *args, **kwargs)
 
