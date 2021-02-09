@@ -209,7 +209,7 @@ class TestExtendedWKBElement():
                ':ST_Buffer_1)')
         assert f.compile().params == {
             u'ST_Buffer_1': 2,
-            u'ST_GeomFromEWKB_1': self._bin,
+            u'ST_GeomFromEWKB_1': self._hex,
         }
 
     def test_function_str(self):
