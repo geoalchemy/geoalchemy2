@@ -6,7 +6,7 @@ This file provides the steps for releasing a new version of GeoAlchemy 2.
 Add a new section to CHANGES.txt, then create a PR with that.
 Proceed when the PR is merged.
 
-Make sure Travis is all green: https://travis-ci.org/geoalchemy/geoalchemy2.
+Make sure the CI is all green: https://github.com/geoalchemy/geoalchemy2/actions
 
 Create Git tag and push it::
 
