@@ -616,6 +616,7 @@ class TestCallFunction():
 
     def teardown(self):
         session.rollback()
+        session.expunge_all()
         metadata.drop_all()
 
     def _create_one_lake(self):
