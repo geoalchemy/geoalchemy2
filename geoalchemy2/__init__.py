@@ -103,16 +103,26 @@ def _setup_ddl_event_listeners():
                         stmt = stmt.execution_options(autocommit=True)
                         bind.execute(stmt)
                     elif bind.dialect.name == 'postgresql':
-                        if table.schema:
-                            q = text('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
-                                     'USING GIST ("%s")' %
-                                     (table.name, c.name, table.schema,
-                                      table.name, c.name))
+                        
+                        index_name = "idx_{}_{}".format(table.name, c.name)
+                        
+                        if c.type.is_N_D_index:
+                            gis_column = '{} gist_geometry_ops_nd'.format(c.name)
                         else:
-                            q = text('CREATE INDEX "idx_%s_%s" ON "%s" '
-                                     'USING GIST ("%s")' %
-                                     (table.name, c.name, table.name, c.name))
+                            gis_column = c.name
+                            
+                        if table.schema:
+                            table_name = "{}.{}".format(table.schema, table.name)
+                        else:
+                            table_name = table.name
+                            
+                        sql = "CREATE INDEX {} ON {} USING GIST ({})".format(index_name, table_name, gis_column)
+                        
+                        q = text(sql)
+                        
                         bind.execute(q)
+                    elif c.type.spatial_index is False and c.type.is_N_D_index is True:
+                        raise ArgumentError('Cannot have N-D spatial index with spatial_index set to False')
                     else:
                         raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
 
