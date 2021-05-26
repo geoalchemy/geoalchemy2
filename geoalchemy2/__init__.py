@@ -123,11 +123,11 @@ def _setup_ddl_event_listeners():
                         bind.execute(q)
                     else:
                         raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
-                
+
                 if isinstance(c.type, (Geometry, Geography)) and c.type.spatial_index is False and \
                         c.type.is_N_D_index is True:
                     raise ArgumentError('Arg Error(is_N_D_index): spatial_index must be True')
-                
+
                 # Add spatial indices for the Raster columns
                 #
                 # Note the use of ST_ConvexHull since most raster operators are
