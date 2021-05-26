@@ -82,6 +82,12 @@ class IndexTestWithSchema(Base):
     geom2 = Column(Geometry(geometry_type='POINT', srid=4326, management=True))
 
 
+class IndexTestWithNDIndex(Base):
+    __tablename__ = 'index_test_with_nd_index'
+    __table_args__ = {'schema': 'gis'}
+    id = Column(Integer, primary_key=True)
+    geom1 = Column(Geometry(geometry_type='POINTZ', dimension=3, is_N_D_index=True))
+    
 class IndexTestWithoutSchema(Base):
     __tablename__ = 'indextestwithoutschema'
     id = Column(Integer, primary_key=True)
@@ -133,6 +139,37 @@ class TestIndex():
         assert not indices[1].get('unique')
         assert indices[1].get('column_names')[0] in (u'geom1', u'geom2')
 
+    def test_n_d_index(self):
+        
+        engine.connect()
+        sql = """SELECT
+                    tablename,
+                    indexname,
+                    indexdef
+                FROM
+                    pg_indexes
+                WHERE
+                    tablename = 'index_test_with_nd_index'
+                ORDER BY
+                    tablename,
+                    indexname"""
+        r = engine.execute(sql)
+        results = r.fetchall()
+
+        for index in results:
+            if 'geom1' in index[1]:
+                nd_index = index[2]
+        
+        index_type = nd_index.split("USING ",1)[1] 
+        assert index_type == 'gist (geom1 gist_geometry_ops_nd)'
+        
+        inspector = get_inspector(engine)
+
+        indices = inspector.get_indexes(IndexTestWithNDIndex.__tablename__)
+        assert len(indices) == 1
+        assert not indices[0].get('unique')
+        assert indices[0].get('column_names')[0] in (u'geom1')
+        
     def test_index_without_schema(self):
         inspector = get_inspector(engine)
         indices = inspector.get_indexes(IndexTestWithSchema.__tablename__)
