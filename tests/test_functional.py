@@ -16,7 +16,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.exc import DataError, IntegrityError, InternalError, ProgrammingError
+from sqlalchemy.exc import ArgumentError, DataError, IntegrityError, InternalError, ProgrammingError
 from sqlalchemy.sql import select, func
 from sqlalchemy.sql.expression import type_coerce
 from sqlalchemy import __version__ as SA_VERSION
@@ -87,7 +87,7 @@ class IndexTestWithNDIndex(Base):
     __table_args__ = {'schema': 'gis'}
     id = Column(Integer, primary_key=True)
     geom1 = Column(Geometry(geometry_type='POINTZ', dimension=3, is_N_D_index=True))
-    
+
 class IndexTestWithoutSchema(Base):
     __tablename__ = 'indextestwithoutschema'
     id = Column(Integer, primary_key=True)
@@ -140,7 +140,7 @@ class TestIndex():
         assert indices[1].get('column_names')[0] in (u'geom1', u'geom2')
 
     def test_n_d_index(self):
-        
+
         engine.connect()
         sql = """SELECT
                     tablename,
@@ -159,20 +159,38 @@ class TestIndex():
         for index in results:
             if 'geom1' in index[1]:
                 nd_index = index[2]
-        
+
         index_type = nd_index.split("USING ",1)[1] 
         assert index_type == 'gist (geom1 gist_geometry_ops_nd)'
-        
+
         inspector = get_inspector(engine)
 
         indices = inspector.get_indexes(IndexTestWithNDIndex.__tablename__)
         assert len(indices) == 1
         assert not indices[0].get('unique')
         assert indices[0].get('column_names')[0] in (u'geom1')
-        
+
+    def test_n_d_index_argument_error(self):
+        BaseArgTest = declarative_base(metadata=metadata)
+
+        class NDIndexArgErrorSchema(BaseArgTest):
+            __tablename__ = 'nd_index_error_arg'
+            __table_args__ = {'schema': 'gis'}
+            id = Column(Integer, primary_key=True)
+            geom1 = Column(Geometry(geometry_type='POINTZ', 
+                                    dimension=3,
+                                    spatial_index=False,
+                                    is_N_D_index=True))
+
+        with pytest.raises(ArgumentError) as excinfo:
+            BaseArgTest.metadata.tables[NDIndexArgErrorSchema.__name__].create(bind=engine)
+
+        assert "Arg Error(is_N_D_index): spatial_index must be True " in str(excinfo.value)
+
+
     def test_index_without_schema(self):
         inspector = get_inspector(engine)
-        indices = inspector.get_indexes(IndexTestWithSchema.__tablename__)
+        indices = inspector.get_indexes(IndexTestWithoutSchema.__tablename__)
         assert len(indices) == 2
         assert not indices[0].get('unique')
         assert indices[0].get('column_names')[0] in (u'geom1', u'geom2')
