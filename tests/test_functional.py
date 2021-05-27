@@ -86,7 +86,7 @@ class IndexTestWithNDIndex(Base):
     __tablename__ = 'index_test_with_nd_index'
     __table_args__ = {'schema': 'gis'}
     id = Column(Integer, primary_key=True)
-    geom1 = Column(Geometry(geometry_type='POINTZ', dimension=3, is_N_D_index=True))
+    geom1 = Column(Geometry(geometry_type='POINTZ', dimension=3, use_N_D_index=True))
 
 class IndexTestWithoutSchema(Base):
     __tablename__ = 'indextestwithoutschema'
@@ -181,11 +181,11 @@ class TestIndex():
             geom1 = Column(Geometry(geometry_type='POINTZ', 
                                     dimension=3,
                                     spatial_index=False,
-                                    is_N_D_index=True))
+                                    use_N_D_index=True))
 
         with pytest.raises(ArgumentError) as excinfo:
             NDIndexArgErrorSchema.__table__.create(engine)
-        assert "Arg Error(is_N_D_index): spatial_index must be True" == excinfo.value.args[0]
+        assert "Arg Error(use_N_D_index): spatial_index must be True" == excinfo.value.args[0]
 
 
     def test_index_without_schema(self):

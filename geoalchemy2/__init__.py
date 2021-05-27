@@ -105,7 +105,7 @@ def _setup_ddl_event_listeners():
 
                         index_name = "idx_{}_{}".format(table.name, c.name)
 
-                        if c.type.is_N_D_index:
+                        if c.type.use_N_D_index:
                             gis_column = '{} gist_geometry_ops_nd'.format(c.name)
                         else:
                             gis_column = c.name
@@ -125,8 +125,8 @@ def _setup_ddl_event_listeners():
                         raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
 
                 if isinstance(c.type, (Geometry, Geography)) and c.type.spatial_index is False and \
-                        c.type.is_N_D_index is True:
-                    raise ArgumentError('Arg Error(is_N_D_index): spatial_index must be True')
+                        c.type.use_N_D_index is True:
+                    raise ArgumentError('Arg Error(use_N_D_index): spatial_index must be True')
 
                 # Add spatial indices for the Raster columns
                 #
@@ -143,7 +143,7 @@ def _setup_ddl_event_listeners():
                                  'USING GIST (ST_ConvexHull("%s"))' %
                                  (table.name, c.name, table.name, c.name))
                     bind.execute(q)
-                
+
         elif event == 'after-drop':
             # Restore original column list including managed Geometry columns
             table.columns = table.info.pop('_saved_columns')
