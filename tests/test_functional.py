@@ -187,7 +187,6 @@ class TestIndex():
             NDIndexArgErrorSchema.__table__.create(engine)
         assert "Arg Error(is_N_D_index): spatial_index must be True" == excinfo.value.args[0]
 
-
     def test_index_without_schema(self):
         inspector = get_inspector(engine)
         indices = inspector.get_indexes(IndexTestWithoutSchema.__tablename__)
