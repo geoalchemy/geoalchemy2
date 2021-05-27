@@ -88,6 +88,7 @@ class IndexTestWithNDIndex(Base):
     id = Column(Integer, primary_key=True)
     geom1 = Column(Geometry(geometry_type='POINTZ', dimension=3, use_N_D_index=True))
 
+
 class IndexTestWithoutSchema(Base):
     __tablename__ = 'indextestwithoutschema'
     id = Column(Integer, primary_key=True)
@@ -160,7 +161,7 @@ class TestIndex():
             if 'geom1' in index[1]:
                 nd_index = index[2]
 
-        index_type = nd_index.split("USING ",1)[1] 
+        index_type = nd_index.split("USING ", 1)[1]
         assert index_type == 'gist (geom1 gist_geometry_ops_nd)'
 
         inspector = get_inspector(engine)
@@ -178,7 +179,7 @@ class TestIndex():
             __tablename__ = 'nd_index_error_arg'
             __table_args__ = {'schema': 'gis'}
             id = Column(Integer, primary_key=True)
-            geom1 = Column(Geometry(geometry_type='POINTZ', 
+            geom1 = Column(Geometry(geometry_type='POINTZ',
                                     dimension=3,
                                     spatial_index=False,
                                     use_N_D_index=True))
