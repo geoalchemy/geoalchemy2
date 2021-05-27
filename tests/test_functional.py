@@ -16,7 +16,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.exc import ArgumentError, DataError, IntegrityError, InternalError, ProgrammingError
+from sqlalchemy.exc import DataError, IntegrityError, InternalError, ProgrammingError
 from sqlalchemy.sql import select, func
 from sqlalchemy.sql.expression import type_coerce
 from sqlalchemy import __version__ as SA_VERSION
@@ -24,7 +24,7 @@ from sqlalchemy import __version__ as SA_VERSION
 from geoalchemy2 import Geometry, Geography, Raster
 from geoalchemy2.elements import WKTElement, WKBElement, RasterElement
 from geoalchemy2.shape import from_shape
-
+from geoalchemy2.exc import ArgumentError
 from shapely.geometry import LineString, Point
 
 from . import skip_postgis1, skip_postgis2, skip_case_insensitivity, skip_pg12_sa1217
@@ -171,7 +171,8 @@ class TestIndex():
         assert indices[0].get('column_names')[0] in (u'geom1')
 
     def test_n_d_index_argument_error(self):
-        BaseArgTest = declarative_base(metadata=metadata)
+        arg_metadata = MetaData(engine)
+        BaseArgTest = declarative_base(metadata=arg_metadata)
 
         class NDIndexArgErrorSchema(BaseArgTest):
             __tablename__ = 'nd_index_error_arg'
@@ -183,9 +184,8 @@ class TestIndex():
                                     is_N_D_index=True))
 
         with pytest.raises(ArgumentError) as excinfo:
-            BaseArgTest.metadata.tables[NDIndexArgErrorSchema.__name__].create(bind=engine)
-
-        assert "Arg Error(is_N_D_index): spatial_index must be True " in str(excinfo.value)
+            NDIndexArgErrorSchema.__table__.create(engine)
+        assert "Arg Error(is_N_D_index): spatial_index must be True" == excinfo.value.args[0]
 
 
     def test_index_without_schema(self):
