@@ -39,6 +39,7 @@ else:
 engine = create_engine(
     os.environ.get('PYTEST_DB_URL', 'postgresql://gis:gis@localhost/gis'), echo=False)
 metadata = MetaData(engine)
+arg_metadata = MetaData(engine)
 Base = declarative_base(metadata=metadata)
 
 
@@ -130,6 +131,7 @@ class TestIndex():
     def teardown(self):
         session.rollback()
         metadata.drop_all()
+        arg_metadata.drop_all()
 
     def test_index_with_schema(self):
         inspector = get_inspector(engine)
@@ -172,7 +174,6 @@ class TestIndex():
         assert indices[0].get('column_names')[0] in (u'geom1')
 
     def test_n_d_index_argument_error(self):
-        arg_metadata = MetaData(engine)
         BaseArgTest = declarative_base(metadata=arg_metadata)
 
         class NDIndexArgErrorSchema(BaseArgTest):
