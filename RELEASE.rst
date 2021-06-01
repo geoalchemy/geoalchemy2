@@ -17,4 +17,4 @@ Go to https://readthedocs.org/projects/geoalchemy-2/builds/ and run the compilat
 the Latest version.
 
 Note that there's no need to manually upload the package to PyPI. This is
-done automatically by Travis when the release tag is pushed to GitHub.
+done automatically by the CI when the release tag is pushed to GitHub.
