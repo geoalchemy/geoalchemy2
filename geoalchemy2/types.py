@@ -94,6 +94,9 @@ class _GISType(UserDefinedType):
 
         Indicate if a spatial index should be created. Default is ``True``.
 
+    ``use_N_D_index``
+        Use the N-D index instead of the standard 2-D index.
+
     ``management``
 
         Indicate if the ``AddGeometryColumn`` and ``DropGeometryColumn``
@@ -129,7 +132,7 @@ class _GISType(UserDefinedType):
         geometry/geography columns. """
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
-                 spatial_index=True, management=False, use_typmod=None,
+                 spatial_index=True, use_N_D_index=False, management=False, use_typmod=None,
                  from_text=None, name=None):
         geometry_type, srid = self.check_ctor_args(
             geometry_type, srid, dimension, management, use_typmod)
@@ -141,6 +144,7 @@ class _GISType(UserDefinedType):
             self.from_text = from_text
         self.dimension = dimension
         self.spatial_index = spatial_index
+        self.use_N_D_index = use_N_D_index
         self.management = management
         self.use_typmod = use_typmod
         self.extended = self.as_binary == 'ST_AsEWKB'
