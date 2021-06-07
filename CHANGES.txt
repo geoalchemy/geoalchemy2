@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.9.0
+-----
+
+* Add many missing functions @adrien-berchet (#298)
+* Add support for N-D index creation @dlbrittain (#316)
+
 0.8.5
 -----
 
