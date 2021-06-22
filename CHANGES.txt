@@ -1,6 +1,11 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.9.1
+-----
+
+* Fix quotes in index creation @adrien-berchet (#321)
+
 0.9.0
 -----
 
