@@ -94,6 +94,7 @@ def _setup_ddl_event_listeners():
                     stmt = select([func.AddGeometryColumn(*args)])
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
+
                 # Add spatial indices for the Geometry and Geography columns
                 if isinstance(c.type, (Geometry, Geography)) and \
                         c.type.spatial_index is True:
@@ -103,19 +104,20 @@ def _setup_ddl_event_listeners():
                         bind.execute(stmt)
                     elif bind.dialect.name == 'postgresql':
 
-                        index_name = "idx_{}_{}".format(table.name, c.name)
+                        index_name = '"idx_{}_{}"'.format(table.name, c.name)
 
                         if c.type.use_N_D_index:
-                            gis_column = '{} gist_geometry_ops_nd'.format(c.name)
+                            gis_column = '"{}" gist_geometry_ops_nd'.format(c.name)
                         else:
-                            gis_column = c.name
+                            gis_column = '"{}"'.format(c.name)
 
                         if table.schema:
-                            table_name = "{}.{}".format(table.schema, table.name)
+                            table_name = '"{}"."{}"'.format(table.schema, table.name)
                         else:
-                            table_name = table.name
+                            table_name = '"{}"'.format(table.name)
 
-                        sql = "CREATE INDEX {} ON {} USING GIST ({})".format(index_name, table_name,
+                        sql = "CREATE INDEX {} ON {} USING GIST ({})".format(index_name,
+                                                                             table_name,
                                                                              gis_column)
 
                         q = text(sql)
