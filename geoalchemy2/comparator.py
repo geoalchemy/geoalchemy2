@@ -224,7 +224,7 @@ class Comparator(BaseComparator):
 
     def intersects_3d(self, other):
         """
-        The ``&&&`` operator returns TRUE if the n-D bounding box of geometry A 
+        The ``&&&`` operator returns TRUE if the n-D bounding box of geometry A
         intersects the n-D bounding box of geometry B.
         """
         return self.operate(INTERSECTS_3D, other, result_type=sqltypes.Boolean)
