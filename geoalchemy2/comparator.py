@@ -53,7 +53,7 @@ except ImportError:  # SQLA < 0.9  # pragma: no cover
 
 
 INTERSECTS = operators.custom_op('&&')
-INTERSECTS_3D = operators.custom_op('&&&')
+INTERSECTS_ND = operators.custom_op('&&&')
 OVERLAPS_OR_TO_LEFT = operators.custom_op('&<')
 OVERLAPS_OR_TO_RIGHT = operators.custom_op('&>')
 OVERLAPS_OR_BELOW = operators.custom_op('&<|')
@@ -227,4 +227,4 @@ class Comparator(BaseComparator):
         The ``&&&`` operator returns TRUE if the n-D bounding box of geometry A
         intersects the n-D bounding box of geometry B.
         """
-        return self.operate(INTERSECTS_3D, other, result_type=sqltypes.Boolean)
+        return self.operate(INTERSECTS_ND, other, result_type=sqltypes.Boolean)
