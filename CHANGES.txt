@@ -1,6 +1,11 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.9.2
+-----
+
+* Add support for N-D intersects '&&&' operator @dlbrittain (#324)
+
 0.9.1
 -----
 
