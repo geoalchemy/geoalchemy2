@@ -132,7 +132,7 @@ class TestOperator():
                   'FROM "table" ORDER BY dc LIMIT :param_1')
         assert s.compile().params == {u'geom_1': 'POINT(1 2)', u'param_1': 10}
 
-    def test_intersects_3d(self, geometry_table):
+    def test_intersects_nd(self, geometry_table):
         expr = geometry_table.c.geom.intersects_3d(
             "Box3D(ST_GeomFromEWKT('LINESTRING(1 2 3, 3 4 5, 5 6 5)'));")
         eq_sql(expr, '"table".geom &&& ST_GeomFromEWKT(:geom_1)')

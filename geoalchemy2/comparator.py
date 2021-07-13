@@ -222,7 +222,7 @@ class Comparator(BaseComparator):
         """
         return self.operate(DISTANCE_BOX, other, result_type=DOUBLE_PRECISION)
 
-    def intersects_3d(self, other):
+    def intersects_nd(self, other):
         """
         The ``&&&`` operator returns TRUE if the n-D bounding box of geometry A
         intersects the n-D bounding box of geometry B.
