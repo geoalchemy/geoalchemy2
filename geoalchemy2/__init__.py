@@ -90,6 +90,8 @@ def _setup_ddl_event_listeners():
                     ])
                     if c.type.use_typmod is not None:
                         args.append(c.type.use_typmod)
+                    if bind.dialect.name == 'sqlite':
+                        args.append(not c.type.nullable)
 
                     stmt = select([func.AddGeometryColumn(*args)])
                     stmt = stmt.execution_options(autocommit=True)

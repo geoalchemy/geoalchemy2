@@ -76,7 +76,8 @@ class TestInsertionCore():
         conn.execute(Lake.__table__.insert(), [
             {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'},
             {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326)},
-            {'geom': from_shape(LineString([[0, 0], [3, 3]]), srid=4326)}
+            {'geom': from_shape(LineString([[0, 0], [3, 3]]), srid=4326)},
+            {'geom': None}
         ])
 
         results = conn.execute(Lake.__table__.select())
@@ -102,6 +103,8 @@ class TestInsertionCore():
         assert wkt == 'LINESTRING(0 0, 3 3)'
         srid = session.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
+
+        assert rows[3] == (4, None)
 
 
 class TestInsertionORM():
@@ -305,3 +308,40 @@ class TestCallFunction():
         assert (
             r1.data == r2.data == r3.data == r4.data == r5.data == r6.data
             == r7.data)
+
+
+class TestNullable():
+
+    class NotNullableLake(Base):
+        __tablename__ = 'NotNullablelake'
+        id = Column(Integer, primary_key=True)
+        geom = Column(Geometry(geometry_type='LINESTRING', srid=4326,
+                               management=True, nullable=False))
+
+        def __init__(self, geom):
+            self.geom = geom
+
+    def setup(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+        self.conn = engine.connect()
+
+    def teardown(self):
+        self.conn.close()
+        metadata.drop_all()
+
+    def test_insert(self):
+        conn = self.conn
+
+        # Insert geometries
+        conn.execute(TestNullable.NotNullableLake.__table__.insert(), [
+            {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'},
+            {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326)},
+            {'geom': from_shape(LineString([[0, 0], [3, 3]]), srid=4326)}
+        ])
+
+        # Fail when trying to insert null geometry
+        with pytest.raises(IntegrityError):
+            conn.execute(TestNullable.NotNullableLake.__table__.insert(), [
+                {'geom': None}
+            ])
