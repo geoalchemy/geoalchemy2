@@ -296,10 +296,6 @@ class Geography(_GISType):
     """ The ``FromText`` geography constructor. Used by the parent class'
         ``bind_expression`` method. """
 
-    from_binary = 'ST_GeogFromWKB'
-    """ The ``FromBinary`` geography constructor. Used by the parent class'
-        ``bind_expression`` method. """
-
     as_binary = 'ST_AsBinary'
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
