@@ -123,6 +123,10 @@ class _GISType(UserDefinedType):
     """ The name of "from text" function for this type.
         Set in subclasses. """
 
+    from_binary = None
+    """ The name of "from binary" function for this type.
+        Set in subclasses. """
+
     as_binary = None
     """ The name of the "as binary" function for this type.
         Set in subclasses. """
@@ -161,6 +165,11 @@ class _GISType(UserDefinedType):
     def result_processor(self, dialect, coltype):
         def process(value):
             if value is not None:
+                if dialect.name == 'bigquery':
+                    element = WKBElement(value, srid=4326, extended=True)
+                    element.geom_from_extended_version = 'ST_GeogFromWKB'
+                    return element
+
                 kwargs = {}
                 if self.srid > 0:
                     kwargs['srid'] = self.srid
@@ -181,7 +190,10 @@ class _GISType(UserDefinedType):
                 else:
                     return 'SRID=%d;%s' % (bindvalue.srid, bindvalue.data)
             elif isinstance(bindvalue, WKBElement):
-                if dialect.name == 'sqlite' or not bindvalue.extended:
+                if (dialect.name == 'sqlite' or
+                    dialect.name == 'bigquery' or
+                    not bindvalue.extended
+                ):
                     # With SpatiaLite or when the WKBElement includes a WKB value rather
                     # than a EWKB value we use Shapely to convert the WKBElement to an
                     # EWKT string
@@ -286,6 +298,10 @@ class Geography(_GISType):
 
     from_text = 'ST_GeogFromText'
     """ The ``FromText`` geography constructor. Used by the parent class'
+        ``bind_expression`` method. """
+
+    from_binary = 'ST_GeogFromWKB'
+    """ The ``FromBinary`` geography constructor. Used by the parent class'
         ``bind_expression`` method. """
 
     as_binary = 'ST_AsBinary'

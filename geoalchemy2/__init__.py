@@ -123,6 +123,8 @@ def _setup_ddl_event_listeners():
                         q = text(sql)
 
                         bind.execute(q)
+                    elif bind.dialect.name == 'bigquery':
+                        pass  # No indexes for BigQuery
                     else:
                         raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
 
