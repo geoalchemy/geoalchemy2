@@ -123,10 +123,6 @@ class _GISType(UserDefinedType):
     """ The name of "from text" function for this type.
         Set in subclasses. """
 
-    from_binary = None
-    """ The name of "from binary" function for this type.
-        Set in subclasses. """
-
     as_binary = None
     """ The name of the "as binary" function for this type.
         Set in subclasses. """
