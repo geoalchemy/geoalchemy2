@@ -80,6 +80,10 @@ class TestGeometry():
         with pytest.warns(UserWarning):
             Geometry(management=False, use_typmod=True)
 
+    def test_check_ctor_args_use_typmod_nullable(self):
+        with pytest.raises(ArgumentError):
+            Geometry(use_typmod=True, nullable=False)
+
     def test_column_expression(self, geometry_table):
         s = select([geometry_table.c.geom])
         eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom FROM "table"')

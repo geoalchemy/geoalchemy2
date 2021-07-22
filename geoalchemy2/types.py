@@ -133,9 +133,9 @@ class _GISType(UserDefinedType):
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
                  spatial_index=True, use_N_D_index=False, management=False, use_typmod=None,
-                 from_text=None, name=None):
+                 from_text=None, name=None, nullable=True):
         geometry_type, srid = self.check_ctor_args(
-            geometry_type, srid, dimension, management, use_typmod)
+            geometry_type, srid, dimension, management, use_typmod, nullable)
         self.geometry_type = geometry_type
         self.srid = srid
         if name is not None:
@@ -148,6 +148,7 @@ class _GISType(UserDefinedType):
         self.management = management
         self.use_typmod = use_typmod
         self.extended = self.as_binary == 'ST_AsEWKB'
+        self.nullable = nullable
 
     def get_col_spec(self):
         if not self.geometry_type:
@@ -202,7 +203,7 @@ class _GISType(UserDefinedType):
         return process
 
     @staticmethod
-    def check_ctor_args(geometry_type, srid, dimension, management, use_typmod):
+    def check_ctor_args(geometry_type, srid, dimension, management, use_typmod, nullable):
         try:
             srid = int(srid)
         except ValueError:
@@ -231,6 +232,11 @@ class _GISType(UserDefinedType):
 
         if use_typmod and not management:
             warnings.warn('use_typmod ignored when management is False')
+        if use_typmod is not None and not nullable:
+            raise ArgumentError(
+                'The "nullable" and "use_typmod" arguments can not be used together'
+            )
+
         return geometry_type, srid
 
 
