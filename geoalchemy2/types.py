@@ -189,7 +189,7 @@ class _GISType(UserDefinedType):
                 if (dialect.name == 'sqlite' or
                     dialect.name == 'bigquery' or
                     not bindvalue.extended
-                ):
+                    ):
                     # With SpatiaLite or when the WKBElement includes a WKB value rather
                     # than a EWKB value we use Shapely to convert the WKBElement to an
                     # EWKT string
