@@ -17,6 +17,10 @@ Install SpatiaLite::
 
     $ sudo apt-get install libsqlite3-mod-spatialite
 
+Install MySQL::
+
+    $ sudo apt-get install mysql-client mysql-server
+
 Install the Python dependencies::
 
     $ pip install -r requirements.txt
@@ -56,6 +60,18 @@ For example, on Debian Sid, and relying on the official SpatiaLite Debian packag
 the SpatiaLite library is ``/usr/lib/x86_64-linux-gnu/mod_spatialite.so``, so you would use this::
 
     $ export SPATIALITE_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu/mod_spatialite.so"
+
+Set up the MySQL database
+=========================
+
+Create the ``gis`` role::
+
+    $ sudo mysql -e "CREATE USER 'gis'@'%' IDENTIFIED BY 'gis';"
+    $ sudo mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'gis'@'%' WITH GRANT OPTION;"
+
+Create the ``gis`` database::
+
+    $ mysql -u gis -p -e "CREATE DATABASE gis;"
 
 Run Tests
 =========
