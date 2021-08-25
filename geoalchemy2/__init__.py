@@ -93,7 +93,7 @@ def _setup_ddl_event_listeners():
                     if bind.dialect.name == 'sqlite':
                         args.append(not c.type.nullable)
 
-                    stmt = select([func.AddGeometryColumn(*args)])
+                    stmt = select(func.AddGeometryColumn(*args))
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
 
@@ -101,7 +101,7 @@ def _setup_ddl_event_listeners():
                 if isinstance(c.type, (Geometry, Geography)) and \
                         c.type.spatial_index is True:
                     if bind.dialect.name == 'sqlite':
-                        stmt = select([func.CreateSpatialIndex(table.name, c.name)])
+                        stmt = select(func.CreateSpatialIndex(table.name, c.name))
                         stmt = stmt.execution_options(autocommit=True)
                         bind.execute(stmt)
                     elif bind.dialect.name == 'postgresql':
