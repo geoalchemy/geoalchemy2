@@ -31,6 +31,7 @@ setup(
     setup_requires=["setuptools_scm"],
     install_requires=[
         'SQLAlchemy>=1.1',
+        'packaging'
     ],
     entry_points="""
     # -*- Entry points: -*-

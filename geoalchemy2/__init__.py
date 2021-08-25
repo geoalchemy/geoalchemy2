@@ -15,8 +15,20 @@ from .exc import ArgumentError
 from . import functions  # NOQA
 from . import types  # NOQA
 
+import sqlalchemy
 from sqlalchemy import Table, event
 from sqlalchemy.sql import select, func, expression, text
+
+from packaging import version
+
+_SQLALCHEMY_VERSION_BEFORE_14 = version.parse(sqlalchemy.__version__) < version.parse("1.4")
+
+
+def _format_select_args(*args):
+    if _SQLALCHEMY_VERSION_BEFORE_14:
+        return [args]
+    else:
+        return args
 
 
 def _setup_ddl_event_listeners():
@@ -69,7 +81,7 @@ def _setup_ddl_event_listeners():
                     args = [table.schema] if table.schema else []
                     args.extend([table.name, c.name])
 
-                    stmt = select([getattr(func, drop_func)(*args)])
+                    stmt = select(*_format_select_args(getattr(func, drop_func)(*args)))
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
 
@@ -93,7 +105,7 @@ def _setup_ddl_event_listeners():
                     if bind.dialect.name == 'sqlite':
                         args.append(not c.type.nullable)
 
-                    stmt = select([func.AddGeometryColumn(*args)])
+                    stmt = select(*_format_select_args(func.AddGeometryColumn(*args)))
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
 
@@ -101,7 +113,8 @@ def _setup_ddl_event_listeners():
                 if isinstance(c.type, (Geometry, Geography)) and \
                         c.type.spatial_index is True:
                     if bind.dialect.name == 'sqlite':
-                        stmt = select([func.CreateSpatialIndex(table.name, c.name)])
+                        stmt = select(*_format_select_args(func.CreateSpatialIndex(table.name,
+                                                                                   c.name)))
                         stmt = stmt.execution_options(autocommit=True)
                         bind.execute(stmt)
                     elif bind.dialect.name == 'postgresql':
