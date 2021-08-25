@@ -23,6 +23,7 @@ from packaging import version
 
 SQLALCHEMY_VERSION_BEFORE_14 = version.parse(sqlalchemy.__version__) < version.parse("1.4")
 
+
 def _setup_ddl_event_listeners():
     @event.listens_for(Table, "before_create")
     def before_create(target, connection, **kw):
