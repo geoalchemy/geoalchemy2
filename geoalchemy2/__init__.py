@@ -69,7 +69,7 @@ def _setup_ddl_event_listeners():
                     args = [table.schema] if table.schema else []
                     args.extend([table.name, c.name])
 
-                    stmt = select([getattr(func, drop_func)(*args)])
+                    stmt = select(getattr(func, drop_func)(*args))
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
 
