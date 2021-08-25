@@ -21,7 +21,14 @@ from sqlalchemy.sql import select, func, expression, text
 
 from packaging import version
 
-SQLALCHEMY_VERSION_BEFORE_14 = version.parse(sqlalchemy.__version__) < version.parse("1.4")
+_SQLALCHEMY_VERSION_BEFORE_14 = version.parse(sqlalchemy.__version__) < version.parse("1.4")
+
+
+def _format_select_args(*args):
+    if _SQLALCHEMY_VERSION_BEFORE_14:
+        return [args]
+    else:
+        return args
 
 
 def _setup_ddl_event_listeners():
@@ -74,10 +81,7 @@ def _setup_ddl_event_listeners():
                     args = [table.schema] if table.schema else []
                     args.extend([table.name, c.name])
 
-                    if SQLALCHEMY_VERSION_BEFORE_14:
-                        stmt = select([getattr(func, drop_func)(*args)])
-                    else:
-                        stmt = select(getattr(func, drop_func)(*args))
+                    stmt = select(*_format_select_args(getattr(func, drop_func)(*args)))
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
 
@@ -101,10 +105,7 @@ def _setup_ddl_event_listeners():
                     if bind.dialect.name == 'sqlite':
                         args.append(not c.type.nullable)
 
-                    if SQLALCHEMY_VERSION_BEFORE_14:
-                        stmt = select([func.AddGeometryColumn(*args)])
-                    else:
-                        stmt = select(func.AddGeometryColumn(*args))
+                    stmt = select(*_format_select_args(func.AddGeometryColumn(*args)))
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
 
@@ -112,10 +113,8 @@ def _setup_ddl_event_listeners():
                 if isinstance(c.type, (Geometry, Geography)) and \
                         c.type.spatial_index is True:
                     if bind.dialect.name == 'sqlite':
-                        if SQLALCHEMY_VERSION_BEFORE_14:
-                            stmt = select([func.CreateSpatialIndex(table.name, c.name)])
-                        else:
-                            stmt = select(func.CreateSpatialIndex(table.name, c.name))
+                        stmt = select(*_format_select_args(func.CreateSpatialIndex(table.name,
+                                                                                   c.name)))
                         stmt = stmt.execution_options(autocommit=True)
                         bind.execute(stmt)
                     elif bind.dialect.name == 'postgresql':
