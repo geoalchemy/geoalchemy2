@@ -752,7 +752,7 @@ _FUNCTIONS = [
      ('''Compute quantiles for a raster or raster table coverage in the context of the sample or population. Thus, a value could be examined to be at the raster's 25%, 50%, 75% percentile.''', 'RT_ST_Quantile')),
     ('ST_SummaryStats', None,
      ('''Returns summarystats consisting of count, sum, mean, stddev, min, max for a given raster band of a raster or raster coverage. Band 1 is assumed is no band is specified.''', 'RT_ST_SummaryStats')),
-    ('ST_SummaryStatsAgg', None,
+    ('ST_SummaryStatsAgg', types.SummaryStats,
      ('''Aggregate. Returns summarystats consisting of count, sum, mean, stddev, min, max for a given raster band of a set of raster. Band 1 is assumed is no band is specified.''', 'RT_ST_SummaryStatsAgg')),
     ('ST_ValueCount', None,
      ('''Returns a set of records containing a pixel band value and count of the number of pixels in a given band of a raster (or a raster coverage) that have a given set of values. If no band is specified defaults to band 1. By default nodata value pixels are not counted. and all other values in the pixel are output and pixel band values are rounded to the nearest integer.''', 'RT_ST_ValueCount')),

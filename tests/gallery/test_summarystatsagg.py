@@ -34,6 +34,8 @@ class SummaryStats(CompositeType):
 
 class ST_SummaryStatsAgg(GenericFunction):
     type = SummaryStats
+    # Set a specific identifier to not override the actual ST_SummaryStatsAgg function
+    identifier = "ST_SummaryStatsAgg_specific"
 
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
@@ -72,7 +74,7 @@ class TestSTSummaryStatsAgg():
 
         # Define the query to compute stats
         stats_agg = select([
-            func.ST_SummaryStatsAgg(Ocean.__table__.c.rast, 1, True, 1).label("stats")
+            func.ST_SummaryStatsAgg_specific(Ocean.__table__.c.rast, 1, True, 1).label("stats")
         ])
         stats_agg_alias = stats_agg.alias("stats_agg")
 

@@ -8,7 +8,7 @@ Reference
 """
 import warnings
 
-from sqlalchemy.types import UserDefinedType, Integer
+from sqlalchemy.types import UserDefinedType, Integer, Float
 from sqlalchemy.sql import func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names
@@ -391,3 +391,15 @@ class GeometryDump(CompositeType):
 ischema_names['geometry'] = Geometry
 ischema_names['geography'] = Geography
 ischema_names['raster'] = Raster
+
+
+class SummaryStats(CompositeType):
+    """Define the composite type returned by the function ST_SummaryStatsAgg"""
+    typemap = {
+        'count': Integer,
+        'sum': Float,
+        'mean': Float,
+        'stddev': Float,
+        'min': Float,
+        'max': Float,
+    }
