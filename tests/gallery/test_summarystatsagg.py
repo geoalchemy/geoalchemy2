@@ -20,8 +20,8 @@ from geoalchemy2.functions import GenericFunction
 from geoalchemy2.types import CompositeType
 
 
-class SummaryStats(CompositeType):
-    """Define the composite type returned by the function ST_SummaryStatsAgg"""
+class SummaryStatsCustomType(CompositeType):
+    """Define the composite type returned by the function ST_SummaryStatsAgg."""
     typemap = {
         'count': Integer,
         'sum': Float,
@@ -33,7 +33,9 @@ class SummaryStats(CompositeType):
 
 
 class ST_SummaryStatsAgg(GenericFunction):
-    type = SummaryStats
+    type = SummaryStatsCustomType
+    # Set a specific identifier to not override the actual ST_SummaryStatsAgg function
+    identifier = "ST_SummaryStatsAgg_custom"
 
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
@@ -72,7 +74,7 @@ class TestSTSummaryStatsAgg():
 
         # Define the query to compute stats
         stats_agg = select([
-            func.ST_SummaryStatsAgg(Ocean.__table__.c.rast, 1, True, 1).label("stats")
+            func.ST_SummaryStatsAgg_custom(Ocean.__table__.c.rast, 1, True, 1).label("stats")
         ])
         stats_agg_alias = stats_agg.alias("stats_agg")
 
