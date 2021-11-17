@@ -8,7 +8,6 @@ kind of functions.
 from sqlalchemy import Column
 from sqlalchemy import create_engine
 from sqlalchemy import Float
-from sqlalchemy import func
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import select
@@ -73,25 +72,27 @@ class TestSTSummaryStatsAgg():
         session.flush()
 
         # Define the query to compute stats
-        stats_agg = select([
-            func.ST_SummaryStatsAgg_custom(Ocean.__table__.c.rast, 1, True, 1).label("stats")
-        ])
+        stats_agg = select(
+            Ocean.rast.ST_SummaryStatsAgg_custom(1, True, 1).label("stats")
+        )
         stats_agg_alias = stats_agg.alias("stats_agg")
 
         # Use these stats
-        query = select([
+        query = select(
             stats_agg_alias.c.stats.count.label("count"),
             stats_agg_alias.c.stats.sum.label("sum"),
+            stats_agg_alias.c.stats.mean.label("mean"),
             stats_agg_alias.c.stats.stddev.label("stddev"),
             stats_agg_alias.c.stats.min.label("min"),
             stats_agg_alias.c.stats.max.label("max")
-        ])
+        )
 
         # Check the query
         assert str(query) == (
             "SELECT "
             "(stats_agg.stats).count AS count, "
             "(stats_agg.stats).sum AS sum, "
+            "(stats_agg.stats).mean AS mean, "
             "(stats_agg.stats).stddev AS stddev, "
             "(stats_agg.stats).min AS min, "
             "(stats_agg.stats).max AS max \n"
@@ -108,4 +109,4 @@ class TestSTSummaryStatsAgg():
         res = session.execute(query).fetchall()
 
         # Check the result
-        assert res == [(15, 15.0, 0.0, 1.0, 1.0)]
+        assert res == [(15, 15.0, 1.0, 0.0, 1.0, 1.0)]
