@@ -5,6 +5,10 @@ Use CompositeType
 Some functions return composite types. This example shows how to deal with this
 kind of functions.
 """
+import pytest
+from pkg_resources import parse_version
+
+from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import Column
 from sqlalchemy import create_engine
 from sqlalchemy import Float
@@ -63,6 +67,10 @@ class TestSTSummaryStatsAgg():
         session.rollback()
         metadata.drop_all()
 
+    @pytest.mark.skipif(
+        parse_version(SA_VERSION) < parse_version("1.4"),
+        reason="requires SQLAlchely>1.4",
+    )
     def test_st_summary_stats_agg(self):
 
         # Create a new raster
