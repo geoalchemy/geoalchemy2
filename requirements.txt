@@ -1,4 +1,5 @@
 # Additional requirements for running the testsuite and development
+more-itertools!=8.11; python_version == '3.5'
 flake8==3.7.9
 pytest==3.7.4
 pytest-cov==2.5.1

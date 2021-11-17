@@ -370,8 +370,8 @@ class CompositeType(UserDefinedType):
             try:
                 type_ = self.type.typemap[key]
             except KeyError:
-                raise KeyError("Type '%s' doesn't have an attribute: '%s'"
-                               % (self.type, key))
+                raise AttributeError("Type '%s' doesn't have an attribute: '%s'"
+                                     % (self.type, key))
 
             return CompositeElement(self.expr, key, type_)
 

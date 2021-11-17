@@ -1068,20 +1068,36 @@ class TestSTSummaryStatsAgg():
         session.add(o)
         session.flush()
 
-        # Define the query to compute stats
-        stats_agg = select([
-            func.ST_SummaryStatsAgg(Ocean.__table__.c.rast, 1, True, 1).label("stats")
-        ])
-        stats_agg_alias = stats_agg.alias("stats_agg")
+        if parse_version(SA_VERSION) < parse_version("1.4"):
+            # Define the query to compute stats
+            stats_agg = select([
+                func.ST_SummaryStatsAgg(Ocean.__table__.c.rast, 1, True, 1).label("stats")
+            ])
+            stats_agg_alias = stats_agg.alias("stats_agg")
 
-        # Use these stats
-        query = select([
-            stats_agg_alias.c.stats.count.label("count"),
-            stats_agg_alias.c.stats.sum.label("sum"),
-            stats_agg_alias.c.stats.stddev.label("stddev"),
-            stats_agg_alias.c.stats.min.label("min"),
-            stats_agg_alias.c.stats.max.label("max")
-        ])
+            # Use these stats
+            query = select([
+                stats_agg_alias.c.stats.count.label("count"),
+                stats_agg_alias.c.stats.sum.label("sum"),
+                stats_agg_alias.c.stats.stddev.label("stddev"),
+                stats_agg_alias.c.stats.min.label("min"),
+                stats_agg_alias.c.stats.max.label("max")
+            ])
+        else:
+            # Define the query to compute stats
+            stats_agg = select(
+                func.ST_SummaryStatsAgg(Ocean.__table__.c.rast, 1, True, 1).label("stats")
+            )
+            stats_agg_alias = stats_agg.alias("stats_agg")
+
+            # Use these stats
+            query = select(
+                stats_agg_alias.c.stats.count.label("count"),
+                stats_agg_alias.c.stats.sum.label("sum"),
+                stats_agg_alias.c.stats.stddev.label("stddev"),
+                stats_agg_alias.c.stats.min.label("min"),
+                stats_agg_alias.c.stats.max.label("max")
+            )
 
         # Check the query
         assert str(query) == (
