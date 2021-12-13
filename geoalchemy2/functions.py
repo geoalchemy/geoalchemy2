@@ -75,6 +75,9 @@ class _GenericMeta(functions._GenericMeta):
 
 
 class TableRowElement(ColumnElement):
+
+    inherit_cache = True
+
     def __init__(self, selectable):
         self.selectable = selectable
 
@@ -88,6 +91,7 @@ class ST_AsGeoJSON(with_metaclass(_GenericMeta, functions.GenericFunction)):
     feature version introduced in PostGIS 3."""
 
     name = "ST_AsGeoJSON"
+    inherit_cache = True
 
     def __init__(self, *args, **kwargs):
         expr = kwargs.pop('expr', None)
@@ -197,7 +201,10 @@ class GenericFunction(with_metaclass(_GenericMeta, functions.GenericFunction)):
 
 # Iterate through _FUNCTIONS and create GenericFunction classes dynamically
 for name, type_, doc in _FUNCTIONS:
-    attributes = {'name': name}
+    attributes = {
+        'name': name,
+        'inherit_cache': True,
+    }
     docs = []
 
     if isinstance(doc, tuple):

@@ -253,6 +253,8 @@ class CompositeElement(FunctionElement):
     Instances of this class wrap a Postgres composite type.
     """
 
+    inherit_cache = True
+
     def __init__(self, base, field, type_):
         self.name = field
         self.type = to_instance(type_)

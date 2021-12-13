@@ -34,11 +34,15 @@ class SummaryStatsCustomType(CompositeType):
         'max': Float,
     }
 
+    cache_ok = True
+
 
 class ST_SummaryStatsAgg(GenericFunction):
     type = SummaryStatsCustomType
     # Set a specific identifier to not override the actual ST_SummaryStatsAgg function
     identifier = "ST_SummaryStatsAgg_custom"
+
+    inherit_cache = True
 
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
