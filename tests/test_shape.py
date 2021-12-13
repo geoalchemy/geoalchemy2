@@ -1,4 +1,3 @@
-from geoalchemy2.compat import buffer, bytes, str
 from geoalchemy2.elements import WKBElement, WKTElement
 from geoalchemy2.shape import from_shape, to_shape
 
@@ -60,7 +59,7 @@ def test_from_shape():
     p = Point(1, 2)
     e = from_shape(p)
     assert isinstance(e, WKBElement)
-    assert isinstance(e.data, buffer)
+    assert isinstance(e.data, memoryview)
     assert e == expected
 
     s = shapely.wkb.loads(bytes(e.data))
@@ -72,7 +71,7 @@ def test_from_shape():
     p = Point(1, 2)
     e2 = from_shape(p, srid=2154)
     assert isinstance(e2, WKBElement)
-    assert isinstance(e2.data, buffer)
+    assert isinstance(e2.data, memoryview)
     assert e2 == expected2
 
     s2 = shapely.wkb.loads(bytes(e2.data))
@@ -85,7 +84,7 @@ def test_from_shape():
         extended=True)
     e3 = from_shape(p, srid=2154, extended=True)
     assert isinstance(e3, WKBElement)
-    assert isinstance(e3.data, buffer)
+    assert isinstance(e3.data, memoryview)
     assert e3 == expected3
 
     s3 = shapely.wkb.loads(bytes(e3.data))

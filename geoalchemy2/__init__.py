@@ -2,13 +2,13 @@ from .types import (  # NOQA
     Geometry,
     Geography,
     Raster
-    )
+)
 
 from .elements import (  # NOQA
     WKTElement,
     WKBElement,
     RasterElement
-    )
+)
 
 from .exc import ArgumentError
 

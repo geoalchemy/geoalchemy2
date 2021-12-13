@@ -10,15 +10,10 @@ except ImportError:  # SQLA < 0.9  # pragma: no cover
 from sqlalchemy.types import to_instance
 from sqlalchemy.ext.compiler import compiles
 
-from .compat import PY3, str as str_
 from .exc import ArgumentError
 
 
-if PY3:
-    BinasciiError = binascii.Error
-else:
-    BinasciiError = TypeError
-
+BinasciiError = binascii.Error
 
 function_registry = set()
 
@@ -190,14 +185,12 @@ class WKBElement(_SpatialElement):
             #     WKB_XDR = 0,  // Most Significant Byte First
             #     WKB_NDR = 1,  // Least Significant Byte First
             # }
-            if isinstance(data, str_):
+            if isinstance(data, str):
                 # SpatiaLite case
                 # assume that the string is an hex value
                 header = binascii.unhexlify(data[:18])
             else:
                 header = data[:9]
-            if not PY3:
-                header = bytearray(header)
             byte_order, srid = header[0], header[5:]
             srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
         _SpatialElement.__init__(self, data, srid, extended)
@@ -207,19 +200,15 @@ class WKBElement(_SpatialElement):
         """
         This element's description string.
         """
-        if isinstance(self.data, str_):
+        if isinstance(self.data, str):
             # SpatiaLite case
             return self.data
-        desc = binascii.hexlify(self.data)
-        if PY3:
-            # hexlify returns a bytes object on py3
-            desc = str(desc, encoding="utf-8")
+        desc = str(binascii.hexlify(self.data), encoding="utf-8")
         return desc
 
     @staticmethod
     def _data_from_desc(desc):
-        if PY3:
-            desc = desc.encode(encoding="utf-8")
+        desc = desc.encode(encoding="utf-8")
         return binascii.unhexlify(desc)
 
 
@@ -244,8 +233,6 @@ class RasterElement(_SpatialElement):
             data = str(binascii.hexlify(data).decode(encoding='utf-8'))
         byte_order = bin_data[0]
         srid = bin_data[53:57]
-        if not PY3:
-            byte_order = bytearray(byte_order)[0]
         srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
         _SpatialElement.__init__(self, data, srid, True)
 

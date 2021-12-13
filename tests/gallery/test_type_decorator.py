@@ -8,10 +8,6 @@ are projected in the DB. To avoid having to always tweak the query with a
 ``ST_Transform()``, it is possible to define a `TypeDecorator
 <https://docs.sqlalchemy.org/en/13/core/custom_types.html#sqlalchemy.types.TypeDecorator>`_
 """
-from pkg_resources import parse_version
-import pytest
-
-import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy import Column
@@ -21,7 +17,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import TypeDecorator
 
-from geoalchemy2.compat import PY3
 from geoalchemy2 import Geometry
 from geoalchemy2 import shape
 
@@ -148,9 +143,6 @@ class TestTypeDecorator():
         assert pt_trans[2].srid == 2154
         check_wkb(pt_trans[2], 857581.89932, 6435414.74784)
 
-    @pytest.mark.skipif(
-        not PY3 and parse_version(str(sqlalchemy.__version__)) < parse_version("1.3"),
-        reason="Need sqlalchemy >= 1.3")
     def test_force_3d(self):
         self._create_one_point()
 
