@@ -8,7 +8,6 @@ from geoalchemy2.types import Geometry
 from geoalchemy2.elements import (
     WKTElement, WKBElement, RasterElement, CompositeElement
 )
-from geoalchemy2.compat import buffer as buffer_, bytes as bytes_, str as str_
 from geoalchemy2.exc import ArgumentError
 
 
@@ -187,9 +186,9 @@ class TestExtendedWKBElement():
 
     # _bin/_hex computed by following query:
     # SELECT ST_GeomFromEWKT('SRID=3;POINT(1 2)');
-    _bin = buffer_(b'\x01\x01\x00\x00 \x03\x00\x00\x00\x00\x00\x00'
-                   b'\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@')
-    _hex = str_('010100002003000000000000000000f03f0000000000000040')
+    _bin = memoryview(b'\x01\x01\x00\x00 \x03\x00\x00\x00\x00\x00\x00'
+                      b'\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@')
+    _hex = str('010100002003000000000000000000f03f0000000000000040')
     _srid = 3  # expected srid
     _wkt = 'POINT (1 2)'  # expected wkt
 
@@ -223,14 +222,14 @@ class TestExtendedWKBElement():
         unpickled = pickle.loads(pickled)
         assert unpickled.srid == self._srid
         assert unpickled.extended is True
-        assert unpickled.data == bytes_(self._bin)
+        assert unpickled.data == bytes(self._bin)
         f = unpickled.ST_Buffer(2)
         eq_sql(f, 'ST_Buffer('
                'ST_GeomFromEWKB(:ST_GeomFromEWKB_1), '
                ':ST_Buffer_1)')
         assert f.compile().params == {
             u'ST_Buffer_1': 2,
-            u'ST_GeomFromEWKB_1': bytes_(self._bin),
+            u'ST_GeomFromEWKB_1': bytes(self._bin),
         }
 
     def test_unpack_srid_from_bin(self):
@@ -240,12 +239,12 @@ class TestExtendedWKBElement():
         """
         e = WKBElement(self._bin, extended=True)
         assert e.srid == self._srid
-        assert wkb.loads(bytes_(e.data)).wkt == self._wkt
+        assert wkb.loads(bytes(e.data)).wkt == self._wkt
 
     def test_unpack_srid_from_bin_forcing_srid(self):
         e = WKBElement(self._bin, srid=9999, extended=True)
         assert e.srid == 9999
-        assert wkb.loads(bytes_(e.data)).wkt == self._wkt
+        assert wkb.loads(bytes(e.data)).wkt == self._wkt
 
     def test_unpack_srid_from_hex(self):
         e = WKBElement(self._hex, extended=True)
@@ -293,10 +292,10 @@ class TestNotEqualSpatialElement():
 
     # _bin/_hex computed by following query:
     # SELECT ST_GeomFromEWKT('SRID=3;POINT(1 2)');
-    _ewkb = buffer_(b'\x01\x01\x00\x00 \x03\x00\x00\x00\x00\x00\x00'
-                    b'\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@')
-    _wkb = wkb.loads(bytes_(_ewkb)).wkb
-    _hex = str_('010100002003000000000000000000f03f0000000000000040')
+    _ewkb = memoryview(b'\x01\x01\x00\x00 \x03\x00\x00\x00\x00\x00\x00'
+                       b'\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@')
+    _wkb = wkb.loads(bytes(_ewkb)).wkb
+    _hex = str('010100002003000000000000000000f03f0000000000000040')
     _srid = 3
     _wkt = 'POINT (1 2)'
     _ewkt = 'SRID=3;POINT (1 2)'

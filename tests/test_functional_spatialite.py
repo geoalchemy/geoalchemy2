@@ -15,7 +15,6 @@ from sqlalchemy.sql import select, func
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement, WKBElement
 from geoalchemy2.shape import from_shape, to_shape
-from geoalchemy2.compat import str as str_
 
 from shapely.geometry import LineString
 
@@ -169,7 +168,7 @@ class TestShapely():
         session.expire(lake)
         lake = session.query(Lake).one()
         assert isinstance(lake.geom, WKBElement)
-        assert isinstance(lake.geom.data, str_)
+        assert isinstance(lake.geom.data, str)
         assert lake.geom.srid == 4326
         s = to_shape(lake.geom)
         assert isinstance(s, LineString)
@@ -179,7 +178,7 @@ class TestShapely():
         session.flush()
         session.expire(lake)
         assert isinstance(lake.geom, WKBElement)
-        assert isinstance(lake.geom.data, str_)
+        assert isinstance(lake.geom.data, str)
         assert lake.geom.srid == 4326
 
 

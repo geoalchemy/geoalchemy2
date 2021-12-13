@@ -12,7 +12,6 @@ import shapely.wkb
 import shapely.wkt
 
 from .elements import WKBElement, WKTElement
-from .compat import buffer, bytes, str
 
 if parse_version(shapely.__version__) < parse_version("1.7"):
     ######################################################################
@@ -99,6 +98,6 @@ def from_shape(shape, srid=-1, extended=False):
         ewkb_element = from_shape(Point(5, 45), srid=4326, extended=True)
     """
     return WKBElement(
-        buffer(dumps(shape, srid=srid if extended else None)),
+        memoryview(dumps(shape, srid=srid if extended else None)),
         srid=srid,
         extended=extended)
