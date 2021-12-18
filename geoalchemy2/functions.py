@@ -76,7 +76,7 @@ class _GenericMeta(functions._GenericMeta):
 
 class TableRowElement(ColumnElement):
 
-    inherit_cache = True
+    inherit_cache = False
 
     def __init__(self, selectable):
         self.selectable = selectable
