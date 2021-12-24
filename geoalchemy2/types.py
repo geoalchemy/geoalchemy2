@@ -131,6 +131,9 @@ class _GISType(UserDefinedType):
     """ This is the way by which spatial operators are defined for
         geometry/geography columns. """
 
+    cache_ok = False
+    """ Disable cache for this type. """
+
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
                  spatial_index=True, use_N_D_index=False, management=False, use_typmod=None,
                  from_text=None, name=None, nullable=True):
@@ -273,6 +276,9 @@ class Geometry(_GISType):
     """ The element class to use. Used by the parent class'
         ``result_processor`` method. """
 
+    cache_ok = False
+    """ Disable cache for this type. """
+
 
 class Geography(_GISType):
     """
@@ -301,6 +307,9 @@ class Geography(_GISType):
     ElementType = WKBElement
     """ The element class to use. Used by the parent class'
         ``result_processor`` method. """
+
+    cache_ok = False
+    """ Disable cache for this type. """
 
 
 class Raster(_GISType):
@@ -344,6 +353,9 @@ class Raster(_GISType):
     """ The element class to use. Used by the parent class'
         ``result_processor`` method. """
 
+    cache_ok = False
+    """ Disable cache for this type. """
+
     def __init__(self, *args, **kwargs):
         # Enforce default values
         kwargs['geometry_type'] = None
@@ -385,6 +397,9 @@ class GeometryDump(CompositeType):
     typemap = {'path': postgresql.ARRAY(Integer), 'geom': Geometry}
     """ Dictionary defining the contents of a ``geometry_dump``. """
 
+    cache_ok = True
+    """ Enable cache for this type. """
+
 
 # Register Geometry, Geography and Raster to SQLAlchemy's Postgres reflection
 # subsystem.
@@ -403,3 +418,6 @@ class SummaryStats(CompositeType):
         'min': Float,
         'max': Float,
     }
+
+    cache_ok = True
+    """ Enable cache for this type. """
