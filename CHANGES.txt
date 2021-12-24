@@ -1,6 +1,14 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.10.0
+------
+
+* Fix cache warnings @adrien-berchet (#338)
+* Drop support for Python < 3.6 @adrien-berchet (#337)
+* Change KeyError into AttributeError in the comparator_factory of CompositeType @adrien-berchet (#335)
+* Add SummaryStats type for the ST_SummaryStatsAgg function @adrien-berchet (#334)
+
 0.9.4
 -----
 
