@@ -1,5 +1,7 @@
-from json import loads
 import os
+import re
+from json import loads
+
 from pkg_resources import parse_version
 import pytest
 import platform
@@ -11,6 +13,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.event import listen
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import select, func
+from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement, WKBElement
@@ -49,6 +52,39 @@ class Lake(Base):
 
     def __init__(self, geom):
         self.geom = geom
+
+
+class TransformedGeometry(TypeDecorator):
+    """This class is used to insert a ST_Transform() in each insert or select."""
+    impl = Geometry
+
+    def __init__(self, db_srid, app_srid, **kwargs):
+        kwargs["srid"] = db_srid
+        self.impl = self.__class__.impl(**kwargs)
+        self.app_srid = app_srid
+        self.db_srid = db_srid
+
+    def column_expression(self, col):
+        """The column_expression() method is overrided to ensure that the
+        SRID of the resulting WKBElement is correct"""
+        return getattr(func, self.impl.as_binary)(
+            func.ST_Transform(col, self.app_srid),
+            type_=self.__class__.impl(srid=self.app_srid)
+            # srid could also be -1 so that the SRID is deduced from the
+            # WKB data
+        )
+
+    def bind_expression(self, bindvalue):
+        return func.ST_Transform(
+            self.impl.bind_expression(bindvalue), self.db_srid)
+
+
+class LocalPoint(Base):
+    __tablename__ = "local_point"
+    id = Column(Integer, primary_key=True)
+    geom = Column(
+        TransformedGeometry(
+            db_srid=2154, app_srid=4326, geometry_type="POINT", management=True))
 
 
 session = sessionmaker(bind=engine)()
@@ -149,6 +185,32 @@ class TestInsertionORM():
         assert wkt == 'LINESTRING(0 0, 1 1)'
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
+
+    def test_transform(self):
+        # Create new point instance
+        p = LocalPoint()
+        p.geom = "SRID=4326;POINT(5 45)"  # Insert 2D geometry into 3D column
+
+        # Insert point
+        session.add(p)
+        session.flush()
+        session.expire(p)
+
+        # Query the point and check the result
+        pt = session.query(LocalPoint).one()
+        assert pt.id == 1
+        assert pt.geom.srid == 4326
+        pt_wkb = to_shape(pt.geom)
+        assert round(pt_wkb.x, 5) == 5
+        assert round(pt_wkb.y, 5) == 45
+
+        # Check that the data is correct in DB using raw query
+        q = "SELECT id, ST_AsText(geom) AS geom FROM local_point;"
+        res_q = session.execute(q).fetchone()
+        assert res_q.id == 1
+        x, y = re.match(r"POINT\((\d+\.\d*) (\d+\.\d*)\)", res_q.geom).groups()
+        assert round(float(x), 3) == 857581.899
+        assert round(float(y), 3) == 6435414.748
 
 
 class TestShapely():

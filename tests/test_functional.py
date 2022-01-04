@@ -19,6 +19,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import DataError, IntegrityError, InternalError, ProgrammingError
 from sqlalchemy.sql import select, func
 from sqlalchemy.sql.expression import type_coerce
+from sqlalchemy.types import TypeDecorator
 from sqlalchemy import __version__ as SA_VERSION
 
 from geoalchemy2 import Geometry, Geography, Raster
@@ -73,6 +74,20 @@ class Summit(Base):
 
     def __init__(self, geom):
         self.geom = geom
+
+
+class ThreeDGeometry(TypeDecorator):
+    """This class is used to insert a ST_Force3D() in each insert."""
+    impl = Geometry
+
+    def bind_expression(self, bindvalue):
+        return func.ST_Force3D(self.impl.bind_expression(bindvalue))
+
+
+class PointZ(Base):
+    __tablename__ = "point_z"
+    id = Column(Integer, primary_key=True)
+    three_d_geom = Column(ThreeDGeometry(srid=4326, geometry_type="POINTZ", dimension=3))
 
 
 class IndexTestWithSchema(Base):
@@ -197,6 +212,13 @@ class TestIndex():
         assert indices[0].get('column_names')[0] in (u'geom1', u'geom2')
         assert not indices[1].get('unique')
         assert indices[1].get('column_names')[0] in (u'geom1', u'geom2')
+
+    def test_type_decorator_index(self):
+        inspector = get_inspector(engine)
+        indices = inspector.get_indexes(PointZ.__tablename__)
+        assert len(indices) == 1
+        assert not indices[0].get('unique')
+        assert indices[0].get('column_names') == ['three_d_geom']
 
 
 class TestTypMod():
