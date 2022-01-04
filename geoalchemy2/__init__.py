@@ -16,7 +16,7 @@ from . import functions  # NOQA
 from . import types  # NOQA
 
 import sqlalchemy
-from sqlalchemy import Table, event
+from sqlalchemy import Column, Index, Table, event
 from sqlalchemy.sql import select, func, expression, text
 from sqlalchemy.types import TypeDecorator
 
@@ -40,6 +40,10 @@ def _check_spatial_type(tested_type, spatial_types, dialect):
             and isinstance(tested_type.load_dialect_impl(dialect), spatial_types)
         )
     )
+
+
+def _spatial_idx_name(table, column):
+    return '"idx_{}_{}"'.format(table.name, column.name)
 
 
 def _setup_ddl_event_listeners():
@@ -95,6 +99,23 @@ def _setup_ddl_event_listeners():
                     stmt = select(*_format_select_args(getattr(func, drop_func)(*args)))
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
+            elif event == 'before-create':
+                # Remove the spatial indexes from the table metadata because they should not be
+                # created during the table.create() step since the associated columns do not exist
+                # at this time.
+                table.info["_after_create_indexes"] = []
+                current_indexes = set(table.indexes)
+                for idx in current_indexes:
+                    for c in table.info["_saved_columns"]:
+                        if (
+                            isinstance(c.type, Geometry)
+                        ) and c in idx.columns.values():
+                            table.indexes.remove(idx)
+                            if (
+                                idx.name != _spatial_idx_name(table, c)
+                                or not getattr(c.type, "spatial_index", False)
+                            ):
+                                table.info["_after_create_indexes"].append(idx)
 
         elif event == 'after-create':
             # Restore original column list including managed Geometry columns
@@ -134,26 +155,12 @@ def _setup_ddl_event_listeners():
                         stmt = stmt.execution_options(autocommit=True)
                         bind.execute(stmt)
                     elif bind.dialect.name == 'postgresql':
+                        # If the index does not exist (which might be the case when
+                        # management=False), define it and create it
+                        if not [i for i in table.indexes if c in i.columns.values()]:
+                            idx = Index(_spatial_idx_name(table, c), c, postgresql_using='gist')
+                            idx.create(bind=bind)
 
-                        index_name = '"idx_{}_{}"'.format(table.name, c.name)
-
-                        if c.type.use_N_D_index:
-                            gis_column = '"{}" gist_geometry_ops_nd'.format(c.name)
-                        else:
-                            gis_column = '"{}"'.format(c.name)
-
-                        if table.schema:
-                            table_name = '"{}"."{}"'.format(table.schema, table.name)
-                        else:
-                            table_name = '"{}"'.format(table.name)
-
-                        sql = "CREATE INDEX {} ON {} USING GIST ({})".format(index_name,
-                                                                             table_name,
-                                                                             gis_column)
-
-                        q = text(sql)
-
-                        bind.execute(q)
                     else:
                         raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
 
@@ -176,6 +183,11 @@ def _setup_ddl_event_listeners():
                                  'USING GIST (ST_ConvexHull("%s"))' %
                                  (table.name, c.name, table.name, c.name))
                     bind.execute(q)
+
+            for idx in table.info["_after_create_indexes"]:
+                table.indexes.add(idx)
+                idx.create(bind=bind)
+            table.info.pop("_after_create_indexes")
 
         elif event == 'after-drop':
             # Restore original column list including managed Geometry columns
