@@ -18,6 +18,7 @@ from . import types  # NOQA
 import sqlalchemy
 from sqlalchemy import Table, event
 from sqlalchemy.sql import select, func, expression, text
+from sqlalchemy.types import TypeDecorator
 
 from packaging import version
 
@@ -29,6 +30,16 @@ def _format_select_args(*args):
         return [args]
     else:
         return args
+
+
+def _check_spatial_type(tested_type, spatial_types):
+    return (
+        isinstance(tested_type, spatial_types)
+        or (
+            isinstance(tested_type, TypeDecorator)
+            and isinstance(tested_type.impl, spatial_types)
+        )
+    )
 
 
 def _setup_ddl_event_listeners():
@@ -53,8 +64,8 @@ def _setup_ddl_event_listeners():
             # Filter Geometry columns from the table with management=True
             # Note: Geography and PostGIS >= 2.0 don't need this
             gis_cols = [c for c in table.c if
-                        isinstance(c.type, Geometry) and
-                        c.type.management is True]
+                        _check_spatial_type(c.type, Geometry)
+                        and c.type.management is True]
 
             # Find all other columns that are not managed Geometries
             regular_cols = [x for x in table.c if x not in gis_cols]
@@ -91,7 +102,10 @@ def _setup_ddl_event_listeners():
 
             for c in table.c:
                 # Add the managed Geometry columns with AddGeometryColumn()
-                if isinstance(c.type, Geometry) and c.type.management is True:
+                if (
+                    _check_spatial_type(c.type, Geometry)
+                    and c.type.management is True
+                ):
                     args = [table.schema] if table.schema else []
                     args.extend([
                         table.name,
@@ -110,8 +124,10 @@ def _setup_ddl_event_listeners():
                     bind.execute(stmt)
 
                 # Add spatial indices for the Geometry and Geography columns
-                if isinstance(c.type, (Geometry, Geography)) and \
-                        c.type.spatial_index is True:
+                if (
+                    _check_spatial_type(c.type, (Geometry, Geography))
+                    and c.type.spatial_index is True
+                ):
                     if bind.dialect.name == 'sqlite':
                         stmt = select(*_format_select_args(func.CreateSpatialIndex(table.name,
                                                                                    c.name)))
