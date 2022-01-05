@@ -1,6 +1,11 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.10.1
+------
+
+*  Fix creation of columns using a TypeDecorator @adrien-berchet (#343)
+
 0.10.0
 ------
 
