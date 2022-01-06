@@ -32,12 +32,12 @@ def _format_select_args(*args):
         return args
 
 
-def _check_spatial_type(tested_type, spatial_types):
+def _check_spatial_type(tested_type, spatial_types, dialect):
     return (
         isinstance(tested_type, spatial_types)
         or (
             isinstance(tested_type, TypeDecorator)
-            and isinstance(tested_type.impl, spatial_types)
+            and isinstance(tested_type.load_dialect_impl(dialect), spatial_types)
         )
     )
 
@@ -64,7 +64,7 @@ def _setup_ddl_event_listeners():
             # Filter Geometry columns from the table with management=True
             # Note: Geography and PostGIS >= 2.0 don't need this
             gis_cols = [c for c in table.c if
-                        _check_spatial_type(c.type, Geometry)
+                        _check_spatial_type(c.type, Geometry, bind.dialect)
                         and c.type.management is True]
 
             # Find all other columns that are not managed Geometries
@@ -103,7 +103,7 @@ def _setup_ddl_event_listeners():
             for c in table.c:
                 # Add the managed Geometry columns with AddGeometryColumn()
                 if (
-                    _check_spatial_type(c.type, Geometry)
+                    _check_spatial_type(c.type, Geometry, bind.dialect)
                     and c.type.management is True
                 ):
                     args = [table.schema] if table.schema else []
@@ -125,7 +125,7 @@ def _setup_ddl_event_listeners():
 
                 # Add spatial indices for the Geometry and Geography columns
                 if (
-                    _check_spatial_type(c.type, (Geometry, Geography))
+                    _check_spatial_type(c.type, (Geometry, Geography), bind.dialect)
                     and c.type.spatial_index is True
                 ):
                     if bind.dialect.name == 'sqlite':
