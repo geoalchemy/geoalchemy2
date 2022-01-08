@@ -158,7 +158,11 @@ def _setup_ddl_event_listeners():
                         # If the index does not exist (which might be the case when
                         # management=False), define it and create it
                         if not [i for i in table.indexes if c in i.columns.values()]:
-                            idx = Index(_spatial_idx_name(table, c), c, postgresql_using='gist')
+                            if c.type.use_N_D_index:
+                                postgresql_ops = {c.name: "gist_geometry_ops_nd"}
+                            else:
+                                postgresql_ops = {}
+                            idx = Index(_spatial_idx_name(table, c), c, postgresql_using='gist', postgresql_ops=postgresql_ops)
                             idx.create(bind=bind)
 
                     else:
@@ -184,10 +188,9 @@ def _setup_ddl_event_listeners():
                                  (table.name, c.name, table.name, c.name))
                     bind.execute(q)
 
-            for idx in table.info["_after_create_indexes"]:
+            for idx in table.info.pop("_after_create_indexes"):
                 table.indexes.add(idx)
                 idx.create(bind=bind)
-            table.info.pop("_after_create_indexes")
 
         elif event == 'after-drop':
             # Restore original column list including managed Geometry columns

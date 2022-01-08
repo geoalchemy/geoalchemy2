@@ -21,6 +21,13 @@ from geoalchemy2.shape import from_shape, to_shape
 
 from shapely.geometry import LineString
 
+SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("2")
+if SQLA_LT_2:
+    from sqlalchemy.engine.reflection import Inspector
+    get_inspector = Inspector.from_engine
+else:
+    from sqlalchemy import inspect as get_inspector
+
 
 if 'SPATIALITE_LIBRARY_PATH' not in os.environ:
     pytest.skip('SPATIALITE_LIBRARY_PATH is not defined, skip SpatiaLite tests',
@@ -406,3 +413,28 @@ class TestNullable():
             conn.execute(TestNullable.NotNullableLake.__table__.insert(), [
                 {'geom': None}
             ])
+
+
+class TestIndex():
+
+    def setup(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+
+    def teardown(self):
+        session.rollback()
+        metadata.drop_all()
+
+    def test_index(self):
+        inspector = get_inspector(engine)
+        indices = inspector.get_indexes(Lake.__tablename__)
+        assert len(indices) == 1
+        assert not indices[0].get('unique')
+        assert indices[0].get('column_names')[0] in (u'geom1')
+
+    def test_type_decorator_index(self):
+        inspector = get_inspector(engine)
+        indices = inspector.get_indexes(LocalPoint.__tablename__)
+        assert len(indices) == 1
+        assert not indices[0].get('unique')
+        assert indices[0].get('column_names') == ['three_d_geom']
