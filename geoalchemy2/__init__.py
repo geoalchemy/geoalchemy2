@@ -69,6 +69,11 @@ def _setup_ddl_event_listeners():
 
     @event.listens_for(Column, 'after_parent_attach')
     def after_parent_attach(column, table):
+        if not isinstance(table, Table):
+            # For ald versions of SQLAlchemy, subqueries might trigger the after_parent_attach event
+            # with a selectable as table, so we want to skip this case.
+            return
+
         if (
             not getattr(column.type, "spatial_index", False)
             and getattr(column.type, "use_N_D_index", False)

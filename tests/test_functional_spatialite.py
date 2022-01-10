@@ -431,8 +431,8 @@ class TestIndex():
     def check_spatial_idx(engine, idx_name):
         tables = engine.execute(
             text("SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%';")
-        ).scalars()
-        if idx_name in tables:
+        ).fetchall()
+        if idx_name in [i[0] for i in tables]:
             return True
         return False
 
