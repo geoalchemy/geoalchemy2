@@ -17,7 +17,7 @@ from . import types  # NOQA
 
 import sqlalchemy
 from sqlalchemy import Column, Index, Table, event
-from sqlalchemy.sql import select, func, expression, text
+from sqlalchemy.sql import select, func, expression
 from sqlalchemy.types import TypeDecorator
 
 from packaging import version
@@ -161,7 +161,10 @@ def _setup_ddl_event_listeners():
 
             for c in table.c:
                 # Add the managed Geometry columns with AddGeometryColumn()
-                if _check_spatial_type(c.type, Geometry, bind.dialect) and check_management(c, bind.dialect.name):
+                if (
+                    _check_spatial_type(c.type, Geometry, bind.dialect)
+                    and check_management(c, bind.dialect.name)
+                ):
                     args = [table.schema] if table.schema else []
                     args.extend([
                         table.name,
@@ -192,12 +195,20 @@ def _setup_ddl_event_listeners():
                     elif bind.dialect.name == 'postgresql':
                         # If the index does not exist (which might be the case when
                         # management=False), define it and create it
-                        if not [i for i in table.indexes if c in i.columns.values()] and check_management(c, bind.dialect.name):
+                        if (
+                            not [i for i in table.indexes if c in i.columns.values()]
+                            and check_management(c, bind.dialect.name)
+                        ):
                             if c.type.use_N_D_index:
                                 postgresql_ops = {c.name: "gist_geometry_ops_nd"}
                             else:
                                 postgresql_ops = {}
-                            idx = Index(_spatial_idx_name(table, c), c, postgresql_using='gist', postgresql_ops=postgresql_ops)
+                            idx = Index(
+                                _spatial_idx_name(table, c),
+                                c,
+                                postgresql_using='gist',
+                                postgresql_ops=postgresql_ops,
+                            )
                             idx.create(bind=bind)
 
                     else:

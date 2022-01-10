@@ -13,7 +13,7 @@ else:
 
 from pkg_resources import parse_version
 from sqlalchemy import create_engine
-from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam, Index, text
+from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import DataError, IntegrityError, InternalError, ProgrammingError
@@ -221,7 +221,7 @@ class TestIndex():
         assert not indices[0].get('unique')
         assert indices[0].get('column_names') == ['three_d_geom']
 
-    def test_indexes(self):
+    def test_all_indexes(self):
         BaseArgTest = declarative_base(metadata=arg_metadata)
 
         class TableWithIndexes(BaseArgTest):

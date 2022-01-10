@@ -21,13 +21,6 @@ from geoalchemy2.shape import from_shape, to_shape
 
 from shapely.geometry import LineString
 
-SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("2")
-if SQLA_LT_2:
-    from sqlalchemy.engine.reflection import Inspector
-    get_inspector = Inspector.from_engine
-else:
-    from sqlalchemy import inspect as get_inspector
-
 
 if 'SPATIALITE_LIBRARY_PATH' not in os.environ:
     pytest.skip('SPATIALITE_LIBRARY_PATH is not defined, skip SpatiaLite tests',
@@ -220,7 +213,9 @@ class TestInsertionORM():
         assert round(pt_wkb.y, 5) == 45
 
         # Check that the data is correct in DB using raw query
-        q = "SELECT id, ST_AsText(geom) AS geom, ST_AsText(managed_geom) AS managed_geom FROM local_point;"
+        q = """
+            SELECT id, ST_AsText(geom) AS geom, ST_AsText(managed_geom) AS managed_geom
+            FROM local_point;"""
         res_q = session.execute(q).fetchone()
         assert res_q.id == 1
         for i in [res_q.geom, res_q.managed_geom]:
