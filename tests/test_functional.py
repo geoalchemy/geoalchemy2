@@ -13,7 +13,7 @@ else:
 
 from pkg_resources import parse_version
 from sqlalchemy import create_engine
-from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam
+from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam, Index, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import DataError, IntegrityError, InternalError, ProgrammingError
@@ -141,6 +141,7 @@ class TestIndex():
 
     def setup(self):
         metadata.drop_all(checkfirst=True)
+        arg_metadata.drop_all(checkfirst=True)
         metadata.create_all()
 
     def teardown(self):
@@ -191,17 +192,17 @@ class TestIndex():
     def test_n_d_index_argument_error(self):
         BaseArgTest = declarative_base(metadata=arg_metadata)
 
-        class NDIndexArgErrorSchema(BaseArgTest):
-            __tablename__ = 'nd_index_error_arg'
-            __table_args__ = {'schema': 'gis'}
-            id = Column(Integer, primary_key=True)
-            geom1 = Column(Geometry(geometry_type='POINTZ',
-                                    dimension=3,
-                                    spatial_index=False,
-                                    use_N_D_index=True))
-
         with pytest.raises(ArgumentError) as excinfo:
-            NDIndexArgErrorSchema.__table__.create(engine)
+            class NDIndexArgErrorSchema(BaseArgTest):
+                __tablename__ = 'nd_index_error_arg'
+                __table_args__ = {'schema': 'gis'}
+                id = Column(Integer, primary_key=True)
+                geom1 = Column(Geometry(geometry_type='POINTZ',
+                                        dimension=3,
+                                        spatial_index=False,
+                                        use_N_D_index=True,
+                                        management=False))
+
         assert "Arg Error(use_N_D_index): spatial_index must be True" == excinfo.value.args[0]
 
     def test_index_without_schema(self):
@@ -219,6 +220,173 @@ class TestIndex():
         assert len(indices) == 1
         assert not indices[0].get('unique')
         assert indices[0].get('column_names') == ['three_d_geom']
+
+    def test_indexes(self):
+        BaseArgTest = declarative_base(metadata=arg_metadata)
+
+        class TableWithIndexes(BaseArgTest):
+            __tablename__ = 'table_with_indexes'
+            __table_args__ = {'schema': 'gis'}
+            id = Column(Integer, primary_key=True)
+            # Test indexes on Geometry columns.
+            geom_not_managed_no_index = Column(
+                Geometry(
+                    geometry_type='POINT',
+                    spatial_index=False,
+                    management=False,
+                )
+            )
+            geom_not_managed_index = Column(
+                Geometry(
+                    geometry_type='POINT',
+                    spatial_index=True,
+                    management=False,
+                )
+            )
+            geom_managed_no_index = Column(
+                Geometry(
+                    geometry_type='POINT',
+                    spatial_index=False,
+                    management=True,
+                )
+            )
+            geom_managed_index = Column(
+                Geometry(
+                    geometry_type='POINT',
+                    spatial_index=True,
+                    management=True,
+                )
+            )
+            # Test indexes on Geometry columns with ND index.
+            geom_not_managed_nd_index = Column(
+                Geometry(
+                    geometry_type='POINTZ',
+                    dimension=3,
+                    spatial_index=True,
+                    use_N_D_index=True,
+                    management=False,
+                )
+            )
+            geom_managed_nd_index = Column(
+                Geometry(
+                    geometry_type='POINTZ',
+                    dimension=3,
+                    spatial_index=True,
+                    use_N_D_index=True,
+                    management=True,
+                )
+            )
+            # Test indexes on Geography columns.
+            geog_not_managed_no_index = Column(
+                Geography(
+                    geometry_type='POINT',
+                    spatial_index=False,
+                    management=False,
+                )
+            )
+            geog_not_managed_index = Column(
+                Geography(
+                    geometry_type='POINT',
+                    spatial_index=True,
+                    management=False,
+                )
+            )
+            geog_managed_no_index = Column(
+                Geography(
+                    geometry_type='POINT',
+                    spatial_index=False,
+                    management=True,
+                )
+            )
+            geog_managed_index = Column(
+                Geography(
+                    geometry_type='POINT',
+                    spatial_index=True,
+                    management=True,
+                )
+            )
+            # Test indexes on Raster columns.
+            # Note: managed Raster columns are not tested because Raster columns can't be managed.
+            rast_not_managed_no_index = Column(
+                Raster(
+                    spatial_index=False,
+                    management=False,
+                )
+            )
+            rast_not_managed_index = Column(
+                Raster(
+                    spatial_index=True,
+                    management=False,
+                )
+            )
+
+        TableWithIndexes.__table__.create(engine)
+
+        index_query = text(
+            """SELECT indexname, indexdef
+            FROM pg_indexes
+            WHERE
+                schemaname = 'gis'
+                AND tablename = 'table_with_indexes';"""
+        )
+        indices = sorted(engine.execute(index_query).fetchall())
+
+        expected_indices = [
+            (
+                "idx_table_with_indexes_geog_managed_index",
+                """CREATE INDEX idx_table_with_indexes_geog_managed_index
+                ON gis.table_with_indexes
+                USING gist (geog_managed_index)"""
+            ),
+            (
+                "idx_table_with_indexes_geog_not_managed_index",
+                """CREATE INDEX idx_table_with_indexes_geog_not_managed_index
+                ON gis.table_with_indexes
+                USING gist (geog_not_managed_index)"""
+            ),
+            (
+                "idx_table_with_indexes_geom_managed_index",
+                """CREATE INDEX idx_table_with_indexes_geom_managed_index
+                ON gis.table_with_indexes
+                USING gist (geom_managed_index)"""
+            ),
+            (
+                "idx_table_with_indexes_geom_managed_nd_index",
+                """CREATE INDEX idx_table_with_indexes_geom_managed_nd_index
+                ON gis.table_with_indexes
+                USING gist (geom_managed_nd_index gist_geometry_ops_nd)"""
+            ),
+            (
+                "idx_table_with_indexes_geom_not_managed_index",
+                """CREATE INDEX idx_table_with_indexes_geom_not_managed_index
+                ON gis.table_with_indexes
+                USING gist (geom_not_managed_index)"""
+            ),
+            (
+                "idx_table_with_indexes_geom_not_managed_nd_index",
+                """CREATE INDEX idx_table_with_indexes_geom_not_managed_nd_index
+                ON gis.table_with_indexes
+                USING gist (geom_not_managed_nd_index gist_geometry_ops_nd)"""
+            ),
+            (
+                "idx_table_with_indexes_rast_not_managed_index",
+                """CREATE INDEX idx_table_with_indexes_rast_not_managed_index
+                ON gis.table_with_indexes
+                USING gist (st_convexhull(rast_not_managed_index))"""
+            ),
+            (
+                "table_with_indexes_pkey",
+                """CREATE UNIQUE INDEX table_with_indexes_pkey
+                ON gis.table_with_indexes
+                USING btree (id)"""
+            ),
+        ]
+
+        assert len(indices) == 8
+
+        for idx, expected_idx in zip(indices, expected_indices):
+            assert idx[0] == expected_idx[0]
+            assert idx[1] == re.sub("\n *", " ", expected_idx[1])
 
 
 class TestTypMod():

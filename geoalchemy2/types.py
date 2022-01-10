@@ -360,6 +360,8 @@ class Raster(_GISType):
         # Enforce default values
         kwargs['geometry_type'] = None
         kwargs['srid'] = -1
+        if kwargs.get('management', False):
+            raise ValueError("The Raster columns can not have management set to True.")
         super(Raster, self).__init__(*args, **kwargs)
         self.extended = None
 

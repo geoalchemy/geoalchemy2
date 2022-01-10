@@ -7,7 +7,7 @@ import pytest
 import platform
 
 from sqlalchemy import __version__ as SA_VERSION
-from sqlalchemy import create_engine, MetaData, Column, Integer, bindparam
+from sqlalchemy import create_engine, MetaData, Column, Integer, bindparam, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.event import listen
@@ -90,6 +90,9 @@ class LocalPoint(Base):
     __tablename__ = "local_point"
     id = Column(Integer, primary_key=True)
     geom = Column(
+        TransformedGeometry(
+            db_srid=2154, app_srid=4326, geometry_type="POINT", management=False))
+    managed_geom = Column(
         TransformedGeometry(
             db_srid=2154, app_srid=4326, geometry_type="POINT", management=True))
 
@@ -197,6 +200,7 @@ class TestInsertionORM():
         # Create new point instance
         p = LocalPoint()
         p.geom = "SRID=4326;POINT(5 45)"  # Insert 2D geometry into 3D column
+        p.managed_geom = "SRID=4326;POINT(5 45)"  # Insert 2D geometry into 3D column
 
         # Insert point
         session.add(p)
@@ -207,17 +211,22 @@ class TestInsertionORM():
         pt = session.query(LocalPoint).one()
         assert pt.id == 1
         assert pt.geom.srid == 4326
+        assert pt.managed_geom.srid == 4326
         pt_wkb = to_shape(pt.geom)
+        assert round(pt_wkb.x, 5) == 5
+        assert round(pt_wkb.y, 5) == 45
+        pt_wkb = to_shape(pt.managed_geom)
         assert round(pt_wkb.x, 5) == 5
         assert round(pt_wkb.y, 5) == 45
 
         # Check that the data is correct in DB using raw query
-        q = "SELECT id, ST_AsText(geom) AS geom FROM local_point;"
+        q = "SELECT id, ST_AsText(geom) AS geom, ST_AsText(managed_geom) AS managed_geom FROM local_point;"
         res_q = session.execute(q).fetchone()
         assert res_q.id == 1
-        x, y = re.match(r"POINT\((\d+\.\d*) (\d+\.\d*)\)", res_q.geom).groups()
-        assert round(float(x), 3) == 857581.899
-        assert round(float(y), 3) == 6435414.748
+        for i in [res_q.geom, res_q.managed_geom]:
+            x, y = re.match(r"POINT\((\d+\.\d*) (\d+\.\d*)\)", i).groups()
+            assert round(float(x), 3) == 857581.899
+            assert round(float(y), 3) == 6435414.748
 
 
 class TestShapely():
@@ -417,6 +426,21 @@ class TestNullable():
 
 class TestIndex():
 
+    @pytest.fixture
+    def tmp_meta(self):
+        tmp_metadata = MetaData(engine)
+        yield tmp_metadata
+        tmp_metadata.drop_all(checkfirst=True)
+
+    @staticmethod
+    def check_spatial_idx(engine, idx_name):
+        tables = engine.execute(
+            text("SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%';")
+        ).scalars()
+        if idx_name in tables:
+            return True
+        return False
+
     def setup(self):
         metadata.drop_all(checkfirst=True)
         metadata.create_all()
@@ -426,15 +450,53 @@ class TestIndex():
         metadata.drop_all()
 
     def test_index(self):
-        inspector = get_inspector(engine)
-        indices = inspector.get_indexes(Lake.__tablename__)
-        assert len(indices) == 1
-        assert not indices[0].get('unique')
-        assert indices[0].get('column_names')[0] in (u'geom1')
+        assert self.check_spatial_idx(engine, 'idx_lake_geom')
 
     def test_type_decorator_index(self):
-        inspector = get_inspector(engine)
-        indices = inspector.get_indexes(LocalPoint.__tablename__)
-        assert len(indices) == 1
-        assert not indices[0].get('unique')
-        assert indices[0].get('column_names') == ['three_d_geom']
+        assert self.check_spatial_idx(engine, 'idx_local_point_geom')
+        assert self.check_spatial_idx(engine, 'idx_local_point_managed_geom')
+
+    def test_all_indexes(self, tmp_meta):
+        BaseArgTest = declarative_base(metadata=tmp_meta)
+
+        class TableWithIndexes(BaseArgTest):
+            __tablename__ = 'table_with_indexes'
+            id = Column(Integer, primary_key=True)
+            # Test indexes on Geometry columns.
+            geom_not_managed_no_index = Column(
+                Geometry(
+                    geometry_type='POINT',
+                    spatial_index=False,
+                    management=False,
+                )
+            )
+            geom_not_managed_index = Column(
+                Geometry(
+                    geometry_type='POINT',
+                    spatial_index=True,
+                    management=False,
+                )
+            )
+            geom_managed_no_index = Column(
+                Geometry(
+                    geometry_type='POINT',
+                    spatial_index=False,
+                    management=True,
+                )
+            )
+            geom_managed_index = Column(
+                Geometry(
+                    geometry_type='POINT',
+                    spatial_index=True,
+                    management=True,
+                )
+            )
+
+        TableWithIndexes.__table__.create(engine)
+
+        expected_indices = [
+            'idx_table_with_indexes_geom_managed_index',
+            'idx_table_with_indexes_geom_not_managed_index',
+        ]
+        for expected_idx in expected_indices:
+            assert self.check_spatial_idx(engine, expected_idx)
