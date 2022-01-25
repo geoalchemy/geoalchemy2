@@ -101,7 +101,7 @@ class _GISType(UserDefinedType):
 
         Indicate if the ``AddGeometryColumn`` and ``DropGeometryColumn``
         managements functions should be called when adding and dropping the
-        geometry column. Should be set to ``True`` for PostGIS 1.x. Default is
+        geometry column. Should be set to ``True`` for PostGIS 1.x and SQLite. Default is
         ``False``. Note that this option has no effect for
         :class:`geoalchemy2.types.Geography`.
 
@@ -373,6 +373,13 @@ class Raster(_GISType):
             nullable=nullable,
         )
         self.extended = None
+
+
+class _DummyGeometry(Geometry):
+    """A dummy type only used with SQLite."""
+
+    def get_col_spec(self):
+        return 'GEOMETRY'
 
 
 class CompositeType(UserDefinedType):
