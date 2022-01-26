@@ -356,13 +356,20 @@ class Raster(_GISType):
     cache_ok = False
     """ Disable cache for this type. """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, spatial_index=True, from_text=None, name=None, nullable=True):
         # Enforce default values
-        kwargs['geometry_type'] = None
-        kwargs['srid'] = -1
-        if kwargs.get('management', False):
-            raise ValueError("The Raster columns can not have management set to True.")
-        super(Raster, self).__init__(*args, **kwargs)
+        super(Raster, self).__init__(
+            geometry_type=None,
+            srid=-1,
+            dimension=2,
+            spatial_index=spatial_index,
+            use_N_D_index=False,
+            management=False,
+            use_typmod=False,
+            from_text=from_text,
+            name=name,
+            nullable=nullable,
+        )
         self.extended = None
 
 

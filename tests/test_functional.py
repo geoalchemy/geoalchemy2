@@ -310,13 +310,11 @@ class TestIndex():
             rast_not_managed_no_index = Column(
                 Raster(
                     spatial_index=False,
-                    management=False,
                 )
             )
             rast_not_managed_index = Column(
                 Raster(
                     spatial_index=True,
-                    management=False,
                 )
             )
 
