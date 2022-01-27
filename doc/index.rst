@@ -89,6 +89,19 @@ Gallery
 The :ref:`gallery` page shows examples of the GeoAlchemy 2's functionalities.
 
 
+Use with Alembic
+----------------
+
+.. toctree::
+   :hidden:
+
+   alembic
+
+The GeoAlchemy 2 package is compatible with the migration tool
+`Alembic <https://alembic.sqlalchemy.org/en/latest/>`_. The :ref:`Alembic <alembic_use>` page
+provides more details on this topic.
+
+
 Reference Documentation
 -----------------------
 
@@ -100,6 +113,7 @@ Reference Documentation
    spatial_functions
    spatial_operators
    shape
+   alembic_helpers
 
 Development
 -----------
