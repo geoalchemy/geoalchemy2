@@ -163,6 +163,7 @@ class _GISType(UserDefinedType):
         return getattr(func, self.as_binary)(col, type_=self)
 
     def result_processor(self, dialect, coltype):
+        """Specific result_processor that automatically process spatial elements"""
         def process(value):
             if value is not None:
                 kwargs = {}
@@ -178,6 +179,7 @@ class _GISType(UserDefinedType):
         return getattr(func, self.from_text)(bindvalue, type_=self)
 
     def bind_processor(self, dialect):
+        """Specific bind_processor that automatically process spatial elements"""
         def process(bindvalue):
             if isinstance(bindvalue, WKTElement):
                 if bindvalue.extended:

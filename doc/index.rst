@@ -98,7 +98,7 @@ Use with Alembic
    alembic
 
 The GeoAlchemy 2 package is compatible with the migration tool
-`Alembic <https://alembic.sqlalchemy.org/en/latest/>`_. The :ref:`Alembic <alembic_use>` page
+`Alembic <https://alembic.sqlalchemy.org/en/latest/>`_. The :ref:`alembic_use` page
 provides more details on this topic.
 
 

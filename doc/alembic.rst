@@ -108,8 +108,8 @@ Helpers
 -------
 
 In order to make the use of Alembic easier, a few helpers are provided in
-``geoalchemy2.alembic_helpers``. These helpers can be used in the ``env.py`` file used by Alembic,
-like in the following example:
+:ref:`geoalchemy2.alembic_helpers <alembic_helpers>`. These helpers can be used in the ``env.py``
+file used by Alembic, like in the following example:
 
 .. code-block:: python
 
