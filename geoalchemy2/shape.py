@@ -28,7 +28,7 @@ if parse_version(shapely.__version__) < parse_version("1.7"):
         ob : geometry
             The geometry to export to well-known binary (WKB) representation
         hex : bool
-            If true, export the WKB as a hexidecimal string. The default is to
+            If true, export the WKB as a hexadecimal string. The default is to
             return a binary string/bytes object.
         srid : int
             Spatial reference system ID to include in the output. The default

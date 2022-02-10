@@ -38,7 +38,7 @@ class TransformedGeometry(TypeDecorator):
         self.db_srid = db_srid
 
     def column_expression(self, col):
-        """The column_expression() method is overrided to ensure that the
+        """The column_expression() method is overridden to ensure that the
         SRID of the resulting WKBElement is correct"""
         return getattr(func, self.impl.as_binary)(
             func.ST_Transform(col, self.app_srid),

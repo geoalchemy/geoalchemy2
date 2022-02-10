@@ -80,7 +80,7 @@ The `reflection system of SQLAlchemy
 <http://docs.sqlalchemy.org/en/latest/core/schema.html#metadata-reflection>`_ can be
 used on tables containing :class:`geoalchemy2.types.Geometry` or
 :class:`geoalchemy2.types.Geography` columns. In this case, the type must be imported to
-be registered into SQLAlchemy, even if it is not used explicitely.
+be registered into SQLAlchemy, even if it is not used explicitly.
 
     >>> from geoalchemy2 import Geometry  # <= not used but must be imported
     >>> from sqlalchemy import create_engine, MetaData

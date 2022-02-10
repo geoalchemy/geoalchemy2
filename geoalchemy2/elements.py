@@ -81,7 +81,7 @@ class _SpatialElement(HasFunction):
         #
 
         # Raise an AttributeError when the attribute name doesn't start
-        # with st_. This is to be nice with other librairies that use
+        # with st_. This is to be nice with other libraries that use
         # some ducktyping (e.g. hasattr(element, "copy")) to determine
         # the type of the element.
 
