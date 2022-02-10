@@ -163,6 +163,7 @@ class _GISType(UserDefinedType):
         return getattr(func, self.as_binary)(col, type_=self)
 
     def result_processor(self, dialect, coltype):
+        """Specific result_processor that automatically process spatial elements"""
         def process(value):
             if value is not None:
                 kwargs = {}
@@ -178,6 +179,7 @@ class _GISType(UserDefinedType):
         return getattr(func, self.from_text)(bindvalue, type_=self)
 
     def bind_processor(self, dialect):
+        """Specific bind_processor that automatically process spatial elements"""
         def process(bindvalue):
             if isinstance(bindvalue, WKTElement):
                 if bindvalue.extended:
@@ -356,11 +358,20 @@ class Raster(_GISType):
     cache_ok = False
     """ Disable cache for this type. """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, spatial_index=True, from_text=None, name=None, nullable=True):
         # Enforce default values
-        kwargs['geometry_type'] = None
-        kwargs['srid'] = -1
-        super(Raster, self).__init__(*args, **kwargs)
+        super(Raster, self).__init__(
+            geometry_type=None,
+            srid=-1,
+            dimension=2,
+            spatial_index=spatial_index,
+            use_N_D_index=False,
+            management=False,
+            use_typmod=False,
+            from_text=from_text,
+            name=name,
+            nullable=nullable,
+        )
         self.extended = None
 
 

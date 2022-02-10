@@ -16,8 +16,8 @@ from . import functions  # NOQA
 from . import types  # NOQA
 
 import sqlalchemy
-from sqlalchemy import Table, event
-from sqlalchemy.sql import select, func, expression, text
+from sqlalchemy import Column, Index, Table, event
+from sqlalchemy.sql import select, func, expression
 from sqlalchemy.types import TypeDecorator
 
 from packaging import version
@@ -32,7 +32,7 @@ def _format_select_args(*args):
         return args
 
 
-def _check_spatial_type(tested_type, spatial_types, dialect):
+def _check_spatial_type(tested_type, spatial_types, dialect=None):
     return (
         isinstance(tested_type, spatial_types)
         or (
@@ -40,6 +40,14 @@ def _check_spatial_type(tested_type, spatial_types, dialect):
             and isinstance(tested_type.load_dialect_impl(dialect), spatial_types)
         )
     )
+
+
+def _spatial_idx_name(table, column):
+    return 'idx_{}_{}'.format(table.name, column.name)
+
+
+def check_management(column, dialect):
+    return getattr(column.type, "management", False) is True or dialect == 'sqlite'
 
 
 def _setup_ddl_event_listeners():
@@ -59,13 +67,51 @@ def _setup_ddl_event_listeners():
     def after_drop(target, connection, **kw):
         dispatch("after-drop", target, connection)
 
+    @event.listens_for(Column, 'after_parent_attach')
+    def after_parent_attach(column, table):
+        if not isinstance(table, Table):
+            # For ald versions of SQLAlchemy, subqueries might trigger the after_parent_attach event
+            # with a selectable as table, so we want to skip this case.
+            return
+
+        if (
+            not getattr(column.type, "spatial_index", False)
+            and getattr(column.type, "use_N_D_index", False)
+        ):
+            raise ArgumentError('Arg Error(use_N_D_index): spatial_index must be True')
+
+        if (
+            getattr(column.type, "management", True)
+            or not getattr(column.type, "spatial_index", False)
+        ):
+            # If the column is managed, the indexes are created after the table
+            return
+
+        if _check_spatial_type(column.type, (Geometry, Geography)):
+            if column.type.use_N_D_index:
+                postgresql_ops = {column.name: "gist_geometry_ops_nd"}
+            else:
+                postgresql_ops = {}
+            Index(
+                _spatial_idx_name(table, column),
+                column,
+                postgresql_using='gist',
+                postgresql_ops=postgresql_ops,
+            )
+        elif _check_spatial_type(column.type, Raster):
+            Index(
+                _spatial_idx_name(table, column),
+                func.ST_ConvexHull(column),
+                postgresql_using='gist',
+            )
+
     def dispatch(event, table, bind):
         if event in ('before-create', 'before-drop'):
             # Filter Geometry columns from the table with management=True
             # Note: Geography and PostGIS >= 2.0 don't need this
             gis_cols = [c for c in table.c if
                         _check_spatial_type(c.type, Geometry, bind.dialect)
-                        and c.type.management is True]
+                        and check_management(c, bind.dialect.name)]
 
             # Find all other columns that are not managed Geometries
             regular_cols = [x for x in table.c if x not in gis_cols]
@@ -95,6 +141,24 @@ def _setup_ddl_event_listeners():
                     stmt = select(*_format_select_args(getattr(func, drop_func)(*args)))
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
+            elif event == 'before-create':
+                # Remove the spatial indexes from the table metadata because they should not be
+                # created during the table.create() step since the associated columns do not exist
+                # at this time.
+                table.info["_after_create_indexes"] = []
+                current_indexes = set(table.indexes)
+                for idx in current_indexes:
+                    for c in table.info["_saved_columns"]:
+                        if (
+                            _check_spatial_type(c.type, Geometry, bind.dialect)
+                            and check_management(c, bind.dialect.name)
+                        ) and c in idx.columns.values():
+                            table.indexes.remove(idx)
+                            if (
+                                idx.name != _spatial_idx_name(table, c)
+                                or not getattr(c.type, "spatial_index", False)
+                            ):
+                                table.info["_after_create_indexes"].append(idx)
 
         elif event == 'after-create':
             # Restore original column list including managed Geometry columns
@@ -104,7 +168,7 @@ def _setup_ddl_event_listeners():
                 # Add the managed Geometry columns with AddGeometryColumn()
                 if (
                     _check_spatial_type(c.type, Geometry, bind.dialect)
-                    and c.type.management is True
+                    and check_management(c, bind.dialect.name)
                 ):
                     args = [table.schema] if table.schema else []
                     args.extend([
@@ -134,26 +198,24 @@ def _setup_ddl_event_listeners():
                         stmt = stmt.execution_options(autocommit=True)
                         bind.execute(stmt)
                     elif bind.dialect.name == 'postgresql':
+                        # If the index does not exist (which might be the case when
+                        # management=False), define it and create it
+                        if (
+                            not [i for i in table.indexes if c in i.columns.values()]
+                            and check_management(c, bind.dialect.name)
+                        ):
+                            if c.type.use_N_D_index:
+                                postgresql_ops = {c.name: "gist_geometry_ops_nd"}
+                            else:
+                                postgresql_ops = {}
+                            idx = Index(
+                                _spatial_idx_name(table, c),
+                                c,
+                                postgresql_using='gist',
+                                postgresql_ops=postgresql_ops,
+                            )
+                            idx.create(bind=bind)
 
-                        index_name = '"idx_{}_{}"'.format(table.name, c.name)
-
-                        if c.type.use_N_D_index:
-                            gis_column = '"{}" gist_geometry_ops_nd'.format(c.name)
-                        else:
-                            gis_column = '"{}"'.format(c.name)
-
-                        if table.schema:
-                            table_name = '"{}"."{}"'.format(table.schema, table.name)
-                        else:
-                            table_name = '"{}"'.format(table.name)
-
-                        sql = "CREATE INDEX {} ON {} USING GIST ({})".format(index_name,
-                                                                             table_name,
-                                                                             gis_column)
-
-                        q = text(sql)
-
-                        bind.execute(q)
                     else:
                         raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
 
@@ -161,21 +223,9 @@ def _setup_ddl_event_listeners():
                         c.type.use_N_D_index is True:
                     raise ArgumentError('Arg Error(use_N_D_index): spatial_index must be True')
 
-                # Add spatial indices for the Raster columns
-                #
-                # Note the use of ST_ConvexHull since most raster operators are
-                # based on the convex hull of the rasters.
-                if isinstance(c.type, Raster) and c.type.spatial_index is True:
-                    if table.schema:
-                        q = text('CREATE INDEX "idx_%s_%s" ON "%s"."%s" '
-                                 'USING GIST (ST_ConvexHull("%s"))' %
-                                 (table.name, c.name, table.schema,
-                                  table.name, c.name))
-                    else:
-                        q = text('CREATE INDEX "idx_%s_%s" ON "%s" '
-                                 'USING GIST (ST_ConvexHull("%s"))' %
-                                 (table.name, c.name, table.name, c.name))
-                    bind.execute(q)
+            for idx in table.info.pop("_after_create_indexes"):
+                table.indexes.add(idx)
+                idx.create(bind=bind)
 
         elif event == 'after-drop':
             # Restore original column list including managed Geometry columns

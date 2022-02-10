@@ -30,7 +30,7 @@ table = Table(
     metadata,
     Column("id", Integer, primary_key=True),
     Column("geom", Geometry("POLYGON", 4326)),
-    Column("rast", Raster(srid=4326)),
+    Column("rast", Raster()),
 )
 
 
@@ -38,7 +38,7 @@ class RasterTable(Base):
     __tablename__ = 'raster_table_orm'
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry("POLYGON", 4326))
-    rast = Column(Raster(srid=4326))
+    rast = Column(Raster())
 
     def __init__(self, rast):
         self.rast = rast
