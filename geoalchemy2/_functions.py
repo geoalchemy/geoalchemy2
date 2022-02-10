@@ -557,7 +557,7 @@ _FUNCTIONS = [
     ('ST_3DArea', None,
      '''Computes area of 3D surface geometries. Will return 0 for solids.'''),
     ('ST_Tesselate', types.Geometry,
-     '''Perform surface Tesselation of a polygon or polyhedralsurface and returns as a TIN or collection of TINS'''),
+     '''Perform surface Tessellation of a polygon or polyhedralsurface and returns as a TIN or collection of TINS'''),
     ('ST_Volume', None,
      '''Computes the volume of a 3D solid. If applied to surface (even closed) geometries will return 0.'''),
     ('ST_MakeSolid', types.Geometry,

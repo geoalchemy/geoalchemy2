@@ -37,8 +37,8 @@ class Ocean(Base):
         self.rast = rast
 
 
-def _format_e(endianess, struct_format):
-    return _ENDIANESS[endianess] + struct_format
+def _format_e(endianness, struct_format):
+    return _ENDIANNESS[endianness] + struct_format
 
 
 def wkbHeader(raw):
@@ -47,9 +47,9 @@ def wkbHeader(raw):
 
     header = {}
 
-    header['endianess'] = struct.unpack('b', raw[0:1])[0]
+    header['endianness'] = struct.unpack('b', raw[0:1])[0]
 
-    e = header['endianess']
+    e = header['endianness']
     header['version'] = struct.unpack(_format_e(e, 'H'), raw[1:3])[0]
     header['nbands'] = struct.unpack(_format_e(e, 'H'), raw[3:5])[0]
     header['scaleX'] = struct.unpack(_format_e(e, 'd'), raw[5:13])[0]
@@ -65,12 +65,12 @@ def wkbHeader(raw):
     return header
 
 
-def read_band(data, offset, pixtype, height, width, endianess=1):
+def read_band(data, offset, pixtype, height, width, endianness=1):
     ptype, _, psize = _PTYPE[pixtype]
     pix_data = data[offset + 1: offset + 1 + width * height * psize]
     band = [
         [
-            struct.unpack(_format_e(endianess, ptype), pix_data[
+            struct.unpack(_format_e(endianness, ptype), pix_data[
                 (i * width + j) * psize: (i * width + j + 1) * psize
             ])[0]
             for j in range(width)
@@ -80,11 +80,11 @@ def read_band(data, offset, pixtype, height, width, endianess=1):
     return band
 
 
-def read_band_numpy(data, offset, pixtype, height, width, endianess=1):
+def read_band_numpy(data, offset, pixtype, height, width, endianness=1):
     import numpy as np  # noqa
     _, dtype, psize = _PTYPE[pixtype]
     dt = np.dtype(dtype)
-    dt = dt.newbyteorder(_ENDIANESS[endianess])
+    dt = dt.newbyteorder(_ENDIANNESS[endianness])
     band = np.frombuffer(data, dtype=dtype,
                          count=height * width, offset=offset + 1)
     band = (np.reshape(band, ((height, width))))
@@ -105,7 +105,7 @@ _PTYPE = {
     11: ['d', 'f8', 8],
 }
 
-_ENDIANESS = {
+_ENDIANNESS = {
     0: '>',
     1: '<',
 }
@@ -119,7 +119,7 @@ def wkbImage(raster_data, use_numpy=False):
 
     # Read header
     h = wkbHeader(bytes(raw))
-    e = h["endianess"]
+    e = h["endianness"]
 
     img = []  # array to store image bands
     offset = 61  # header raw length in bytes
