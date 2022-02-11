@@ -7,7 +7,14 @@ import pytest
 import platform
 
 from sqlalchemy import __version__ as SA_VERSION
-from sqlalchemy import create_engine, MetaData, Column, Integer, bindparam, text
+from sqlalchemy import create_engine
+from sqlalchemy import MetaData
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import bindparam
+from sqlalchemy import text
+from sqlalchemy import CheckConstraint
+from sqlalchemy import String
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.event import listen
@@ -37,7 +44,7 @@ def load_spatialite(dbapi_conn, connection_record):
 
 
 engine = create_engine(
-    os.environ.get('SPATIALITE_DB_PATH', 'sqlite:///spatialdb'), echo=False)
+    os.environ.get('SPATIALITE_DB_PATH', 'sqlite:///spatialdb'), echo=True)
 listen(engine, 'connect', load_spatialite)
 
 metadata = MetaData(engine)
@@ -416,6 +423,49 @@ class TestNullable():
         with pytest.raises(IntegrityError):
             conn.execute(TestNullable.NotNullableLake.__table__.insert(), [
                 {'geom': None}
+            ])
+
+
+class TestContraint():
+
+    class ConstrainedLake(Base):
+        __tablename__ = 'contrained_lake'
+        __table_args__ = (
+            CheckConstraint(
+                '(geom is null and a_str is null) = (checked_str is null)', 'check_geom_sk'
+            ),
+        )
+        id = Column(Integer, primary_key=True)
+        a_str = Column(String, nullable=True)
+        checked_str = Column(String, nullable=True)
+        geom = Column(Geometry(geometry_type='LINESTRING', srid=4326, management=False))
+
+        def __init__(self, geom):
+            self.geom = geom
+
+    def setup(self):
+        metadata.drop_all(checkfirst=True)
+        metadata.create_all()
+        self.conn = engine.connect()
+
+    def teardown(self):
+        self.conn.close()
+        metadata.drop_all()
+
+    def test_insert(self):
+        conn = self.conn
+
+        # Insert geometries
+        conn.execute(TestContraint.ConstrainedLake.__table__.insert(), [
+            {'a_str': None, 'geom': 'SRID=4326;LINESTRING(0 0,1 1)', 'checked_str': 'test'},
+            {'a_str': 'test', 'geom': None, 'checked_str': 'test'},
+            {'a_str': None, 'geom': None, 'checked_str': None},
+        ])
+
+        # Fail when trying to insert null geometry
+        with pytest.raises(IntegrityError):
+            conn.execute(TestContraint.ConstrainedLake.__table__.insert(), [
+                {'a_str': None, 'geom': None, 'checked_str': 'should fail'},
             ])
 
 

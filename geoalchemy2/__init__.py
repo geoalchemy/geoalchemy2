@@ -1,7 +1,8 @@
 from .types import (  # NOQA
     Geometry,
     Geography,
-    Raster
+    Raster,
+    _DummyGeometry,
 )
 
 from .elements import (  # NOQA
@@ -70,7 +71,7 @@ def _setup_ddl_event_listeners():
     @event.listens_for(Column, 'after_parent_attach')
     def after_parent_attach(column, table):
         if not isinstance(table, Table):
-            # For ald versions of SQLAlchemy, subqueries might trigger the after_parent_attach event
+            # For old versions of SQLAlchemy, subqueries might trigger the after_parent_attach event
             # with a selectable as table, so we want to skip this case.
             return
 
@@ -109,15 +110,15 @@ def _setup_ddl_event_listeners():
         if event in ('before-create', 'before-drop'):
             # Filter Geometry columns from the table with management=True
             # Note: Geography and PostGIS >= 2.0 don't need this
-            gis_cols = [c for c in table.c if
+            gis_cols = [c for c in table.columns if
                         _check_spatial_type(c.type, Geometry, bind.dialect)
                         and check_management(c, bind.dialect.name)]
 
             # Find all other columns that are not managed Geometries
-            regular_cols = [x for x in table.c if x not in gis_cols]
+            regular_cols = [x for x in table.columns if x not in gis_cols]
 
             # Save original table column list for later
-            table.info["_saved_columns"] = table.c
+            table.info["_saved_columns"] = table.columns
 
             # Temporarily patch a set of columns not including the
             # managed Geometry columns
@@ -159,17 +160,30 @@ def _setup_ddl_event_listeners():
                                 or not getattr(c.type, "spatial_index", False)
                             ):
                                 table.info["_after_create_indexes"].append(idx)
+                if bind.dialect.name == 'sqlite':
+                    for c in gis_cols:
+                        # Add dummy columns with GEOMETRY type
+                        c._actual_type = c.type
+                        c.type = _DummyGeometry()
+                        c.nullable = c._actual_type.nullable
+                    table.columns = table.info["_saved_columns"]
 
         elif event == 'after-create':
             # Restore original column list including managed Geometry columns
             table.columns = table.info.pop('_saved_columns')
 
-            for c in table.c:
+            for c in table.columns:
                 # Add the managed Geometry columns with AddGeometryColumn()
                 if (
                     _check_spatial_type(c.type, Geometry, bind.dialect)
                     and check_management(c, bind.dialect.name)
                 ):
+                    if bind.dialect.name == 'sqlite':
+                        c.type = c._actual_type
+                        del c._actual_type
+                        create_func = func.RecoverGeometryColumn
+                    else:
+                        create_func = func.AddGeometryColumn
                     args = [table.schema] if table.schema else []
                     args.extend([
                         table.name,
@@ -180,10 +194,8 @@ def _setup_ddl_event_listeners():
                     ])
                     if c.type.use_typmod is not None:
                         args.append(c.type.use_typmod)
-                    if bind.dialect.name == 'sqlite':
-                        args.append(not c.type.nullable)
 
-                    stmt = select(*_format_select_args(func.AddGeometryColumn(*args)))
+                    stmt = select(*_format_select_args(create_func(*args)))
                     stmt = stmt.execution_options(autocommit=True)
                     bind.execute(stmt)
 
