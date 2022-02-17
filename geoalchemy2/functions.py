@@ -53,25 +53,48 @@ import re
 
 from sqlalchemy import inspect
 from sqlalchemy.sql import functions
+# from sqlalchemy.sql.functions import _GenericMeta as _FuncGenericMeta
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.util import with_metaclass
 
 from . import elements
 from ._functions import _FUNCTIONS
 
 
-class _GenericMeta(functions._GenericMeta):
-    """Extend the metaclass mechanism of sqlalchemy to register the functions in
-    a specific registry for geoalchemy2"""
+# class _GenericMeta(_FuncGenericMeta):
+#     """Extend the metaclass mechanism of sqlalchemy to register the functions in
+#     a specific registry for geoalchemy2"""
 
-    _register = False
+#     _register = False
 
-    def __init__(cls, clsname, bases, clsdict):
-        # Register the function
-        elements.function_registry.add(clsname.lower())
+#     def __init__(cls, clsname, bases, clsdict):
+#         # Register the function
+#         elements.function_registry.add(clsname.lower())
 
-        super(_GenericMeta, cls).__init__(clsname, bases, clsdict)
+#         super(_GenericMeta, cls).__init__(clsname, bases, clsdict)
+
+
+class GeoGenericFunction(functions.GenericFunction):
+
+    @classmethod
+    def _register_generic_function(cls, clsname, clsdict):
+        super()._register_generic_function(clsname, clsdict)
+
+        cls.name = name = clsdict.get("name", clsname)
+        cls.identifier = clsdict.get("identifier", name)
+        # legacy
+        if "__return_type__" in clsdict:
+            cls.type = clsdict["__return_type__"]
+
+        # Check _register attribute status
+        cls._register = getattr(cls, "_register", True)
+
+        # Register the function if required
+        if cls._register:
+            elements.function_registry.add(clsname.lower())
+        else:
+            # Set _register to True to register child classes by default
+            cls._register = True
 
 
 class TableRowElement(ColumnElement):
@@ -86,7 +109,7 @@ class TableRowElement(ColumnElement):
         return [self.selectable]
 
 
-class ST_AsGeoJSON(with_metaclass(_GenericMeta, functions.GenericFunction)):
+class ST_AsGeoJSON(GeoGenericFunction):
     """Special process for the ST_AsGeoJSON() function to be able to work with its
     feature version introduced in PostGIS 3."""
 
@@ -117,7 +140,7 @@ class ST_AsGeoJSON(with_metaclass(_GenericMeta, functions.GenericFunction)):
                 except Exception:
                     continue
 
-        functions.GenericFunction.__init__(self, *args, **kwargs)
+        GeoGenericFunction.__init__(self, *args, **kwargs)
 
     __doc__ = (
         'Return the geometry as a GeoJSON "geometry" object, or the row as a '
@@ -150,7 +173,7 @@ def _compile_table_row_thing(element, compiler, **kw):
     return compiled.split(".")[0]
 
 
-class GenericFunction(with_metaclass(_GenericMeta, functions.GenericFunction)):
+class GenericFunction(GeoGenericFunction):
     """
     The base class for GeoAlchemy functions.
 
@@ -196,7 +219,7 @@ class GenericFunction(with_metaclass(_GenericMeta, functions.GenericFunction)):
                     func_name = elem.geom_from
                     func_args = [elem.data, elem.srid]
                 args[idx] = getattr(functions.func, func_name)(*func_args)
-        functions.GenericFunction.__init__(self, *args, **kwargs)
+        GeoGenericFunction.__init__(self, *args, **kwargs)
 
 
 # Iterate through _FUNCTIONS and create GenericFunction classes dynamically

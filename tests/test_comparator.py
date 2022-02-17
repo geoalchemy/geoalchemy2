@@ -1,8 +1,10 @@
 import re
 import pytest
 
-from sqlalchemy import Table, MetaData, Column, select
+from sqlalchemy import Table, MetaData, Column
 from geoalchemy2.types import Geometry
+
+from . import select
 
 
 def eq_sql(a, b):

@@ -17,7 +17,7 @@ from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import DataError, IntegrityError, InternalError, ProgrammingError
-from sqlalchemy.sql import select, func
+from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import type_coerce
 from sqlalchemy.types import TypeDecorator
 from sqlalchemy import __version__ as SA_VERSION
@@ -28,129 +28,128 @@ from geoalchemy2.shape import from_shape
 from geoalchemy2.exc import ArgumentError
 from shapely.geometry import LineString, Point
 
-from . import skip_postgis1, skip_postgis2, skip_case_insensitivity, skip_pg12_sa1217
+from . import skip_postgis1, skip_postgis2, skip_case_insensitivity, skip_pg12_sa1217, select
 
-SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("2")
+SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("1.999")
 if SQLA_LT_2:
     from sqlalchemy.engine.reflection import Inspector
     get_inspector = Inspector.from_engine
 else:
     from sqlalchemy import inspect as get_inspector
 
-engine = create_engine(
-    os.environ.get('PYTEST_DB_URL', 'postgresql://gis:gis@localhost/gis'), echo=False)
-metadata = MetaData(engine)
-arg_metadata = MetaData(engine)
-Base = declarative_base(metadata=metadata)
+# tmp_engine = create_engine(
+#     os.environ.get('PYTEST_DB_URL', 'postgresql://gis:gis@localhost/gis'), echo=False)
+# metadata = MetaData()
+# arg_metadata = MetaData()
+# Base = declarative_base(metadata=metadata)
 
 
-class Lake(Base):
-    __tablename__ = 'lake'
-    __table_args__ = {'schema': 'gis'}
-    id = Column(Integer, primary_key=True)
-    geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
+# class Lake(Base):
+#     __tablename__ = 'lake'
+#     __table_args__ = {'schema': 'gis'}
+#     id = Column(Integer, primary_key=True)
+#     geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
 
-    def __init__(self, geom):
-        self.geom = geom
-
-
-class Poi(Base):
-    __tablename__ = 'poi'
-    __table_args__ = {'schema': 'gis'}
-    id = Column(Integer, primary_key=True)
-    geom = Column(Geometry(geometry_type='POINT', srid=4326))
-    geog = Column(Geography(geometry_type='POINT', srid=4326))
-
-    def __init__(self, geog):
-        self.geog = geog
+#     def __init__(self, geom):
+#         self.geom = geom
 
 
-class Summit(Base):
-    __tablename__ = 'summit'
-    __table_args__ = {'schema': 'gis'}
-    id = Column(Integer, primary_key=True)
-    geom = Column(Geometry(
-        geometry_type='POINT', srid=4326, management=True))
+# class Poi(Base):
+#     __tablename__ = 'poi'
+#     __table_args__ = {'schema': 'gis'}
+#     id = Column(Integer, primary_key=True)
+#     geom = Column(Geometry(geometry_type='POINT', srid=4326))
+#     geog = Column(Geography(geometry_type='POINT', srid=4326))
 
-    def __init__(self, geom):
-        self.geom = geom
-
-
-class ThreeDGeometry(TypeDecorator):
-    """This class is used to insert a ST_Force3D() in each insert."""
-    impl = Geometry
-
-    def bind_expression(self, bindvalue):
-        return func.ST_Force3D(self.impl.bind_expression(bindvalue))
+#     def __init__(self, geog):
+#         self.geog = geog
 
 
-class PointZ(Base):
-    __tablename__ = "point_z"
-    id = Column(Integer, primary_key=True)
-    three_d_geom = Column(ThreeDGeometry(srid=4326, geometry_type="POINTZ", dimension=3))
+# class Summit(Base):
+#     __tablename__ = 'summit'
+#     __table_args__ = {'schema': 'gis'}
+#     id = Column(Integer, primary_key=True)
+#     geom = Column(Geometry(
+#         geometry_type='POINT', srid=4326, management=True))
+
+#     def __init__(self, geom):
+#         self.geom = geom
 
 
-class IndexTestWithSchema(Base):
-    __tablename__ = 'indextestwithschema'
-    __table_args__ = {'schema': 'gis'}
-    id = Column(Integer, primary_key=True)
-    geom1 = Column(Geometry(geometry_type='POINT', srid=4326))
-    geom2 = Column(Geometry(geometry_type='POINT', srid=4326, management=True))
+# class ThreeDGeometry(TypeDecorator):
+#     """This class is used to insert a ST_Force3D() in each insert."""
+#     impl = Geometry
+
+#     def bind_expression(self, bindvalue):
+#         return func.ST_Force3D(self.impl.bind_expression(bindvalue))
 
 
-class IndexTestWithNDIndex(Base):
-    __tablename__ = 'index_test_with_nd_index'
-    __table_args__ = {'schema': 'gis'}
-    id = Column(Integer, primary_key=True)
-    geom1 = Column(Geometry(geometry_type='POINTZ', dimension=3, use_N_D_index=True))
+# class PointZ(Base):
+#     __tablename__ = "point_z"
+#     id = Column(Integer, primary_key=True)
+#     three_d_geom = Column(ThreeDGeometry(srid=4326, geometry_type="POINTZ", dimension=3))
 
 
-class IndexTestWithoutSchema(Base):
-    __tablename__ = 'indextestwithoutschema'
-    id = Column(Integer, primary_key=True)
-    geom1 = Column(Geometry(geometry_type='POINT', srid=4326))
-    geom2 = Column(Geometry(geometry_type='POINT', srid=4326, management=True))
+# class IndexTestWithSchema(Base):
+#     __tablename__ = 'indextestwithschema'
+#     __table_args__ = {'schema': 'gis'}
+#     id = Column(Integer, primary_key=True)
+#     geom1 = Column(Geometry(geometry_type='POINT', srid=4326))
+#     geom2 = Column(Geometry(geometry_type='POINT', srid=4326, management=True))
 
 
-session = sessionmaker(bind=engine)()
+# class IndexTestWithNDIndex(Base):
+#     __tablename__ = 'index_test_with_nd_index'
+#     __table_args__ = {'schema': 'gis'}
+#     id = Column(Integer, primary_key=True)
+#     geom1 = Column(Geometry(geometry_type='POINTZ', dimension=3, use_N_D_index=True))
 
-postgis_version = session.execute(func.postgis_lib_version()).scalar()
-postgres_major_version = re.match(r"([0-9]*)\.([0-9]*).*", session.execute(
-    """SELECT current_setting('server_version');""").scalar()).group(1)
 
-if postgis_version.startswith('1.'):
-    # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
-    # management functions should be used.
-    Lake.__table__.c.geom.type.management = True
-else:
-    # parameter use_typmod for AddGeometryColumn was added in PostGIS 2.0
-    Summit.__table__.c.geom.type.use_typmod = False
+# class IndexTestWithoutSchema(Base):
+#     __tablename__ = 'indextestwithoutschema'
+#     id = Column(Integer, primary_key=True)
+#     geom1 = Column(Geometry(geometry_type='POINT', srid=4326))
+#     geom2 = Column(Geometry(geometry_type='POINT', srid=4326, management=True))
 
-    # The raster type is only available on PostGIS 2.0 and above
-    class Ocean(Base):
-        __tablename__ = 'ocean'
-        __table_args__ = {'schema': 'public'}
-        id = Column(Integer, primary_key=True)
-        rast = Column(Raster)
 
-        def __init__(self, rast):
-            self.rast = rast
+# session = sessionmaker(bind=tmp_engine)()
+
+# postgis_version = session.execute(func.postgis_lib_version()).scalar()
+# postgres_major_version = re.match(r"([0-9]*)\.([0-9]*).*", session.execute(
+#     text("""SELECT current_setting('server_version');""")).scalar()).group(1)
+
+# if postgis_version.startswith('1.'):
+#     # With PostGIS 1.x the AddGeometryColumn and DropGeometryColumn
+#     # management functions should be used.
+#     Lake.__table__.c.geom.type.management = True
+# else:
+#     # parameter use_typmod for AddGeometryColumn was added in PostGIS 2.0
+#     Summit.__table__.c.geom.type.use_typmod = False
+
+#     # The raster type is only available on PostGIS 2.0 and above
+#     class Ocean(Base):
+#         __tablename__ = 'ocean'
+#         __table_args__ = {'schema': 'public'}
+#         id = Column(Integer, primary_key=True)
+#         rast = Column(Raster)
+
+#         def __init__(self, rast):
+#             self.rast = rast
+
+
+@pytest.fixture
+def setup_tables(conn, metadata):
+    metadata.drop_all(conn, checkfirst=True)
+    metadata.create_all(conn)
+    yield
+    conn.rollback()
+    metadata.drop_all(conn, checkfirst=True)
 
 
 class TestIndex():
 
-    def setup(self):
-        metadata.drop_all(checkfirst=True)
-        arg_metadata.drop_all(checkfirst=True)
-        metadata.create_all()
-
-    def teardown(self):
-        session.rollback()
-        metadata.drop_all()
-        arg_metadata.drop_all()
-
-    def test_index_with_schema(self):
-        inspector = get_inspector(engine)
+    def test_index_with_schema(self, conn, IndexTestWithSchema, setup_tables):
+        inspector = get_inspector(conn)
         indices = inspector.get_indexes(IndexTestWithSchema.__tablename__, schema='gis')
         assert len(indices) == 2
         assert not indices[0].get('unique')
@@ -158,10 +157,8 @@ class TestIndex():
         assert not indices[1].get('unique')
         assert indices[1].get('column_names')[0] in (u'geom1', u'geom2')
 
-    def test_n_d_index(self):
-
-        engine.connect()
-        sql = """SELECT
+    def test_n_d_index(self, conn, IndexTestWithNDIndex, setup_tables):
+        sql = text("""SELECT
                     tablename,
                     indexname,
                     indexdef
@@ -171,8 +168,8 @@ class TestIndex():
                     tablename = 'index_test_with_nd_index'
                 ORDER BY
                     tablename,
-                    indexname"""
-        r = engine.execute(sql)
+                    indexname""")
+        r = conn.execute(sql)
         results = r.fetchall()
 
         for index in results:
@@ -182,7 +179,7 @@ class TestIndex():
         index_type = nd_index.split("USING ", 1)[1]
         assert index_type == 'gist (geom1 gist_geometry_ops_nd)'
 
-        inspector = get_inspector(engine)
+        inspector = get_inspector(conn)
 
         indices = inspector.get_indexes(IndexTestWithNDIndex.__tablename__)
         assert len(indices) == 1
@@ -190,7 +187,7 @@ class TestIndex():
         assert indices[0].get('column_names')[0] in (u'geom1')
 
     def test_n_d_index_argument_error(self):
-        BaseArgTest = declarative_base(metadata=arg_metadata)
+        BaseArgTest = declarative_base(metadata=MetaData())
 
         with pytest.raises(ArgumentError) as excinfo:
             class NDIndexArgErrorSchema(BaseArgTest):
@@ -205,8 +202,8 @@ class TestIndex():
 
         assert "Arg Error(use_N_D_index): spatial_index must be True" == excinfo.value.args[0]
 
-    def test_index_without_schema(self):
-        inspector = get_inspector(engine)
+    def test_index_without_schema(self, conn, IndexTestWithoutSchema, setup_tables):
+        inspector = get_inspector(conn)
         indices = inspector.get_indexes(IndexTestWithoutSchema.__tablename__)
         assert len(indices) == 2
         assert not indices[0].get('unique')
@@ -214,15 +211,15 @@ class TestIndex():
         assert not indices[1].get('unique')
         assert indices[1].get('column_names')[0] in (u'geom1', u'geom2')
 
-    def test_type_decorator_index(self):
-        inspector = get_inspector(engine)
+    def test_type_decorator_index(self, conn, PointZ, setup_tables):
+        inspector = get_inspector(conn)
         indices = inspector.get_indexes(PointZ.__tablename__)
         assert len(indices) == 1
         assert not indices[0].get('unique')
         assert indices[0].get('column_names') == ['three_d_geom']
 
-    def test_all_indexes(self):
-        BaseArgTest = declarative_base(metadata=arg_metadata)
+    def test_all_indexes(self, conn):
+        BaseArgTest = declarative_base(metadata=MetaData())
 
         class TableWithIndexes(BaseArgTest):
             __tablename__ = 'table_with_indexes'
@@ -318,7 +315,7 @@ class TestIndex():
                 )
             )
 
-        TableWithIndexes.__table__.create(engine)
+        TableWithIndexes.__table__.create(conn)
 
         index_query = text(
             """SELECT indexname, indexdef
@@ -327,7 +324,7 @@ class TestIndex():
                 schemaname = 'gis'
                 AND tablename = 'table_with_indexes';"""
         )
-        indices = sorted(engine.execute(index_query).fetchall())
+        indices = sorted(conn.execute(index_query).fetchall())
 
         expected_indices = [
             (
@@ -389,21 +386,12 @@ class TestIndex():
 
 class TestTypMod():
 
-    def setup(self):
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
-
-    def teardown(self):
-        session.rollback()
-        metadata.drop_all()
-
-    @skip_pg12_sa1217(postgres_major_version)
-    def test_SummitConstraints(self):
-        """ Make sure the geometry column of table Summit is created with
-        `use_typmod=false` (explicit constraints are created).
+    def test_SummitConstraints(self, conn, Summit, setup_tables):
+        """Make sure the geometry column of table Summit is created with
+        `use_typmod=False` (explicit constraints are created).
          """
-
-        inspector = get_inspector(engine)
+        skip_pg12_sa1217(conn)
+        inspector = get_inspector(conn)
         constraints = inspector.get_check_constraints(
             Summit.__tablename__, schema='gis')
         assert len(constraints) == 3
@@ -416,18 +404,7 @@ class TestTypMod():
 
 class TestInsertionCore():
 
-    def setup(self):
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
-        self.conn = engine.connect()
-
-    def teardown(self):
-        self.conn.close()
-        metadata.drop_all()
-
-    def test_insert(self):
-        conn = self.conn
-
+    def test_insert(self, conn, Lake, setup_tables):
         # Issue inserts using DBAPI's executemany() method. This tests the
         # Geometry type's bind_processor and bind_expression functions.
         conn.execute(Lake.__table__.insert(), [
@@ -442,35 +419,33 @@ class TestInsertionCore():
 
         row = rows[0]
         assert isinstance(row[1], WKBElement)
-        wkt = session.execute(row[1].ST_AsText()).scalar()
+        wkt = conn.execute(row[1].ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,1 1)'
-        srid = session.execute(row[1].ST_SRID()).scalar()
+        srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
         row = rows[1]
         assert isinstance(row[1], WKBElement)
-        wkt = session.execute(row[1].ST_AsText()).scalar()
+        wkt = conn.execute(row[1].ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,2 2)'
-        srid = session.execute(row[1].ST_SRID()).scalar()
+        srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
         row = rows[2]
         assert isinstance(row[1], WKBElement)
-        wkt = session.execute(row[1].ST_AsText()).scalar()
+        wkt = conn.execute(row[1].ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,2 2)'
-        srid = session.execute(row[1].ST_SRID()).scalar()
+        srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
         row = rows[3]
         assert isinstance(row[1], WKBElement)
-        wkt = session.execute(row[1].ST_AsText()).scalar()
+        wkt = conn.execute(row[1].ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,3 3)'
-        srid = session.execute(row[1].ST_SRID()).scalar()
+        srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
-    def test_insert_geom_poi(self):
-        conn = self.conn
-
+    def test_insert_geom_poi(self, conn, Poi, setup_tables):
         conn.execute(Poi.__table__.insert(), [
             {'geom': 'SRID=4326;POINT(1 1)'},
             {'geom': WKTElement('POINT(1 1)', srid=4326)},
@@ -484,15 +459,13 @@ class TestInsertionCore():
 
         for row in rows:
             assert isinstance(row[1], WKBElement)
-            wkt = session.execute(row[1].ST_AsText()).scalar()
+            wkt = conn.execute(row[1].ST_AsText()).scalar()
             assert wkt == 'POINT(1 1)'
-            srid = session.execute(row[1].ST_SRID()).scalar()
+            srid = conn.execute(row[1].ST_SRID()).scalar()
             assert srid == 4326
             assert row[1] == from_shape(Point(1, 1), srid=4326, extended=True)
 
-    def test_insert_geog_poi(self):
-        conn = self.conn
-
+    def test_insert_geog_poi(self, conn, Poi, setup_tables):
         conn.execute(Poi.__table__.insert(), [
             {'geog': 'SRID=4326;POINT(1 1)'},
             {'geog': WKTElement('POINT(1 1)', srid=4326)},
@@ -505,61 +478,55 @@ class TestInsertionCore():
 
         for row in rows:
             assert isinstance(row[2], WKBElement)
-            wkt = session.execute(row[2].ST_AsText()).scalar()
+            wkt = conn.execute(row[2].ST_AsText()).scalar()
             assert wkt == 'POINT(1 1)'
-            srid = session.execute(row[2].ST_SRID()).scalar()
+            srid = conn.execute(row[2].ST_SRID()).scalar()
             assert srid == 4326
             assert row[2] == from_shape(Point(1, 1), srid=4326)
 
 
 class TestSelectBindParam():
 
-    def setup(self):
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
-        self.conn = engine.connect()
-        self.conn.execute(Lake.__table__.insert(), {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'})
+    @pytest.fixture
+    def setup_one_lake(self, conn, Lake, setup_tables):
+        conn.execute(Lake.__table__.insert(), {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'})
 
-    def teardown(self):
-        self.conn.close()
-        metadata.drop_all()
-
-    def test_select_bindparam(self):
+    def test_select_bindparam(self, conn, Lake, setup_one_lake):
         s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
         params = {"geom": "SRID=4326;LINESTRING(0 0,1 1)"}
         if SQLA_LT_2:
-            results = self.conn.execute(s, **params)
+            results = conn.execute(s, **params)
         else:
-            results = self.conn.execute(s, parameters=params)
+            results = conn.execute(s, params)
         rows = results.fetchall()
 
         row = rows[0]
         assert isinstance(row[1], WKBElement)
-        wkt = session.execute(row[1].ST_AsText()).scalar()
+        wkt = conn.execute(row[1].ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,1 1)'
-        srid = session.execute(row[1].ST_SRID()).scalar()
+        srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
-    def test_select_bindparam_WKBElement(self):
+    def test_select_bindparam_WKBElement(self, conn, Lake, setup_one_lake):
         s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
         wkbelement = from_shape(LineString([[0, 0], [1, 1]]), srid=4326)
         params = {"geom": wkbelement}
         if SQLA_LT_2:
-            results = self.conn.execute(s, **params)
+            results = conn.execute(s, **params)
         else:
-            results = self.conn.execute(s, parameters=params)
+            results = conn.execute(s, params)
         rows = results.fetchall()
 
         row = rows[0]
         assert isinstance(row[1], WKBElement)
-        wkt = session.execute(row[1].ST_AsText()).scalar()
+        wkt = conn.execute(row[1].ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,1 1)'
-        srid = session.execute(row[1].ST_SRID()).scalar()
+        srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
-    def test_select_bindparam_WKBElement_extented(self):
+    def test_select_bindparam_WKBElement_extented(self, conn, Lake, setup_one_lake):
         s = Lake.__table__.select()
-        results = self.conn.execute(s)
+        results = conn.execute(s)
         rows = results.fetchall()
         geom = rows[0][1]
         assert isinstance(geom, WKBElement)
@@ -568,30 +535,22 @@ class TestSelectBindParam():
         s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
         params = {"geom": geom}
         if SQLA_LT_2:
-            results = self.conn.execute(s, **params)
+            results = conn.execute(s, **params)
         else:
-            results = self.conn.execute(s, parameters=params)
+            results = conn.execute(s, params)
         rows = results.fetchall()
 
         row = rows[0]
         assert isinstance(row[1], WKBElement)
-        wkt = session.execute(row[1].ST_AsText()).scalar()
+        wkt = conn.execute(row[1].ST_AsText()).scalar()
         assert wkt == 'LINESTRING(0 0,1 1)'
-        srid = session.execute(row[1].ST_SRID()).scalar()
+        srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
 
 class TestInsertionORM():
 
-    def setup(self):
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
-
-    def teardown(self):
-        session.rollback()
-        metadata.drop_all()
-
-    def test_WKT(self):
+    def test_WKT(self, session, Lake, setup_tables):
         # With PostGIS 1.5:
         # IntegrityError: (IntegrityError) new row for relation "lake" violates
         # check constraint "enforce_srid_geom"
@@ -605,7 +564,7 @@ class TestInsertionORM():
         with pytest.raises((DataError, IntegrityError)):
             session.flush()
 
-    def test_WKTElement(self):
+    def test_WKTElement(self, session, Lake, setup_tables):
         lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(lake)
         session.flush()
@@ -616,7 +575,7 @@ class TestInsertionORM():
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-    def test_WKBElement(self):
+    def test_WKBElement(self, session, Lake, setup_tables):
         shape = LineString([[0, 0], [1, 1]])
         lake = Lake(from_shape(shape, srid=4326))
         session.add(lake)
@@ -628,8 +587,9 @@ class TestInsertionORM():
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-    @skip_postgis1(postgis_version)
-    def test_Raster(self):
+    # @skip_postgis1(postgis_version)
+    def test_Raster(self, session, Ocean, setup_tables):
+        skip_postgis1(session)
         polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
         o = Ocean(polygon.ST_AsRaster(5, 5))
         session.add(o)
@@ -659,15 +619,7 @@ class TestInsertionORM():
 
 class TestUpdateORM():
 
-    def setup(self):
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
-
-    def teardown(self):
-        session.rollback()
-        metadata.drop_all()
-
-    def test_WKTElement(self):
+    def test_WKTElement(self, session, Lake, setup_tables):
         raw_wkt = 'LINESTRING(0 0,1 1)'
         lake = Lake(WKTElement(raw_wkt, srid=4326))
         session.add(lake)
@@ -709,7 +661,7 @@ class TestUpdateORM():
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-    def test_WKBElement(self):
+    def test_WKBElement(self, session, Lake, setup_tables):
         shape = LineString([[0, 0], [1, 1]])
         lake = Lake(from_shape(shape, srid=4326))
         session.add(lake)
@@ -751,7 +703,7 @@ class TestUpdateORM():
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-    def test_other_type_fail(self):
+    def test_other_type_fail(self, session, Lake, setup_tables):
         shape = LineString([[0, 0], [1, 1]])
         lake = Lake(from_shape(shape, srid=4326))
         session.add(lake)
@@ -767,8 +719,9 @@ class TestUpdateORM():
             # Call __eq__() operator of _SpatialElement with 'other' argument equal to 1
             session.flush()
 
-    @skip_postgis1(postgis_version)
-    def test_Raster(self):
+    # @skip_postgis1(postgis_version)
+    def test_Raster(self, session, Ocean, setup_tables):
+        skip_postgis1(session)
         polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
         o = Ocean(polygon.ST_AsRaster(5, 5))
         session.add(o)
@@ -821,25 +774,18 @@ class TestUpdateORM():
 
 class TestPickle():
 
-    def setup(self):
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
-
-    def teardown(self):
-        session.rollback()
-        metadata.drop_all()
-
-    def _create_one_lake(self):
+    @pytest.fixture
+    def setup_one_lake(self, session, Lake, setup_tables):
         lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(lake)
         session.flush()
         session.expire(lake)
         return lake.id
 
-    def test_pickle_unpickle(self):
+    def test_pickle_unpickle(self, session, Lake, setup_one_lake):
         import pickle
 
-        lake_id = self._create_one_lake()
+        lake_id = setup_one_lake
 
         lake = session.query(Lake).get(lake_id)
         assert isinstance(lake.geom, WKBElement)
@@ -854,31 +800,33 @@ class TestPickle():
 
 class TestCallFunction():
 
-    def setup(self):
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
+    # def setup(self):
+    #     metadata.drop_all(checkfirst=True)
+    #     metadata.create_all()
 
-    def teardown(self):
-        session.rollback()
-        session.expunge_all()
-        metadata.drop_all()
+    # def teardown(self):
+    #     session.rollback()
+    #     session.expunge_all()
+    #     metadata.drop_all()
 
-    def _create_one_lake(self):
+    @pytest.fixture
+    def setup_one_lake(self, session, Lake, setup_tables):
         lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
         session.add(lake)
         session.flush()
         session.expire(lake)
         return lake.id
 
-    def _create_one_poi(self):
+    @pytest.fixture
+    def setup_one_poi(self, session, Poi, setup_tables):
         p = Poi('POINT(5 45)')
         session.add(p)
         session.flush()
         session.expire(p)
         return p.id
 
-    def test_ST_GeometryType(self):
-        lake_id = self._create_one_lake()
+    def test_ST_GeometryType(self, session, Lake, setup_one_lake):
+        lake_id = setup_one_lake
 
         s = select([func.ST_GeometryType(Lake.__table__.c.geom)])
         r1 = session.execute(s).scalar()
@@ -896,8 +844,8 @@ class TestCallFunction():
         assert isinstance(r4, Lake)
         assert r4.id == lake_id
 
-    def test_ST_Buffer(self):
-        lake_id = self._create_one_lake()
+    def test_ST_Buffer(self, session, Lake, setup_one_lake):
+        lake_id = setup_one_lake
 
         s = select([func.ST_Buffer(Lake.__table__.c.geom, 2)])
         r1 = session.execute(s).scalar()
@@ -919,8 +867,8 @@ class TestCallFunction():
         assert isinstance(r4, Lake)
         assert r4.id == lake_id
 
-    def test_ST_Dump(self):
-        lake_id = self._create_one_lake()
+    def test_ST_Dump(self, session, Lake, setup_one_lake):
+        lake_id = setup_one_lake
         lake = session.query(Lake).get(lake_id)
         assert isinstance(lake.geom, WKBElement)
 
@@ -952,8 +900,8 @@ class TestCallFunction():
 
         assert r2.data == r3.data == r4.data == r5.data
 
-    def test_ST_DumpPoints(self):
-        lake_id = self._create_one_lake()
+    def test_ST_DumpPoints(self, session, Lake, setup_one_lake):
+        lake_id = setup_one_lake
         lake = session.query(Lake).get(lake_id)
         assert isinstance(lake.geom, WKBElement)
 
@@ -977,23 +925,21 @@ class TestCallFunction():
         p2 = session.execute(func.ST_AsText(p2.geom)).scalar()
         assert p2 == 'POINT(1 1)'
 
-    def test_ST_Buffer_Mixed_SRID(self):
-        self._create_one_lake()
-
+    def test_ST_Buffer_Mixed_SRID(self, session, Lake, setup_one_lake):
         with pytest.raises(InternalError):
             session.query(Lake).filter(
                 func.ST_Within('POINT(0 0)',
                                Lake.geom.ST_Buffer(2))).one()
 
-    def test_ST_Distance_type_coerce(self):
-        poi_id = self._create_one_poi()
+    def test_ST_Distance_type_coerce(self, session, Poi, setup_one_poi):
+        poi_id = setup_one_poi
         poi = session.query(Poi) \
             .filter(Poi.geog.ST_Distance(
                 type_coerce('POINT(5 45)', Geography)) < 1000).one()
         assert poi.id == poi_id
 
-    def test_ST_AsGeoJson(self):
-        lake_id = self._create_one_lake()
+    def test_ST_AsGeoJson(self, session, Lake, setup_one_lake):
+        lake_id = setup_one_lake
         lake = session.query(Lake).get(lake_id)
 
         # Test geometry
@@ -1020,11 +966,11 @@ class TestCallFunction():
             "coordinates": [[0, 0], [1, 1]]
         }
 
-    @skip_postgis1(postgis_version)
-    @skip_postgis2(postgis_version)
-    def test_ST_AsGeoJson_feature(self):
-        self._create_one_lake()
-
+    # @skip_postgis1(postgis_version)
+    # @skip_postgis2(postgis_version)
+    def test_ST_AsGeoJson_feature(self, session, Lake, setup_one_lake):
+        skip_postgis1(session)
+        skip_postgis2(session)
         # Test feature
         s2 = select([func.ST_AsGeoJSON(Lake, 'geom')])
         r2 = session.execute(s2).scalar()
@@ -1051,8 +997,8 @@ class TestCallFunction():
         }
 
     @skip_case_insensitivity()
-    def test_comparator_case_insensitivity(self):
-        lake_id = self._create_one_lake()
+    def test_comparator_case_insensitivity(self, session, Lake, setup_one_lake):
+        lake_id = setup_one_lake
 
         s = select([func.ST_Buffer(Lake.__table__.c.geom, 2)])
         r1 = session.execute(s).scalar()
@@ -1083,15 +1029,13 @@ class TestCallFunction():
             r1.data == r2.data == r3.data == r4.data == r5.data == r6.data
             == r7.data)
 
-    def test_unknown_function_column(self):
-        self._create_one_lake()
-
+    def test_unknown_function_column(self, session, Lake, setup_one_lake):
         s = select([func.ST_UnknownFunction(Lake.__table__.c.geom, 2)])
         with pytest.raises(ProgrammingError, match="ST_UnknownFunction"):
             session.execute(s)
 
-    def test_unknown_function_element(self):
-        lake_id = self._create_one_lake()
+    def test_unknown_function_element(self, session, Lake, setup_one_lake):
+        lake_id = setup_one_lake
         lake = session.query(Lake).get(lake_id)
 
         s = select([func.ST_UnknownFunction(lake.geom, 2)])
@@ -1101,8 +1045,8 @@ class TestCallFunction():
             # It would be better if it could fail because of a "UndefinedFunction" error
             session.execute(s)
 
-    def test_unknown_function_element_ORM(self):
-        lake_id = self._create_one_lake()
+    def test_unknown_function_element_ORM(self, session, Lake, setup_one_lake):
+        lake_id = setup_one_lake
         lake = session.query(Lake).get(lake_id)
 
         with pytest.raises(AttributeError):
@@ -1111,21 +1055,14 @@ class TestCallFunction():
 
 class TestReflection():
 
-    def setup(self):
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
-
-    def teardown(self):
-        metadata.drop_all()
-
-    @skip_pg12_sa1217(postgres_major_version)
-    def test_reflection(self):
+    # @skip_pg12_sa1217(postgres_major_version)
+    def test_reflection(self, conn, Lake, setup_tables):
+        skip_pg12_sa1217(conn)
         t = Table(
             'lake',
             MetaData(),
             schema='gis',
-            autoload=True,
-            autoload_with=engine)
+            autoload_with=conn)
         type_ = t.c.geom.type
         assert isinstance(type_, Geometry)
         if postgis_version.startswith('1.'):
@@ -1135,10 +1072,12 @@ class TestReflection():
             assert type_.geometry_type == 'LINESTRING'
             assert type_.srid == 4326
 
-    @skip_postgis1(postgis_version)
-    @skip_pg12_sa1217(postgres_major_version)
-    def test_raster_reflection(self):
-        t = Table('ocean', MetaData(), autoload=True, autoload_with=engine)
+    # @skip_postgis1(postgis_version)
+    # @skip_pg12_sa1217(postgres_major_version)
+    def test_raster_reflection(self, conn, Ocean, setup_tables):
+        skip_pg12_sa1217(conn)
+        skip_postgis1(conn)
+        t = Table('ocean', MetaData(), autoload_with=conn)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
 
@@ -1163,14 +1102,14 @@ class TestSTAsGeoJson():
         strstmt = strstmt.replace("\n", "")
         assert strstmt == expected
 
-    def test_one(self):
+    def test_one(self, Lake):
         stmt = select([func.ST_AsGeoJSON(Lake.__table__.c.geom)])
 
         self._assert_stmt(
             stmt, 'SELECT ST_AsGeoJSON(gis.lake.geom) AS "ST_AsGeoJSON_1" FROM gis.lake'
         )
 
-    def test_two(self):
+    def test_two(self, Lake):
         stmt = select([func.ST_AsGeoJSON(Lake, "geom")])
         self._assert_stmt(
             stmt,
@@ -1178,9 +1117,9 @@ class TestSTAsGeoJson():
             '"ST_AsGeoJSON_1" FROM gis.lake',
         )
 
-    @skip_postgis1(postgis_version)
-    @skip_postgis2(postgis_version)
-    def test_three(self):
+    # @skip_postgis1(postgis_version)
+    # @skip_postgis2(postgis_version)
+    def test_three(self, Lake):
         sq = select([Lake, bindparam("dummy_val", 10).label("dummy_attr")]).alias()
         stmt = select([func.ST_AsGeoJSON(sq, "geom")])
         self._assert_stmt(
@@ -1190,8 +1129,8 @@ class TestSTAsGeoJson():
             "dummy_attr FROM gis.lake) AS anon_1",
         )
 
-    @skip_postgis1(postgis_version)
-    @skip_postgis2(postgis_version)
+    # @skip_postgis1(postgis_version)
+    # @skip_postgis2(postgis_version)
     def test_four(self):
         stmt = select([func.ST_AsGeoJSON(TestSTAsGeoJson.TblWSpacesAndDots, "geom")])
         self._assert_stmt(
@@ -1201,8 +1140,8 @@ class TestSTAsGeoJson():
             '"this is.an AWFUL.name"',
         )
 
-    @skip_postgis1(postgis_version)
-    @skip_postgis2(postgis_version)
+    # @skip_postgis1(postgis_version)
+    # @skip_postgis2(postgis_version)
     def test_five(self):
         stmt = select([func.ST_AsGeoJSON(TestSTAsGeoJson.TblWSpacesAndDots, "geom", 3)])
         self._assert_stmt(
@@ -1213,7 +1152,7 @@ class TestSTAsGeoJson():
             '"this is.an AWFUL.name"',
         )
 
-    @skip_postgis1(postgis_version)
+    # @skip_postgis1(postgis_version)
     def test_nested_funcs(self):
         stmt = select([func.ST_AsGeoJSON(func.ST_MakeValid(func.ST_MakePoint(1, 2)))])
         self._assert_stmt(
@@ -1224,7 +1163,7 @@ class TestSTAsGeoJson():
             ')) AS "ST_AsGeoJSON_1"',
         )
 
-    @skip_postgis1(postgis_version)
+    # @skip_postgis1(postgis_version)
     def test_unknown_func(self):
         stmt = select([
             func.ST_AsGeoJSON(func.ST_UnknownFunction(func.ST_MakePoint(1, 2)))
@@ -1240,15 +1179,7 @@ class TestSTAsGeoJson():
 
 class TestSTSummaryStatsAgg():
 
-    def setup(self):
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
-
-    def teardown(self):
-        session.rollback()
-        metadata.drop_all()
-
-    def test_st_summary_stats_agg(self):
+    def test_st_summary_stats_agg(self, session, Ocean, setup_tables):
 
         # Create a new raster
         polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
@@ -1256,36 +1187,20 @@ class TestSTSummaryStatsAgg():
         session.add(o)
         session.flush()
 
-        if parse_version(SA_VERSION) < parse_version("1.4"):
-            # Define the query to compute stats
-            stats_agg = select([
-                func.ST_SummaryStatsAgg(Ocean.__table__.c.rast, 1, True, 1).label("stats")
-            ])
-            stats_agg_alias = stats_agg.alias("stats_agg")
+        # Define the query to compute stats
+        stats_agg = select([
+            func.ST_SummaryStatsAgg(Ocean.__table__.c.rast, 1, True, 1).label("stats")
+        ])
+        stats_agg_alias = stats_agg.alias("stats_agg")
 
-            # Use these stats
-            query = select([
-                stats_agg_alias.c.stats.count.label("count"),
-                stats_agg_alias.c.stats.sum.label("sum"),
-                stats_agg_alias.c.stats.stddev.label("stddev"),
-                stats_agg_alias.c.stats.min.label("min"),
-                stats_agg_alias.c.stats.max.label("max")
-            ])
-        else:
-            # Define the query to compute stats
-            stats_agg = select(
-                func.ST_SummaryStatsAgg(Ocean.__table__.c.rast, 1, True, 1).label("stats")
-            )
-            stats_agg_alias = stats_agg.alias("stats_agg")
-
-            # Use these stats
-            query = select(
-                stats_agg_alias.c.stats.count.label("count"),
-                stats_agg_alias.c.stats.sum.label("sum"),
-                stats_agg_alias.c.stats.stddev.label("stddev"),
-                stats_agg_alias.c.stats.min.label("min"),
-                stats_agg_alias.c.stats.max.label("max")
-            )
+        # Use these stats
+        query = select([
+            stats_agg_alias.c.stats.count.label("count"),
+            stats_agg_alias.c.stats.sum.label("sum"),
+            stats_agg_alias.c.stats.stddev.label("stddev"),
+            stats_agg_alias.c.stats.min.label("min"),
+            stats_agg_alias.c.stats.max.label("max")
+        ])
 
         # Check the query
         assert str(query) == (

@@ -2,9 +2,11 @@ import pytest
 import re
 
 from sqlalchemy import Table, MetaData, Column
-from sqlalchemy.sql import select, insert, func, text
+from sqlalchemy.sql import insert, func, text
 from geoalchemy2.types import Geometry, Geography, Raster
 from geoalchemy2.exc import ArgumentError
+
+from . import select
 
 
 def eq_sql(a, b):
@@ -112,7 +114,6 @@ class TestGeometry():
     def test_subquery(self, geometry_table):
         # test for geometry columns not delivered to the result
         # http://hg.sqlalchemy.org/sqlalchemy/rev/f1efb20c6d61
-        from sqlalchemy.sql import select
         s = select([geometry_table]).alias('name').select()
         eq_sql(s,
                'SELECT ST_AsEWKB(name.geom) AS geom FROM '
