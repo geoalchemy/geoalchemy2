@@ -83,8 +83,12 @@ class TestGeometry():
             Geometry(management=False, use_typmod=True)
 
     def test_check_ctor_args_use_typmod_nullable(self):
-        with pytest.raises(ArgumentError):
-            Geometry(use_typmod=True, nullable=False)
+        with pytest.warns(UserWarning, match="use_typmod ignored when management is False"):
+            with pytest.raises(
+                ArgumentError,
+                match='The "nullable" and "use_typmod" arguments can not be used together',
+            ):
+                Geometry(use_typmod=True, nullable=False)
 
     def test_column_expression(self, geometry_table):
         s = select([geometry_table.c.geom])
