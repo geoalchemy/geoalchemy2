@@ -8,10 +8,10 @@ are projected in the DB. To avoid having to always tweak the query with a
 ``ST_Transform()``, it is possible to define a `TypeDecorator
 <https://docs.sqlalchemy.org/en/13/core/custom_types.html#sqlalchemy.types.TypeDecorator>`_
 """
-from sqlalchemy import create_engine
-from sqlalchemy import MetaData
 from sqlalchemy import Column
 from sqlalchemy import Integer
+from sqlalchemy import MetaData
+from sqlalchemy import create_engine
 from sqlalchemy import func
 from sqlalchemy import text
 from sqlalchemy.ext.declarative import declarative_base
@@ -20,7 +20,6 @@ from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import shape
-
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
 metadata = MetaData()

@@ -1,7 +1,7 @@
-from json import loads
-import os
-import pytest
 import re
+from json import loads
+
+import pytest
 
 try:
     from psycopg2cffi import compat
@@ -12,35 +12,38 @@ else:
     del compat
 
 from pkg_resources import parse_version
-from sqlalchemy import create_engine
-from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam, text
+from shapely.geometry import LineString
+from shapely.geometry import Point
 from sqlalchemy import CheckConstraint
-from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.exc import DataError, IntegrityError, InternalError, ProgrammingError, OperationalError
-from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import type_coerce
-from sqlalchemy.types import TypeDecorator
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import MetaData
+from sqlalchemy import String
+from sqlalchemy import Table
 from sqlalchemy import __version__ as SA_VERSION
+from sqlalchemy import bindparam
+from sqlalchemy import text
+from sqlalchemy.exc import DataError
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.sql import func
 
-from geoalchemy2 import Geometry, Geography, Raster
-from geoalchemy2.elements import WKTElement, WKBElement, RasterElement
+from geoalchemy2 import Geometry
+from geoalchemy2 import Raster
+from geoalchemy2.elements import WKBElement
+from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
 from geoalchemy2.shape import to_shape
-from geoalchemy2.exc import ArgumentError
-from shapely.geometry import LineString, Point
 
-from . import skip_postgis1, skip_postgis2, skip_case_insensitivity, skip_pg12_sa1217, select
-from . import get_postgis_version
 from . import format_wkt
+from . import get_postgis_version
+from . import select
+from . import skip_case_insensitivity
+from . import skip_pg12_sa1217
+from . import skip_postgis1
 
 SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("1.999")
-if SQLA_LT_2:
-    from sqlalchemy.engine.reflection import Inspector
-    get_inspector = Inspector.from_engine
-else:
-    from sqlalchemy import inspect as get_inspector
 
 
 class TestInsertionCore():
@@ -241,9 +244,11 @@ class TestInsertionORM():
         assert round(pt_wkb.y, 5) == 45
 
         # Check that the data is correct in DB using raw query
-        q = text("""
+        q = text(
+            """
             SELECT id, ST_AsText(geom) AS geom, ST_AsText(managed_geom) AS managed_geom
-            FROM local_point;"""
+            FROM local_point;
+            """
         )
         res_q = session.execute(q).fetchone()
         assert res_q.id == 1
@@ -447,7 +452,9 @@ class TestCallFunction():
         }
 
         # Test with function inside
-        s1_func = select([func.ST_AsGeoJSON(func.ST_Translate(Lake.__table__.c.geom, 0.0, 0.0, 0.0))])
+        s1_func = select([
+            func.ST_AsGeoJSON(func.ST_Translate(Lake.__table__.c.geom, 0.0, 0.0, 0.0))
+        ])
         r1_func = session.execute(s1_func).scalar()
         assert loads(r1_func) == {
             "type": "LineString",

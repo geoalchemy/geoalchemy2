@@ -16,7 +16,6 @@ from geoalchemy2 import Geometry
 
 from .. import select
 
-
 Base = declarative_base()
 
 

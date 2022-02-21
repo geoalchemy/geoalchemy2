@@ -1,34 +1,17 @@
-import os
-import re
-from json import loads
-
-from pkg_resources import parse_version
-import pytest
 import platform
 
+import pytest
 from shapely.geometry import LineString
-from sqlalchemy import __version__ as SA_VERSION
-from sqlalchemy import create_engine
-from sqlalchemy import MetaData
+from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import Integer
-from sqlalchemy import bindparam
-from sqlalchemy import text
-from sqlalchemy import CheckConstraint
 from sqlalchemy import String
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.event import listen
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.sql import func
-from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2 import Geometry
-from geoalchemy2.elements import WKTElement, WKBElement
-from geoalchemy2.shape import from_shape, to_shape
-
-from . import select
-
+from geoalchemy2.elements import WKTElement
+from geoalchemy2.shape import from_shape
 
 if platform.python_implementation().lower() == 'pypy':
     pytest.skip('skip SpatiaLite tests on PyPy', allow_module_level=True)

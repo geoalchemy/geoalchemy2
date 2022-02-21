@@ -1,14 +1,20 @@
-from itertools import permutations
 import re
-import pytest
+from itertools import permutations
 
+import pytest
 from shapely import wkb
-from sqlalchemy import Table, MetaData, Column, String, func
-from geoalchemy2.types import Geometry
-from geoalchemy2.elements import (
-    WKTElement, WKBElement, RasterElement, CompositeElement
-)
+from sqlalchemy import Column
+from sqlalchemy import MetaData
+from sqlalchemy import String
+from sqlalchemy import Table
+from sqlalchemy import func
+
+from geoalchemy2.elements import CompositeElement
+from geoalchemy2.elements import RasterElement
+from geoalchemy2.elements import WKBElement
+from geoalchemy2.elements import WKTElement
 from geoalchemy2.exc import ArgumentError
+from geoalchemy2.types import Geometry
 
 
 @pytest.fixture

@@ -7,17 +7,17 @@ kind of functions.
 """
 import pytest
 from pkg_resources import parse_version
-
-from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import Column
-from sqlalchemy import create_engine
 from sqlalchemy import Float
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
+from sqlalchemy import __version__ as SA_VERSION
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from geoalchemy2 import Raster, WKTElement
+from geoalchemy2 import Raster
+from geoalchemy2 import WKTElement
 from geoalchemy2.functions import GenericFunction
 from geoalchemy2.types import CompositeType
 

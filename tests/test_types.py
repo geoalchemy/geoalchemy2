@@ -1,10 +1,17 @@
-import pytest
 import re
 
-from sqlalchemy import Table, MetaData, Column
-from sqlalchemy.sql import insert, func, text
-from geoalchemy2.types import Geometry, Geography, Raster
+import pytest
+from sqlalchemy import Column
+from sqlalchemy import MetaData
+from sqlalchemy import Table
+from sqlalchemy.sql import func
+from sqlalchemy.sql import insert
+from sqlalchemy.sql import text
+
 from geoalchemy2.exc import ArgumentError
+from geoalchemy2.types import Geography
+from geoalchemy2.types import Geometry
+from geoalchemy2.types import Raster
 
 from . import select
 

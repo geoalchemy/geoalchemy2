@@ -1,7 +1,10 @@
 import re
-import pytest
 
-from sqlalchemy import Table, MetaData, Column
+import pytest
+from sqlalchemy import Column
+from sqlalchemy import MetaData
+from sqlalchemy import Table
+
 from geoalchemy2.types import Geometry
 
 from . import select

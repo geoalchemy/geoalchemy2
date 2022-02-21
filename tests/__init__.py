@@ -1,13 +1,13 @@
 import re
-from pkg_resources import parse_version
 
 import pytest
 from packaging import version
+from pkg_resources import parse_version
 from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import select as raw_select
 from sqlalchemy import text
-from sqlalchemy.sql import func
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.sql import func
 
 
 def get_postgis_version(bind):

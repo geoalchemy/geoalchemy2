@@ -12,14 +12,14 @@ import struct
 
 import pytest
 from sqlalchemy import Column
-from sqlalchemy import create_engine
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from geoalchemy2 import Raster, WKTElement
-
+from geoalchemy2 import Raster
+from geoalchemy2 import WKTElement
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=False)
 metadata = MetaData()

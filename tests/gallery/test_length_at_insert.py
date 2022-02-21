@@ -6,20 +6,19 @@ It is possible to insert a geometry and ask PostgreSQL to compute its length at 
 time.
 This example uses SQLAlchemy core queries.
 """
-from sqlalchemy import bindparam
 from sqlalchemy import Column
-from sqlalchemy import create_engine
 from sqlalchemy import Float
-from sqlalchemy import func
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
+from sqlalchemy import bindparam
+from sqlalchemy import create_engine
+from sqlalchemy import func
 
 from geoalchemy2 import Geometry
 from geoalchemy2.shape import to_shape
 
 from .. import select
-
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
 metadata = MetaData()

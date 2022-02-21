@@ -2,7 +2,6 @@
 # flake8: noqa
 from . import types
 
-
 _FUNCTIONS = [
     ('AddGeometryColumn', None,
      '''Adds a geometry column to an existing table.'''),

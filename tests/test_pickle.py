@@ -1,14 +1,16 @@
 import pytest
-from sqlalchemy import Table, MetaData, Column, Integer, String, bindparam, text
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import MetaData
 from sqlalchemy.ext.declarative import declarative_base
 
 from geoalchemy2 import Geometry
-from geoalchemy2 import WKTElement
 from geoalchemy2 import WKBElement
+from geoalchemy2 import WKTElement
 
-
-metadata=MetaData()
+metadata = MetaData()
 Base = declarative_base(metadata=metadata)
+
 
 class PickledLake(Base):
     __tablename__ = 'pickled_lake'

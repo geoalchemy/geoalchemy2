@@ -8,11 +8,13 @@ Reference
 """
 import warnings
 
-from sqlalchemy.types import UserDefinedType, Integer, Float
-from sqlalchemy.sql import func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names as postgresql_ischema_names
 from sqlalchemy.dialects.sqlite.base import ischema_names as sqlite_ischema_names
+from sqlalchemy.sql import func
+from sqlalchemy.types import Float
+from sqlalchemy.types import Integer
+from sqlalchemy.types import UserDefinedType
 
 try:
     from .shape import to_shape
@@ -21,8 +23,12 @@ except ImportError:
     SHAPELY = False
 
 
-from .comparator import BaseComparator, Comparator
-from .elements import WKBElement, WKTElement, RasterElement, CompositeElement
+from .comparator import BaseComparator
+from .comparator import Comparator
+from .elements import CompositeElement
+from .elements import RasterElement
+from .elements import WKBElement
+from .elements import WKTElement
 from .exc import ArgumentError
 
 

@@ -10,18 +10,17 @@ function on `Raster` requires minor tweaking.
 This example uses both SQLAlchemy core and ORM queries.
 """
 from sqlalchemy import Column
-from sqlalchemy import func
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
-from sqlalchemy.orm import Query
+from sqlalchemy import func
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Query
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
 
 from .. import select
-
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)

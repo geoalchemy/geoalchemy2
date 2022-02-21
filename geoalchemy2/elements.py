@@ -7,11 +7,11 @@ try:
 except ImportError:  # SQLA < 0.9  # pragma: no cover
     from sqlalchemy.sql import expression as functions
     from sqlalchemy.sql.expression import FunctionElement
-from sqlalchemy.types import to_instance
+
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.types import to_instance
 
 from .exc import ArgumentError
-
 
 BinasciiError = binascii.Error
 

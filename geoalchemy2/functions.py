@@ -52,10 +52,10 @@ Reference
 import re
 
 from sqlalchemy import inspect
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import annotation
 from sqlalchemy.sql import functions
 from sqlalchemy.sql.elements import ColumnElement
-from sqlalchemy.ext.compiler import compiles
 
 from . import elements
 from ._functions import _FUNCTIONS
