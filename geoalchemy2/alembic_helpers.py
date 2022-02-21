@@ -1,5 +1,7 @@
 """Some helpers to use with Alembic migration tool."""
-from geoalchemy2 import Geometry, Geography, Raster
+from geoalchemy2 import Geography
+from geoalchemy2 import Geometry
+from geoalchemy2 import Raster
 from geoalchemy2 import _check_spatial_type
 
 

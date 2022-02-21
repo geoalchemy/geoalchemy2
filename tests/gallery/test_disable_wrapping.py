@@ -10,11 +10,11 @@ This example uses SQLAlchemy ORM queries.
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import func
-from sqlalchemy import select
 from sqlalchemy.ext.declarative import declarative_base
 
 from geoalchemy2 import Geometry
 
+from .. import select
 
 Base = declarative_base()
 

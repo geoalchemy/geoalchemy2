@@ -2,13 +2,13 @@ import re
 
 from sqlalchemy.sql import func
 
+import geoalchemy2.functions  # NOQA
+from geoalchemy2.types import Raster  # NOQA
+
 #
 # Importing geoalchemy2 actually registers the GeoAlchemy generic
 # functions in SQLAlchemy's function registry.
 #
-
-import geoalchemy2.functions  # NOQA
-from geoalchemy2.types import Raster  # NOQA
 
 
 def eq_sql(a, b):

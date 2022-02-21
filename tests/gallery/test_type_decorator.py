@@ -8,11 +8,12 @@ are projected in the DB. To avoid having to always tweak the query with a
 ``ST_Transform()``, it is possible to define a `TypeDecorator
 <https://docs.sqlalchemy.org/en/13/core/custom_types.html#sqlalchemy.types.TypeDecorator>`_
 """
-from sqlalchemy import create_engine
-from sqlalchemy import MetaData
 from sqlalchemy import Column
 from sqlalchemy import Integer
+from sqlalchemy import MetaData
+from sqlalchemy import create_engine
 from sqlalchemy import func
+from sqlalchemy import text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import TypeDecorator
@@ -20,9 +21,8 @@ from sqlalchemy.types import TypeDecorator
 from geoalchemy2 import Geometry
 from geoalchemy2 import shape
 
-
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
-metadata = MetaData(engine)
+metadata = MetaData()
 
 Base = declarative_base(metadata=metadata)
 
@@ -71,9 +71,6 @@ class Point(Base):
         ThreeDGeometry(srid=4326, geometry_type="POINTZ", dimension=3))
 
 
-session = sessionmaker(bind=engine)()
-
-
 def check_wkb(wkb, x, y):
     pt = shape.to_shape(wkb)
     assert round(pt.x, 5) == x
@@ -83,12 +80,15 @@ def check_wkb(wkb, x, y):
 class TestTypeDecorator():
 
     def setup(self):
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
+        self.session = sessionmaker(bind=engine)()
+        self.conn = self.session.connection()
+        metadata.drop_all(self.conn, checkfirst=True)
+        metadata.create_all(self.conn)
 
     def teardown(self):
-        session.rollback()
-        metadata.drop_all()
+        self.session.rollback()
+        self.conn = self.session.connection()
+        metadata.drop_all(self.conn)
 
     def _create_one_point(self):
         # Create new point instance
@@ -98,9 +98,9 @@ class TestTypeDecorator():
         p.three_d_geom = "SRID=4326;POINT(5 45)"  # Insert 2D geometry into 3D column
 
         # Insert point
-        session.add(p)
-        session.flush()
-        session.expire(p)
+        self.session.add(p)
+        self.session.flush()
+        self.session.expire(p)
 
         return p.id
 
@@ -108,7 +108,7 @@ class TestTypeDecorator():
         self._create_one_point()
 
         # Query the point and check the result
-        pt = session.query(Point).one()
+        pt = self.session.query(Point).one()
         assert pt.id == 1
         assert pt.raw_geom.srid == 4326
         check_wkb(pt.raw_geom, 5, 45)
@@ -117,13 +117,13 @@ class TestTypeDecorator():
         check_wkb(pt.geom, 5, 45)
 
         # Check that the data is correct in DB using raw query
-        q = "SELECT id, ST_AsEWKT(geom) AS geom FROM point;"
-        res_q = session.execute(q).fetchone()
+        q = text("SELECT id, ST_AsEWKT(geom) AS geom FROM point;")
+        res_q = self.session.execute(q).fetchone()
         assert res_q.id == 1
         assert res_q.geom == "SRID=2154;POINT(857581.899319668 6435414.7478354)"
 
         # Compare geom, raw_geom with auto transform and explicit transform
-        pt_trans = session.query(
+        pt_trans = self.session.query(
             Point,
             Point.raw_geom,
             func.ST_Transform(Point.raw_geom, 2154).label("trans")
@@ -147,7 +147,7 @@ class TestTypeDecorator():
         self._create_one_point()
 
         # Query the point and check the result
-        pt = session.query(Point).one()
+        pt = self.session.query(Point).one()
 
         assert pt.id == 1
         assert pt.three_d_geom.srid == 4326

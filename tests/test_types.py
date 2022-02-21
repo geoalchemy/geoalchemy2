@@ -1,10 +1,19 @@
-import pytest
 import re
 
-from sqlalchemy import Table, MetaData, Column
-from sqlalchemy.sql import select, insert, func, text
-from geoalchemy2.types import Geometry, Geography, Raster
+import pytest
+from sqlalchemy import Column
+from sqlalchemy import MetaData
+from sqlalchemy import Table
+from sqlalchemy.sql import func
+from sqlalchemy.sql import insert
+from sqlalchemy.sql import text
+
 from geoalchemy2.exc import ArgumentError
+from geoalchemy2.types import Geography
+from geoalchemy2.types import Geometry
+from geoalchemy2.types import Raster
+
+from . import select
 
 
 def eq_sql(a, b):
@@ -81,8 +90,12 @@ class TestGeometry():
             Geometry(management=False, use_typmod=True)
 
     def test_check_ctor_args_use_typmod_nullable(self):
-        with pytest.raises(ArgumentError):
-            Geometry(use_typmod=True, nullable=False)
+        with pytest.warns(UserWarning, match="use_typmod ignored when management is False"):
+            with pytest.raises(
+                ArgumentError,
+                match='The "nullable" and "use_typmod" arguments can not be used together',
+            ):
+                Geometry(use_typmod=True, nullable=False)
 
     def test_column_expression(self, geometry_table):
         s = select([geometry_table.c.geom])
@@ -112,7 +125,6 @@ class TestGeometry():
     def test_subquery(self, geometry_table):
         # test for geometry columns not delivered to the result
         # http://hg.sqlalchemy.org/sqlalchemy/rev/f1efb20c6d61
-        from sqlalchemy.sql import select
         s = select([geometry_table]).alias('name').select()
         eq_sql(s,
                'SELECT ST_AsEWKB(name.geom) AS geom FROM '

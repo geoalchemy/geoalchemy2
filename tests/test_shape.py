@@ -1,8 +1,10 @@
-from geoalchemy2.elements import WKBElement, WKTElement
-from geoalchemy2.shape import from_shape, to_shape
-
 import shapely.wkb
 from shapely.geometry import Point
+
+from geoalchemy2.elements import WKBElement
+from geoalchemy2.elements import WKTElement
+from geoalchemy2.shape import from_shape
+from geoalchemy2.shape import to_shape
 
 
 def test_to_shape_WKBElement():

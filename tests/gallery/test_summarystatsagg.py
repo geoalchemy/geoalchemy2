@@ -7,20 +7,21 @@ kind of functions.
 """
 import pytest
 from pkg_resources import parse_version
-
-from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import Column
-from sqlalchemy import create_engine
 from sqlalchemy import Float
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
-from sqlalchemy import select
+from sqlalchemy import __version__ as SA_VERSION
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from geoalchemy2 import Raster, WKTElement
+from geoalchemy2 import Raster
+from geoalchemy2 import WKTElement
 from geoalchemy2.functions import GenericFunction
 from geoalchemy2.types import CompositeType
+
+from .. import select
 
 
 class SummaryStatsCustomType(CompositeType):
@@ -46,9 +47,8 @@ class ST_SummaryStatsAgg(GenericFunction):
 
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
-metadata = MetaData(engine)
+metadata = MetaData()
 Base = declarative_base(metadata=metadata)
-session = sessionmaker(bind=engine)()
 
 
 class Ocean(Base):
@@ -64,12 +64,15 @@ class Ocean(Base):
 class TestSTSummaryStatsAgg():
 
     def setup(self):
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
+        self.session = sessionmaker(bind=engine)()
+        self.conn = self.session.connection()
+        metadata.drop_all(self.conn, checkfirst=True)
+        metadata.create_all(self.conn)
 
     def teardown(self):
-        session.rollback()
-        metadata.drop_all()
+        self.session.rollback()
+        self.conn = self.session.connection()
+        metadata.drop_all(self.conn)
 
     @pytest.mark.skipif(
         parse_version(SA_VERSION) < parse_version("1.4"),
@@ -80,27 +83,27 @@ class TestSTSummaryStatsAgg():
         # Create a new raster
         polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
         o = Ocean(polygon.ST_AsRaster(5, 6))
-        session.add(o)
-        session.flush()
+        self.session.add(o)
+        self.session.flush()
 
         # Define the query to compute stats
-        stats_agg = select(
+        stats_agg = select([
             Ocean.rast.ST_SummaryStatsAgg_custom(1, True, 1).label("stats")
-        )
+        ])
         stats_agg_alias = stats_agg.alias("stats_agg")
 
         # Use these stats
-        query = select(
+        query = select([
             stats_agg_alias.c.stats.count.label("count"),
             stats_agg_alias.c.stats.sum.label("sum"),
             stats_agg_alias.c.stats.mean.label("mean"),
             stats_agg_alias.c.stats.stddev.label("stddev"),
             stats_agg_alias.c.stats.min.label("min"),
             stats_agg_alias.c.stats.max.label("max")
-        )
+        ])
 
         # Check the query
-        assert str(query) == (
+        assert str(query.compile(dialect=self.session.bind.dialect)) == (
             "SELECT "
             "(stats_agg.stats).count AS count, "
             "(stats_agg.stats).sum AS sum, "
@@ -118,7 +121,7 @@ class TestSTSummaryStatsAgg():
         )
 
         # Execute the query
-        res = session.execute(query).fetchall()
+        res = self.session.execute(query).fetchall()
 
         # Check the result
         assert res == [(15, 15.0, 1.0, 0.0, 1.0, 1.0)]
