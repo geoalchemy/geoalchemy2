@@ -134,6 +134,14 @@ class TestExtendedWKTElement():
         b = WKTElement(self._ewkt, extended=True)
         assert a == b
 
+    def test_missing_srid(self):
+        with pytest.raises(ArgumentError, match="invalid EWKT string"):
+            WKTElement(self._wkt, extended=True)
+
+    def test_missing_semi_colon(self):
+        with pytest.raises(ArgumentError, match="invalid EWKT string"):
+            WKTElement("SRID=3857" + self._wkt, extended=True)
+
 
 class TestWKTElementFunction():
 

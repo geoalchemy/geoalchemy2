@@ -2,3 +2,4 @@
 flake8==3.7.9
 pytest==3.7.4
 pytest-cov==2.5.1
+pytest-html
