@@ -202,8 +202,8 @@ class WKBElement(_SpatialElement):
         """
         if isinstance(self.data, str):
             # SpatiaLite case
-            return self.data
-        desc = str(binascii.hexlify(self.data), encoding="utf-8")
+            return self.data.lower()
+        desc = str(binascii.hexlify(self.data), encoding="utf-8").lower()
         return desc
 
     @staticmethod

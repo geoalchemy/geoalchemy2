@@ -7,19 +7,26 @@ from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import select as raw_select
 from sqlalchemy import text
 from sqlalchemy.sql import func
+from sqlalchemy.exc import OperationalError
 
 
 def get_postgis_version(bind):
-    return bind.execute(func.postgis_lib_version()).scalar()
+    try:
+        return bind.execute(func.postgis_lib_version()).scalar()
+    except OperationalError:
+        return "0"
 
 
 def get_postgres_major_version(bind):
-    return re.match(
-        r"([0-9]*)\.([0-9]*).*",
-        bind.execute(
-            text("""SELECT current_setting('server_version');""")
-        ).scalar()
-    ).group(1)
+    try:
+        return re.match(
+            r"([0-9]*)\.([0-9]*).*",
+            bind.execute(
+                text("""SELECT current_setting('server_version');""")
+            ).scalar()
+        ).group(1)
+    except OperationalError:
+        return "0"
 
 
 def skip_postgis1(bind):
@@ -56,3 +63,7 @@ def select(args):
         return raw_select(args)
     else:
         return raw_select(*args)
+
+
+def format_wkt(wkt):
+    return wkt.replace(", ", ",")

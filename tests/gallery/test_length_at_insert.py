@@ -13,15 +13,16 @@ from sqlalchemy import Float
 from sqlalchemy import func
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
-from sqlalchemy import select
 from sqlalchemy import Table
 
 from geoalchemy2 import Geometry
 from geoalchemy2.shape import to_shape
 
+from .. import select
+
 
 engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
-metadata = MetaData(engine)
+metadata = MetaData()
 
 table = Table(
     "inserts",
@@ -36,12 +37,13 @@ class TestLengthAtInsert():
 
     def setup(self):
         self.conn = engine.connect()
-        metadata.drop_all(checkfirst=True)
-        metadata.create_all()
+        self.trans = self.conn.begin()
+        metadata.drop_all(bind=self.conn, checkfirst=True)
+        metadata.create_all(bind=self.conn)
 
     def teardown(self):
-        self.conn.close()
-        metadata.drop_all()
+        self.trans.rollback()
+        metadata.drop_all(bind=self.conn)
 
     def test_query(self):
         conn = self.conn
