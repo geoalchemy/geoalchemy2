@@ -451,6 +451,22 @@ class TestCallFunction():
             "coordinates": [[0, 0], [1, 1]]
         }
 
+        # Test from WKTElement
+        s1_wkt = WKTElement("LINESTRING(0 0,1 1)", srid=4326, extended=False).ST_AsGeoJSON()
+        r1_wkt = session.execute(s1_wkt).scalar()
+        assert loads(r1_wkt) == {
+            "type": "LineString",
+            "coordinates": [[0, 0], [1, 1]]
+        }
+
+        # Test from extended WKTElement
+        s1_ewkt = WKTElement("SRID=4326;LINESTRING(0 0,1 1)", extended=True).ST_AsGeoJSON()
+        r1_ewkt = session.execute(s1_ewkt).scalar()
+        assert loads(r1_ewkt) == {
+            "type": "LineString",
+            "coordinates": [[0, 0], [1, 1]]
+        }
+
         # Test with function inside
         s1_func = select([
             func.ST_AsGeoJSON(func.ST_Translate(Lake.__table__.c.geom, 0.0, 0.0, 0.0))
