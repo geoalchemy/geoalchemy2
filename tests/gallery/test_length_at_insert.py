@@ -12,15 +12,14 @@ from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import bindparam
-from sqlalchemy import create_engine
 from sqlalchemy import func
 
 from geoalchemy2 import Geometry
 from geoalchemy2.shape import to_shape
 
-from .. import select
+from tests import select
+from tests import test_only_with_dialects
 
-engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
 metadata = MetaData()
 
 table = Table(
@@ -32,20 +31,12 @@ table = Table(
 )
 
 
+@test_only_with_dialects("postgresql")
 class TestLengthAtInsert():
 
-    def setup(self):
-        self.conn = engine.connect()
-        self.trans = self.conn.begin()
-        metadata.drop_all(bind=self.conn, checkfirst=True)
-        metadata.create_all(bind=self.conn)
-
-    def teardown(self):
-        self.trans.rollback()
-        metadata.drop_all(bind=self.conn)
-
-    def test_query(self):
-        conn = self.conn
+    def test_query(self, conn):
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
 
         # Define geometries to insert
         values = [

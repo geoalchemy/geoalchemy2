@@ -1,4 +1,5 @@
 # Additional requirements for building the documentation
+shapely
 sphinx
 sphinx-gallery
 pillow

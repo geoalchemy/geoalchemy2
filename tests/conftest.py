@@ -38,6 +38,10 @@ def pytest_generate_tests(metafunc):
             dialects = ["postgresql"]
         elif metafunc.module.__name__ == "tests.test_functional_sqlite":
             dialects = ["sqlite"]
+        elif getattr(metafunc.function, "tested_dialects", False):
+            dialects = metafunc.function.tested_dialects
+        elif getattr(metafunc.cls, "tested_dialects", False):
+            dialects = metafunc.cls.tested_dialects
         else:
             dialects = ["postgresql", "sqlite"]
         metafunc.parametrize("db_url", dialects, indirect=True)
