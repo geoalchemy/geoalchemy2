@@ -11,17 +11,16 @@ are projected in the DB. To avoid having to always tweak the query with a
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
-from sqlalchemy import create_engine
 from sqlalchemy import func
 from sqlalchemy import text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import shape
 
-engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
+from tests import test_only_with_dialects
+
 metadata = MetaData()
 
 Base = declarative_base(metadata=metadata)
@@ -77,20 +76,13 @@ def check_wkb(wkb, x, y):
     assert round(pt.y, 5) == y
 
 
+@test_only_with_dialects("postgresql")
 class TestTypeDecorator():
 
-    def setup(self):
-        self.session = sessionmaker(bind=engine)()
-        self.conn = self.session.connection()
-        metadata.drop_all(self.conn, checkfirst=True)
-        metadata.create_all(self.conn)
+    def _create_one_point(self, session, conn):
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
 
-    def teardown(self):
-        self.session.rollback()
-        self.conn = self.session.connection()
-        metadata.drop_all(self.conn)
-
-    def _create_one_point(self):
         # Create new point instance
         p = Point()
         p.raw_geom = "SRID=4326;POINT(5 45)"
@@ -98,17 +90,17 @@ class TestTypeDecorator():
         p.three_d_geom = "SRID=4326;POINT(5 45)"  # Insert 2D geometry into 3D column
 
         # Insert point
-        self.session.add(p)
-        self.session.flush()
-        self.session.expire(p)
+        session.add(p)
+        session.flush()
+        session.expire(p)
 
         return p.id
 
-    def test_transform(self):
-        self._create_one_point()
+    def test_transform(self, session, conn):
+        self._create_one_point(session, conn)
 
         # Query the point and check the result
-        pt = self.session.query(Point).one()
+        pt = session.query(Point).one()
         assert pt.id == 1
         assert pt.raw_geom.srid == 4326
         check_wkb(pt.raw_geom, 5, 45)
@@ -118,12 +110,12 @@ class TestTypeDecorator():
 
         # Check that the data is correct in DB using raw query
         q = text("SELECT id, ST_AsEWKT(geom) AS geom FROM point;")
-        res_q = self.session.execute(q).fetchone()
+        res_q = session.execute(q).fetchone()
         assert res_q.id == 1
         assert res_q.geom == "SRID=2154;POINT(857581.899319668 6435414.7478354)"
 
         # Compare geom, raw_geom with auto transform and explicit transform
-        pt_trans = self.session.query(
+        pt_trans = session.query(
             Point,
             Point.raw_geom,
             func.ST_Transform(Point.raw_geom, 2154).label("trans")
@@ -143,11 +135,11 @@ class TestTypeDecorator():
         assert pt_trans[2].srid == 2154
         check_wkb(pt_trans[2], 857581.89932, 6435414.74784)
 
-    def test_force_3d(self):
-        self._create_one_point()
+    def test_force_3d(self, session, conn):
+        self._create_one_point(session, conn)
 
         # Query the point and check the result
-        pt = self.session.query(Point).one()
+        pt = session.query(Point).one()
 
         assert pt.id == 1
         assert pt.three_d_geom.srid == 4326

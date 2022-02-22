@@ -10,6 +10,15 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.sql import func
 
 
+class test_only_with_dialects:
+    def __init__(self, *dialects):
+        self.tested_dialects = dialects
+
+    def __call__(self, test_obj):
+        test_obj.tested_dialects = self.tested_dialects
+        return test_obj
+
+
 def get_postgis_version(bind):
     try:
         return bind.execute(func.postgis_lib_version()).scalar()

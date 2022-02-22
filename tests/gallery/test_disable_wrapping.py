@@ -14,7 +14,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from geoalchemy2 import Geometry
 
-from .. import select
+from tests import select
 
 Base = declarative_base()
 

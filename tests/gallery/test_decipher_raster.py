@@ -14,14 +14,13 @@ import pytest
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
-from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 
 from geoalchemy2 import Raster
 from geoalchemy2 import WKTElement
 
-engine = create_engine('postgresql://gis:gis@localhost/gis', echo=False)
+from tests import test_only_with_dialects
+
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
 
@@ -142,18 +141,8 @@ def wkbImage(raster_data, use_numpy=False):
     return img
 
 
+@test_only_with_dialects("postgresql")
 class TestDecipherRaster():
-
-    def setup(self):
-        self.session = sessionmaker(bind=engine)()
-        self.conn = self.session.connection()
-        metadata.drop_all(self.conn, checkfirst=True)
-        metadata.create_all(self.conn)
-
-    def teardown(self):
-        self.session.rollback()
-        self.conn = self.session.connection()
-        metadata.drop_all(self.conn)
 
     @pytest.mark.parametrize("pixel_type", [
         '1BB',
@@ -168,14 +157,16 @@ class TestDecipherRaster():
         '32BF',
         '64BF'
     ])
-    def test_decipher_raster(self, pixel_type):
+    def test_decipher_raster(self, pixel_type, session, conn):
         """Create a raster and decipher it"""
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
 
         # Create a new raster
         polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
         o = Ocean(polygon.ST_AsRaster(5, 6, pixel_type))
-        self.session.add(o)
-        self.session.flush()
+        session.add(o)
+        session.flush()
 
         # Decipher data from each raster
         image = wkbImage(o.rast.data)

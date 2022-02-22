@@ -11,7 +11,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import sys
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -218,21 +219,6 @@ man_pages = [
     ('index', 'geoalchemy2', u'GeoAlchemy2 Documentation',
      [u'Eric Lemoine'], 1)
 ]
-
-# Mocks for Read the Docs
-import sys
-from unittest.mock import MagicMock
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        if name == "_mock_methods":
-            return name._mock_methods
-        else:
-            return Mock()
-
-MOCK_MODULES = ['shapely', 'shapely.wkt', 'shapely.wkb']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Options gallery generation ------------------------------------------------
 from sphinx_gallery.sorting import ExampleTitleSortKey
