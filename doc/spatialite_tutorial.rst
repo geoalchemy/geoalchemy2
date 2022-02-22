@@ -31,7 +31,7 @@ SpatiaLite extension, which is a necessary operation for using SpatiaLite throug
 At this point you can test that you are able to connect to the database::
 
      >> conn = engine.connect()
-     2018-05-30 17:12:02,675 INFO sqlalchemy.engine.base.Engine SELECT CAST('test plain returns' AS VARCHAR(60)) AS anon_1 
+     2018-05-30 17:12:02,675 INFO sqlalchemy.engine.base.Engine SELECT CAST('test plain returns' AS VARCHAR(60)) AS anon_1
      2018-05-30 17:12:02,676 INFO sqlalchemy.engine.base.Engine ()
      2018-05-30 17:12:02,676 INFO sqlalchemy.engine.base.Engine SELECT CAST('test unicode returns' AS VARCHAR(60)) AS anon_1
      2018-05-30 17:12:02,676 INFO sqlalchemy.engine.base.Engine ()
@@ -185,6 +185,28 @@ case).
 
 The value ``1`` indicates that the lake "Garde" does intersects the ``LINESTRING(2 1,4 1)``
 geometry. See the SpatiaLite SQL functions reference list for more information.
+
+Function mapping
+----------------
+
+Several functions have different names in SpatiaLite than in PostGIS. The GeoAlchemy 2 package is
+based on the PostGIS syntax but it is possible to automatically translate the queries into
+SpatiaLite ones. For example, the function `ST_GeomFromEWKT` is automatically translated into
+`GeomFromEWKT`. Unfortunately, only a few functions are automatically mapped (the ones internally
+used by GeoAlchemy 2). Nevertheless, it is possible to define new mappings in order to translate
+the queries automatically. Here is an example to register a mapping for the `ST_Buffer` function::
+
+    >>> geoalchemy2.functions.register_sqlite_mapping(
+    ...     {'ST_Buffer': 'Buffer'}
+    ... )
+
+After this command, all `ST_Buffer` calls in the queries will be translated to `Buffer` calls when
+the query is executed on a SQLite DB.
+
+A more complex example is provided for when the `PostGIS` function should be mapped depending on
+the given parameters. For example, the `ST_Buffer` function can actually be translate into either
+the `Buffer` function or the `SingleSidedBuffer` function (only when `side=right` or `side=left` is
+passed). See the :ref:`sphx_glr_gallery_test_specific_compilation.py` example in the gallery.
 
 Further Reference
 -----------------

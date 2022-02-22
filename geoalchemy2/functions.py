@@ -286,6 +286,20 @@ def _compiles_sqlite(cls, fn):
     compiles(globals()[cls], "sqlite")(_compile_sqlite)
 
 
-for cls, fn in _SQLITE_FUNCTIONS.items():
-    _compiles_default(cls)
-    _compiles_sqlite(cls, fn)
+def register_sqlite_mapping(mapping):
+    """Register compilation mappings for the given functions.
+
+    ``mapping`` should have the following form::
+
+        {
+            "function_name_1": "sqlite_function_name_1",
+            "function_name_2": "sqlite_function_name_2",
+            ...
+        }
+    """
+    for cls, fn in mapping.items():
+        _compiles_default(cls)
+        _compiles_sqlite(cls, fn)
+
+
+register_sqlite_mapping(_SQLITE_FUNCTIONS)
