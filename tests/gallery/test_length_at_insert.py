@@ -17,6 +17,7 @@ from sqlalchemy import func
 from geoalchemy2 import Geometry
 from geoalchemy2.shape import to_shape
 
+# Tests imports
 from tests import select
 from tests import test_only_with_dialects
 

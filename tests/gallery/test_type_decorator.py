@@ -19,6 +19,7 @@ from sqlalchemy.types import TypeDecorator
 from geoalchemy2 import Geometry
 from geoalchemy2 import shape
 
+# Tests imports
 from tests import test_only_with_dialects
 
 metadata = MetaData()

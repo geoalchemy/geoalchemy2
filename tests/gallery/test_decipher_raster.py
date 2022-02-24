@@ -19,6 +19,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from geoalchemy2 import Raster
 from geoalchemy2 import WKTElement
 
+# Tests imports
 from tests import test_only_with_dialects
 
 metadata = MetaData()

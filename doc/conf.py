@@ -231,4 +231,5 @@ sphinx_gallery_conf = {
     'default_thumb_file': '_static/geoalchemy_small.png',
     'thumbnail_size': (100, 100),
     'within_subsection_order': ExampleTitleSortKey,
+    'min_reported_time': 999,
 }

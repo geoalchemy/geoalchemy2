@@ -19,6 +19,7 @@ from geoalchemy2 import WKTElement
 from geoalchemy2.functions import GenericFunction
 from geoalchemy2.types import CompositeType
 
+# Tests imports
 from tests import select
 from tests import test_only_with_dialects
 
