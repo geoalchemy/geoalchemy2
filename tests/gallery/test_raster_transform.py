@@ -20,6 +20,7 @@ from sqlalchemy.orm import Query
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
 
+# Tests imports
 from tests import select
 
 metadata = MetaData()
