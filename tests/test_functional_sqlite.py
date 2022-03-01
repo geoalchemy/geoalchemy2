@@ -8,10 +8,13 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql import func
 
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
+
+from . import select
 
 if platform.python_implementation().lower() == 'pypy':
     pytest.skip('skip SpatiaLite tests on PyPy', allow_module_level=True)
@@ -89,7 +92,23 @@ class TestUpdateORM():
 
 
 class TestCallFunction():
-    pass
+
+    def test_ST_Buffer(self, session):
+        """Test the specific SQLite signature with the `quadrantsegments` parameter."""
+        s = select([
+            func.St_AsText(func.ST_Buffer(WKTElement('LINESTRING(0 0,1 0)', srid=4326), 2, 1))
+        ])
+        r1 = session.execute(s).scalar()
+        assert r1 == 'POLYGON((1 2, 3 0, 1 -2, 0 -2, -2 0, 0 2, 1 2))'
+
+        s = select([
+            func.St_AsText(func.ST_Buffer(WKTElement('LINESTRING(0 0,1 0)', srid=4326), 2, 2))
+        ])
+        r1 = session.execute(s).scalar()
+        assert r1 == (
+            'POLYGON((1 2, 2.414214 1.414214, 3 0, 2.414214 -1.414214, 1 -2, 0 -2, '
+            '-1.414214 -1.414214, -2 0, -1.414214 1.414214, 0 2, 1 2))'
+        )
 
 
 class TestShapely():
