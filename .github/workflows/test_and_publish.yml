@@ -82,13 +82,7 @@ jobs:
                                 libxml2-dev \
                                 zlib1g-dev
         pip install --upgrade pip setuptools
-        pip install tox-gh-actions flake8==3.7.9
-
-    # Run Flake8
-    - name: Run Flake8
-      run: |
-        # Run the library through flake8
-        flake8 --ignore=W503,W504 geoalchemy2 tests
+        pip install tox-gh-actions
 
     # Run the test suite
     - name: Run the tests
