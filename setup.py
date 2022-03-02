@@ -22,6 +22,9 @@ setup(
     author='Eric Lemoine',
     author_email='eric.lemoine@gmail.com',
     url='https://geoalchemy-2.readthedocs.io/en/latest/',
+    project_urls={
+        'Source': 'https://github.com/geoalchemy/geoalchemy2',
+    },
     license='MIT',
     python_requires=">=3.6",
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests', 'doc']),
