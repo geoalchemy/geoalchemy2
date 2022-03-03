@@ -88,6 +88,7 @@ jobs:
     - name: Run the tests
       env:
         SPATIALITE_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/mod_spatialite.so
+        COVERAGE_FILE: .coverage
       run: |
         # Run the unit test suite with SQLAlchemy=1.1.2 and then with the latest version of SQLAlchemy
         tox -vv
