@@ -432,6 +432,14 @@ postgresql_ischema_names['geography'] = Geography
 postgresql_ischema_names['raster'] = Raster
 
 sqlite_ischema_names['GEOMETRY'] = Geometry
+sqlite_ischema_names['POINT'] = Geometry
+sqlite_ischema_names['LINESTRING'] = Geometry
+sqlite_ischema_names['POLYGON'] = Geometry
+sqlite_ischema_names['MULTIPOINT'] = Geometry
+sqlite_ischema_names['MULTILINESTRING'] = Geometry
+sqlite_ischema_names['MULTIPOLYGON'] = Geometry
+sqlite_ischema_names['CURVE'] = Geometry
+sqlite_ischema_names['GEOMETRYCOLLECTION'] = Geometry
 sqlite_ischema_names['RASTER'] = Raster
 
 
