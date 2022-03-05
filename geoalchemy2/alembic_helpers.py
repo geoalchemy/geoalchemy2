@@ -88,8 +88,8 @@ class DropGeospatialColumn(ops.DropColumnOp):
 def add_geospatial_column(operations, operation):
     """Handle the actual column addition according to the dialect backend.
 
-    Parameters:
-        operations: Operations object from alembic base, defining high level migration operations
+    Args:
+        operations: Operations object from alembic base, defining high level migration operations.
         operation: AddGeospatialColumn call, with attributes for table_name, column_name,
             column_type, and optional keywords.
     """
@@ -125,9 +125,12 @@ def add_geospatial_column(operations, operation):
 
 @Operations.implementation_for(DropGeospatialColumn)
 def drop_geospatial_column(operations, operation):
-    """
-    Handles the actual column removal by checking for the dialect backend and issuing proper
-    commands.
+    """Handle the actual column removal according to the dialect backend.
+
+    Args:
+        operations: Operations object from alembic base, defining high level migration operations.
+        operation: AddGeospatialColumn call, with attributes for table_name, column_name,
+            column_type, and optional keywords.
     """
 
     table_name = operation.table_name

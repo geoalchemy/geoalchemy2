@@ -215,66 +215,66 @@ columns in a SQLite database, the ``env.py`` file should look like the following
 
 .. code-block:: python
 
-from alembic.autogenerate import rewriter
+    from alembic.autogenerate import rewriter
 
-writer = rewriter.Rewriter()
-
-
-@writer.rewrites(ops.AddColumnOp)
-def add_geo_column(context, revision, op):
-"""This function replaces the default AddColumnOp by a geospatial-specific one."""
-    col_type = op.column.type
-    if isinstance(col_type, TypeDecorator):
-        dialect = context.bind().dialect
-        col_type = col_type.load_dialect_impl(dialect)
-    if isinstance(col_type, (Geometry, Geography, Raster)):
-        new_op = AddGeospatialColumn(op.table_name, op.column, op.schema)
-    else:
-        new_op = op
-    return new_op
+    writer = rewriter.Rewriter()
 
 
-@writer.rewrites(ops.DropColumnOp)
-def drop_geo_column(context, revision, op):
-"""This function replaces the default DropColumnOp by a geospatial-specific one."""
-    col_type = op.to_column().type
-    if isinstance(col_type, TypeDecorator):
-        dialect = context.bind.dialect
-        col_type = col_type.load_dialect_impl(dialect)
-    if isinstance(col_type, (Geometry, Geography, Raster)):
-        new_op = DropGeospatialColumn(op.table_name, op.column_name, op.schema)
-    else:
-        new_op = op
-    return new_op
+    @writer.rewrites(ops.AddColumnOp)
+    def add_geo_column(context, revision, op):
+    """This function replaces the default AddColumnOp by a geospatial-specific one."""
+        col_type = op.column.type
+        if isinstance(col_type, TypeDecorator):
+            dialect = context.bind().dialect
+            col_type = col_type.load_dialect_impl(dialect)
+        if isinstance(col_type, (Geometry, Geography, Raster)):
+            new_op = AddGeospatialColumn(op.table_name, op.column, op.schema)
+        else:
+            new_op = op
+        return new_op
 
 
-def load_spatialite(dbapi_conn, connection_record):
-    """Load SpatiaLite extension in SQLite DB."""
-    dbapi_conn.enable_load_extension(True)
-    dbapi_conn.load_extension(os.environ['SPATIALITE_LIBRARY_PATH'])
-    dbapi_conn.enable_load_extension(False)
-    dbapi_conn.execute('SELECT InitSpatialMetaData()')
+    @writer.rewrites(ops.DropColumnOp)
+    def drop_geo_column(context, revision, op):
+    """This function replaces the default DropColumnOp by a geospatial-specific one."""
+        col_type = op.to_column().type
+        if isinstance(col_type, TypeDecorator):
+            dialect = context.bind.dialect
+            col_type = col_type.load_dialect_impl(dialect)
+        if isinstance(col_type, (Geometry, Geography, Raster)):
+            new_op = DropGeospatialColumn(op.table_name, op.column_name, op.schema)
+        else:
+            new_op = op
+        return new_op
 
 
-def run_migrations_offline():
-    # ...
-    context.configure(
-        # ...
-        process_revision_directives=writer,
-    )
-    # ...
+    def load_spatialite(dbapi_conn, connection_record):
+        """Load SpatiaLite extension in SQLite DB."""
+        dbapi_conn.enable_load_extension(True)
+        dbapi_conn.load_extension(os.environ['SPATIALITE_LIBRARY_PATH'])
+        dbapi_conn.enable_load_extension(False)
+        dbapi_conn.execute('SELECT InitSpatialMetaData()')
 
 
-def run_migrations_online():
-    # ...
-    if connectable.dialect.name == "sqlite":
-        # Load the SpatiaLite extension when the engine connects to the DB
-        listen(connectable, 'connect', load_spatialite)
-
-    with connectable.connect() as connection:
+    def run_migrations_offline():
         # ...
         context.configure(
             # ...
             process_revision_directives=writer,
         )
         # ...
+
+
+    def run_migrations_online():
+        # ...
+        if connectable.dialect.name == "sqlite":
+            # Load the SpatiaLite extension when the engine connects to the DB
+            listen(connectable, 'connect', load_spatialite)
+
+        with connectable.connect() as connection:
+            # ...
+            context.configure(
+                # ...
+                process_revision_directives=writer,
+            )
+            # ...

@@ -19,28 +19,20 @@ function_registry = set()
 
 
 class HasFunction(object):
+    """Base class used as a marker to know if a given element has a 'geom_from' function."""
     pass
 
 
 class _SpatialElement(HasFunction):
-    """
-    The base class for :class:`geoalchemy2.elements.WKTElement` and
-    :class:`geoalchemy2.elements.WKBElement`.
+    """The base class for public spatial elements.
 
-    The first argument passed to the constructor is the data wrapped
-    by the ``_SpatialElement` object being constructed.
-
-    Additional arguments:
-
-    ``srid``
-
-        An integer representing the spatial reference system. E.g. 4326.
-        Default value is -1, which means no/unknown reference system.
-
-    ``extended``
-
-        A boolean indicating whether the extended format (EWKT or EWKB)
-        is used. Default is ``False``.
+    Args:
+        data: The first argument passed to the constructor is the data wrapped
+            by the ``_SpatialElement`` object being constructed.
+        srid: An integer representing the spatial reference system. E.g. ``4326``.
+            Default value is ``-1``, which means no/unknown reference system.
+        extended: A boolean indicating whether the extended format (EWKT or EWKB)
+            is used. Default is ``False``.
 
     """
 
@@ -249,9 +241,7 @@ class RasterElement(_SpatialElement):
 
 
 class CompositeElement(FunctionElement):
-    """
-    Instances of this class wrap a Postgres composite type.
-    """
+    """Instances of this class wrap a Postgres composite type."""
 
     inherit_cache = False
 
