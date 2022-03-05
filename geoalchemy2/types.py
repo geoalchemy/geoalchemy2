@@ -47,79 +47,61 @@ class _GISType(UserDefinedType):
     objects. The function returned by ``bind_processor`` converts
     :class:`geoalchemy2.elements.WKTElement` objects to EWKT strings.
 
-    Constructor arguments:
+    Args:
+        geometry_type: The geometry type.
 
-    ``geometry_type``
+            Possible values are:
 
-        The geometry type.
+              * ``"GEOMETRY"``,
+              * ``"POINT"``,
+              * ``"LINESTRING"``,
+              * ``"POLYGON"``,
+              * ``"MULTIPOINT"``,
+              * ``"MULTILINESTRING"``,
+              * ``"MULTIPOLYGON"``,
+              * ``"GEOMETRYCOLLECTION"``,
+              * ``"CURVE"``,
+              * ``None``.
 
-        Possible values are:
+           The latter is actually not supported with
+           :class:`geoalchemy2.types.Geography`.
 
-          * ``"GEOMETRY"``,
-          * ``"POINT"``,
-          * ``"LINESTRING"``,
-          * ``"POLYGON"``,
-          * ``"MULTIPOINT"``,
-          * ``"MULTILINESTRING"``,
-          * ``"MULTIPOLYGON"``,
-          * ``"GEOMETRYCOLLECTION"``,
-          * ``"CURVE"``,
-          * ``None``.
+           When set to ``None`` then no "geometry type" constraints will be
+           attached to the geometry type declaration. Using ``None`` here
+           is not compatible with setting ``management`` to ``True``.
 
-       The latter is actually not supported with
-       :class:`geoalchemy2.types.Geography`.
+           Default is ``"GEOMETRY"``.
 
-       When set to ``None`` then no "geometry type" constraints will be
-       attached to the geometry type declaration. Using ``None`` here
-       is not compatible with setting ``management`` to ``True``.
+        srid: The SRID for this column. E.g. 4326. Default is ``-1``.
+        dimension: The dimension of the geometry. Default is ``2``.
 
-       Default is ``"GEOMETRY"``.
+            With ``management`` set to ``True``, that is when ``AddGeometryColumn`` is used
+            to add the geometry column, there are two constraints:
 
-    ``srid``
+            * The ``geometry_type`` must not end with ``"ZM"``.  This is due to PostGIS'
+              ``AddGeometryColumn`` failing with ZM geometry types. Instead the "simple"
+              geometry type (e.g. POINT rather POINTZM) should be used with ``dimension``
+              set to ``4``.
+            * When the ``geometry_type`` ends with ``"Z"`` or ``"M"`` then ``dimension``
+              must be set to ``3``.
 
-        The SRID for this column. E.g. 4326. Default is ``-1``.
+            With ``management`` set to ``False`` (the default) ``dimension`` is not
+            taken into account, and the actual dimension is fully defined with the
+            ``geometry_type``.
 
-    ``dimension``
-
-        The dimension of the geometry. Default is ``2``.
-
-        With ``management`` set to ``True``, that is when ``AddGeometryColumn`` is used
-        to add the geometry column, there are two constraints:
-
-        * The ``geometry_type`` must not end with ``"ZM"``.  This is due to PostGIS'
-          ``AddGeometryColumn`` failing with ZM geometry types. Instead the "simple"
-          geometry type (e.g. POINT rather POINTZM) should be used with ``dimension``
-          set to ``4``.
-        * When the ``geometry_type`` ends with ``"Z"`` or ``"M"`` then ``dimension``
-          must be set to ``3``.
-
-        With ``management`` set to ``False`` (the default) ``dimension`` is not
-        taken into account, and the actual dimension is fully defined with the
-        ``geometry_type``.
-
-    ``spatial_index``
-
-        Indicate if a spatial index should be created. Default is ``True``.
-
-    ``use_N_D_index``
-        Use the N-D index instead of the standard 2-D index.
-
-    ``management``
-
-        Indicate if the ``AddGeometryColumn`` and ``DropGeometryColumn``
-        managements functions should be called when adding and dropping the
-        geometry column. Should be set to ``True`` for PostGIS 1.x and SQLite. Default is
-        ``False``. Note that this option has no effect for
-        :class:`geoalchemy2.types.Geography`.
-
-    ``use_typmod``
-
-        By default PostgreSQL type modifiers are used to create the geometry
-        column. To use check constraints instead set ``use_typmod`` to
-        ``False``. By default this option is not included in the call to
-        ``AddGeometryColumn``. Note that this option is only taken
-        into account if ``management`` is set to ``True`` and is only available
-        for PostGIS 2.x.
+        spatial_index: Indicate if a spatial index should be created. Default is ``True``.
+        use_N_D_index: Use the N-D index instead of the standard 2-D index.
+        management: Indicate if the ``AddGeometryColumn`` and ``DropGeometryColumn``
+            managements functions should be called when adding and dropping the
+            geometry column. Should be set to ``True`` for PostGIS 1.x and SQLite. Default is
+            ``False``. Note that this option has no effect for
+            :class:`geoalchemy2.types.Geography`.
+        use_typmod: By default PostgreSQL type modifiers are used to create the geometry
+            column. To use check constraints instead set ``use_typmod`` to
+            ``False``. By default this option is not included in the call to
+            ``AddGeometryColumn``. Note that this option is only taken
+            into account if ``management`` is set to ``True`` and is only available
+            for PostGIS 2.x.
     """
 
     name = None
@@ -333,11 +315,8 @@ class Raster(_GISType):
     received from the database are converted to
     :class:`geoalchemy2.elements.RasterElement` objects.
 
-    Constructor arguments:
-
-    ``spatial_index``
-
-        Indicate if a spatial index should be created. Default is ``True``.
+    Args:
+        spatial_index: Indicate if a spatial index should be created. Default is ``True``.
 
     """
 

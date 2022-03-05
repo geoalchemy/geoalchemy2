@@ -24,18 +24,17 @@ if parse_version(shapely.__version__) < parse_version("1.7"):  # pragma: no cove
         """Dump a WKB representation of a geometry to a byte string, or a
         hex-encoded string if ``hex=True``.
 
-        Parameters
-        ----------
-        ob : geometry
-            The geometry to export to well-known binary (WKB) representation
-        hex : bool
-            If true, export the WKB as a hexadecimal string. The default is to
-            return a binary string/bytes object.
-        srid : int
-            Spatial reference system ID to include in the output. The default
-            value means no SRID is included.
-        **kw : kwargs
-            See available keyword output settings in ``shapely.geos.WKBWriter``.
+        Args:
+            ob (geometry):
+                The geometry to export to well-known binary (WKB) representation
+            hex (bool):
+                If true, export the WKB as a hexadecimal string. The default is to
+                return a binary string/bytes object.
+            srid (int):
+                Spatial reference system ID to include in the output. The default
+                value means no SRID is included.
+        Keyword args:
+            kwargs: See available keyword output settings in ``shapely.geos.WKBWriter``.
         """
         if srid is not None:
             # clone the object and set the SRID before dumping
@@ -57,6 +56,9 @@ def to_shape(element):
     """
     Function to convert a :class:`geoalchemy2.types.SpatialElement`
     to a Shapely geometry.
+
+    Args:
+        element: The element to convert into a ``Shapely`` object.
 
     Example::
 
@@ -80,17 +82,13 @@ def from_shape(shape, srid=-1, extended=False):
     Function to convert a Shapely geometry to a
     :class:`geoalchemy2.types.WKBElement`.
 
-    Additional arguments:
-
-    ``srid``
-
-        An integer representing the spatial reference system. E.g. 4326.
-        Default value is -1, which means no/unknown reference system.
-
-    ``extended``
-
-        A boolean to switch between WKB and EWKB.
-        Default value is False.
+    Args:
+        srid:
+            An integer representing the spatial reference system. E.g. ``4326``.
+            Default value is ``-1``, which means no/unknown reference system.
+        extended:
+            A boolean to switch between WKB and EWKB.
+            Default value is False.
 
     Example::
 
