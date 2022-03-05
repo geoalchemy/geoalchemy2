@@ -1,6 +1,11 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.11.1
+------
+
+* Improve doc formatting @adrien-berchet (#369)
+
 0.11.0
 ------
 
