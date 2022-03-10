@@ -43,7 +43,7 @@ class TransformedGeometry(TypeDecorator):
         """The column_expression() method is overridden to set the correct type.
 
         This is needed so that the returned element will also be decorated. In this case we don't
-        want to transfor is again afterwards so we set the same SRID to both the ``db_srid`` and
+        want to transform it again afterwards so we set the same SRID to both the ``db_srid`` and
         ``app_srid`` arguments.
         Without this the SRID of the WKBElement would be wrong.
         """
@@ -68,7 +68,7 @@ class ThreeDGeometry(TypeDecorator):
     def column_expression(self, col):
         """The column_expression() method is overridden to set the correct type.
 
-        This is not needed in this example but it is needed if one want to override other methods
+        This is not needed in this example but it is needed if one wants to override other methods
         of the TypeDecorator class, like ``process_result_value()`` for example.
         """
         return getattr(func, self.impl.as_binary)(col, type_=self)
