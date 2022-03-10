@@ -31,33 +31,53 @@ class TransformedGeometry(TypeDecorator):
     """This class is used to insert a ST_Transform() in each insert or select."""
     impl = Geometry
 
+    cache_ok = True
+
     def __init__(self, db_srid, app_srid, **kwargs):
         kwargs["srid"] = db_srid
-        self.impl = self.__class__.impl(**kwargs)
+        super().__init__(**kwargs)
         self.app_srid = app_srid
         self.db_srid = db_srid
 
     def column_expression(self, col):
-        """The column_expression() method is overridden to ensure that the
-        SRID of the resulting WKBElement is correct"""
+        """The column_expression() method is overridden to set the correct type.
+
+        This is needed so that the returned element will also be decorated. In this case we don't
+        want to transform it again afterwards so we set the same SRID to both the ``db_srid`` and
+        ``app_srid`` arguments.
+        Without this the SRID of the WKBElement would be wrong.
+        """
         return getattr(func, self.impl.as_binary)(
             func.ST_Transform(col, self.app_srid),
-            type_=self.__class__.impl(srid=self.app_srid)
-            # srid could also be -1 so that the SRID is deduced from the
-            # WKB data
+            type_=self.__class__(db_srid=self.app_srid, app_srid=self.app_srid)
         )
 
     def bind_expression(self, bindvalue):
         return func.ST_Transform(
-            self.impl.bind_expression(bindvalue), self.db_srid)
+            self.impl.bind_expression(bindvalue), self.db_srid,
+            type_=self,
+        )
 
 
 class ThreeDGeometry(TypeDecorator):
     """This class is used to insert a ST_Force3D() in each insert."""
     impl = Geometry
 
+    cache_ok = True
+
+    def column_expression(self, col):
+        """The column_expression() method is overridden to set the correct type.
+
+        This is not needed in this example but it is needed if one wants to override other methods
+        of the TypeDecorator class, like ``process_result_value()`` for example.
+        """
+        return getattr(func, self.impl.as_binary)(col, type_=self)
+
     def bind_expression(self, bindvalue):
-        return func.ST_Force3D(self.impl.bind_expression(bindvalue))
+        return func.ST_Force3D(
+            self.impl.bind_expression(bindvalue),
+            type=self,
+        )
 
 
 class Point(Base):
@@ -119,7 +139,7 @@ class TestTypeDecorator():
         pt_trans = session.query(
             Point,
             Point.raw_geom,
-            func.ST_Transform(Point.raw_geom, 2154).label("trans")
+            func.ST_Transform(Point.raw_geom, 2154).label("trans"),
         ).one()
 
         assert pt_trans[0].id == 1
