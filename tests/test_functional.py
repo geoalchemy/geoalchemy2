@@ -601,21 +601,59 @@ class TestContraint():
 
 class TestReflection():
 
-    def test_reflection(self, conn, Lake, setup_tables, schema):
+    @pytest.fixture
+    def setup_reflection_tables(self, reflection_tables_metadata, conn):
+        reflection_tables_metadata.drop_all(conn, checkfirst=True)
+        reflection_tables_metadata.create_all(conn)
+
+    def test_reflection(self, conn, setup_reflection_tables):
         skip_pg12_sa1217(conn)
         t = Table(
             'lake',
             MetaData(),
-            schema=schema,
             autoload_with=conn)
-        type_ = t.c.geom.type
-        assert isinstance(type_, Geometry)
-        if get_postgis_version(conn).startswith('1.') or conn.dialect.name == "sqlite":
+
+        if get_postgis_version(conn).startswith('1.'):
+            type_ = t.c.geom.type
+            assert isinstance(type_, Geometry)
             assert type_.geometry_type == 'GEOMETRY'
             assert type_.srid == -1
         else:
+            type_ = t.c.geom.type
+            assert isinstance(type_, Geometry)
             assert type_.geometry_type == 'LINESTRING'
             assert type_.srid == 4326
+            assert type_.dimension == 2
+
+            type_ = t.c.geom_no_idx.type
+            assert isinstance(type_, Geometry)
+            assert type_.geometry_type == 'LINESTRING'
+            assert type_.srid == 4326
+            assert type_.dimension == 2
+
+            type_ = t.c.geom_z.type
+            assert isinstance(type_, Geometry)
+            assert type_.geometry_type == 'LINESTRINGZ'
+            assert type_.srid == 4326
+            assert type_.dimension == 3
+
+            type_ = t.c.geom_m.type
+            assert isinstance(type_, Geometry)
+            assert type_.geometry_type == 'LINESTRINGM'
+            assert type_.srid == 4326
+            assert type_.dimension == 3
+
+            type_ = t.c.geom_zm.type
+            assert isinstance(type_, Geometry)
+            assert type_.geometry_type == 'LINESTRINGZM'
+            assert type_.srid == 4326
+            assert type_.dimension == 4
+
+        # Drop the table
+        t.drop(bind=conn)
+
+        # Recreate the table to check that the reflected properties are correct
+        t.create(bind=conn)
 
     def test_raster_reflection(self, conn, Ocean, setup_tables):
         skip_pg12_sa1217(conn)

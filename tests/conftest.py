@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from . import get_postgis_version
 from . import get_postgres_major_version
+from . import load_spatialite
 from .schema_fixtures import *  # noqa
 
 
@@ -78,13 +79,6 @@ def db_url(request, db_url_postgresql, db_url_sqlite):
 def _engine_echo(request):
     _engine_echo = request.config.getoption('--engine-echo')
     return _engine_echo
-
-
-def load_spatialite(dbapi_conn, connection_record):
-    """Load SpatiaLite extension in SQLite DB."""
-    dbapi_conn.enable_load_extension(True)
-    dbapi_conn.load_extension(os.environ['SPATIALITE_LIBRARY_PATH'])
-    dbapi_conn.enable_load_extension(False)
 
 
 @pytest.fixture

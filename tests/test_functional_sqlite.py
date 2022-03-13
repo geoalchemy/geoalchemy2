@@ -1,12 +1,19 @@
+import os
 import platform
+import shutil
+from pathlib import Path
 
 import pytest
 from shapely.geometry import LineString
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import Integer
+from sqlalchemy import MetaData
 from sqlalchemy import String
+from sqlalchemy import Table
+from sqlalchemy import create_engine
 from sqlalchemy import text
+from sqlalchemy.event import listen
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import func
 
@@ -14,6 +21,7 @@ from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
 
+from . import load_spatialite
 from . import select
 
 if platform.python_implementation().lower() == 'pypy':
@@ -178,3 +186,302 @@ class TestContraint():
             conn.execute(ConstrainedLake.__table__.insert(), [
                 {'a_str': None, 'geom': None, 'checked_str': 'should fail'},
             ])
+
+
+class TestReflection():
+
+    def _copy_and_connect_db(self, input_db, tmp_db, engine_echo):
+        if 'SPATIALITE_LIBRARY_PATH' not in os.environ:
+            pytest.skip('SPATIALITE_LIBRARY_PATH is not defined, skip SpatiaLite tests')
+
+        shutil.copyfile(input_db, tmp_db)
+
+        db_url = f"sqlite:///{tmp_db}"
+        engine = create_engine(db_url, echo=engine_echo)
+        listen(engine, 'connect', load_spatialite)
+
+        conn = engine.connect()
+
+        return conn
+
+    @pytest.fixture
+    def spatialite_3_conn(self, tmpdir, _engine_echo):
+        return self._copy_and_connect_db(
+            Path(__file__).parent / "data" / "spatialite_lt_4.sqlite",
+            tmpdir / "test_geoalchemy2_spatialite_lt_4.sqlite",
+            _engine_echo
+        )
+
+    @pytest.fixture
+    def spatialite_4_conn(self, tmpdir, _engine_echo):
+        return self._copy_and_connect_db(
+            Path(__file__).parent / "data" / "spatialite_ge_4.sqlite",
+            tmpdir / "test_geoalchemy2_spatialite_ge_4.sqlite",
+            _engine_echo
+        )
+
+    @pytest.fixture
+    def setup_reflection_tables_lt_4(self, reflection_tables_metadata, spatialite_3_conn):
+        reflection_tables_metadata.drop_all(spatialite_3_conn, checkfirst=True)
+        reflection_tables_metadata.create_all(spatialite_3_conn)
+
+    @pytest.fixture
+    def setup_reflection_tables_ge_4(self, reflection_tables_metadata, spatialite_4_conn):
+        reflection_tables_metadata.drop_all(spatialite_4_conn, checkfirst=True)
+        reflection_tables_metadata.create_all(spatialite_4_conn)
+
+    def test_reflection_spatialite_lt_4(self, spatialite_3_conn, setup_reflection_tables_lt_4):
+        t = Table(
+            'lake',
+            MetaData(),
+            autoload_with=spatialite_3_conn)
+
+        type_ = t.c.geom.type
+        assert isinstance(type_, Geometry)
+        assert type_.geometry_type == 'LINESTRING'
+        assert type_.srid == 4326
+        assert type_.dimension == 2
+
+        type_ = t.c.geom_no_idx.type
+        assert isinstance(type_, Geometry)
+        assert type_.geometry_type == 'LINESTRING'
+        assert type_.srid == 4326
+        assert type_.dimension == 2
+
+        type_ = t.c.geom_z.type
+        assert isinstance(type_, Geometry)
+        assert type_.geometry_type == 'LINESTRINGZ'
+        assert type_.srid == 4326
+        assert type_.dimension == 3
+
+        type_ = t.c.geom_m.type
+        assert isinstance(type_, Geometry)
+        assert type_.geometry_type == 'LINESTRINGM'
+        assert type_.srid == 4326
+        assert type_.dimension == 3
+
+        type_ = t.c.geom_zm.type
+        assert isinstance(type_, Geometry)
+        assert type_.geometry_type == 'LINESTRINGZM'
+        assert type_.srid == 4326
+        assert type_.dimension == 4
+
+        # Drop the table
+        t.drop(bind=spatialite_3_conn)
+
+        # Query to check the tables
+        query_tables = text(
+            """SELECT
+                name
+            FROM
+                sqlite_master
+            WHERE
+                type ='table' AND
+                name NOT LIKE 'sqlite_%'
+            ORDER BY tbl_name;"""
+        )
+
+        # Query to check the indices
+        query_indexes = text(
+            """SELECT * FROM geometry_columns ORDER BY f_table_name, f_geometry_column;"""
+        )
+
+        # Check the indices
+        geom_cols = spatialite_3_conn.execute(query_indexes).fetchall()
+        assert geom_cols == []
+
+        # Check the tables
+        all_tables = [i[0] for i in spatialite_3_conn.execute(query_tables).fetchall()]
+        assert all_tables == [
+            'SpatialIndex',
+            'geometry_columns',
+            'geometry_columns_auth',
+            'layer_statistics',
+            'spatial_ref_sys',
+            'spatialite_history',
+            'views_geometry_columns',
+            'views_layer_statistics',
+            'virts_geometry_columns',
+            'virts_layer_statistics',
+        ]
+
+        # Recreate the table to check that the reflected properties are correct
+        t.create(bind=spatialite_3_conn)
+
+        # Check the actual properties
+        geom_cols = spatialite_3_conn.execute(query_indexes).fetchall()
+        assert geom_cols == [
+            ('lake', 'geom', 'LINESTRING', 'XY', 4326, 1),
+            ('lake', 'geom_m', 'LINESTRING', 'XYM', 4326, 1),
+            ('lake', 'geom_no_idx', 'LINESTRING', 'XY', 4326, 0),
+            ('lake', 'geom_z', 'LINESTRING', 'XYZ', 4326, 1),
+            ('lake', 'geom_zm', 'LINESTRING', 'XYZM', 4326, 1),
+        ]
+
+        all_tables = [i[0] for i in spatialite_3_conn.execute(query_tables).fetchall()]
+        assert all_tables == [
+            'SpatialIndex',
+            'geometry_columns',
+            'geometry_columns_auth',
+            'idx_lake_geom',
+            'idx_lake_geom_m',
+            'idx_lake_geom_m_node',
+            'idx_lake_geom_m_parent',
+            'idx_lake_geom_m_rowid',
+            'idx_lake_geom_node',
+            'idx_lake_geom_parent',
+            'idx_lake_geom_rowid',
+            'idx_lake_geom_z',
+            'idx_lake_geom_z_node',
+            'idx_lake_geom_z_parent',
+            'idx_lake_geom_z_rowid',
+            'idx_lake_geom_zm',
+            'idx_lake_geom_zm_node',
+            'idx_lake_geom_zm_parent',
+            'idx_lake_geom_zm_rowid',
+            'lake',
+            'layer_statistics',
+            'spatial_ref_sys',
+            'spatialite_history',
+            'views_geometry_columns',
+            'views_layer_statistics',
+            'virts_geometry_columns',
+            'virts_layer_statistics',
+        ]
+
+    def test_reflection_spatialite_ge_4(self, spatialite_4_conn, setup_reflection_tables_ge_4):
+        t = Table(
+            'lake',
+            MetaData(),
+            autoload_with=spatialite_4_conn)
+
+        type_ = t.c.geom.type
+        assert isinstance(type_, Geometry)
+        assert type_.geometry_type == 'LINESTRING'
+        assert type_.srid == 4326
+        assert type_.dimension == 2
+
+        type_ = t.c.geom_no_idx.type
+        assert isinstance(type_, Geometry)
+        assert type_.geometry_type == 'LINESTRING'
+        assert type_.srid == 4326
+        assert type_.dimension == 2
+
+        type_ = t.c.geom_z.type
+        assert isinstance(type_, Geometry)
+        assert type_.geometry_type == 'LINESTRINGZ'
+        assert type_.srid == 4326
+        assert type_.dimension == 3
+
+        type_ = t.c.geom_m.type
+        assert isinstance(type_, Geometry)
+        assert type_.geometry_type == 'LINESTRINGM'
+        assert type_.srid == 4326
+        assert type_.dimension == 3
+
+        type_ = t.c.geom_zm.type
+        assert isinstance(type_, Geometry)
+        assert type_.geometry_type == 'LINESTRINGZM'
+        assert type_.srid == 4326
+        assert type_.dimension == 4
+
+        # Drop the table
+        t.drop(bind=spatialite_4_conn)
+
+        # Query to check the tables
+        query_tables = text(
+            """SELECT
+                name
+            FROM
+                sqlite_master
+            WHERE
+                type ='table' AND
+                name NOT LIKE 'sqlite_%'
+            ORDER BY tbl_name;"""
+        )
+
+        # Query to check the indices
+        query_indexes = text(
+            """SELECT * FROM geometry_columns ORDER BY f_table_name, f_geometry_column;"""
+        )
+
+        # Check the indices
+        geom_cols = spatialite_4_conn.execute(query_indexes).fetchall()
+        assert geom_cols == []
+
+        # Check the tables
+        all_tables = [i[0] for i in spatialite_4_conn.execute(query_tables).fetchall()]
+        assert all_tables == [
+            'ElementaryGeometries',
+            'SpatialIndex',
+            'geometry_columns',
+            'geometry_columns_auth',
+            'geometry_columns_field_infos',
+            'geometry_columns_statistics',
+            'geometry_columns_time',
+            'spatial_ref_sys',
+            'spatial_ref_sys_aux',
+            'spatialite_history',
+            'sql_statements_log',
+            'views_geometry_columns',
+            'views_geometry_columns_auth',
+            'views_geometry_columns_field_infos',
+            'views_geometry_columns_statistics',
+            'virts_geometry_columns',
+            'virts_geometry_columns_auth',
+            'virts_geometry_columns_field_infos',
+            'virts_geometry_columns_statistics',
+        ]
+
+        # Recreate the table to check that the reflected properties are correct
+        t.create(bind=spatialite_4_conn)
+
+        # Check the actual properties
+        geom_cols = spatialite_4_conn.execute(query_indexes).fetchall()
+        assert geom_cols == [
+            ('lake', 'geom', 2, 2, 4326, 1),
+            ('lake', 'geom_m', 2002, 3, 4326, 1),
+            ('lake', 'geom_no_idx', 2, 2, 4326, 0),
+            ('lake', 'geom_z', 1002, 3, 4326, 1),
+            ('lake', 'geom_zm', 3002, 4, 4326, 1),
+        ]
+
+        all_tables = [i[0] for i in spatialite_4_conn.execute(query_tables).fetchall()]
+        assert all_tables == [
+            'ElementaryGeometries',
+            'SpatialIndex',
+            'geometry_columns',
+            'geometry_columns_auth',
+            'geometry_columns_field_infos',
+            'geometry_columns_statistics',
+            'geometry_columns_time',
+            'idx_lake_geom',
+            'idx_lake_geom_m',
+            'idx_lake_geom_m_node',
+            'idx_lake_geom_m_parent',
+            'idx_lake_geom_m_rowid',
+            'idx_lake_geom_node',
+            'idx_lake_geom_parent',
+            'idx_lake_geom_rowid',
+            'idx_lake_geom_z',
+            'idx_lake_geom_z_node',
+            'idx_lake_geom_z_parent',
+            'idx_lake_geom_z_rowid',
+            'idx_lake_geom_zm',
+            'idx_lake_geom_zm_node',
+            'idx_lake_geom_zm_parent',
+            'idx_lake_geom_zm_rowid',
+            'lake',
+            'spatial_ref_sys',
+            'spatial_ref_sys_aux',
+            'spatialite_history',
+            'sql_statements_log',
+            'views_geometry_columns',
+            'views_geometry_columns_auth',
+            'views_geometry_columns_field_infos',
+            'views_geometry_columns_statistics',
+            'virts_geometry_columns',
+            'virts_geometry_columns_auth',
+            'virts_geometry_columns_field_infos',
+            'virts_geometry_columns_statistics',
+        ]

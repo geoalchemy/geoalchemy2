@@ -1,3 +1,4 @@
+import os
 import re
 
 import pytest
@@ -76,3 +77,10 @@ def select(args):
 
 def format_wkt(wkt):
     return wkt.replace(", ", ",")
+
+
+def load_spatialite(dbapi_conn, connection_record):
+    """Load SpatiaLite extension in SQLite DB."""
+    dbapi_conn.enable_load_extension(True)
+    dbapi_conn.load_extension(os.environ['SPATIALITE_LIBRARY_PATH'])
+    dbapi_conn.enable_load_extension(False)

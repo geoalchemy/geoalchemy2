@@ -5,6 +5,7 @@ from sqlalchemy import Column
 from sqlalchemy import Index
 from sqlalchemy import Table
 from sqlalchemy import event
+from sqlalchemy import text
 from sqlalchemy.sql import expression
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
@@ -176,10 +177,20 @@ def _setup_ddl_event_listeners():
                     _check_spatial_type(col.type, Geometry, bind.dialect)
                     and check_management(col, bind.dialect.name)
                 ):
+                    dimension = col.type.dimension
                     if bind.dialect.name == 'sqlite':
                         col.type = col._actual_type
                         del col._actual_type
                         create_func = func.RecoverGeometryColumn
+                        if col.type.dimension == 4:
+                            dimension = 'XYZM'
+                        elif col.type.dimension == 2:
+                            dimension = 'XY'
+                        else:
+                            if col.type.geometry_type.endswith('M'):
+                                dimension = 'XYM'
+                            else:
+                                dimension = 'XYZ'
                     else:
                         create_func = func.AddGeometryColumn
                     args = [table.schema] if table.schema else []
@@ -188,7 +199,7 @@ def _setup_ddl_event_listeners():
                         col.name,
                         col.type.srid,
                         col.type.geometry_type,
-                        col.type.dimension
+                        dimension
                     ])
                     if col.type.use_typmod is not None:
                         args.append(col.type.use_typmod)
@@ -241,8 +252,116 @@ def _setup_ddl_event_listeners():
                 idx.create(bind=bind)
 
         elif current_event == 'after-drop':
+            if bind.dialect.name == 'sqlite':
+                # Remove spatial index tables
+                for idx in table.indexes:
+                    if any(
+                        [
+                            _check_spatial_type(i.type, (Geometry, Geography, Raster))
+                            for i in idx.columns.values()
+                        ]
+                    ):
+                        bind.execute(text("""DROP TABLE IF EXISTS {};""".format(idx.name)))
             # Restore original column list including managed Geometry columns
             table.columns = table.info.pop('_saved_columns')
+
+    @event.listens_for(Table, "column_reflect")
+    def _reflect_geometry_column(inspector, table, column_info):
+        if not isinstance(column_info.get("type"), Geometry):
+            return
+
+        if inspector.bind.dialect.name == "postgresql":
+            geo_type = column_info["type"]
+            geometry_type = geo_type.geometry_type
+            coord_dimension = geo_type.dimension
+            if geometry_type.endswith("ZM"):
+                coord_dimension = 4
+            elif geometry_type[-1] in ["Z", "M"]:
+                coord_dimension = 3
+
+            # Query to check a given column has spatial index
+            # has_index_query = """SELECT (indexrelid IS NOT NULL) AS has_index
+            #     FROM (
+            #         SELECT
+            #                 n.nspname,
+            #                 c.relname,
+            #                 c.oid AS relid,
+            #                 a.attname,
+            #                 a.attnum
+            #         FROM pg_attribute a
+            #         INNER JOIN pg_class c ON (a.attrelid=c.oid)
+            #         INNER JOIN pg_type t ON (a.atttypid=t.oid)
+            #         INNER JOIN pg_namespace n ON (c.relnamespace=n.oid)
+            #         WHERE t.typname='geometry'
+            #                 AND c.relkind='r'
+            #     ) g
+            #     LEFT JOIN pg_index i ON (g.relid = i.indrelid AND g.attnum = ANY(i.indkey))
+            #     WHERE relname = '{}' AND attname = '{}'""".format(
+            #         table.name, column_info["name"]
+            #     )
+            # if table.schema is not None:
+            #     has_index_query += " AND nspname = '{}'".format(table.schema)
+            # spatial_index = inspector.bind.execute(text(has_index_query)).scalar()
+
+            # NOTE: For now we just set the spatial_index attribute to False because the indexes
+            # are already retrieved by the reflection process.
+
+            # Set attributes
+            column_info["type"].geometry_type = geometry_type
+            column_info["type"].dimension = coord_dimension
+            column_info["type"].spatial_index = False
+            # column_info["type"].spatial_index = bool(spatial_index)
+        elif inspector.bind.dialect.name == "sqlite":
+            # Get geometry type, SRID and spatial index from the SpatiaLite metadata
+            col_attributes = inspector.bind.execute(
+                text("""SELECT * FROM "geometry_columns"
+                   WHERE f_table_name = '{}' and f_geometry_column = '{}'
+                """.format(
+                    table.name, column_info["name"]
+                ))
+            ).fetchone()
+            if col_attributes is not None:
+                _, _, geometry_type, coord_dimension, srid, spatial_index = col_attributes
+
+                if isinstance(geometry_type, int):
+                    geometry_type_str = str(geometry_type)
+                    if geometry_type >= 1000:
+                        first_digit = geometry_type_str[0]
+                        has_z = first_digit in ["1", "3"]
+                        has_m = first_digit in ["2", "3"]
+                    else:
+                        has_z = has_m = False
+                    geometry_type = {
+                        "0": "GEOMETRY",
+                        "1": "POINT",
+                        "2": "LINESTRING",
+                        "3": "POLYGON",
+                        "4": "MULTIPOINT",
+                        "5": "MULTILINESTRING",
+                        "6": "MULTIPOLYGON",
+                        "7": "GEOMETRYCOLLECTION",
+                    }[geometry_type_str[-1]]
+                    if has_z:
+                        geometry_type += "Z"
+                    if has_m:
+                        geometry_type += "M"
+                else:
+                    if "Z" in coord_dimension:
+                        geometry_type += "Z"
+                    if "M" in coord_dimension:
+                        geometry_type += "M"
+                    coord_dimension = {
+                        "XY": 2,
+                        "XYZ": 3,
+                        "XYM": 3,
+                        "XYZM": 4,
+                    }.get(coord_dimension, coord_dimension)
+
+                # Set attributes
+                column_info["type"].geometry_type = geometry_type
+                column_info["type"].dimension = coord_dimension
+                column_info["type"].srid = srid
+                column_info["type"].spatial_index = bool(spatial_index)
 
 
 _setup_ddl_event_listeners()

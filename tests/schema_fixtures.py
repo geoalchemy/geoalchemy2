@@ -2,6 +2,8 @@
 import pytest
 from sqlalchemy import Column
 from sqlalchemy import Integer
+from sqlalchemy import MetaData
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
 
@@ -169,3 +171,20 @@ def IndexTestWithoutSchema(base):
         geom2 = Column(Geometry(geometry_type='POINT', srid=4326, management=True))
 
     return IndexTestWithoutSchema
+
+
+@pytest.fixture
+def reflection_tables_metadata():
+    metadata = MetaData()
+    base = declarative_base(metadata=metadata)
+
+    class Lake(base):
+        __tablename__ = 'lake'
+        id = Column(Integer, primary_key=True)
+        geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
+        geom_no_idx = Column(Geometry(geometry_type='LINESTRING', srid=4326, spatial_index=False))
+        geom_z = Column(Geometry(geometry_type='LINESTRINGZ', srid=4326, dimension=3))
+        geom_m = Column(Geometry(geometry_type='LINESTRINGM', srid=4326, dimension=3))
+        geom_zm = Column(Geometry(geometry_type='LINESTRINGZM', srid=4326, dimension=4))
+
+    return metadata
