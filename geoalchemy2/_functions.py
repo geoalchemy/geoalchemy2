@@ -473,7 +473,7 @@ _FUNCTIONS = [
      '''Window function that returns a cluster id for each input geometry using the K-means algorithm.'''),
     ('ST_ClusterWithin', types.Geometry,
      '''Aggregate function that clusters the input geometries by separation distance.'''),
-    ('Box2D', types.Geometry,
+    ('Box2D', None,
      ('''Returns a BOX2D representing the 2D extent of the geometry.''', 'Box2D_type')),
     ('Box3D', types.Geometry,
      ('''[geometry] Returns a BOX3D representing the 3D extent of the geometry.\nOR\n[raster] Returns the box 3d representation of the enclosing box of the raster.''', 'Box3D_type')),
