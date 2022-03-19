@@ -475,7 +475,7 @@ _FUNCTIONS = [
      '''Aggregate function that clusters the input geometries by separation distance.'''),
     ('Box2D', None,
      ('''Returns a BOX2D representing the 2D extent of the geometry.''', 'Box2D_type')),
-    ('Box3D', types.Geometry,
+    ('Box3D', None,
      ('''[geometry] Returns a BOX3D representing the 3D extent of the geometry.\nOR\n[raster] Returns the box 3d representation of the enclosing box of the raster.''', 'Box3D_type')),
     ('ST_EstimatedExtent', types.Geometry,
      '''Return the 'estimated' extent of a spatial table.'''),
