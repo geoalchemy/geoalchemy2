@@ -56,7 +56,7 @@ def test_ST_BdMPolyFromText():
 
 
 def test_ST_Box2dFromGeoHash():
-    _test_geometry_returning_func('ST_Box2dFromGeoHash')
+    _test_simple_func('ST_Box2dFromGeoHash')
 
 
 def test_ST_GeogFromText():
@@ -140,11 +140,11 @@ def test_ST_LinestringFromWKB():
 
 
 def test_ST_MakeBox2D():
-    _test_geometry_returning_func('ST_MakeBox2D')
+    _test_simple_func('ST_MakeBox2D')
 
 
 def test_ST_3DMakeBox():
-    _test_geometry_returning_func('ST_3DMakeBox')
+    _test_simple_func('ST_3DMakeBox')
 
 
 def test_ST_MakeLine():
