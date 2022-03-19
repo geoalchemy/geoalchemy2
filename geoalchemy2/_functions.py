@@ -223,7 +223,7 @@ _FUNCTIONS = [
      '''Makes a geometry from WKB with the given SRID'''),
     ('ST_WKBToSQL', types.Geometry,
      '''Return a specified ST_Geometry value from Well-Known Binary representation (WKB). This is an alias name for ST_GeomFromWKB that takes no srid'''),
-    ('ST_Box2dFromGeoHash', types.Geometry,
+    ('ST_Box2dFromGeoHash', None,  # return an unsupported Box2d object
      '''Return a BOX2D from a GeoHash string.'''),
     ('ST_GeomFromGeoHash', types.Geometry,
      '''Return a geometry from a GeoHash string.'''),
@@ -473,21 +473,21 @@ _FUNCTIONS = [
      '''Window function that returns a cluster id for each input geometry using the K-means algorithm.'''),
     ('ST_ClusterWithin', types.Geometry,
      '''Aggregate function that clusters the input geometries by separation distance.'''),
-    ('Box2D', types.Geometry,
+    ('Box2D', None,  # return an unsupported Box2d object
      ('''Returns a BOX2D representing the 2D extent of the geometry.''', 'Box2D_type')),
-    ('Box3D', types.Geometry,
+    ('Box3D', None,  # return an unsupported Box3d object
      ('''[geometry] Returns a BOX3D representing the 3D extent of the geometry.\nOR\n[raster] Returns the box 3d representation of the enclosing box of the raster.''', 'Box3D_type')),
-    ('ST_EstimatedExtent', types.Geometry,
+    ('ST_EstimatedExtent', None,  # return an unsupported Box2d object
      '''Return the 'estimated' extent of a spatial table.'''),
     ('ST_Expand', types.Geometry,
      '''Returns a bounding box expanded from another bounding box or a geometry.'''),
-    ('ST_Extent', types.Geometry,
+    ('ST_Extent', None,  # return an unsupported Box2d object
      '''an aggregate function that returns the bounding box that bounds rows of geometries.'''),
-    ('ST_3DExtent', types.Geometry,
+    ('ST_3DExtent', None,  # return an unsupported Box3d object
      '''an aggregate function that returns the 3D bounding box that bounds rows of geometries.'''),
-    ('ST_MakeBox2D', types.Geometry,
+    ('ST_MakeBox2D', None,  # return an unsupported Box2d object
      '''Creates a BOX2D defined by two 2D point geometries.'''),
-    ('ST_3DMakeBox', types.Geometry,
+    ('ST_3DMakeBox', None,  # return an unsupported Box3d object
      '''Creates a BOX3D defined by two 3D point geometries.'''),
     ('ST_XMax', None,
      '''Returns the X maxima of a 2D or 3D bounding box or a geometry.'''),
