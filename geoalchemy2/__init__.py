@@ -97,12 +97,14 @@ def _setup_ddl_event_listeners():
                 column,
                 postgresql_using='gist',
                 postgresql_ops=postgresql_ops,
+                _column_flag=True,
             )
         elif _check_spatial_type(column.type, Raster):
             Index(
                 _spatial_idx_name(table, column),
                 func.ST_ConvexHull(column),
                 postgresql_using='gist',
+                _column_flag=True,
             )
 
     def dispatch(current_event, table, bind):

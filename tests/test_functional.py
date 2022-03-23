@@ -661,3 +661,15 @@ class TestReflection():
         t = Table('ocean', MetaData(), autoload_with=conn)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
+
+
+class TestToMetadata:
+
+    def test_to_metadata(self, Lake):
+        new_meta = MetaData()
+        new_Lake = Lake.__table__.to_metadata(new_meta)
+
+        assert Lake != new_Lake
+
+        # Check that the spatial index was not duplicated
+        assert len(new_Lake.indexes) == 1
