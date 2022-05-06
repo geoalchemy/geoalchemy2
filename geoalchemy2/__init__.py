@@ -92,19 +92,23 @@ def _setup_ddl_event_listeners():
                 postgresql_ops = {column.name: "gist_geometry_ops_nd"}
             else:
                 postgresql_ops = {}
-            Index(
-                _spatial_idx_name(table, column),
-                column,
-                postgresql_using='gist',
-                postgresql_ops=postgresql_ops,
-                _column_flag=True,
+            table.append_constraint(
+                Index(
+                    _spatial_idx_name(table, column),
+                    column,
+                    postgresql_using='gist',
+                    postgresql_ops=postgresql_ops,
+                    _column_flag=True,
+                )
             )
         elif _check_spatial_type(column.type, Raster):
-            Index(
-                _spatial_idx_name(table, column),
-                func.ST_ConvexHull(column),
-                postgresql_using='gist',
-                _column_flag=True,
+            table.append_constraint(
+                Index(
+                    _spatial_idx_name(table, column),
+                    func.ST_ConvexHull(column),
+                    postgresql_using='gist',
+                    _column_flag=True,
+                )
             )
 
     def dispatch(current_event, table, bind):
@@ -236,6 +240,7 @@ def _setup_ddl_event_listeners():
                                 col,
                                 postgresql_using='gist',
                                 postgresql_ops=postgresql_ops,
+                                _column_flag=True,
                             )
                             idx.create(bind=bind)
 

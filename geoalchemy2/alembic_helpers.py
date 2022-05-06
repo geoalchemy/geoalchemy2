@@ -113,6 +113,7 @@ def add_geospatial_column(operations, operation):
             geospatial_core_type.srid,
             geospatial_core_type.geometry_type
         ))
+        # TODO: Add Index if geospatial_core_type.spatial_index is True
     elif "postgresql" in dialect.name:
         operations.add_column(
             table_name,
@@ -121,6 +122,7 @@ def add_geospatial_column(operations, operation):
                 operation.column
             )
         )
+        # TODO: Add Index if geospatial_core_type.spatial_index is True
 
 
 @Operations.implementation_for(DropGeospatialColumn)
@@ -149,6 +151,7 @@ def drop_geospatial_column(operations, operation):
         sqlite_version = conn.execute(text("SELECT sqlite_version();")).scalar()
         if parse_version(sqlite_version) >= parse_version("3.35"):
             operations.drop_column(table_name, column_name)
+        # TODO: Drop Index?
     elif "postgresql" in dialect.name:
         operations.drop_column(table_name, column_name)
 

@@ -28,6 +28,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.sql import func
+from sqlalchemy.testing.assertions import ComparesTables
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
@@ -663,13 +664,13 @@ class TestReflection():
         assert isinstance(type_, Raster)
 
 
-class TestToMetadata:
+class TestToMetadata(ComparesTables):
 
     def test_to_metadata(self, Lake):
         new_meta = MetaData()
         new_Lake = Lake.__table__.to_metadata(new_meta)
 
-        assert Lake != new_Lake
+        self.assert_tables_equal(Lake.__table__, new_Lake)
 
         # Check that the spatial index was not duplicated
         assert len(new_Lake.indexes) == 1
