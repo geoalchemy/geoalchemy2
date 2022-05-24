@@ -47,7 +47,37 @@ def _spatial_idx_name(table, column):
 
 
 def check_management(column, dialect):
-    return getattr(column.type, "management", False) is True or dialect == 'sqlite'
+    return getattr(column.type, "management", False) is True or dialect.name == 'sqlite'
+
+
+def _get_gis_cols(table, spatial_types, dialect, check_col_management=False):
+    return [
+        col
+        for col in table.columns
+        if (
+            isinstance(col, Column)
+            and _check_spatial_type(col.type, spatial_types, dialect)
+            and (
+                not check_col_management
+                or check_management(col, dialect)
+            )
+        )
+    ]
+
+
+def _get_spatialite_attrs(bind, table_name, col_name):
+    col_attributes = bind.execute(
+        text("""SELECT * FROM "geometry_columns"
+           WHERE f_table_name = '{}' and f_geometry_column = '{}'
+        """.format(
+            table_name, col_name
+        ))
+    ).fetchone()
+    return col_attributes
+
+
+def _get_spatialite_version(bind):
+    return bind.execute(text("""SELECT spatialite_version();""")).fetchone()[0]
 
 
 def _setup_ddl_event_listeners():
@@ -115,9 +145,7 @@ def _setup_ddl_event_listeners():
         if current_event in ('before-create', 'before-drop'):
             # Filter Geometry columns from the table with management=True
             # Note: Geography and PostGIS >= 2.0 don't need this
-            gis_cols = [col for col in table.columns if
-                        _check_spatial_type(col.type, Geometry, bind.dialect)
-                        and check_management(col, bind.dialect.name)]
+            gis_cols = _get_gis_cols(table, Geometry, bind.dialect, check_col_management=True)
 
             # Find all other columns that are not managed Geometries
             regular_cols = [x for x in table.columns if x not in gis_cols]
@@ -137,6 +165,14 @@ def _setup_ddl_event_listeners():
                 for col in gis_cols:
                     if bind.dialect.name == 'sqlite':
                         drop_func = 'DiscardGeometryColumn'
+
+                        # Disable spatial indexes if present
+                        stmt = select(*_format_select_args(getattr(func, 'CheckSpatialIndex')(table.name, col.name)))
+                        if bind.execute(stmt).fetchone()[0] is not None:
+                            stmt = select(*_format_select_args(getattr(func, 'DisableSpatialIndex')(table.name, col.name)))
+                            stmt = stmt.execution_options(autocommit=True)
+                            bind.execute(stmt)
+                            bind.execute(text("""DROP TABLE IF EXISTS idx_{}_{};""".format(table.name, col.name)))
                     elif bind.dialect.name == 'postgresql':
                         drop_func = 'DropGeometryColumn'
                     else:
@@ -157,7 +193,7 @@ def _setup_ddl_event_listeners():
                     for col in table.info["_saved_columns"]:
                         if (
                             _check_spatial_type(col.type, Geometry, bind.dialect)
-                            and check_management(col, bind.dialect.name)
+                            and check_management(col, bind.dialect)
                         ) and col in idx.columns.values():
                             table.indexes.remove(idx)
                             if (
@@ -181,7 +217,7 @@ def _setup_ddl_event_listeners():
                 # Add the managed Geometry columns with AddGeometryColumn()
                 if (
                     _check_spatial_type(col.type, Geometry, bind.dialect)
-                    and check_management(col, bind.dialect.name)
+                    and check_management(col, bind.dialect)
                 ):
                     dimension = col.type.dimension
                     if bind.dialect.name == 'sqlite':
@@ -229,7 +265,7 @@ def _setup_ddl_event_listeners():
                         # management=False), define it and create it
                         if (
                             not [i for i in table.indexes if col in i.columns.values()]
-                            and check_management(col, bind.dialect.name)
+                            and check_management(col, bind.dialect)
                         ):
                             if col.type.use_N_D_index:
                                 postgresql_ops = {col.name: "gist_geometry_ops_nd"}
@@ -259,16 +295,6 @@ def _setup_ddl_event_listeners():
                 idx.create(bind=bind)
 
         elif current_event == 'after-drop':
-            if bind.dialect.name == 'sqlite':
-                # Remove spatial index tables
-                for idx in table.indexes:
-                    if any(
-                        [
-                            _check_spatial_type(i.type, (Geometry, Geography, Raster))
-                            for i in idx.columns.values()
-                        ]
-                    ):
-                        bind.execute(text("""DROP TABLE IF EXISTS {};""".format(idx.name)))
             # Restore original column list including managed Geometry columns
             table.columns = table.info.pop('_saved_columns')
 
@@ -320,13 +346,7 @@ def _setup_ddl_event_listeners():
             # column_info["type"].spatial_index = bool(spatial_index)
         elif inspector.bind.dialect.name == "sqlite":
             # Get geometry type, SRID and spatial index from the SpatiaLite metadata
-            col_attributes = inspector.bind.execute(
-                text("""SELECT * FROM "geometry_columns"
-                   WHERE f_table_name = '{}' and f_geometry_column = '{}'
-                """.format(
-                    table.name, column_info["name"]
-                ))
-            ).fetchone()
+            col_attributes = _get_spatialite_attrs(inspector.bind, table.name, column_info["name"])
             if col_attributes is not None:
                 _, _, geometry_type, coord_dimension, srid, spatial_index = col_attributes
 

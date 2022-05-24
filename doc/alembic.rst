@@ -173,7 +173,7 @@ in ``my_package.custom_types``, you just have to edit the ``env.py`` file like t
         if spatial_type:
             return spatial_type
 
-        # For the cumstom type
+        # For the custom type
         if obj_type == 'type' and isinstance(obj, TheCustomType):
             import_name = obj.__class__.__name__
             autogen_context.imports.add(f"from my_package.custom_types import {import_name}")
@@ -206,54 +206,17 @@ in ``my_package.custom_types``, you just have to edit the ``env.py`` file like t
 Then the proper imports will be automatically added in the migration scripts.
 
 
-Add / Drop columns
-------------------
+Add / Drop columns or tables
+----------------------------
 
-Some dialects (like SQLite) require some specific management to alter columns of a table. In this
+Some dialects (like SQLite) require some specific management to alter columns or tables. In this
 case, other dedicated helpers are provided to handle this. For example, if one wants to add and drop
 columns in a SQLite database, the ``env.py`` file should look like the following:
 
 .. code-block:: python
 
-    from alembic.autogenerate import rewriter
-
-    writer = rewriter.Rewriter()
-
-
-    @writer.rewrites(ops.AddColumnOp)
-    def add_geo_column(context, revision, op):
-    """This function replaces the default AddColumnOp by a geospatial-specific one."""
-        col_type = op.column.type
-        if isinstance(col_type, TypeDecorator):
-            dialect = context.bind().dialect
-            col_type = col_type.load_dialect_impl(dialect)
-        if isinstance(col_type, (Geometry, Geography, Raster)):
-            new_op = AddGeospatialColumn(op.table_name, op.column, op.schema)
-        else:
-            new_op = op
-        return new_op
-
-
-    @writer.rewrites(ops.DropColumnOp)
-    def drop_geo_column(context, revision, op):
-    """This function replaces the default DropColumnOp by a geospatial-specific one."""
-        col_type = op.to_column().type
-        if isinstance(col_type, TypeDecorator):
-            dialect = context.bind.dialect
-            col_type = col_type.load_dialect_impl(dialect)
-        if isinstance(col_type, (Geometry, Geography, Raster)):
-            new_op = DropGeospatialColumn(op.table_name, op.column_name, op.schema)
-        else:
-            new_op = op
-        return new_op
-
-
-    def load_spatialite(dbapi_conn, connection_record):
-        """Load SpatiaLite extension in SQLite DB."""
-        dbapi_conn.enable_load_extension(True)
-        dbapi_conn.load_extension(os.environ['SPATIALITE_LIBRARY_PATH'])
-        dbapi_conn.enable_load_extension(False)
-        dbapi_conn.execute('SELECT InitSpatialMetaData()')
+    from geoalchemy2.alembic_helpers import load_spatialite
+    from geoalchemy2.alembic_helpers import writer
 
 
     def run_migrations_offline():
