@@ -137,15 +137,9 @@ def drop_geospatial_column(operations, operation):
         # (the column is not actually dropped here)
         operations.execute(func.DiscardGeometryColumn(table_name, column_name))
 
-        # This second drop column call is necessary: SpatiaLite was designed for a SQLite that did
-        # not support dropping columns from tables at all. DiscardGeometryColumn removes associated
-        # metadata and triggers from the DB associated with a geospatial column, without removing
-        # the column itself. The next call actually removes the geospatial column, IF the underlying
-        # SQLite package version >= 3.35
-        conn = operations.get_bind()
-        sqlite_version = conn.execute(text("SELECT sqlite_version();")).scalar()
-        if parse_version(sqlite_version) >= parse_version("3.35"):
-            operations.drop_column(table_name, column_name)
+        # Actually drop the column
+        with operations.batch_alter_table(table_name) as batch_op:
+            batch_op.drop_column(column_name)
     elif "postgresql" in dialect.name:
         operations.drop_column(table_name, column_name)
 
