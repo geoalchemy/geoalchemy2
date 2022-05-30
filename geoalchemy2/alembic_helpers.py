@@ -1,6 +1,5 @@
 """Some helpers to use with Alembic migration tool."""
 import os
-from collections import defaultdict
 
 from alembic.autogenerate import renderers
 from alembic.autogenerate import rewriter
@@ -17,13 +16,10 @@ from alembic.operations import BatchOperations
 from alembic.operations import Operations
 from alembic.operations import ops
 from alembic.operations.batch import ApplyBatchImpl
-from packaging.version import parse as parse_version
 from sqlalchemy import Index
-from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import text
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
-from sqlalchemy.engine import reflection
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import DropTable
 from sqlalchemy.types import TypeDecorator
@@ -34,10 +30,7 @@ from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
 from geoalchemy2 import _check_spatial_type
 from geoalchemy2 import _get_gis_cols
-from geoalchemy2 import _get_spatialite_attrs
-from geoalchemy2 import _get_spatialite_version
 from geoalchemy2 import _spatial_idx_name
-from geoalchemy2 import check_management
 from geoalchemy2 import func
 
 writer = rewriter.Rewriter()
@@ -87,7 +80,6 @@ def _monkey_patch_transfer_elements_to_new_table_for_sqlite():
     def remove_spatial_indexes(table, new_table, dialect):
         new_indexes = set()
         input_col_names = set([col.name for col in table.columns])
-        remove_index_cols = []
         for idx in table.indexes:
             if len(idx.columns) == 1:
                 col = idx.columns[0]
@@ -287,7 +279,6 @@ def drop_geospatial_column(operations, operation):
     """
 
     table_name = operation.table_name
-    column_name = operation.column_name
     column = operation.to_column(operations.migration_context)
 
     dialect = operations.get_bind().dialect
@@ -300,9 +291,7 @@ def drop_geospatial_column(operations, operation):
 
 
 @compiles(RenameTable, "sqlite")
-def visit_rename_geospatial_table(
-    element: "RenameTable", compiler: "DDLCompiler", **kw
-) -> str:
+def visit_rename_geospatial_table(element, compiler, **kw):
 
     table_is_spatial = element.table_name in _SPATIAL_TABLES
     new_table_is_spatial = element.new_table_name in _SPATIAL_TABLES
@@ -319,9 +308,7 @@ def visit_rename_geospatial_table(
 
 
 @compiles(DropTable, "sqlite")
-def visit_drop_geospatial_table(
-    element: "DropTable", compiler: "DDLCompiler", **kw
-) -> str:
+def visit_drop_geospatial_table(element, compiler, **kw):
 
     table_is_spatial = element.element.name in _SPATIAL_TABLES
 

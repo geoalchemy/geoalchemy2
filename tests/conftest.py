@@ -5,7 +5,6 @@ import pytest
 from sqlalchemy import MetaData
 from sqlalchemy import create_engine
 from sqlalchemy import text
-from sqlalchemy.event import listen
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 

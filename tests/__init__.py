@@ -88,6 +88,7 @@ def load_spatialite(dbapi_conn, connection_record):
     dbapi_conn.load_extension(os.environ['SPATIALITE_LIBRARY_PATH'])
     dbapi_conn.enable_load_extension(False)
 
+
 def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo):
     if 'SPATIALITE_LIBRARY_PATH' not in os.environ:
         pytest.skip('SPATIALITE_LIBRARY_PATH is not defined, skip SpatiaLite tests')

@@ -1,7 +1,4 @@
-import os
 import platform
-import shutil
-from pathlib import Path
 
 import pytest
 from shapely.geometry import LineString
@@ -11,9 +8,7 @@ from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import String
 from sqlalchemy import Table
-from sqlalchemy import create_engine
 from sqlalchemy import text
-from sqlalchemy.event import listen
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import func
 

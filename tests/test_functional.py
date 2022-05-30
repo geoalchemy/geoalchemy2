@@ -655,11 +655,6 @@ class TestReflection():
         # Drop the table
         t.drop(bind=conn)
 
-        # Query to check the indexes
-        query_indexes = text(
-            """SELECT * FROM geometry_columns ORDER BY f_table_name, f_geometry_column;"""
-        )
-
         # Check the indexes
         check_indexes(
             conn,
@@ -695,11 +690,26 @@ class TestReflection():
             conn,
             {
                 "postgresql": [
-                    ('idx_lake_geom', 'CREATE INDEX idx_lake_geom ON gis.lake USING gist (geom)'),
-                    ('idx_lake_geom_m', 'CREATE INDEX idx_lake_geom_m ON gis.lake USING gist (geom_m)'),
-                    ('idx_lake_geom_z', 'CREATE INDEX idx_lake_geom_z ON gis.lake USING gist (geom_z)'),
-                    ('idx_lake_geom_zm', 'CREATE INDEX idx_lake_geom_zm ON gis.lake USING gist (geom_zm)'),
-                    ('lake_pkey', 'CREATE UNIQUE INDEX lake_pkey ON gis.lake USING btree (id)'),
+                    (
+                        'idx_lake_geom',
+                        'CREATE INDEX idx_lake_geom ON gis.lake USING gist (geom)',
+                    ),
+                    (
+                        'idx_lake_geom_m',
+                        'CREATE INDEX idx_lake_geom_m ON gis.lake USING gist (geom_m)',
+                    ),
+                    (
+                        'idx_lake_geom_z',
+                        'CREATE INDEX idx_lake_geom_z ON gis.lake USING gist (geom_z)',
+                    ),
+                    (
+                        'idx_lake_geom_zm',
+                        'CREATE INDEX idx_lake_geom_zm ON gis.lake USING gist (geom_zm)',
+                    ),
+                    (
+                        'lake_pkey',
+                        'CREATE UNIQUE INDEX lake_pkey ON gis.lake USING btree (id)',
+                    ),
                 ],
                 "sqlite": sqlite_indexes,
             },

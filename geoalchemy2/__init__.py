@@ -173,12 +173,27 @@ def _setup_ddl_event_listeners():
                         drop_func = 'DiscardGeometryColumn'
 
                         # Disable spatial indexes if present
-                        stmt = select(*_format_select_args(getattr(func, 'CheckSpatialIndex')(table.name, col.name)))
+                        stmt = select(
+                            *_format_select_args(
+                                getattr(func, 'CheckSpatialIndex')(table.name, col.name)
+                            )
+                        )
                         if bind.execute(stmt).fetchone()[0] is not None:
-                            stmt = select(*_format_select_args(getattr(func, 'DisableSpatialIndex')(table.name, col.name)))
+                            stmt = select(
+                                *_format_select_args(
+                                    getattr(func, 'DisableSpatialIndex')(table.name, col.name)
+                                )
+                            )
                             stmt = stmt.execution_options(autocommit=True)
                             bind.execute(stmt)
-                            bind.execute(text("""DROP TABLE IF EXISTS idx_{}_{};""".format(table.name, col.name)))
+                            bind.execute(
+                                text(
+                                    """DROP TABLE IF EXISTS idx_{}_{};""".format(
+                                        table.name,
+                                        col.name,
+                                    )
+                                )
+                            )
                     elif bind.dialect.name == 'postgresql':
                         drop_func = 'DropGeometryColumn'
                     else:
@@ -335,9 +350,10 @@ def _setup_ddl_event_listeners():
                             AND c.relkind='r'
                 ) g
                 LEFT JOIN pg_index i ON (g.relid = i.indrelid AND g.attnum = ANY(i.indkey))
-                WHERE relname = '{}' AND attname = '{}'""".format(
-                    table.name, column_info["name"]
-                )
+                WHERE relname = '{}' AND attname = '{}';
+            """.format(
+                table.name, column_info["name"]
+            )
             if table.schema is not None:
                 has_index_query += " AND nspname = '{}'".format(table.schema)
             spatial_index = inspector.bind.execute(text(has_index_query)).scalar()

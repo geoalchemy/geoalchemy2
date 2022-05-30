@@ -1,24 +1,15 @@
 """Test alembic migrations of spatial columns."""
-import re
-
 import pytest
 import sqlalchemy as sa  # noqa (This import is only used in the migration scripts)
 from alembic import command
-from alembic import context
 from alembic import script
 from alembic.autogenerate import compare_metadata
-from alembic.autogenerate import produce_migrations
-from alembic.autogenerate import render_python_code
 from alembic.config import Config
 from alembic.migration import MigrationContext
-from alembic.operations import Operations
-from alembic.operations import ops
-from alembic.operations.ops import ModifyTableOps
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
-from sqlalchemy import text
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import alembic_helpers
