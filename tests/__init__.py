@@ -106,3 +106,35 @@ def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo):
         engine._spatialite_version = None
 
     return engine
+
+
+def check_indexes(conn, expected, table_name):
+    if conn.dialect.name == "postgresql":
+        # Query to check the indexes
+        index_query = text(
+            """SELECT indexname, indexdef
+            FROM pg_indexes
+            WHERE
+                tablename = '{}'
+            ORDER BY indexname;""".format(table_name)
+        )
+        indexes = conn.execute(index_query).fetchall()
+
+        expected = [
+            (i[0], re.sub("\n *", " ", i[1]))
+            for i in expected["postgresql"]
+        ]
+
+        assert indexes == expected
+
+    elif conn.dialect.name == "sqlite":
+        # Query to check the indexes
+        index_query = text(
+            """SELECT *
+            FROM geometry_columns
+            WHERE f_table_name = '{}'
+            ORDER BY f_table_name, f_geometry_column;""".format(table_name)
+        )
+
+        indexes = conn.execute(index_query).fetchall()
+        assert indexes == expected["sqlite"]

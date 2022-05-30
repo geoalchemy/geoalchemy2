@@ -30,6 +30,7 @@ from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.sql import func
 from sqlalchemy.testing.assertions import ComparesTables
 
+from geoalchemy2 import _get_spatialite_attrs
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
 from geoalchemy2.elements import WKBElement
@@ -37,6 +38,7 @@ from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
 from geoalchemy2.shape import to_shape
 
+from . import check_indexes
 from . import format_wkt
 from . import get_postgis_version
 from . import select
@@ -653,8 +655,56 @@ class TestReflection():
         # Drop the table
         t.drop(bind=conn)
 
+        # Query to check the indexes
+        query_indexes = text(
+            """SELECT * FROM geometry_columns ORDER BY f_table_name, f_geometry_column;"""
+        )
+
+        # Check the indexes
+        check_indexes(
+            conn,
+            {
+                "postgresql": [],
+                "sqlite": [],
+            },
+            table_name=t.name,
+        )
+
         # Recreate the table to check that the reflected properties are correct
         t.create(bind=conn)
+
+        # Check the indexes
+        col_attributes = _get_spatialite_attrs(conn, t.name, "geom")
+        if isinstance(col_attributes[2], int):
+            sqlite_indexes = [
+                ('lake', 'geom', 2, 2, 4326, 1),
+                ('lake', 'geom_m', 2002, 3, 4326, 1),
+                ('lake', 'geom_no_idx', 2, 2, 4326, 0),
+                ('lake', 'geom_z', 1002, 3, 4326, 1),
+                ('lake', 'geom_zm', 3002, 4, 4326, 1),
+            ]
+        else:
+            sqlite_indexes = [
+                ('lake', 'geom', 'LINESTRING', 'XY', 4326, 1),
+                ('lake', 'geom_m', 'LINESTRING', 'XYM', 4326, 1),
+                ('lake', 'geom_no_idx', 'LINESTRING', 'XY', 4326, 0),
+                ('lake', 'geom_z', 'LINESTRING', 'XYZ', 4326, 1),
+                ('lake', 'geom_zm', 'LINESTRING', 'XYZM', 4326, 1),
+            ]
+        check_indexes(
+            conn,
+            {
+                "postgresql": [
+                    ('idx_lake_geom', 'CREATE INDEX idx_lake_geom ON gis.lake USING gist (geom)'),
+                    ('idx_lake_geom_m', 'CREATE INDEX idx_lake_geom_m ON gis.lake USING gist (geom_m)'),
+                    ('idx_lake_geom_z', 'CREATE INDEX idx_lake_geom_z ON gis.lake USING gist (geom_z)'),
+                    ('idx_lake_geom_zm', 'CREATE INDEX idx_lake_geom_zm ON gis.lake USING gist (geom_zm)'),
+                    ('lake_pkey', 'CREATE UNIQUE INDEX lake_pkey ON gis.lake USING btree (id)'),
+                ],
+                "sqlite": sqlite_indexes,
+            },
+            table_name=t.name,
+        )
 
     def test_raster_reflection(self, conn, Ocean, setup_tables):
         skip_pg12_sa1217(conn)

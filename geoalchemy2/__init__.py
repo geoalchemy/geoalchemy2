@@ -42,8 +42,8 @@ def _check_spatial_type(tested_type, spatial_types, dialect=None):
     )
 
 
-def _spatial_idx_name(table, column):
-    return 'idx_{}_{}'.format(table.name, column.name)
+def _spatial_idx_name(table_name, column_name):
+    return 'idx_{}_{}'.format(table_name, column_name)
 
 
 def check_management(column, dialect):
@@ -117,6 +117,12 @@ def _setup_ddl_event_listeners():
             # If the column is managed, the indexes are created after the table
             return
 
+        try:
+            if column.type._spatial_index_reflected:
+                return
+        except AttributeError:
+            pass
+
         if _check_spatial_type(column.type, (Geometry, Geography)):
             if column.type.use_N_D_index:
                 postgresql_ops = {column.name: "gist_geometry_ops_nd"}
@@ -124,7 +130,7 @@ def _setup_ddl_event_listeners():
                 postgresql_ops = {}
             table.append_constraint(
                 Index(
-                    _spatial_idx_name(table, column),
+                    _spatial_idx_name(table.name, column.name),
                     column,
                     postgresql_using='gist',
                     postgresql_ops=postgresql_ops,
@@ -134,7 +140,7 @@ def _setup_ddl_event_listeners():
         elif _check_spatial_type(column.type, Raster):
             table.append_constraint(
                 Index(
-                    _spatial_idx_name(table, column),
+                    _spatial_idx_name(table.name, column.name),
                     func.ST_ConvexHull(column),
                     postgresql_using='gist',
                     _column_flag=True,
@@ -197,7 +203,7 @@ def _setup_ddl_event_listeners():
                         ) and col in idx.columns.values():
                             table.indexes.remove(idx)
                             if (
-                                idx.name != _spatial_idx_name(table, col)
+                                idx.name != _spatial_idx_name(table.name, col.name)
                                 or not getattr(col.type, "spatial_index", False)
                             ):
                                 table.info["_after_create_indexes"].append(idx)
@@ -272,7 +278,7 @@ def _setup_ddl_event_listeners():
                             else:
                                 postgresql_ops = {}
                             idx = Index(
-                                _spatial_idx_name(table, col),
+                                _spatial_idx_name(table.name, col.name),
                                 col,
                                 postgresql_using='gist',
                                 postgresql_ops=postgresql_ops,
@@ -313,37 +319,36 @@ def _setup_ddl_event_listeners():
                 coord_dimension = 3
 
             # Query to check a given column has spatial index
-            # has_index_query = """SELECT (indexrelid IS NOT NULL) AS has_index
-            #     FROM (
-            #         SELECT
-            #                 n.nspname,
-            #                 c.relname,
-            #                 c.oid AS relid,
-            #                 a.attname,
-            #                 a.attnum
-            #         FROM pg_attribute a
-            #         INNER JOIN pg_class c ON (a.attrelid=c.oid)
-            #         INNER JOIN pg_type t ON (a.atttypid=t.oid)
-            #         INNER JOIN pg_namespace n ON (c.relnamespace=n.oid)
-            #         WHERE t.typname='geometry'
-            #                 AND c.relkind='r'
-            #     ) g
-            #     LEFT JOIN pg_index i ON (g.relid = i.indrelid AND g.attnum = ANY(i.indkey))
-            #     WHERE relname = '{}' AND attname = '{}'""".format(
-            #         table.name, column_info["name"]
-            #     )
-            # if table.schema is not None:
-            #     has_index_query += " AND nspname = '{}'".format(table.schema)
-            # spatial_index = inspector.bind.execute(text(has_index_query)).scalar()
-
-            # NOTE: For now we just set the spatial_index attribute to False because the indexes
-            # are already retrieved by the reflection process.
+            has_index_query = """SELECT (indexrelid IS NOT NULL) AS has_index
+                FROM (
+                    SELECT
+                            n.nspname,
+                            c.relname,
+                            c.oid AS relid,
+                            a.attname,
+                            a.attnum
+                    FROM pg_attribute a
+                    INNER JOIN pg_class c ON (a.attrelid=c.oid)
+                    INNER JOIN pg_type t ON (a.atttypid=t.oid)
+                    INNER JOIN pg_namespace n ON (c.relnamespace=n.oid)
+                    WHERE t.typname='geometry'
+                            AND c.relkind='r'
+                ) g
+                LEFT JOIN pg_index i ON (g.relid = i.indrelid AND g.attnum = ANY(i.indkey))
+                WHERE relname = '{}' AND attname = '{}'""".format(
+                    table.name, column_info["name"]
+                )
+            if table.schema is not None:
+                has_index_query += " AND nspname = '{}'".format(table.schema)
+            spatial_index = inspector.bind.execute(text(has_index_query)).scalar()
 
             # Set attributes
             column_info["type"].geometry_type = geometry_type
             column_info["type"].dimension = coord_dimension
-            column_info["type"].spatial_index = False
-            # column_info["type"].spatial_index = bool(spatial_index)
+            column_info["type"].spatial_index = bool(spatial_index)
+
+            # Spatial indexes are automatically reflected with PostgreSQL dialect
+            column_info["type"]._spatial_index_reflected = True
         elif inspector.bind.dialect.name == "sqlite":
             # Get geometry type, SRID and spatial index from the SpatiaLite metadata
             col_attributes = _get_spatialite_attrs(inspector.bind, table.name, column_info["name"])
@@ -389,6 +394,9 @@ def _setup_ddl_event_listeners():
                 column_info["type"].dimension = coord_dimension
                 column_info["type"].srid = srid
                 column_info["type"].spatial_index = bool(spatial_index)
+
+                # Spatial indexes are not automatically reflected with SQLite dialect
+                column_info["type"]._spatial_index_reflected = False
 
 
 _setup_ddl_event_listeners()

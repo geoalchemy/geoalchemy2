@@ -29,9 +29,12 @@ pip-delete-this-directory.txt
 # Unit test / coverage reports
 .tox/
 .coverage
+.coverage-*
 .cache
 nosetests.xml
 coverage.xml
+.pytest_cache/
+reports/
 
 # Translations
 *.mo
@@ -51,3 +54,9 @@ coverage.xml
 # Sphinx documentation
 doc/_build/
 doc/gallery/
+
+# Miscellaneous
+*.csv
+*.sh
+*.txt
+issues

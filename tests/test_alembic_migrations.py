@@ -4,6 +4,7 @@ import re
 import pytest
 import sqlalchemy as sa  # noqa (This import is only used in the migration scripts)
 from alembic import command
+from alembic import context
 from alembic import script
 from alembic.autogenerate import compare_metadata
 from alembic.autogenerate import produce_migrations
@@ -11,6 +12,8 @@ from alembic.autogenerate import render_python_code
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
+from alembic.operations import ops
+from alembic.operations.ops import ModifyTableOps
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
@@ -20,10 +23,7 @@ from sqlalchemy import text
 from geoalchemy2 import Geometry
 from geoalchemy2 import alembic_helpers
 
-from alembic.operations import ops
-from alembic.operations.ops import ModifyTableOps
-from alembic import context
-
+from . import check_indexes
 from . import test_only_with_dialects
 
 
@@ -55,7 +55,6 @@ class TestAutogenerate:
         mc = MigrationContext.configure(
             conn,
             opts={
-                "include_object": alembic_helpers.include_object,
                 "include_name": filter_tables,
                 "process_revision_directives": alembic_helpers.writer,
             },
@@ -96,7 +95,6 @@ class TestAutogenerate:
         mc = MigrationContext.configure(
             conn,
             opts={
-                "include_object": alembic_helpers.include_object,
                 "include_name": filter_tables,
                 "process_revision_directives": alembic_helpers.writer,
             },
@@ -131,26 +129,28 @@ class TestAutogenerate:
 
 @pytest.fixture
 def alembic_dir(tmpdir):
-    return (tmpdir / "alembic_files")
+    return tmpdir / "alembic_files"
 
 
 @pytest.fixture
 def alembic_config_path(alembic_dir):
-    return (alembic_dir / "test_alembic.ini")
+    return alembic_dir / "test_alembic.ini"
 
 
 @pytest.fixture
 def alembic_env_path(alembic_dir):
-    return (alembic_dir / "env.py")
+    return alembic_dir / "env.py"
 
 
 @pytest.fixture
 def test_script_path(alembic_dir):
-    return (alembic_dir / "test_script.py")
+    return alembic_dir / "test_script.py"
 
 
 @pytest.fixture
-def alembic_env(engine, alembic_dir, alembic_config_path, alembic_env_path, test_script_path):
+def alembic_env(
+    engine, alembic_dir, alembic_config_path, alembic_env_path, test_script_path
+):
     cfg_tmp = Config(alembic_config_path)
     engine.execute("DROP TABLE IF EXISTS alembic_version;")
     command.init(cfg_tmp, str(alembic_dir), template="generic")
@@ -169,7 +169,8 @@ config = context.config
 engine = engine_from_config(
     config.get_section(config.config_ini_section),
     prefix='sqlalchemy.',
-    echo=True)
+    echo=True,
+)
 
 if engine.dialect.name == "sqlite":
     listen(engine, 'connect', alembic_helpers.load_spatialite)
@@ -203,6 +204,7 @@ context.configure(
     process_revision_directives=alembic_helpers.writer,
     render_item=alembic_helpers.render_item,
     include_object=include_object,
+    render_as_batch=True
 )
 
 try:
@@ -212,7 +214,9 @@ finally:
     connection.close()
     engine.dispose()
 
-""".format(str(test_script_path))
+""".format(
+                str(test_script_path)
+            )
         )
     with test_script_path.open(mode="w", encoding="utf8") as f:
         f.write(
@@ -261,44 +265,17 @@ keys = generic
 format = %%(levelname)-5.5s [%%(name)s] %%(message)s
 datefmt = %%H:%%M:%%S
 
-""".format(alembic_dir, engine.url)
+""".format(
+                alembic_dir, engine.url
+            )
         )
     return cfg
 
 
-def _check_indexes(conn, expected):
-    if conn.dialect.name == "postgresql":
-        # Query to check the indexes
-        index_query = text(
-            """SELECT indexname, indexdef
-            FROM pg_indexes
-            WHERE
-                tablename = 'new_spatial_table'
-            ORDER BY indexname;"""
-        )
-        indexes = conn.execute(index_query).fetchall()
-
-        expected = [
-            (i[0], re.sub("\n *", " ", i[1]))
-            for i in expected["postgresql"]
-        ]
-
-        assert indexes == expected
-
-    elif conn.dialect.name == "sqlite":
-        # Query to check the indexes
-        index_query = text(
-            """SELECT *
-            FROM geometry_columns
-            WHERE f_table_name = 'new_spatial_table'
-            ORDER BY f_table_name, f_geometry_column;"""
-        )
-
-        indexes = conn.execute(index_query).fetchall()
-        assert indexes == expected["sqlite"]
-
 @test_only_with_dialects("postgresql", "sqlite-spatialite4")
-def test_migration_revision(conn, metadata, alembic_config, alembic_env_path, test_script_path):
+def test_migration_revision(
+    conn, metadata, alembic_config, alembic_env_path, test_script_path
+):
     initial_rev = command.revision(
         alembic_config,
         "Initial state",
@@ -354,7 +331,7 @@ new_table = Table(
     # Apply the upgrade script
     command.upgrade(alembic_config, rev_table.revision)
 
-    _check_indexes(
+    check_indexes(
         conn,
         {
             "postgresql": [
@@ -375,7 +352,8 @@ new_table = Table(
                 ("new_spatial_table", "geom_with_idx", 2, 2, 4326, 1),
                 ("new_spatial_table", "geom_without_idx", 2, 2, 4326, 0),
             ],
-        }
+        },
+        table_name="new_spatial_table",
     )
 
     # Remove spatial columns and add new ones
@@ -425,7 +403,7 @@ new_table = Table(
     # Apply the upgrade script
     command.upgrade(alembic_config, rev_cols.revision)
 
-    _check_indexes(
+    check_indexes(
         conn,
         {
             "postgresql": [
@@ -446,13 +424,14 @@ new_table = Table(
                 ("new_spatial_table", "new_geom_with_idx", 2, 2, 4326, 1),
                 ("new_spatial_table", "new_geom_without_idx", 2, 2, 4326, 0),
             ],
-        }
+        },
+        table_name="new_spatial_table",
     )
 
     # Apply the downgrade script for columns
     command.downgrade(alembic_config, rev_table.revision)
 
-    _check_indexes(
+    check_indexes(
         conn,
         {
             "postgresql": [
@@ -473,16 +452,18 @@ new_table = Table(
                 ("new_spatial_table", "geom_with_idx", 2, 2, 4326, 1),
                 ("new_spatial_table", "geom_without_idx", 2, 2, 4326, 0),
             ],
-        }
+        },
+        table_name="new_spatial_table",
     )
 
     # Apply the downgrade script for tables
     command.downgrade(alembic_config, initial_rev.revision)
 
-    _check_indexes(
+    check_indexes(
         conn,
         {
             "postgresql": [],
             "sqlite": [],
-        }
+        },
+        table_name="new_spatial_table",
     )
