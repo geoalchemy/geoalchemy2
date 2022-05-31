@@ -45,6 +45,15 @@ def _monkey_patch_get_indexes_for_sqlite():
         indexes = self._get_indexes_normal_behavior(
             connection, table_name, schema=None, **kw
         )
+
+        # Check that SpatiaLite was loaded into the DB
+        is_spatial_db = connection.exec_driver_sql(
+            """PRAGMA main.table_info(geometry_columns)"""
+        ).fetchall()
+        if not is_spatial_db:
+            return indexes
+
+        # Get spatial indexes
         spatial_index_query = text(
             """SELECT *
             FROM geometry_columns
@@ -70,6 +79,7 @@ def _monkey_patch_get_indexes_for_sqlite():
                     }
                 )
                 reflected_names.add(idx_name)
+
         return indexes
 
     spatial_behavior.__doc__ = normal_behavior.__doc__
