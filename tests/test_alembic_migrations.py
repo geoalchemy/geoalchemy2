@@ -307,6 +307,14 @@ new_table = Table(
             spatial_index=False,
         ),
     ),
+    Column(
+        "geom_without_idx_2",
+        Geometry(
+            geometry_type="LINESTRING",
+            srid=4326,
+            spatial_index=False,
+        ),
+    ),
 )
 
 """
@@ -343,10 +351,27 @@ new_table = Table(
             "sqlite": [
                 ("new_spatial_table", "geom_with_idx", 2, 2, 4326, 1),
                 ("new_spatial_table", "geom_without_idx", 2, 2, 4326, 0),
+                ('new_spatial_table', 'geom_without_idx_2', 2, 2, 4326, 0)
             ],
         },
         table_name="new_spatial_table",
     )
+
+    # Insert data in new table to check that everything works when Alembic copies the tables
+    from_text = "GeomFromEWKT" if conn.dialect.name == "sqlite" else "ST_GeomFromEWKT"
+    conn.execute(
+        """INSERT INTO new_spatial_table (
+            geom_with_idx,
+            geom_without_idx,
+            geom_without_idx_2
+        ) VALUES (
+            {from_text}('SRID=4326;LINESTRING(0 0, 1 1)'),
+            {from_text}('SRID=4326;LINESTRING(0 0, 1 1)'),
+            {from_text}('SRID=4326;LINESTRING(0 0, 1 1)')
+        )
+        """.format(from_text=from_text)
+    )
+    conn.execute("COMMIT")
 
     # Remove spatial columns and add new ones
     with test_script_path.open(mode="w", encoding="utf8") as f:
@@ -364,6 +389,23 @@ new_table = Table(
     "new_spatial_table",
     metadata,
     Column("id", Integer, primary_key=True),
+    Column(
+        "geom_with_idx",
+        Geometry(
+            geometry_type="LINESTRING",
+            srid=4326,
+        ),
+        nullable=False,
+    ),
+    Column(
+        "geom_without_idx",
+        Geometry(
+            geometry_type="LINESTRING",
+            srid=4326,
+            spatial_index=False,
+        ),
+        nullable=False,
+    ),
     Column(
         "new_geom_with_idx",
         Geometry(
@@ -387,7 +429,7 @@ new_table = Table(
     # Auto-generate a new migration script
     rev_cols = command.revision(
         alembic_config,
-        "Add and remove spatial columns",
+        "Add, alter and remove spatial columns",
         autogenerate=True,
         rev_id="columns",
     )
@@ -400,19 +442,21 @@ new_table = Table(
         {
             "postgresql": [
                 (
-                    "idx_new_spatial_table_new_geom_with_idx",
-                    """CREATE INDEX idx_new_spatial_table_new_geom_with_idx
-                    ON gis.new_spatial_table
-                    USING gist (new_geom_with_idx)""",
+                    'idx_new_spatial_table_geom_with_idx',
+                    'CREATE INDEX idx_new_spatial_table_geom_with_idx ON gis.new_spatial_table USING gist (geom_with_idx)'
                 ),
                 (
-                    "new_spatial_table_pkey",
-                    """CREATE UNIQUE INDEX new_spatial_table_pkey
-                    ON gis.new_spatial_table
-                    USING btree (id)""",
+                    'idx_new_spatial_table_new_geom_with_idx',
+                    'CREATE INDEX idx_new_spatial_table_new_geom_with_idx ON gis.new_spatial_table USING gist (new_geom_with_idx)',
+                ),
+                (
+                    'new_spatial_table_pkey',
+                    'CREATE UNIQUE INDEX new_spatial_table_pkey ON gis.new_spatial_table USING btree (id)',
                 ),
             ],
             "sqlite": [
+                ("new_spatial_table", "geom_with_idx", 2, 2, 4326, 1),
+                ("new_spatial_table", "geom_without_idx", 2, 2, 4326, 0),
                 ("new_spatial_table", "new_geom_with_idx", 2, 2, 4326, 1),
                 ("new_spatial_table", "new_geom_without_idx", 2, 2, 4326, 0),
             ],
@@ -443,6 +487,7 @@ new_table = Table(
             "sqlite": [
                 ("new_spatial_table", "geom_with_idx", 2, 2, 4326, 1),
                 ("new_spatial_table", "geom_without_idx", 2, 2, 4326, 0),
+                ('new_spatial_table', 'geom_without_idx_2', 2, 2, 4326, 0),
             ],
         },
         table_name="new_spatial_table",
