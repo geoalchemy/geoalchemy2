@@ -65,61 +65,18 @@ def _monkey_patch_get_indexes_for_sqlite():
                         "name": idx_name,
                         "column_names": [idx_col],
                         "unique": 0,
+                        "dialect_options": {"_column_flag": True},
                     }
                 )
                 reflected_names.add(idx_name)
         return indexes
 
+    spatial_behavior.__doc__ = normal_behavior.__doc__
     SQLiteDialect.get_indexes = spatial_behavior
     SQLiteDialect._get_indexes_normal_behavior = normal_behavior
 
 
-def _monkey_patch_transfer_elements_to_new_table_for_sqlite():
-    normal_behavior = ApplyBatchImpl._transfer_elements_to_new_table
-
-    def remove_spatial_indexes(table, new_table, dialect):
-        new_indexes = set()
-        input_col_names = set([col.name for col in table.columns])
-        for idx in table.indexes:
-            if len(idx.columns) == 1:
-                col = idx.columns[0]
-                if not isinstance(col, Column) or not _check_spatial_type(
-                    col.type,
-                    (Geometry, Geography, Raster),
-                    dialect,
-                ):
-                    new_indexes.add(idx)
-            else:
-                new_indexes.add(idx)
-        table.indexes = new_indexes
-
-        new_indexes = set()
-        for idx in new_table.indexes:
-            if len(idx.columns) == 1:
-                col = idx.columns[0]
-                if not isinstance(col, Column) or not _check_spatial_type(
-                    col.type,
-                    (Geometry, Geography, Raster),
-                    dialect,
-                ):
-                    new_indexes.add(idx)
-                    if col.name not in input_col_names:
-                        for i in idx.columns:
-                            i.spatial_index = False
-            else:
-                new_indexes.add(idx)
-        new_table.indexes = new_indexes
-
-    def spatial_behavior(self):
-        self._transfer_elements_to_new_table_normal_behavior()
-        remove_spatial_indexes(self.table, self.new_table, self.impl.dialect)
-
-    ApplyBatchImpl._transfer_elements_to_new_table = spatial_behavior
-    ApplyBatchImpl._transfer_elements_to_new_table_normal_behavior = normal_behavior
-
-
 _monkey_patch_get_indexes_for_sqlite()
-_monkey_patch_transfer_elements_to_new_table_for_sqlite()
 
 
 def render_item(obj_type, obj, autogen_context):

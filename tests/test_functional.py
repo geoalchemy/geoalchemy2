@@ -27,6 +27,7 @@ from sqlalchemy.exc import DataError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import SAWarning
 from sqlalchemy.sql import func
 from sqlalchemy.testing.assertions import ComparesTables
 
@@ -719,7 +720,8 @@ class TestReflection():
     def test_raster_reflection(self, conn, Ocean, setup_tables):
         skip_pg12_sa1217(conn)
         skip_postgis1(conn)
-        t = Table('ocean', MetaData(), autoload_with=conn)
+        with pytest.warns(SAWarning):
+            t = Table('ocean', MetaData(), autoload_with=conn)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
 
