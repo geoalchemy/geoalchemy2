@@ -154,6 +154,7 @@ from alembic import context
 from sqlalchemy import MetaData, engine_from_config
 from sqlalchemy.event import listen
 from geoalchemy2 import alembic_helpers
+from geoalchemy2 import load_spatialite
 
 config = context.config
 
@@ -164,7 +165,7 @@ engine = engine_from_config(
 )
 
 if engine.dialect.name == "sqlite":
-    listen(engine, 'connect', alembic_helpers.load_spatialite)
+    listen(engine, 'connect', load_spatialite)
 
 spec = importlib.util.spec_from_file_location("test_script", "{}")
 module = importlib.util.module_from_spec(spec)

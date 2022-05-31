@@ -13,6 +13,8 @@ from sqlalchemy.event import listen
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.sql import func
 
+from geoalchemy2 import load_spatialite
+
 
 class test_only_with_dialects:
     def __init__(self, *dialects):
@@ -80,13 +82,6 @@ def select(args):
 
 def format_wkt(wkt):
     return wkt.replace(", ", ",")
-
-
-def load_spatialite(dbapi_conn, connection_record):
-    """Load SpatiaLite extension in SQLite DB."""
-    dbapi_conn.enable_load_extension(True)
-    dbapi_conn.load_extension(os.environ['SPATIALITE_LIBRARY_PATH'])
-    dbapi_conn.enable_load_extension(False)
 
 
 def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo):

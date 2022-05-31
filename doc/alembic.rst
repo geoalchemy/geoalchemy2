@@ -41,9 +41,9 @@ following migration script:
 
     """Create new table
 
-    Revision ID: 01b69e67a408
-    Revises: 2371af7aed3f
-    Create Date: 2022-01-27 15:53:05.268929
+    Revision ID: <rev_id>
+    Revises: <down_rev_id>
+    Create Date: <date>
 
     """
     from alembic import op
@@ -51,8 +51,8 @@ following migration script:
 
 
     # revision identifiers, used by Alembic.
-    revision = "01b69e67a408"
-    down_revision = "2371af7aed3f"
+    revision = "<rev_id>"
+    down_revision = "<down_rev_id>"
     branch_labels = None
     depends_on = None
 
@@ -122,8 +122,8 @@ file used by Alembic, like in the following example:
         # ...
         context.configure(
             # ...
-            render_item=render_item,
-            include_object=include_object,
+            process_revision_directives=alembic_helpers.writer,
+            render_item=alembic_helpers.render_item,
         )
         # ...
 
@@ -132,12 +132,12 @@ file used by Alembic, like in the following example:
         # ...
         context.configure(
             # ...
-            render_item=render_item,
-            include_object=include_object,
+            process_revision_directives=alembic_helpers.writer,
+            render_item=alembic_helpers.render_item,
         )
         # ...
 
-After running the ``alembic`` command, the migration script will be properly generated and should
+After running the ``alembic`` command, the migration script should be properly generated and should
 not need to be manually edited.
 
 
@@ -188,8 +188,8 @@ in ``my_package.custom_types``, you just have to edit the ``env.py`` file like t
         # ...
         context.configure(
             # ...
+            process_revision_directives=alembic_helpers.writer,
             render_item=render_item,
-            include_object=include_object,
         )
         # ...
 
@@ -198,20 +198,21 @@ in ``my_package.custom_types``, you just have to edit the ``env.py`` file like t
         # ...
         context.configure(
             # ...
+            process_revision_directives=alembic_helpers.writer,
             render_item=render_item,
-            include_object=include_object,
         )
         # ...
 
 Then the proper imports will be automatically added in the migration scripts.
 
 
-Add / Drop columns or tables
-----------------------------
+Dialects
+--------
 
 Some dialects (like SQLite) require some specific management to alter columns or tables. In this
 case, other dedicated helpers are provided to handle this. For example, if one wants to add and drop
-columns in a SQLite database, the ``env.py`` file should look like the following:
+columns in a SQLite database, the SpatiaLite extension should be loaded when the engine connects,
+thus the ``env.py`` file should look like the following:
 
 .. code-block:: python
 
@@ -224,6 +225,7 @@ columns in a SQLite database, the ``env.py`` file should look like the following
         context.configure(
             # ...
             process_revision_directives=writer,
+            render_item=alembic_helpers.render_item,
         )
         # ...
 
@@ -239,5 +241,6 @@ columns in a SQLite database, the ``env.py`` file should look like the following
             context.configure(
                 # ...
                 process_revision_directives=writer,
+                render_item=alembic_helpers.render_item,
             )
             # ...

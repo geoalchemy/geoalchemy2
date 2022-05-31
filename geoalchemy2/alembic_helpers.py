@@ -38,6 +38,7 @@ _SPATIAL_TABLES = set()
 
 
 def _monkey_patch_get_indexes_for_sqlite():
+    """Monkey patch SQLAlchemy to fix spatial index reflection."""
     normal_behavior = SQLiteDialect.get_indexes
 
     def spatial_behavior(self, connection, table_name, schema=None, **kw):
@@ -80,7 +81,7 @@ _monkey_patch_get_indexes_for_sqlite()
 
 
 def render_item(obj_type, obj, autogen_context):
-    """Apply custom rendering for selected items."""
+    """Add proper imports for spatial types."""
     if obj_type == "type" and isinstance(obj, (Geometry, Geography, Raster)):
         import_name = obj.__class__.__name__
         autogen_context.imports.add(f"from geoalchemy2 import {import_name}")
@@ -120,15 +121,7 @@ class AddGeospatialColumnOp(ops.AddColumnOp):
         insert_before=None,
         insert_after=None,
     ):
-        """Issue an "add column" instruction using the current
-        batch migration context.
-
-        .. seealso::
-
-            :meth:`.Operations.add_column`
-
-        """
-
+        """Issue an "add column" instruction using the current batch migration context."""
         kw = {}
         if insert_before:
             kw["insert_before"] = insert_before
@@ -156,7 +149,6 @@ class DropGeospatialColumnOp(ops.DropColumnOp):
         cls, operations, table_name, column_name, schema=None, **kw
     ):
         """Handle the different situations arising from dropping geospatial column from a DB."""
-
         op = cls(table_name, column_name, schema=schema, **kw)
         return operations.invoke(op)
 
@@ -168,14 +160,7 @@ class DropGeospatialColumnOp(ops.DropColumnOp):
 
     @classmethod
     def batch_drop_geospatial_column(cls, operations, column_name, **kw):
-        """Issue a "drop column" instruction using the current
-        batch migration context.
-
-        .. seealso::
-
-            :meth:`.Operations.drop_column`
-
-        """
+        """Issue a "drop column" instruction using the current batch migration context."""
         op = cls(
             operations.impl.table_name,
             column_name,
@@ -249,7 +234,7 @@ def drop_geospatial_column(operations, operation):
 
 @compiles(RenameTable, "sqlite")
 def visit_rename_geospatial_table(element, compiler, **kw):
-
+    """Specific compilation rule to rename spatial tables with SQLite dialect."""
     table_is_spatial = element.table_name in _SPATIAL_TABLES
     new_table_is_spatial = element.new_table_name in _SPATIAL_TABLES
 
@@ -266,7 +251,7 @@ def visit_rename_geospatial_table(element, compiler, **kw):
 
 @compiles(DropTable, "sqlite")
 def visit_drop_geospatial_table(element, compiler, **kw):
-
+    """Specific compilation rule to drop spatial tables with SQLite dialect."""
     table_is_spatial = element.element.name in _SPATIAL_TABLES
 
     if table_is_spatial:
@@ -294,7 +279,7 @@ def render_drop_geo_column(autogen_context, op):
 
 @writer.rewrites(ops.AddColumnOp)
 def add_geo_column(context, revision, op):
-    """This function replaces the default AddColumnOp by a geospatial-specific one."""
+    """Replace the default AddColumnOp by a geospatial-specific one."""
     col_type = op.column.type
     if isinstance(col_type, TypeDecorator):
         dialect = context.bind.dialect
@@ -310,7 +295,7 @@ def add_geo_column(context, revision, op):
 
 @writer.rewrites(ops.DropColumnOp)
 def drop_geo_column(context, revision, op):
-    """This function replaces the default DropColumnOp by a geospatial-specific one."""
+    """Replace the default DropColumnOp by a geospatial-specific one."""
     col_type = op.to_column().type
     if isinstance(col_type, TypeDecorator):
         dialect = context.bind.dialect
@@ -343,13 +328,11 @@ class CreateGeospatialTableOp(ops.CreateTableOp):
         )
 
     @classmethod
-    def from_table(
-        cls, table: "Table", _namespace_metadata=None
-    ) -> "CreateGeospatialTableOp":
+    def from_table(cls, table, _namespace_metadata=None):
         obj = super().from_table(table, _namespace_metadata)
         return obj
 
-    def to_table(self, migration_context=None) -> "Table":
+    def to_table(self, migration_context=None):
         table = super().to_table(migration_context)
 
         # Set spatial_index attribute to False so the indexes are created explicitly
@@ -379,13 +362,11 @@ class DropGeospatialTableOp(ops.DropTableOp):
         )
 
     @classmethod
-    def from_table(
-        cls, table: "Table", _namespace_metadata=None
-    ) -> "DropGeospatialTableOp":
+    def from_table(cls, table, _namespace_metadata=None):
         obj = super().from_table(table, _namespace_metadata)
         return obj
 
-    def to_table(self, migration_context=None) -> "Table":
+    def to_table(self, migration_context=None):
         table = super().to_table(migration_context)
         return table
 
@@ -443,7 +424,7 @@ def render_drop_geo_table(autogen_context, op):
 
 @writer.rewrites(ops.CreateTableOp)
 def create_geo_table(context, revision, op):
-    """This function replaces the default CreateTableOp by a geospatial-specific one."""
+    """Replace the default CreateTableOp by a geospatial-specific one."""
     dialect = context.bind.dialect
     gis_cols = _get_gis_cols(
         op, (Geometry, Geography, Raster), dialect, check_col_management=False
@@ -459,7 +440,7 @@ def create_geo_table(context, revision, op):
 
 @writer.rewrites(ops.DropTableOp)
 def drop_geo_table(context, revision, op):
-    """This function replaces the default DropTableOp by a geospatial-specific one."""
+    """Replace the default DropTableOp by a geospatial-specific one."""
     dialect = context.bind.dialect
     table = op.to_table()
     gis_cols = _get_gis_cols(
@@ -490,7 +471,7 @@ class CreateGeospatialIndexOp(ops.CreateIndexOp):
         unique=False,
         **kw,
     ):
-        """Handle the different situations arising from dropping geospatial table from a DB."""
+        """Handle the different situations arising from creating geospatial index into a DB."""
         op = cls(index_name, table_name, columns, schema=schema, unique=unique, **kw)
         return operations.invoke(op)
 
@@ -511,14 +492,7 @@ class CreateGeospatialIndexOp(ops.CreateIndexOp):
         columns,
         **kw,
     ):
-        """Issue a "create index" instruction using the
-        current batch migration context.
-
-        .. seealso::
-
-            :meth:`.Operations.create_index`
-
-        """
+        """Issue a "create index" instruction using the current batch migration context."""
         op = cls(
             index_name,
             operations.impl.table_name,
@@ -549,7 +523,7 @@ class DropGeospatialIndexOp(ops.DropIndexOp):
         unique=False,
         **kw,
     ):
-        """Handle the different situations arising from dropping geospatial table from a DB."""
+        """Handle the different situations arising from dropping geospatial index from a DB."""
         op = cls(
             index_name,
             table_name,
@@ -572,7 +546,7 @@ class DropGeospatialIndexOp(ops.DropIndexOp):
         )
 
     @classmethod
-    def from_index(cls, index: "Index") -> "DropGeospatialIndexOp":
+    def from_index(cls, index):
         assert index.table is not None
         assert len(index.columns) == 1, "A spatial index must be set on one column only"
         return cls(
@@ -586,14 +560,7 @@ class DropGeospatialIndexOp(ops.DropIndexOp):
 
     @classmethod
     def batch_drop_geospatial_index(cls, operations, index_name, **kw):
-        """Issue a "drop index" instruction using the
-        current batch migration context.
-
-        .. seealso::
-
-            :meth:`.Operations.drop_index`
-
-        """
+        """Issue a "drop index" instruction using the current batch migration context."""
         op = cls(
             index_name,
             table_name=operations.impl.table_name,
@@ -670,7 +637,7 @@ def render_drop_geo_index(autogen_context, op):
 
 @writer.rewrites(ops.CreateIndexOp)
 def create_geo_index(context, revision, op):
-    """This function replaces the default CreateIndexOp by a geospatial-specific one."""
+    """Replace the default CreateIndexOp by a geospatial-specific one."""
     dialect = context.bind.dialect
 
     if len(op.columns) == 1:
@@ -695,7 +662,7 @@ def create_geo_index(context, revision, op):
 
 @writer.rewrites(ops.DropIndexOp)
 def drop_geo_index(context, revision, op):
-    """This function replaces the default DropIndexOp by a geospatial-specific one."""
+    """Replace the default DropIndexOp by a geospatial-specific one."""
     dialect = context.bind.dialect
     idx = op.to_index()
 
@@ -713,15 +680,3 @@ def drop_geo_index(context, revision, op):
             )
 
     return op
-
-
-def load_spatialite(dbapi_conn, connection_record):
-    """Load SpatiaLite extension in SQLite DB."""
-    if "SPATIALITE_LIBRARY_PATH" not in os.environ:
-        raise RuntimeError(
-            "The SPATIALITE_LIBRARY_PATH environment variable is not set."
-        )
-    dbapi_conn.enable_load_extension(True)
-    dbapi_conn.load_extension(os.environ["SPATIALITE_LIBRARY_PATH"])
-    dbapi_conn.enable_load_extension(False)
-    dbapi_conn.execute("SELECT InitSpatialMetaData()")

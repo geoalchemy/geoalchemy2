@@ -1,4 +1,6 @@
 """GeoAlchemy2 package."""
+import os
+
 import sqlalchemy
 from packaging import version
 from sqlalchemy import Column
@@ -416,6 +418,23 @@ def _setup_ddl_event_listeners():
 
 
 _setup_ddl_event_listeners()
+
+
+def load_spatialite(dbapi_conn, connection_record):
+    """Load SpatiaLite extension in SQLite DB.
+
+    The path to the SpatiaLite module should be set in the `SPATIALITE_LIBRARY_PATH` environment
+    variable.
+    """
+    if "SPATIALITE_LIBRARY_PATH" not in os.environ:
+        raise RuntimeError(
+            "The SPATIALITE_LIBRARY_PATH environment variable is not set."
+        )
+    dbapi_conn.enable_load_extension(True)
+    dbapi_conn.load_extension(os.environ["SPATIALITE_LIBRARY_PATH"])
+    dbapi_conn.enable_load_extension(False)
+    dbapi_conn.execute("SELECT InitSpatialMetaData();")
+
 
 # Get version number
 __version__ = "UNKNOWN VERSION"
