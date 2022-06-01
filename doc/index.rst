@@ -6,11 +6,12 @@ GeoAlchemy 2 Documentation
 GeoAlchemy 2 provides extensions to `SQLAlchemy <http://sqlalchemy.org>`_ for
 working with spatial databases.
 
-GeoAlchemy 2 focuses on `PostGIS <http://postgis.net/>`_. PostGIS 1.5 and
-PostGIS 2 are supported.
+GeoAlchemy 2 focuses on `PostGIS <http://postgis.net/>`_. PostGIS 1.5,
+PostGIS 2 and PostGIS 3 are supported.
 
 SpatiaLite is also supported, but using GeoAlchemy 2 with SpatiaLite requires some specific
-configuration on the application side. GeoAlchemy 2 works with SpatiaLite 4.3.0 and higher.
+configuration on the application side. GeoAlchemy 2 works with SpatiaLite 4.3.0 and higher
+(except for alembic helpers that need SpatiaLite >= 5).
 
 GeoAlchemy 2 aims to be simpler than its predecessor, `GeoAlchemy
 <https://pypi.python.org/pypi/GeoAlchemy>`_. Simpler to use, and simpler
@@ -22,8 +23,7 @@ The current version of this documentation applies to the version |version| of Ge
 Requirements
 ------------
 
-GeoAlchemy 2 requires SQLAlchemy 0.8. GeoAlchemy 2 does not work with
-SQLAlchemy 0.7 and lower.
+GeoAlchemy 2 requires SQLAlchemy 1.4.
 
 Installation
 ------------

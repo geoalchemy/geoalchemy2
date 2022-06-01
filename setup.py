@@ -32,7 +32,7 @@ setup(
     zip_safe=False,
     setup_requires=["setuptools_scm"],
     install_requires=[
-        'SQLAlchemy>=1.1',
+        'SQLAlchemy>=1.4',
         'packaging'
     ],
     entry_points="""
