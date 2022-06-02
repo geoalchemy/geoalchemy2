@@ -1,5 +1,5 @@
 # Additional requirements for running the testsuite and development
-flake8==3.7.9
-pytest==3.7.4
-pytest-cov==2.5.1
+flake8
+pytest
+pytest-cov
 pytest-html

@@ -125,7 +125,7 @@ class _GISType(UserDefinedType):
 
     def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
                  spatial_index=True, use_N_D_index=False, management=False, use_typmod=None,
-                 from_text=None, name=None, nullable=True):
+                 from_text=None, name=None, nullable=True, _spatial_index_reflected=None):
         geometry_type, srid = self.check_ctor_args(
             geometry_type, srid, dimension, management, use_typmod, nullable)
         self.geometry_type = geometry_type
@@ -141,6 +141,7 @@ class _GISType(UserDefinedType):
         self.use_typmod = use_typmod
         self.extended = self.as_binary == 'ST_AsEWKB'
         self.nullable = nullable
+        self._spatial_index_reflected = _spatial_index_reflected
 
     def get_col_spec(self):
         if not self.geometry_type:

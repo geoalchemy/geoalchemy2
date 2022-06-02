@@ -40,7 +40,7 @@ from . import skip_pg12_sa1217
 from . import skip_postgis1
 from . import skip_postgis2
 
-SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("1.999")
+SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("1.4")
 if SQLA_LT_2:
     from sqlalchemy.engine.reflection import Inspector
     get_inspector = Inspector.from_engine

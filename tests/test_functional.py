@@ -27,15 +27,19 @@ from sqlalchemy.exc import DataError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import SAWarning
 from sqlalchemy.sql import func
+from sqlalchemy.testing.assertions import ComparesTables
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
+from geoalchemy2 import _get_spatialite_attrs
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
 from geoalchemy2.shape import to_shape
 
+from . import check_indexes
 from . import format_wkt
 from . import get_postgis_version
 from . import select
@@ -601,25 +605,134 @@ class TestContraint():
 
 class TestReflection():
 
-    def test_reflection(self, conn, Lake, setup_tables, schema):
+    @pytest.fixture
+    def setup_reflection_tables(self, reflection_tables_metadata, conn):
+        reflection_tables_metadata.drop_all(conn, checkfirst=True)
+        reflection_tables_metadata.create_all(conn)
+
+    def test_reflection(self, conn, setup_reflection_tables):
         skip_pg12_sa1217(conn)
         t = Table(
             'lake',
             MetaData(),
-            schema=schema,
             autoload_with=conn)
-        type_ = t.c.geom.type
-        assert isinstance(type_, Geometry)
-        if get_postgis_version(conn).startswith('1.') or conn.dialect.name == "sqlite":
+
+        if get_postgis_version(conn).startswith('1.'):
+            type_ = t.c.geom.type
+            assert isinstance(type_, Geometry)
             assert type_.geometry_type == 'GEOMETRY'
             assert type_.srid == -1
         else:
+            type_ = t.c.geom.type
+            assert isinstance(type_, Geometry)
             assert type_.geometry_type == 'LINESTRING'
             assert type_.srid == 4326
+            assert type_.dimension == 2
+
+            type_ = t.c.geom_no_idx.type
+            assert isinstance(type_, Geometry)
+            assert type_.geometry_type == 'LINESTRING'
+            assert type_.srid == 4326
+            assert type_.dimension == 2
+
+            type_ = t.c.geom_z.type
+            assert isinstance(type_, Geometry)
+            assert type_.geometry_type == 'LINESTRINGZ'
+            assert type_.srid == 4326
+            assert type_.dimension == 3
+
+            type_ = t.c.geom_m.type
+            assert isinstance(type_, Geometry)
+            assert type_.geometry_type == 'LINESTRINGM'
+            assert type_.srid == 4326
+            assert type_.dimension == 3
+
+            type_ = t.c.geom_zm.type
+            assert isinstance(type_, Geometry)
+            assert type_.geometry_type == 'LINESTRINGZM'
+            assert type_.srid == 4326
+            assert type_.dimension == 4
+
+        # Drop the table
+        t.drop(bind=conn)
+
+        # Check the indexes
+        check_indexes(
+            conn,
+            {
+                "postgresql": [],
+                "sqlite": [],
+            },
+            table_name=t.name,
+        )
+
+        # Recreate the table to check that the reflected properties are correct
+        t.create(bind=conn)
+
+        # Check the indexes
+        col_attributes = _get_spatialite_attrs(conn, t.name, "geom")
+        if isinstance(col_attributes[2], int):
+            sqlite_indexes = [
+                ('lake', 'geom', 2, 2, 4326, 1),
+                ('lake', 'geom_m', 2002, 3, 4326, 1),
+                ('lake', 'geom_no_idx', 2, 2, 4326, 0),
+                ('lake', 'geom_z', 1002, 3, 4326, 1),
+                ('lake', 'geom_zm', 3002, 4, 4326, 1),
+            ]
+        else:
+            sqlite_indexes = [
+                ('lake', 'geom', 'LINESTRING', 'XY', 4326, 1),
+                ('lake', 'geom_m', 'LINESTRING', 'XYM', 4326, 1),
+                ('lake', 'geom_no_idx', 'LINESTRING', 'XY', 4326, 0),
+                ('lake', 'geom_z', 'LINESTRING', 'XYZ', 4326, 1),
+                ('lake', 'geom_zm', 'LINESTRING', 'XYZM', 4326, 1),
+            ]
+        check_indexes(
+            conn,
+            {
+                "postgresql": [
+                    (
+                        'idx_lake_geom',
+                        'CREATE INDEX idx_lake_geom ON gis.lake USING gist (geom)',
+                    ),
+                    (
+                        'idx_lake_geom_m',
+                        'CREATE INDEX idx_lake_geom_m ON gis.lake USING gist (geom_m)',
+                    ),
+                    (
+                        'idx_lake_geom_z',
+                        'CREATE INDEX idx_lake_geom_z ON gis.lake USING gist (geom_z)',
+                    ),
+                    (
+                        'idx_lake_geom_zm',
+                        'CREATE INDEX idx_lake_geom_zm ON gis.lake USING gist (geom_zm)',
+                    ),
+                    (
+                        'lake_pkey',
+                        'CREATE UNIQUE INDEX lake_pkey ON gis.lake USING btree (id)',
+                    ),
+                ],
+                "sqlite": sqlite_indexes,
+            },
+            table_name=t.name,
+        )
 
     def test_raster_reflection(self, conn, Ocean, setup_tables):
         skip_pg12_sa1217(conn)
         skip_postgis1(conn)
-        t = Table('ocean', MetaData(), autoload_with=conn)
+        with pytest.warns(SAWarning):
+            t = Table('ocean', MetaData(), autoload_with=conn)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
+
+
+class TestToMetadata(ComparesTables):
+
+    def test_to_metadata(self, Lake):
+        new_meta = MetaData()
+        new_Lake = Lake.__table__.to_metadata(new_meta)
+
+        self.assert_tables_equal(Lake.__table__, new_Lake)
+
+        # Check that the spatial index was not duplicated
+        assert len(new_Lake.indexes) == 1
