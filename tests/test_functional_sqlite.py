@@ -16,8 +16,8 @@ from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
 
-from . import test_only_with_dialects
 from . import select
+from . import test_only_with_dialects
 
 if platform.python_implementation().lower() == 'pypy':
     pytest.skip('skip SpatiaLite tests on PyPy', allow_module_level=True)

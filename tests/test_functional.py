@@ -31,9 +31,9 @@ from sqlalchemy.exc import SAWarning
 from sqlalchemy.sql import func
 from sqlalchemy.testing.assertions import ComparesTables
 
-from geoalchemy2 import _get_spatialite_attrs
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
+from geoalchemy2 import _get_spatialite_attrs
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
