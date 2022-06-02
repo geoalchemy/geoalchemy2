@@ -351,7 +351,7 @@ new_table = Table(
             "sqlite": [
                 ("new_spatial_table", "geom_with_idx", 2, 2, 4326, 1),
                 ("new_spatial_table", "geom_without_idx", 2, 2, 4326, 0),
-                ('new_spatial_table', 'geom_without_idx_2', 2, 2, 4326, 0)
+                ("new_spatial_table", "geom_without_idx_2", 2, 2, 4326, 0),
             ],
         },
         table_name="new_spatial_table",
@@ -369,7 +369,9 @@ new_table = Table(
             {from_text}('SRID=4326;LINESTRING(0 0, 1 1)'),
             {from_text}('SRID=4326;LINESTRING(0 0, 1 1)')
         )
-        """.format(from_text=from_text)
+        """.format(
+            from_text=from_text
+        )
     )
     conn.execute("COMMIT")
 
@@ -442,16 +444,19 @@ new_table = Table(
         {
             "postgresql": [
                 (
-                    'idx_new_spatial_table_geom_with_idx',
-                    'CREATE INDEX idx_new_spatial_table_geom_with_idx ON gis.new_spatial_table USING gist (geom_with_idx)'
+                    "idx_new_spatial_table_geom_with_idx",
+                    """CREATE INDEX idx_new_spatial_table_geom_with_idx ON gis.new_spatial_table
+                    USING gist (geom_with_idx)""",
                 ),
                 (
-                    'idx_new_spatial_table_new_geom_with_idx',
-                    'CREATE INDEX idx_new_spatial_table_new_geom_with_idx ON gis.new_spatial_table USING gist (new_geom_with_idx)',
+                    "idx_new_spatial_table_new_geom_with_idx",
+                    """CREATE INDEX idx_new_spatial_table_new_geom_with_idx ON gis.new_spatial_table
+                    USING gist (new_geom_with_idx)""",
                 ),
                 (
-                    'new_spatial_table_pkey',
-                    'CREATE UNIQUE INDEX new_spatial_table_pkey ON gis.new_spatial_table USING btree (id)',
+                    "new_spatial_table_pkey",
+                    """CREATE UNIQUE INDEX new_spatial_table_pkey ON gis.new_spatial_table
+                    USING btree (id)""",
                 ),
             ],
             "sqlite": [
@@ -487,7 +492,7 @@ new_table = Table(
             "sqlite": [
                 ("new_spatial_table", "geom_with_idx", 2, 2, 4326, 1),
                 ("new_spatial_table", "geom_without_idx", 2, 2, 4326, 0),
-                ('new_spatial_table', 'geom_without_idx_2', 2, 2, 4326, 0),
+                ("new_spatial_table", "geom_without_idx_2", 2, 2, 4326, 0),
             ],
         },
         table_name="new_spatial_table",

@@ -1,6 +1,4 @@
 """Some helpers to use with Alembic migration tool."""
-import os
-
 from alembic.autogenerate import renderers
 from alembic.autogenerate import rewriter
 from alembic.autogenerate.render import _add_column
@@ -15,9 +13,6 @@ from alembic.ddl.base import visit_rename_table
 from alembic.operations import BatchOperations
 from alembic.operations import Operations
 from alembic.operations import ops
-from alembic.operations.batch import ApplyBatchImpl
-from sqlalchemy import Index
-from sqlalchemy import Table
 from sqlalchemy import text
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.ext.compiler import compiles
