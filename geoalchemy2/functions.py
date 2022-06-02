@@ -45,6 +45,23 @@ in several ways:
 
       session.scalar(lake.geom.ST_Area())
 
+.. warning::
+
+    A few functions (like `ST_Transform()`, `ST_Union()`, `ST_SnapToGrid()`, ...) can be used on
+    several spatial types (:class:`geoalchemy2.types.Geometry`,
+    :class:`geoalchemy2.types.Geography` and / or :class:`geoalchemy2.types.Raster` types). In
+    GeoAlchemy2, these functions are only defined for the :class:`geoalchemy2.types.Geometry` type,
+    as it can not be defined for several types at the same time. Therefore, using these functions on
+    :class:`geoalchemy2.types.Geography` or :class:`geoalchemy2.types.Raster` requires minor
+    tweaking to enforce the type by passing the `type_=Geography` or `type_=Raster` argument to the
+    function::
+
+        s = select([func.ST_Transform(
+                            lake_table.c.raster,
+                            2154,
+                            type_=Raster)
+                        .label('transformed_raster')])
+
 Reference
 ---------
 
@@ -108,6 +125,7 @@ except ImportError:
 class TableRowElement(ColumnElement):
 
     inherit_cache = False
+    """The cache is disabled for this class."""
 
     def __init__(self, selectable):
         self.selectable = selectable
@@ -123,6 +141,7 @@ class ST_AsGeoJSON(_GeoFunctionBase):
 
     name = "ST_AsGeoJSON"
     inherit_cache = True
+    """The cache is enabled for this class."""
 
     def __init__(self, *args, **kwargs):
         expr = kwargs.pop('expr', None)

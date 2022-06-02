@@ -91,6 +91,10 @@ pygments_style = 'sphinx'
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
+# -- Options for Autodoc ---------------------------------------------------
+autodoc_default_options = {
+    'exclude-members': 'inherit_cache'
+}
 
 # -- Options for HTML output ---------------------------------------------------
 

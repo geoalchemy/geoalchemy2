@@ -244,6 +244,7 @@ class CompositeElement(FunctionElement):
     """Instances of this class wrap a Postgres composite type."""
 
     inherit_cache = False
+    """The cache is disabled for this class."""
 
     def __init__(self, base, field, type_):
         self.name = field
