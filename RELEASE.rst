@@ -8,10 +8,7 @@ Proceed when the PR is merged.
 
 Make sure the CI is all green: https://github.com/geoalchemy/geoalchemy2/actions
 
-Create Git tag and push it::
-
-    $ git tag -a x.y -m 'version x.y'
-    $ git push origin x.y
+Create a new Release on GitHub. The release tag should be formatted as 'X.Y.Z'.
 
 Go to https://readthedocs.org/projects/geoalchemy-2/builds/ and run the compilation for
 the Latest version.

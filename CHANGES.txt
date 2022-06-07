@@ -1,6 +1,14 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.12.0
+------
+
+* Improve documentation for functions applied to types other than Geometry @adrien-berchet (#380)
+* Improve reflection mechanism and alembic interactions @adrien-berchet (#374)
+* Functions returning Box types now return None types instead of Geometry types @EdwardBetts @adrien-berchet (#375)
+* Improve the gallery example for TypeDecorator @adrien-berchet (#373)
+
 0.11.1
 ------
 
@@ -99,7 +107,7 @@ GeoAlchemy 2 Changelog
 * Fix Shapely requirements for Pypy @adrien-berchet (#262)
 * Add a gallery with tests and doc based on examples given in #219, #244 and #251 @adrien-berchet (#260)
 * Add support of the feature version of St_AsGeoJson() @adrien-berchet @zzzeek (#258)
-* Add __eq__ to WKBElement and make shape.from_shape() able to create extended elements @adrien-berchet matthew-emw (#247)
+* Add __eq__ to WKBElement and make shape.from_shape() able to create extended elements @adrien-berchet @matthew-emw (#247)
 * Extract all SQL concepts from Elements and refactor Raster type @adrien-berchet @elemoine @zzzeek (#256)
 
 0.7.0
