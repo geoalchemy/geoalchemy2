@@ -352,12 +352,13 @@ def _setup_ddl_event_listeners():
                             AND c.relkind='r'
                 ) g
                 LEFT JOIN pg_index i ON (g.relid = i.indrelid AND g.attnum = ANY(i.indkey))
-                WHERE relname = '{}' AND attname = '{}';
+                WHERE relname = '{}' AND attname = '{}'
             """.format(
                 table.name, column_info["name"]
             )
             if table.schema is not None:
                 has_index_query += " AND nspname = '{}'".format(table.schema)
+            has_index_query += ";"
             spatial_index = inspector.bind.execute(text(has_index_query)).scalar()
 
             # Set attributes
