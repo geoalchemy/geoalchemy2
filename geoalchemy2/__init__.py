@@ -336,6 +336,11 @@ def _setup_ddl_event_listeners():
                 coord_dimension = 3
 
             # Query to check a given column has spatial index
+            if table.schema is not None:
+                schema_part = " AND nspname = '{}'".format(table.schema)
+            else:
+                schema_part = ""
+
             has_index_query = """SELECT (indexrelid IS NOT NULL) AS has_index
                 FROM (
                     SELECT
@@ -352,12 +357,10 @@ def _setup_ddl_event_listeners():
                             AND c.relkind='r'
                 ) g
                 LEFT JOIN pg_index i ON (g.relid = i.indrelid AND g.attnum = ANY(i.indkey))
-                WHERE relname = '{}' AND attname = '{}';
+                WHERE relname = '{}' AND attname = '{}'{};
             """.format(
-                table.name, column_info["name"]
+                table.name, column_info["name"], schema_part
             )
-            if table.schema is not None:
-                has_index_query += " AND nspname = '{}'".format(table.schema)
             spatial_index = inspector.bind.execute(text(has_index_query)).scalar()
 
             # Set attributes

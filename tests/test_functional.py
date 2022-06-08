@@ -615,7 +615,27 @@ class TestReflection():
         t = Table(
             'lake',
             MetaData(),
-            autoload_with=conn)
+            autoload_with=conn,
+        )
+
+        if conn.dialect.name == "postgresql":
+            # Check index query with explicit schema
+            t_with_schema = Table(
+                'lake',
+                MetaData(),
+                autoload_with=conn,
+                schema="gis"
+            )
+            assert sorted(
+                [col.name for col in t.columns]
+            ) == sorted(
+                [col.name for col in t_with_schema.columns]
+            )
+            assert sorted(
+                [idx.name for idx in t.indexes]
+            ) == sorted(
+                [idx.name for idx in t_with_schema.indexes]
+            )
 
         if get_postgis_version(conn).startswith('1.'):
             type_ = t.c.geom.type
