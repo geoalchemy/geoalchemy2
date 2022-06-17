@@ -178,10 +178,7 @@ target_metadata = module.metadata
 connection = engine.connect()
 
 def include_object(obj, name, obj_type, reflected, compare_to):
-    if obj_type == "table" and name.startswith("idx_"):
-        # Ignore SQLite tables used for spatial indexes
-        # TODO: Improve this condition!!!
-        return False
+    # Ignore tables that are already in the DB
     if (
         obj_type == "table"
         and name not in [

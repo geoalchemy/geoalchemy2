@@ -14,7 +14,7 @@ Interactions between some features of Alembic and GeoAlchemy 2 may lead to error
 scripts, especially when using the ``--autogenerate`` feature of Alembic with the
 ``spatial_index=True`` feature of GeoAlchemy 2. In this case, the following errors occur:
 
-1. the migration script miss the relevant imports from ``geoalchemy2``.
+1. the migration script misses the relevant imports from ``geoalchemy2``.
 2. the migration script will create the indexes of the spatial columns after the table is created,
    but these indexes are already automatically created during table creation, which will lead to
    an error.
@@ -109,13 +109,12 @@ Helpers
 
 In order to make the use of Alembic easier, a few helpers are provided in
 :ref:`geoalchemy2.alembic_helpers <alembic_helpers>`. These helpers can be used in the ``env.py``
-file used by Alembic, like in the following example:
+file used by Alembic to auto-generate the migration scripts, like in the following example:
 
 .. code-block:: python
 
     # ...
-    from geoalchemy2.alembic_helpers import include_object
-    from geoalchemy2.alembic_helpers import render_item
+    from geoalchemy2 import alembic_helpers
     # ...
 
     def run_migrations_offline():
@@ -137,8 +136,13 @@ file used by Alembic, like in the following example:
         )
         # ...
 
-After running the ``alembic`` command, the migration script should be properly generated and should
-not need to be manually edited.
+After running the ``alembic revision --autogenerate -m <msg>`` command, the migration script should
+be properly generated and should not need to be manually edited.
+
+In this migration script you will notice specific spatial operation like `create_geospatial_table`,
+`drop_geospatial_table`, `add_geospatial_column`, `drop_geospatial_column`, etc. These operations
+can of course be edited manually in the migration scripts if you don't want to use auto-generation.
+All specific operations can be found in :ref:`geoalchemy2.alembic_helpers <alembic_helpers>`.
 
 
 Dealing with custom types
@@ -161,15 +165,14 @@ in ``my_package.custom_types``, you just have to edit the ``env.py`` file like t
 .. code-block:: python
 
     # ...
-    from geoalchemy2.alembic_helpers import include_object
-    from geoalchemy2.alembic_helpers import render_item as spatial_render_item
+    from geoalchemy2 import alembic_helpers
     from my_package.custom_types import TheCustomType
     # ...
 
 
     def render_item(obj_type, obj, autogen_context):
         """Apply custom rendering for selected items."""
-        spatial_type = spatial_render_item(obj_type, obj, autogen_context)
+        spatial_type = alembic_helpers.render_item(obj_type, obj, autogen_context)
         if spatial_type:
             return spatial_type
 
@@ -181,7 +184,6 @@ in ``my_package.custom_types``, you just have to edit the ``env.py`` file like t
 
         # default rendering for other objects
         return False
-
 
 
     def run_migrations_offline():
@@ -216,15 +218,15 @@ thus the ``env.py`` file should look like the following:
 
 .. code-block:: python
 
-    from geoalchemy2.alembic_helpers import load_spatialite
-    from geoalchemy2.alembic_helpers import writer
+    from geoalchemy2 import alembic_helpers
+    from geoalchemy2 import load_spatialite
 
 
     def run_migrations_offline():
         # ...
         context.configure(
             # ...
-            process_revision_directives=writer,
+            process_revision_directives=alembic_helpers.writer,
             render_item=alembic_helpers.render_item,
         )
         # ...
@@ -240,7 +242,7 @@ thus the ``env.py`` file should look like the following:
             # ...
             context.configure(
                 # ...
-                process_revision_directives=writer,
+                process_revision_directives=alembic_helpers.writer,
                 render_item=alembic_helpers.render_item,
             )
             # ...
