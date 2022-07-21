@@ -4,12 +4,14 @@
  *
  * :copyright: Copyright 2010 by Armin Ronacher.
  * :license: Flask Design License, see LICENSE for details.
+ *
+ * 2022-07-21: Minor updates by @adrien-berchet
  */
 
-{% set page_width = '940px' %}
+{% set page_width = '1140px' %}
 {% set sidebar_width = '220px' %}
-{% set text_font = "'Open Sans', Verdana, Helvetica, sans-serif" %}
-{% set title_font = "'Bree Serif', Georgia, serif" %}
+{% set text_font = "Garamond, Giorgia, serif" %}
+{% set title_font = "'Crimson Text', Garamond, Georgia, serif" %}
 
 @import url("basic.css");
 
@@ -328,6 +330,7 @@ table.footnote td {
 dl {
     margin: 0;
     padding: 0;
+    margin-top: 20px;
 }
 
 dl dd {
