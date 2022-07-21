@@ -11,7 +11,7 @@
 {% set page_width = '1140px' %}
 {% set sidebar_width = '220px' %}
 {% set text_font = "Garamond, Giorgia, serif" %}
-{% set title_font = "'Crimson Text', Garamond, Georgia, serif" %}
+{% set title_font = "'Bree Serif', Georgia, serif" %}
 
 @import url("basic.css");
 
