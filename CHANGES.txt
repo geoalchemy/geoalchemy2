@@ -1,6 +1,13 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.12.2
+------
+
+* Provide alembic_helpers.include_object again @adrien-berchet (#388)
+* Change doc font and increase page width @adrien-berchet (#389)
+* Fix doc for Alembic helpers @adrien-berchet (#386)
+
 0.12.1
 ------
 
