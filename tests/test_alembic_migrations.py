@@ -177,24 +177,13 @@ target_metadata = module.metadata
 
 connection = engine.connect()
 
-def include_object(obj, name, obj_type, reflected, compare_to):
-    # Ignore tables that are already in the DB
-    if (
-        obj_type == "table"
-        and name not in [
-            "new_spatial_table"
-        ]
-    ):
-        return False
-    return True
-
 context.configure(
     connection=connection,
     target_metadata=target_metadata,
     version_table_pk=True,
     process_revision_directives=alembic_helpers.writer,
     render_item=alembic_helpers.render_item,
-    include_object=include_object,
+    include_object=alembic_helpers.include_object,
     render_as_batch=True
 )
 

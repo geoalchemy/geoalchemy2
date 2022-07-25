@@ -29,6 +29,8 @@ from geoalchemy2 import _spatial_idx_name
 from geoalchemy2 import func
 
 writer = rewriter.Rewriter()
+"""Rewriter object for Alembic."""
+
 _SPATIAL_TABLES = set()
 
 
@@ -94,6 +96,30 @@ def render_item(obj_type, obj, autogen_context):
 
     # Default rendering for other objects
     return False
+
+
+def include_object(obj, name, obj_type, reflected, compare_to):
+    """Do not include internal tables of spatial extensions.
+
+    .. warning::
+        This function only checks the table names, so it might exclude tables that should not be.
+        In such case, you should create your own function to handle your specific table names.
+
+    """
+    if (
+        obj_type == "table"
+        and (
+            name.startswith("geometry_columns")
+            or name.startswith("spatial_ref_sys")
+            or name.startswith("spatialite_history")
+            or name.startswith("sqlite_sequence")
+            or name.startswith("views_geometry_columns")
+            or name.startswith("virts_geometry_columns")
+            or name.startswith("idx_")
+        )
+    ):
+        return False
+    return True
 
 
 @Operations.register_operation("add_geospatial_column")

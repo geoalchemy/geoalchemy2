@@ -130,6 +130,7 @@ def engine(tmpdir, db_url, _engine_echo):
 
     # For other dialects the engine is directly returned
     engine = create_engine(db_url, echo=_engine_echo)
+    engine.update_execution_options(search_path=["gis", "public"])
     engine._spatialite_version = None
     return engine
 

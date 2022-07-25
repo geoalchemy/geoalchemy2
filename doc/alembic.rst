@@ -121,6 +121,7 @@ file used by Alembic to auto-generate the migration scripts, like in the followi
         # ...
         context.configure(
             # ...
+            include_object=alembic_helpers.include_object,
             process_revision_directives=alembic_helpers.writer,
             render_item=alembic_helpers.render_item,
         )
@@ -131,10 +132,20 @@ file used by Alembic to auto-generate the migration scripts, like in the followi
         # ...
         context.configure(
             # ...
+            include_object=alembic_helpers.include_object,
             process_revision_directives=alembic_helpers.writer,
             render_item=alembic_helpers.render_item,
         )
         # ...
+
+As one can see, there are 3 specific functions to pass to the context:
+
+1. :func:`geoalchemy2.alembic_helpers.include_object` ignores the internal tables managed by the
+   spatial extensions (note that in some cases this function might need some customization, see the
+   details in the doc of this function).
+2. :obj:`geoalchemy2.alembic_helpers.writer` adds specific spatial operations to Alembic.
+3. :func:`geoalchemy2.alembic_helpers.render_item` automatically adds `GeoAlchemy2` imports into the
+   migration scripts.
 
 After running the ``alembic revision --autogenerate -m <msg>`` command, the migration script should
 be properly generated and should not need to be manually edited.
@@ -190,6 +201,7 @@ in ``my_package.custom_types``, you just have to edit the ``env.py`` file like t
         # ...
         context.configure(
             # ...
+            include_object=alembic_helpers.include_object,
             process_revision_directives=alembic_helpers.writer,
             render_item=render_item,
         )
@@ -200,6 +212,7 @@ in ``my_package.custom_types``, you just have to edit the ``env.py`` file like t
         # ...
         context.configure(
             # ...
+            include_object=alembic_helpers.include_object,
             process_revision_directives=alembic_helpers.writer,
             render_item=render_item,
         )
@@ -226,6 +239,7 @@ thus the ``env.py`` file should look like the following:
         # ...
         context.configure(
             # ...
+            include_object=alembic_helpers.include_object,
             process_revision_directives=alembic_helpers.writer,
             render_item=alembic_helpers.render_item,
         )
@@ -242,6 +256,7 @@ thus the ``env.py`` file should look like the following:
             # ...
             context.configure(
                 # ...
+                include_object=alembic_helpers.include_object,
                 process_revision_directives=alembic_helpers.writer,
                 render_item=alembic_helpers.render_item,
             )

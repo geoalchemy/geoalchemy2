@@ -23,7 +23,7 @@ The current version of this documentation applies to the version |version| of Ge
 Requirements
 ------------
 
-GeoAlchemy 2 requires SQLAlchemy 1.4.
+GeoAlchemy 2 requires `SQLAlchemy <http://sqlalchemy.org>`_ >= 1.4.
 
 Installation
 ------------

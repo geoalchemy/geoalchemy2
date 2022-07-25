@@ -190,9 +190,11 @@ def _setup_ddl_event_listeners():
                             bind.execute(stmt)
                             bind.execute(
                                 text(
-                                    """DROP TABLE IF EXISTS idx_{}_{};""".format(
-                                        table.name,
-                                        col.name,
+                                    """DROP TABLE IF EXISTS {};""".format(
+                                        _spatial_idx_name(
+                                            table.name,
+                                            col.name,
+                                        )
                                     )
                                 )
                             )

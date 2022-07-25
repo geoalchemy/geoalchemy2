@@ -105,32 +105,46 @@ def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo):
 
 
 def check_indexes(conn, expected, table_name):
-    if conn.dialect.name == "postgresql":
-        # Query to check the indexes
-        index_query = text(
+    """Check that actual indexes are equal to the expected ones."""
+    index_query = {
+        "postgresql": text(
             """SELECT indexname, indexdef
             FROM pg_indexes
             WHERE
                 tablename = '{}'
             ORDER BY indexname;""".format(table_name)
-        )
-        indexes = conn.execute(index_query).fetchall()
-
-        expected = [
-            (i[0], re.sub("\n *", " ", i[1]))
-            for i in expected["postgresql"]
-        ]
-
-        assert indexes == expected
-
-    elif conn.dialect.name == "sqlite":
-        # Query to check the indexes
-        index_query = text(
+        ),
+        "sqlite": text(
             """SELECT *
             FROM geometry_columns
             WHERE f_table_name = '{}'
             ORDER BY f_table_name, f_geometry_column;""".format(table_name)
-        )
+        ),
+    }
 
-        indexes = conn.execute(index_query).fetchall()
-        assert indexes == expected["sqlite"]
+    # Query to check the indexes
+    actual_indexes = conn.execute(index_query[conn.dialect.name]).fetchall()
+
+    expected_indexes = expected[conn.dialect.name]
+    if conn.dialect.name == "postgresql":
+        expected_indexes = [
+            (i[0], re.sub("\n *", " ", i[1]))
+            for i in expected_indexes
+        ]
+
+    try:
+        assert actual_indexes == expected_indexes
+    except AssertionError as exc:
+        print("###############################################")
+
+        print("Expected indexes:")
+        for i in expected_indexes:
+            print(i)
+
+        print("Actual indexes:")
+        for i in actual_indexes:
+            print(i)
+
+        print("###############################################")
+
+        raise exc
