@@ -745,6 +745,24 @@ class TestReflection():
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
 
+    @pytest.fixture
+    def ocean_view(self, conn, Ocean):
+        conn.execute("CREATE VIEW test_view AS SELECT * FROM ocean;")
+        yield Ocean
+        conn.execute("DROP VIEW test_view;")
+
+    def test_view_reflection(self, conn, Ocean, setup_tables, ocean_view):
+        """Test reflection of a view.
+
+        Note: the reflected `Table` object has spatial indexes attached. It would be nice to detect
+        when a view is reflected to not attach any spatial index.
+        """
+        skip_pg12_sa1217(conn)
+        skip_postgis1(conn)
+        t = Table('test_view', MetaData(), autoload_with=conn)
+        type_ = t.c.rast.type
+        assert isinstance(type_, Raster)
+
 
 class TestToMetadata(ComparesTables):
 
