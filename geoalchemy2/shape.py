@@ -8,12 +8,12 @@ This module provides utility functions for integrating with Shapely.
 """
 import shapely.wkb
 import shapely.wkt
-from pkg_resources import parse_version
+from packaging import version
 
 from .elements import WKBElement
 from .elements import WKTElement
 
-if parse_version(shapely.__version__) < parse_version("1.7"):  # pragma: no cover
+if version.parse(shapely.__version__) < version.parse('1.7'):
     ######################################################################
     # Backport function from Shapely 1.7
     from shapely.geometry.base import geom_factory
