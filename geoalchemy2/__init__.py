@@ -451,15 +451,9 @@ try:
     import importlib.metadata
     __version__ = importlib.metadata.version('GeoAlchemy2')
 except ImportError:
-    pass
-
-try:
-    if __version__ == "UNKNOWN VERSION":
+    try:
         from pkg_resources import DistributionNotFound
         from pkg_resources import get_distribution
-        try:
-            __version__ = get_distribution('GeoAlchemy2').version
-        except DistributionNotFound:  # pragma: no cover
-            pass  # pragma: no cover
-except ImportError:  # pragma: no cover
-    pass  # pragma: no cover
+        __version__ = get_distribution('GeoAlchemy2').version
+    except (DistributionNotFound, ImportError):  # pragma: no cover
+        pass  # pragma: no cover
