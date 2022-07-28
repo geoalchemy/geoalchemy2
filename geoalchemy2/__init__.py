@@ -449,11 +449,19 @@ __version__ = "UNKNOWN VERSION"
 # back to pkg_resources for Python 3.7 support
 try:
     import importlib.metadata
-    __version__ = importlib.metadata.version('GeoAlchemy2')
 except ImportError:
     try:
         from pkg_resources import DistributionNotFound
         from pkg_resources import get_distribution
-        __version__ = get_distribution('GeoAlchemy2').version
-    except (DistributionNotFound, ImportError):  # pragma: no cover
-        pass  # pragma: no cover
+    except ImportError:  # pragma: no cover
+        pass
+    else:
+        try:
+            __version__ = get_distribution('GeoAlchemy2').version
+        except DistributionNotFound:  # pragma: no cover
+            pass
+else:
+    try:
+        __version__ = importlib.metadata.version('GeoAlchemy2')
+    except importlib.metadata.PackageNotFoundError:  # pragma: no cover
+        pass
