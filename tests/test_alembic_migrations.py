@@ -184,7 +184,7 @@ context.configure(
     process_revision_directives=alembic_helpers.writer,
     render_item=alembic_helpers.render_item,
     include_object=alembic_helpers.include_object,
-    render_as_batch=True
+    render_as_batch={}
 )
 
 try:
@@ -195,7 +195,8 @@ finally:
     engine.dispose()
 
 """.format(
-                str(test_script_path)
+                str(test_script_path),
+                True if engine.dialect.name == "sqlite" else False
             )
         )
     with test_script_path.open(mode="w", encoding="utf8") as f:
