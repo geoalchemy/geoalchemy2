@@ -125,35 +125,32 @@ def _setup_ddl_event_listeners():
         except AttributeError:
             pass
 
+        kwargs = {
+            'postgresql_using': 'gist',
+            '_column_flag': True,
+        }
+        col = column
         if _check_spatial_type(column.type, (Geometry, Geography)):
             if column.type.use_N_D_index:
-                postgresql_ops = {column.name: "gist_geometry_ops_nd"}
-            else:
-                postgresql_ops = {}
-            table.append_constraint(
-                Index(
-                    _spatial_idx_name(table.name, column.name),
-                    column,
-                    postgresql_using='gist',
-                    postgresql_ops=postgresql_ops,
-                    _column_flag=True,
-                )
-            )
+                kwargs['postgresql_ops'] = {column.name: "gist_geometry_ops_nd"}
         elif _check_spatial_type(column.type, Raster):
-            table.append_constraint(
-                Index(
-                    _spatial_idx_name(table.name, column.name),
-                    func.ST_ConvexHull(column),
-                    postgresql_using='gist',
-                    _column_flag=True,
-                )
+            col = func.ST_ConvexHull(column)
+
+        table.append_constraint(
+            Index(
+                _spatial_idx_name(table.name, column.name),
+                col,
+                **kwargs,
             )
+        )
 
     def dispatch(current_event, table, bind):
         if current_event in ('before-create', 'before-drop'):
+            dialect = bind.dialect
+
             # Filter Geometry columns from the table with management=True
             # Note: Geography and PostGIS >= 2.0 don't need this
-            gis_cols = _get_gis_cols(table, Geometry, bind.dialect, check_col_management=True)
+            gis_cols = _get_gis_cols(table, Geometry, dialect, check_col_management=True)
 
             # Find all other columns that are not managed Geometries
             regular_cols = [x for x in table.columns if x not in gis_cols]
@@ -171,7 +168,7 @@ def _setup_ddl_event_listeners():
             if current_event == 'before-drop':
                 # Drop the managed Geometry columns
                 for col in gis_cols:
-                    if bind.dialect.name == 'sqlite':
+                    if dialect.name == 'sqlite':
                         drop_func = 'DiscardGeometryColumn'
 
                         # Disable spatial indexes if present
@@ -198,10 +195,10 @@ def _setup_ddl_event_listeners():
                                     )
                                 )
                             )
-                    elif bind.dialect.name == 'postgresql':
+                    elif dialect.name == 'postgresql':
                         drop_func = 'DropGeometryColumn'
                     else:
-                        raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
+                        raise ArgumentError('dialect {} is not supported'.format(dialect.name))
                     args = [table.schema] if table.schema else []
                     args.extend([table.name, col.name])
 
@@ -217,8 +214,8 @@ def _setup_ddl_event_listeners():
                 for idx in current_indexes:
                     for col in table.info["_saved_columns"]:
                         if (
-                            _check_spatial_type(col.type, Geometry, bind.dialect)
-                            and check_management(col, bind.dialect)
+                            _check_spatial_type(col.type, Geometry, dialect)
+                            and check_management(col, dialect)
                         ) and col in idx.columns.values():
                             table.indexes.remove(idx)
                             if (
@@ -226,7 +223,7 @@ def _setup_ddl_event_listeners():
                                 or not getattr(col.type, "spatial_index", False)
                             ):
                                 table.info["_after_create_indexes"].append(idx)
-                if bind.dialect.name == 'sqlite':
+                if dialect.name == 'sqlite':
                     for col in gis_cols:
                         # Add dummy columns with GEOMETRY type
                         col._actual_type = col.type
@@ -236,16 +233,18 @@ def _setup_ddl_event_listeners():
 
         elif current_event == 'after-create':
             # Restore original column list including managed Geometry columns
+            dialect = bind.dialect
+
             table.columns = table.info.pop('_saved_columns')
 
             for col in table.columns:
                 # Add the managed Geometry columns with AddGeometryColumn()
                 if (
-                    _check_spatial_type(col.type, Geometry, bind.dialect)
-                    and check_management(col, bind.dialect)
+                    _check_spatial_type(col.type, Geometry, dialect)
+                    and check_management(col, dialect)
                 ):
                     dimension = col.type.dimension
-                    if bind.dialect.name == 'sqlite':
+                    if dialect.name == 'sqlite':
                         col.type = col._actual_type
                         del col._actual_type
                         create_func = func.RecoverGeometryColumn
@@ -268,7 +267,7 @@ def _setup_ddl_event_listeners():
                         col.type.geometry_type,
                         dimension
                     ])
-                    if col.type.use_typmod is not None:
+                    if col.type.use_typmod is not None and dialect.name != 'sqlite':
                         args.append(col.type.use_typmod)
 
                     stmt = select(*_format_select_args(create_func(*args)))
@@ -277,20 +276,20 @@ def _setup_ddl_event_listeners():
 
                 # Add spatial indices for the Geometry and Geography columns
                 if (
-                    _check_spatial_type(col.type, (Geometry, Geography), bind.dialect)
+                    _check_spatial_type(col.type, (Geometry, Geography), dialect)
                     and col.type.spatial_index is True
                 ):
-                    if bind.dialect.name == 'sqlite':
+                    if dialect.name == 'sqlite':
                         stmt = select(*_format_select_args(func.CreateSpatialIndex(table.name,
                                                                                    col.name)))
                         stmt = stmt.execution_options(autocommit=True)
                         bind.execute(stmt)
-                    elif bind.dialect.name == 'postgresql':
+                    elif dialect.name == 'postgresql':
                         # If the index does not exist (which might be the case when
                         # management=False), define it and create it
                         if (
                             not [i for i in table.indexes if col in i.columns.values()]
-                            and check_management(col, bind.dialect)
+                            and check_management(col, dialect)
                         ):
                             if col.type.use_N_D_index:
                                 postgresql_ops = {col.name: "gist_geometry_ops_nd"}
@@ -306,14 +305,7 @@ def _setup_ddl_event_listeners():
                             idx.create(bind=bind)
 
                     else:
-                        raise ArgumentError('dialect {} is not supported'.format(bind.dialect.name))
-
-                if (
-                    isinstance(col.type, (Geometry, Geography))
-                    and col.type.spatial_index is False
-                    and col.type.use_N_D_index is True
-                ):
-                    raise ArgumentError('Arg Error(use_N_D_index): spatial_index must be True')
+                        raise ArgumentError('dialect {} is not supported'.format(dialect.name))
 
             for idx in table.info.pop("_after_create_indexes"):
                 table.indexes.add(idx)

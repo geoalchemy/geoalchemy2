@@ -31,6 +31,7 @@ from sqlalchemy.exc import SAWarning
 from sqlalchemy.sql import func
 from sqlalchemy.testing.assertions import ComparesTables
 
+import geoalchemy2
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
 from geoalchemy2 import _get_spatialite_attrs
@@ -46,8 +47,41 @@ from . import select
 from . import skip_case_insensitivity
 from . import skip_pg12_sa1217
 from . import skip_postgis1
+from . import test_only_with_dialects
 
 SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("1.999")
+
+
+class TestAdmin():
+
+    def test_create_drop_tables(
+        self,
+        conn,
+        metadata,
+        Lake,
+        Poi,
+        Summit,
+        Ocean,
+        PointZ,
+        LocalPoint,
+        IndexTestWithSchema,
+        IndexTestWithNDIndex,
+        IndexTestWithoutSchema,
+    ):
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+        metadata.drop_all(conn, checkfirst=True)
+
+
+class TestMiscellaneous():
+
+    @test_only_with_dialects("sqlite")
+    def test_load_spatialite(self, monkeypatch, conn):
+        geoalchemy2.load_spatialite(conn.connection.dbapi_connection, None)
+
+        monkeypatch.delenv("SPATIALITE_LIBRARY_PATH")
+        with pytest.raises(RuntimeError):
+            geoalchemy2.load_spatialite(conn.connection.dbapi_connection, None)
 
 
 class TestInsertionCore():
@@ -744,6 +778,25 @@ class TestReflection():
             t = Table('ocean', MetaData(), autoload_with=conn)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
+
+    @test_only_with_dialects("sqlite")
+    def test_sqlite_reflection_with_discarded_col(self, conn, Lake, setup_tables):
+        """Test that a discarded geometry column is not properly reflected with SQLite."""
+        conn.execute("""DELETE FROM "geometry_columns" WHERE f_table_name = 'lake';""")
+        t = Table(
+            'lake',
+            MetaData(),
+            autoload_with=conn,
+        )
+
+        # In this case the reflected type is generic with default values
+        assert t.c.geom.type.geometry_type == "GEOMETRY"
+        assert t.c.geom.type.dimension == 2
+        assert t.c.geom.type.extended
+        assert not t.c.geom.type.management
+        assert t.c.geom.type.nullable
+        assert t.c.geom.type.spatial_index
+        assert t.c.geom.type.srid == -1
 
     @pytest.fixture
     def ocean_view(self, conn, Ocean):

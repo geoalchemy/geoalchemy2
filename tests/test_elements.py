@@ -72,6 +72,13 @@ class TestWKTElement():
         b = WKTElement('POINT(1 2)')
         assert a == b
 
+    def test_hash(self):
+        a = WKTElement('POINT(1 2)')
+        b = WKTElement('POINT(10 20)')
+        c = WKTElement('POINT(10 20)')
+        assert set([a, b, c]) == set([a, b, c])
+        assert len(set([a, b, c])) == 2
+
 
 class TestExtendedWKTElement():
 
@@ -133,6 +140,13 @@ class TestExtendedWKTElement():
         a = WKTElement(self._ewkt, extended=True)
         b = WKTElement(self._ewkt, extended=True)
         assert a == b
+
+    def test_hash(self):
+        a = WKTElement('SRID=3857;POINT (1 2 3)', extended=True)
+        b = WKTElement('SRID=3857;POINT (10 20 30)', extended=True)
+        c = WKTElement('SRID=3857;POINT (10 20 30)', extended=True)
+        assert set([a, b, c]) == set([a, b, c])
+        assert len(set([a, b, c])) == 2
 
     def test_missing_srid(self):
         with pytest.raises(ArgumentError, match="invalid EWKT string"):
@@ -270,6 +284,13 @@ class TestExtendedWKBElement():
         b = WKBElement(self._bin, extended=True)
         assert a == b
 
+    def test_hash(self):
+        a = WKBElement(str('010100002003000000000000000000f03f0000000000000040'), extended=True)
+        b = WKBElement(str('010100002003000000000000000000f02f0000000000000040'), extended=True)
+        c = WKBElement(str('010100002003000000000000000000f02f0000000000000040'), extended=True)
+        assert set([a, b, c]) == set([a, b, c])
+        assert len(set([a, b, c])) == 2
+
 
 class TestWKBElement():
 
@@ -300,6 +321,13 @@ class TestWKBElement():
         a = WKBElement(b'\x01\x02')
         b = WKBElement(b'\x01\x02')
         assert a == b
+
+    def test_hash(self):
+        a = WKBElement(b'\x01\x02')
+        b = WKBElement(b'\x01\x03')
+        c = WKBElement(b'\x01\x03')
+        assert set([a, b, c]) == set([a, b, c])
+        assert len(set([a, b, c])) == 2
 
 
 class TestNotEqualSpatialElement():
@@ -384,6 +412,14 @@ class TestRasterElement():
         assert f.compile().params == {
             u'raster_1': self.hex_rast_data,
         }
+
+    def test_hash(self):
+        new_hex_rast_data = self.hex_rast_data.replace('f', 'e')
+        a = WKBElement(self.hex_rast_data)
+        b = WKBElement(new_hex_rast_data)
+        c = WKBElement(new_hex_rast_data)
+        assert set([a, b, c]) == set([a, b, c])
+        assert len(set([a, b, c])) == 2
 
 
 class TestCompositeElement():

@@ -101,7 +101,7 @@ class _SpatialElement(HasFunction):
 
     @staticmethod
     def _data_from_desc(desc):
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
 
 class WKTElement(_SpatialElement):
