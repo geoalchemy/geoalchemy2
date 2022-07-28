@@ -443,12 +443,25 @@ def load_spatialite(dbapi_conn, connection_record):
 
 # Get version number
 __version__ = "UNKNOWN VERSION"
+
+# Attempt to use importlib.metadata first because it's much faster
+# though it's only available in Python 3.8+ so we'll need to fall
+# back to pkg_resources for Python 3.7 support
 try:
-    from pkg_resources import DistributionNotFound
-    from pkg_resources import get_distribution
+    import importlib.metadata
+except ImportError:
     try:
-        __version__ = get_distribution('GeoAlchemy2').version
-    except DistributionNotFound:  # pragma: no cover
-        pass  # pragma: no cover
-except ImportError:  # pragma: no cover
-    pass  # pragma: no cover
+        from pkg_resources import DistributionNotFound
+        from pkg_resources import get_distribution
+    except ImportError:  # pragma: no cover
+        pass
+    else:
+        try:
+            __version__ = get_distribution('GeoAlchemy2').version
+        except DistributionNotFound:  # pragma: no cover
+            pass
+else:
+    try:
+        __version__ = importlib.metadata.version('GeoAlchemy2')
+    except importlib.metadata.PackageNotFoundError:  # pragma: no cover
+        pass
