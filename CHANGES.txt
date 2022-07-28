@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.12.3
+------
+
+* Replace pkg_resources usage with packaging + importlib.metadata @jacob-indigo (#392)
+* Add a test for reflection of a view with spatial columns @adrien-berchet (#391)
+
 0.12.2
 ------
 
