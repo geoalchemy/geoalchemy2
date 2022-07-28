@@ -13,7 +13,7 @@ from packaging import version
 from .elements import WKBElement
 from .elements import WKTElement
 
-if version.parse(shapely.__version__) < version.parse('1.7'):
+if version.parse(shapely.__version__) < version.parse('1.7'):  # pragma: no cover
     ######################################################################
     # Backport function from Shapely 1.7
     from shapely.geometry.base import geom_factory
