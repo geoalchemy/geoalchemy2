@@ -462,7 +462,13 @@ def create_geo_table(context, revision, op):
     )
 
     if gis_cols:
-        new_op = CreateGeospatialTableOp(op.table_name, op.columns, op.schema)
+        new_op = CreateGeospatialTableOp(
+            op.table_name,
+            op.columns,
+            op.schema,
+            op._namespace_metadata,
+            op._constraints_included,
+        )
     else:
         new_op = op
 
