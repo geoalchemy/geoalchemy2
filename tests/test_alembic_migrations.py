@@ -272,18 +272,28 @@ def test_migration_revision(
     with test_script_path.open(mode="w", encoding="utf8") as f:
         f.write(
             """
-from sqlalchemy import MetaData
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import Table
 from geoalchemy2 import Geometry
+from sqlalchemy import Column
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import MetaData
+from sqlalchemy import String
+from sqlalchemy import Table
 
 metadata = MetaData()
+
+group_table = Table(
+    "new_groups",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("name", String),
+)
 
 new_table = Table(
     "new_spatial_table",
     metadata,
     Column("id", Integer, primary_key=True),
+    Column("group_id", Integer, ForeignKey(group_table.c.id)),
     Column(
         "geom_with_idx",
         Geometry(
@@ -371,18 +381,29 @@ new_table = Table(
     with test_script_path.open(mode="w", encoding="utf8") as f:
         f.write(
             """
-from sqlalchemy import MetaData
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import Table
 from geoalchemy2 import Geometry
+from sqlalchemy import Column
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import MetaData
+from sqlalchemy import String
+from sqlalchemy import Table
 
 metadata = MetaData()
+
+group_table = Table(
+    "new_groups",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("name", String),
+)
+
 
 new_table = Table(
     "new_spatial_table",
     metadata,
     Column("id", Integer, primary_key=True),
+    Column("group_id", Integer, ForeignKey(group_table.c.id)),
     Column(
         "geom_with_idx",
         Geometry(
