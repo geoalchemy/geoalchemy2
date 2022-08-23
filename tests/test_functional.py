@@ -47,6 +47,7 @@ from . import select
 from . import skip_case_insensitivity
 from . import skip_pg12_sa1217
 from . import skip_postgis1
+from . import skip_sa11
 from . import test_only_with_dialects
 
 SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("1.999")
@@ -77,6 +78,7 @@ class TestMiscellaneous():
 
     @test_only_with_dialects("sqlite")
     def test_load_spatialite(self, monkeypatch, conn):
+        skip_sa11()
         geoalchemy2.load_spatialite(conn.connection.dbapi_connection, None)
 
         monkeypatch.delenv("SPATIALITE_LIBRARY_PATH")
@@ -646,6 +648,7 @@ class TestReflection():
 
     def test_reflection(self, conn, setup_reflection_tables):
         skip_pg12_sa1217(conn)
+        skip_sa11()
         t = Table(
             'lake',
             MetaData(),
@@ -774,6 +777,7 @@ class TestReflection():
     def test_raster_reflection(self, conn, Ocean, setup_tables):
         skip_pg12_sa1217(conn)
         skip_postgis1(conn)
+        skip_sa11()
         with pytest.warns(SAWarning):
             t = Table('ocean', MetaData(), autoload_with=conn)
         type_ = t.c.rast.type
@@ -782,6 +786,7 @@ class TestReflection():
     @test_only_with_dialects("sqlite")
     def test_sqlite_reflection_with_discarded_col(self, conn, Lake, setup_tables):
         """Test that a discarded geometry column is not properly reflected with SQLite."""
+        skip_sa11()
         conn.execute("""DELETE FROM "geometry_columns" WHERE f_table_name = 'lake';""")
         t = Table(
             'lake',
@@ -812,6 +817,7 @@ class TestReflection():
         """
         skip_pg12_sa1217(conn)
         skip_postgis1(conn)
+        skip_sa11()
         t = Table('test_view', MetaData(), autoload_with=conn)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
@@ -820,6 +826,7 @@ class TestReflection():
 class TestToMetadata(ComparesTables):
 
     def test_to_metadata(self, Lake):
+        skip_sa11()
         new_meta = MetaData()
         new_Lake = Lake.__table__.to_metadata(new_meta)
 

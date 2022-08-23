@@ -73,6 +73,11 @@ def skip_pg12_sa1217(bind):
         pytest.skip("Reflection for PostgreSQL-12 is only supported by sqlalchemy>=1.2.17")
 
 
+def skip_sa11():
+    if parse_version(SA_VERSION) < parse_version("1.4"):
+        pytest.skip("Requires SQLAlchely>=1.4")
+
+
 def select(args):
     if version.parse(SA_VERSION) < version.parse("1.4"):
         return raw_select(args)

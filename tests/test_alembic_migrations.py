@@ -17,6 +17,7 @@ from geoalchemy2 import Geometry
 from geoalchemy2 import alembic_helpers
 
 from . import check_indexes
+from . import skip_sa11
 from . import test_only_with_dialects
 
 
@@ -26,8 +27,9 @@ def filter_tables(name, type_, parent_names):
 
 
 class TestAutogenerate:
-    def test_no_diff(self, conn, Lake, setup_tables):
+    def test_no_diff(self, conn, Lake, setup_tables, use_sqlite_monkeypatch):
         """Check that the autogeneration detects spatial types properly."""
+        skip_sa11()
         metadata = MetaData()
 
         Table(
@@ -57,8 +59,9 @@ class TestAutogenerate:
 
         assert diff == []
 
-    def test_diff(self, conn, Lake, setup_tables):
+    def test_diff(self, conn, Lake, setup_tables, use_sqlite_monkeypatch):
         """Check that the autogeneration detects spatial types properly."""
+        skip_sa11()
         metadata = MetaData()
 
         Table(
@@ -255,8 +258,9 @@ datefmt = %%H:%%M:%%S
 
 @test_only_with_dialects("postgresql", "sqlite-spatialite4")
 def test_migration_revision(
-    conn, metadata, alembic_config, alembic_env_path, test_script_path
+    conn, metadata, alembic_config, alembic_env_path, test_script_path, use_sqlite_monkeypatch
 ):
+    skip_sa11()
     if platform.python_implementation().lower() == 'pypy':
         pytest.skip('skip SpatiaLite tests on PyPy', allow_module_level=True)
 

@@ -32,9 +32,10 @@ setup(
     zip_safe=False,
     setup_requires=["setuptools_scm"],
     install_requires=[
-        'SQLAlchemy>=1.4',
+        'SQLAlchemy>=1.1',
         'packaging'
     ],
+    extras_require={"alembic": ["alembic", "sqlalchemy>=1.4"]},
     entry_points="""
     # -*- Entry points: -*-
     """,

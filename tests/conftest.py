@@ -5,8 +5,11 @@ import pytest
 from sqlalchemy import MetaData
 from sqlalchemy import create_engine
 from sqlalchemy import text
+from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
+from geoalchemy2.alembic_helpers import _monkey_patch_get_indexes_for_sqlite
 
 from . import copy_and_connect_sqlite_db
 from . import get_postgis_version
@@ -177,6 +180,23 @@ def postgis_version(conn):
 @pytest.fixture
 def postgres_major_version(conn):
     return get_postgres_major_version(conn)
+
+
+@pytest.fixture(autouse=True)
+def reset_sqlite_monkeypatch():
+    """Disable Alembic monkeypatching by default."""
+    try:
+        normal_behavior = SQLiteDialect._get_indexes_normal_behavior
+        SQLiteDialect.get_indexes = normal_behavior
+        SQLiteDialect._get_indexes_normal_behavior = normal_behavior
+    except AttributeError:
+        pass
+
+
+@pytest.fixture(autouse=True)
+def use_sqlite_monkeypatch():
+    """Enable Alembic monkeypatching ."""
+    _monkey_patch_get_indexes_for_sqlite()
 
 
 @pytest.fixture

@@ -5,13 +5,10 @@ Use CompositeType
 Some functions return composite types. This example shows how to deal with this
 kind of functions.
 """
-import pytest
-from pkg_resources import parse_version
 from sqlalchemy import Column
 from sqlalchemy import Float
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
-from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy.ext.declarative import declarative_base
 
 from geoalchemy2 import Raster
@@ -21,6 +18,7 @@ from geoalchemy2.types import CompositeType
 
 # Tests imports
 from tests import select
+from tests import skip_sa11
 from tests import test_only_with_dialects
 
 
@@ -62,11 +60,8 @@ class Ocean(Base):
 @test_only_with_dialects("postgresql")
 class TestSTSummaryStatsAgg():
 
-    @pytest.mark.skipif(
-        parse_version(SA_VERSION) < parse_version("1.4"),
-        reason="requires SQLAlchely>1.4",
-    )
     def test_st_summary_stats_agg(self, session, conn):
+        skip_sa11()
         metadata.drop_all(conn, checkfirst=True)
         metadata.create_all(conn)
 

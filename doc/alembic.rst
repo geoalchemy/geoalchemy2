@@ -107,6 +107,10 @@ In this case, we have to do the following changes to make it work:
 Helpers
 -------
 
+.. warning::
+
+    The helpers described in this section need `SQLAlchemy>=1.4`.
+
 In order to make the use of Alembic easier, a few helpers are provided in
 :ref:`geoalchemy2.alembic_helpers <alembic_helpers>`. These helpers can be used in the ``env.py``
 file used by Alembic to auto-generate the migration scripts, like in the following example:

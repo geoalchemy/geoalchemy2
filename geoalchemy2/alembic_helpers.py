@@ -43,11 +43,14 @@ def _monkey_patch_get_indexes_for_sqlite():
             connection, table_name, schema=None, **kw
         )
 
-        # Check that SpatiaLite was loaded into the DB
-        is_spatial_db = connection.exec_driver_sql(
-            """PRAGMA main.table_info(geometry_columns)"""
-        ).fetchall()
-        if not is_spatial_db:
+        try:
+            # Check that SpatiaLite was loaded into the DB
+            is_spatial_db = connection.exec_driver_sql(
+                """PRAGMA main.table_info(geometry_columns)"""
+            ).fetchall()
+            if not is_spatial_db:
+                return indexes
+        except AttributeError:
             return indexes
 
         # Get spatial indexes
