@@ -414,8 +414,8 @@ def create_geospatial_table(operations, operation):
     table_name = operation.table_name
     bind = operations.get_bind()
 
-    # For now the default events defined in geoalchemy2 are enought to handle table creation
-    operations.create_table(table_name, *operation.columns, **operation.kw)
+    # For now the default events defined in geoalchemy2 are enough to handle table creation
+    operations.create_table(table_name, *operation.columns, schema=operation.schema, **operation.kw)
 
     if bind.dialect.name == "sqlite":
         _SPATIAL_TABLES.add(table_name)
