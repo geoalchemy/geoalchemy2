@@ -1,10 +1,15 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.12.5
+------
+
+* Fix alembic_helpers.create_geospatial_table() use the proper schema @adrien-berchet (#404)
+
 0.12.4
 ------
 
-* Fix create_geo_table() in alembic helpers to handle foreign keys @adrien-berchet (#398)
+* Fix alembic_helpers.create_geo_table() to handle foreign keys @adrien-berchet (#398)
 
 0.12.3
 ------
