@@ -134,6 +134,6 @@ jobs:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        pip install --upgrade pip setuptools wheel twine
-        python setup.py sdist bdist_wheel
+        pip install --upgrade pip setuptools build twine
+        python -m build -o dist
         twine upload dist/*
