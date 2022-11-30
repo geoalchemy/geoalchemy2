@@ -93,6 +93,7 @@ def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo):
     db_url = f"sqlite:///{tmp_db}"
     engine = create_engine(db_url, echo=engine_echo)
     listen(engine, 'connect', load_spatialite)
+    print(f"""SPATIALITE VERSION: {engine.execute("SELECT spatialite_version();").fetchone()[0]}""")
 
     if input_db.endswith("spatialite_lt_4.sqlite"):
         engine._spatialite_version = 3
