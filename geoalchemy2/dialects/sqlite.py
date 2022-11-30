@@ -5,8 +5,12 @@ from sqlalchemy import text
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
 
+from geoalchemy2.dialects.common import _check_spatial_type
 from geoalchemy2.dialects.common import _format_select_args
 from geoalchemy2.dialects.common import _spatial_idx_name
+from geoalchemy2.dialects.common import setup_create_drop
+from geoalchemy2.types import Geography
+from geoalchemy2.types import Geometry
 from geoalchemy2.types import _DummyGeometry
 
 
@@ -150,3 +154,87 @@ def reflect_geometry_column(inspector, table, column_info):
 
         # Spatial indexes are not automatically reflected with SQLite dialect
         column_info["type"]._spatial_index_reflected = False
+
+
+def before_create(table, bind, **kw):
+    """Handle spatial indexes during the before_create event."""
+    dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
+    dialect_name = dialect.name
+
+    # Remove the spatial indexes from the table metadata because they should not be
+    # created during the table.create() step since the associated columns do not exist
+    # at this time.
+    table.info["_after_create_indexes"] = []
+    current_indexes = set(table.indexes)
+    for idx in current_indexes:
+        for col in table.info["_saved_columns"]:
+            if (
+                _check_spatial_type(col.type, Geometry, dialect)
+            ) and col in idx.columns.values():
+                table.indexes.remove(idx)
+                if (
+                    idx.name != _spatial_idx_name(table.name, col.name)
+                    or not getattr(col.type, "spatial_index", False)
+                ):
+                    table.info["_after_create_indexes"].append(idx)
+    _setup_dummy_type(table, gis_cols)
+
+
+def after_create(table, bind, **kw):
+    """Handle spatial indexes during the after_create event."""
+    dialect = bind.dialect
+
+    table.columns = table.info.pop('_saved_columns')
+
+    for col in table.columns:
+        # Add the managed Geometry columns with AddGeometryColumn()
+        if (
+            _check_spatial_type(col.type, Geometry, dialect)
+        ):
+            col.type = col._actual_type
+            del col._actual_type
+            dimension = get_col_dim(col)
+            args = [table.schema] if table.schema else []
+            args.extend([
+                table.name,
+                col.name,
+                col.type.srid,
+                col.type.geometry_type,
+                dimension
+            ])
+
+            stmt = select(*_format_select_args(func.RecoverGeometryColumn(*args)))
+            stmt = stmt.execution_options(autocommit=True)
+            bind.execute(stmt)
+
+        # Add spatial indices for the Geometry and Geography columns
+        if (
+            _check_spatial_type(col.type, (Geometry, Geography), dialect)
+            and col.type.spatial_index is True
+        ):
+            create_spatial_index(bind, table, col)
+
+    for idx in table.info.pop("_after_create_indexes"):
+        table.indexes.add(idx)
+        idx.create(bind=bind)
+
+
+def before_drop(table, bind, **kw):
+    """Handle spatial indexes during the before_drop event."""
+    dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
+    dialect_name = dialect.name
+    for col in gis_cols:
+        # Disable spatial indexes if present
+        disable_spatial_index(bind, table, col)
+
+        args = [table.schema] if table.schema else []
+        args.extend([table.name, col.name])
+
+        stmt = select(*_format_select_args(func.DiscardGeometryColumn(*args)))
+        stmt = stmt.execution_options(autocommit=True)
+        bind.execute(stmt)
+
+
+def after_drop(table, bind, **kw):
+    """Handle spatial indexes during the after_drop event."""
+    table.columns = table.info.pop('_saved_columns')

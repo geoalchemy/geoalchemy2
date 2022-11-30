@@ -3,16 +3,21 @@ from sqlalchemy import Index
 from sqlalchemy import text
 
 from geoalchemy2.dialects.common import _spatial_idx_name
+from geoalchemy2.dialects.common import after_create
+from geoalchemy2.dialects.common import after_drop
+from geoalchemy2.dialects.common import before_create
+from geoalchemy2.dialects.common import before_drop
 from geoalchemy2.dialects.common import check_management
 
 
 def create_spatial_index(bind, table, col):
     """Create spatial index on the given column."""
+    return
+
     # If the index does not exist (which might be the case when
     # management=False), define it and create it
     if (
         not [i for i in table.indexes if col in i.columns.values()]
-        and check_management(col, "postgresql")
     ):
         if col.type.use_N_D_index:
             postgresql_ops = {col.name: "gist_geometry_ops_nd"}
