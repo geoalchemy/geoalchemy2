@@ -3,11 +3,9 @@ from sqlalchemy import Column
 from sqlalchemy import Index
 from sqlalchemy import Table
 from sqlalchemy import event
-from sqlalchemy import text
 from sqlalchemy.sql import expression
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
-from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2 import functions  # noqa
 from geoalchemy2 import types  # noqa

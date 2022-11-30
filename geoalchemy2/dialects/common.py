@@ -43,6 +43,5 @@ def _check_spatial_type(tested_type, spatial_types, dialect=None):
     )
 
 
-
 def check_management(column, dialect_name):
     return getattr(column.type, "management", False) is True or dialect_name == 'sqlite'
