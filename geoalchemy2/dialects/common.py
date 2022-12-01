@@ -53,12 +53,6 @@ def _get_dispatch_info(table, bind):
     # Note: Geography and PostGIS >= 2.0 don't need this
     gis_cols = _get_gis_cols(table, Geometry, dialect, check_col_management=True)
 
-    if dialect.name != "sqlite" and gis_cols:
-        import pdb
-        pdb.set_trace()
-        print(dialect.name)
-        print(gis_cols)
-
     # Find all other columns that are not managed Geometries
     regular_cols = [x for x in table.columns if x not in gis_cols]
 
@@ -84,7 +78,7 @@ def setup_create_drop(table, bind):
 
 
 def check_management(column, dialect_name):
-    return dialect_name == 'sqlite'
+    return getattr(column.type, "management", False) is True or dialect.name == 'sqlite'
 
 
 def before_create(table, bind, **kw):

@@ -30,10 +30,16 @@ from geoalchemy2.types import Raster
 
 def _select_dialect(dialect_name):
     """Select the dialect from its name."""
-    return {
+    known_dialects = {
         "postgresql": postgresql,
         "sqlite": sqlite,
-    }.get(dialect_name, common)
+    }
+    try:
+        return known_dialects[dialect_name]
+    except KeyError:
+        raise ValueError(
+            f"The dialect '{dialect_name}' is unknown, please choose one of {known_dialects.keys()}"
+        )
 
 
 def _setup_ddl_event_listeners():
@@ -73,7 +79,8 @@ def _setup_ddl_event_listeners():
             raise ArgumentError('Arg Error(use_N_D_index): spatial_index must be True')
 
         if (
-            not getattr(column.type, "spatial_index", False)
+            getattr(column.type, "management", True)
+            or not getattr(column.type, "spatial_index", False)
         ):
             # If the column is managed, the indexes are created after the table
             return
