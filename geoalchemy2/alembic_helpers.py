@@ -17,16 +17,16 @@ from sqlalchemy import text
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import DropTable
+from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2 import Column
 from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
-from geoalchemy2 import _check_spatial_type
-from geoalchemy2 import _get_gis_cols
-from geoalchemy2 import _spatial_idx_name
-from geoalchemy2 import func
+from geoalchemy2.dialects.common import _check_spatial_type
+from geoalchemy2.dialects.common import _get_gis_cols
+from geoalchemy2.dialects.common import _spatial_idx_name
 
 writer = rewriter.Rewriter()
 """Rewriter object for Alembic."""
