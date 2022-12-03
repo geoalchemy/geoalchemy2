@@ -34,7 +34,7 @@ from sqlalchemy.testing.assertions import ComparesTables
 import geoalchemy2
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
-from geoalchemy2 import _get_spatialite_attrs
+from geoalchemy2.dialects.sqlite import _get_spatialite_attrs
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
