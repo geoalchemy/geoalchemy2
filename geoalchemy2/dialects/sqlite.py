@@ -22,9 +22,7 @@ def load_spatialite(dbapi_conn, connection_record):
     variable.
     """
     if "SPATIALITE_LIBRARY_PATH" not in os.environ:
-        raise RuntimeError(
-            "The SPATIALITE_LIBRARY_PATH environment variable is not set."
-        )
+        raise RuntimeError("The SPATIALITE_LIBRARY_PATH environment variable is not set.")
     dbapi_conn.enable_load_extension(True)
     dbapi_conn.load_extension(os.environ["SPATIALITE_LIBRARY_PATH"])
     dbapi_conn.enable_load_extension(False)
@@ -33,11 +31,13 @@ def load_spatialite(dbapi_conn, connection_record):
 
 def _get_spatialite_attrs(bind, table_name, col_name):
     col_attributes = bind.execute(
-        text("""SELECT * FROM "geometry_columns"
+        text(
+            """SELECT * FROM "geometry_columns"
            WHERE f_table_name = '{}' and f_geometry_column = '{}'
         """.format(
-            table_name, col_name
-        ))
+                table_name, col_name
+            )
+        )
     ).fetchone()
     return col_attributes
 
@@ -48,7 +48,7 @@ def get_spatialite_version(bind):
 
 
 def _setup_dummy_type(table, gis_cols):
-    """Setup dummy type for new Geometry columns so they can be updated later into """
+    """Setup dummy type for new Geometry columns so they can be updated later into."""
     for col in gis_cols:
         # Add dummy columns with GEOMETRY type
         col._actual_type = col.type
@@ -60,38 +60,29 @@ def _setup_dummy_type(table, gis_cols):
 def get_col_dim(col):
     """Get dimension of the column type."""
     if col.type.dimension == 4:
-        dimension = 'XYZM'
+        dimension = "XYZM"
     elif col.type.dimension == 2:
-        dimension = 'XY'
+        dimension = "XY"
     else:
-        if col.type.geometry_type.endswith('M'):
-            dimension = 'XYM'
+        if col.type.geometry_type.endswith("M"):
+            dimension = "XYM"
         else:
-            dimension = 'XYZ'
+            dimension = "XYZ"
     return dimension
 
 
 def create_spatial_index(bind, table, col):
     """Create spatial index on the given column."""
-    stmt = select(*_format_select_args(func.CreateSpatialIndex(table.name,
-                                                               col.name)))
+    stmt = select(*_format_select_args(func.CreateSpatialIndex(table.name, col.name)))
     stmt = stmt.execution_options(autocommit=True)
     bind.execute(stmt)
 
 
 def disable_spatial_index(bind, table, col):
     """Disable spatial indexes if present."""
-    stmt = select(
-        *_format_select_args(
-            func.CheckSpatialIndex(table.name, col.name)
-        )
-    )
+    stmt = select(*_format_select_args(func.CheckSpatialIndex(table.name, col.name)))
     if bind.execute(stmt).fetchone()[0] is not None:
-        stmt = select(
-            *_format_select_args(
-                func.DisableSpatialIndex(table.name, col.name)
-            )
-        )
+        stmt = select(*_format_select_args(func.DisableSpatialIndex(table.name, col.name)))
         stmt = stmt.execution_options(autocommit=True)
         bind.execute(stmt)
         bind.execute(
@@ -174,9 +165,8 @@ def before_create(table, bind, **kw):
                 and check_management(col, dialect_name)
             ) and col in idx.columns.values():
                 table.indexes.remove(idx)
-                if (
-                    idx.name != _spatial_idx_name(table.name, col.name)
-                    or not getattr(col.type, "spatial_index", False)
+                if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
+                    col.type, "spatial_index", False
                 ):
                     table.info["_after_create_indexes"].append(idx)
     _setup_dummy_type(table, gis_cols)
@@ -187,25 +177,16 @@ def after_create(table, bind, **kw):
     dialect = bind.dialect
     dialect_name = dialect.name
 
-    table.columns = table.info.pop('_saved_columns')
+    table.columns = table.info.pop("_saved_columns")
 
     for col in table.columns:
         # Add the managed Geometry columns with AddGeometryColumn()
-        if (
-            _check_spatial_type(col.type, Geometry, dialect)
-            and check_management(col, dialect_name)
-        ):
+        if _check_spatial_type(col.type, Geometry, dialect) and check_management(col, dialect_name):
             col.type = col._actual_type
             del col._actual_type
             dimension = get_col_dim(col)
             args = [table.schema] if table.schema else []
-            args.extend([
-                table.name,
-                col.name,
-                col.type.srid,
-                col.type.geometry_type,
-                dimension
-            ])
+            args.extend([table.name, col.name, col.type.srid, col.type.geometry_type, dimension])
 
             stmt = select(*_format_select_args(func.RecoverGeometryColumn(*args)))
             stmt = stmt.execution_options(autocommit=True)
@@ -241,4 +222,4 @@ def before_drop(table, bind, **kw):
 
 def after_drop(table, bind, **kw):
     """Handle spatial indexes during the after_drop event."""
-    table.columns = table.info.pop('_saved_columns')
+    table.columns = table.info.pop("_saved_columns")

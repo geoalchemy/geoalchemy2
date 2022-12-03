@@ -11,7 +11,7 @@ _SQLALCHEMY_VERSION_BEFORE_14 = version.parse(sqlalchemy.__version__) < version.
 
 
 def _spatial_idx_name(table_name, column_name):
-    return 'idx_{}_{}'.format(table_name, column_name)
+    return "idx_{}_{}".format(table_name, column_name)
 
 
 def _format_select_args(*args):
@@ -28,22 +28,17 @@ def _get_gis_cols(table, spatial_types, dialect, check_col_management=False):
         if (
             isinstance(col, Column)
             and _check_spatial_type(col.type, spatial_types, dialect)
-            and (
-                not check_col_management
-                or check_management(col, dialect.name)
-            )
+            and (not check_col_management or check_management(col, dialect.name))
         )
     ]
 
 
 def _check_spatial_type(tested_type, spatial_types, dialect=None):
-    return (
-        isinstance(tested_type, spatial_types)
-        or (
-            isinstance(tested_type, TypeDecorator)
-            and isinstance(tested_type.load_dialect_impl(dialect), spatial_types)
-        )
+    return isinstance(tested_type, spatial_types) or (
+        isinstance(tested_type, TypeDecorator)
+        and isinstance(tested_type.load_dialect_impl(dialect), spatial_types)
     )
+
 
 def _get_dispatch_info(table, bind):
     """Get info required for dispatch events."""
@@ -58,6 +53,7 @@ def _get_dispatch_info(table, bind):
 
     return dialect, gis_cols, regular_cols
 
+
 def _update_table_for_dispatch(table, regular_cols):
     """Update the table before dispatch events."""
     # Save original table column list for later
@@ -70,6 +66,7 @@ def _update_table_for_dispatch(table, regular_cols):
         column_collection.add(col)
     table.columns = column_collection
 
+
 def setup_create_drop(table, bind):
     """Prepare the table for before_create and before_drop events."""
     dialect, gis_cols, regular_cols = _get_dispatch_info(table, bind)
@@ -78,7 +75,7 @@ def setup_create_drop(table, bind):
 
 
 def check_management(column, dialect_name):
-    return getattr(column.type, "management", False) is True or dialect_name == 'sqlite'
+    return getattr(column.type, "management", False) is True or dialect_name == "sqlite"
 
 
 def before_create(table, bind, **kw):

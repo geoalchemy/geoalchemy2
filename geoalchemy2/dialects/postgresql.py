@@ -7,10 +7,6 @@ from sqlalchemy.sql import select
 from geoalchemy2.dialects.common import _check_spatial_type
 from geoalchemy2.dialects.common import _format_select_args
 from geoalchemy2.dialects.common import _spatial_idx_name
-# from geoalchemy2.dialects.common import after_create
-# from geoalchemy2.dialects.common import after_drop
-# from geoalchemy2.dialects.common import before_create
-# from geoalchemy2.dialects.common import before_drop
 from geoalchemy2.dialects.common import check_management
 from geoalchemy2.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
@@ -21,9 +17,7 @@ def create_spatial_index(bind, table, col):
     """Create spatial index on the given column."""
     # If the index does not exist (which might be the case when
     # management=False), define it and create it
-    if (
-        not [i for i in table.indexes if col in i.columns.values()]
-    ):
+    if not [i for i in table.indexes if col in i.columns.values()]:
         if col.type.use_N_D_index:
             postgresql_ops = {col.name: "gist_geometry_ops_nd"}
         else:
@@ -31,7 +25,7 @@ def create_spatial_index(bind, table, col):
         idx = Index(
             _spatial_idx_name(table.name, col.name),
             col,
-            postgresql_using='gist',
+            postgresql_using="gist",
             postgresql_ops=postgresql_ops,
             _column_flag=True,
         )
@@ -102,9 +96,8 @@ def before_create(table, bind, **kw):
                 and check_management(col, dialect_name)
             ) and col in idx.columns.values():
                 table.indexes.remove(idx)
-                if (
-                    idx.name != _spatial_idx_name(table.name, col.name)
-                    or not getattr(col.type, "spatial_index", False)
+                if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
+                    col.type, "spatial_index", False
                 ):
                     table.info["_after_create_indexes"].append(idx)
 
@@ -115,23 +108,14 @@ def after_create(table, bind, **kw):
     dialect = bind.dialect
     dialect_name = dialect.name
 
-    table.columns = table.info.pop('_saved_columns')
+    table.columns = table.info.pop("_saved_columns")
 
     for col in table.columns:
         # Add the managed Geometry columns with AddGeometryColumn()
-        if (
-            _check_spatial_type(col.type, Geometry, dialect)
-            and check_management(col, dialect_name)
-        ):
+        if _check_spatial_type(col.type, Geometry, dialect) and check_management(col, dialect_name):
             dimension = col.type.dimension
             args = [table.schema] if table.schema else []
-            args.extend([
-                table.name,
-                col.name,
-                col.type.srid,
-                col.type.geometry_type,
-                dimension
-            ])
+            args.extend([table.name, col.name, col.type.srid, col.type.geometry_type, dimension])
             if col.type.use_typmod is not None:
                 args.append(col.type.use_typmod)
 
@@ -145,9 +129,8 @@ def after_create(table, bind, **kw):
             and col.type.spatial_index is True
         ):
             # If the index does not exist, define it and create it
-            if (
-                not [i for i in table.indexes if col in i.columns.values()]
-                and check_management(col, dialect_name)
+            if not [i for i in table.indexes if col in i.columns.values()] and check_management(
+                col, dialect_name
             ):
                 if col.type.use_N_D_index:
                     postgresql_ops = {col.name: "gist_geometry_ops_nd"}
@@ -156,7 +139,7 @@ def after_create(table, bind, **kw):
                 idx = Index(
                     _spatial_idx_name(table.name, col.name),
                     col,
-                    postgresql_using='gist',
+                    postgresql_using="gist",
                     postgresql_ops=postgresql_ops,
                     _column_flag=True,
                 )
@@ -184,6 +167,6 @@ def before_drop(table, bind, **kw):
 def after_drop(table, bind, **kw):
     """Handle spatial indexes during the after_drop event."""
     # Restore original column list including managed Geometry columns
-    saved_cols = table.info.pop('_saved_columns', None)
+    saved_cols = table.info.pop("_saved_columns", None)
     if saved_cols is not None:
         table.columns = saved_cols
