@@ -8,6 +8,7 @@ from sqlalchemy.sql import select
 from geoalchemy2.dialects.common import _check_spatial_type
 from geoalchemy2.dialects.common import _format_select_args
 from geoalchemy2.dialects.common import _spatial_idx_name
+from geoalchemy2.dialects.common import check_management
 from geoalchemy2.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
@@ -82,13 +83,13 @@ def disable_spatial_index(bind, table, col):
     """Disable spatial indexes if present."""
     stmt = select(
         *_format_select_args(
-            getattr(func, 'CheckSpatialIndex')(table.name, col.name)
+            func.CheckSpatialIndex(table.name, col.name)
         )
     )
     if bind.execute(stmt).fetchone()[0] is not None:
         stmt = select(
             *_format_select_args(
-                getattr(func, 'DisableSpatialIndex')(table.name, col.name)
+                func.DisableSpatialIndex(table.name, col.name)
             )
         )
         stmt = stmt.execution_options(autocommit=True)
@@ -170,6 +171,7 @@ def before_create(table, bind, **kw):
         for col in table.info["_saved_columns"]:
             if (
                 _check_spatial_type(col.type, Geometry, dialect)
+                and check_management(col, dialect_name)
             ) and col in idx.columns.values():
                 table.indexes.remove(idx)
                 if (
@@ -183,6 +185,7 @@ def before_create(table, bind, **kw):
 def after_create(table, bind, **kw):
     """Handle spatial indexes during the after_create event."""
     dialect = bind.dialect
+    dialect_name = dialect.name
 
     table.columns = table.info.pop('_saved_columns')
 
@@ -190,6 +193,7 @@ def after_create(table, bind, **kw):
         # Add the managed Geometry columns with AddGeometryColumn()
         if (
             _check_spatial_type(col.type, Geometry, dialect)
+            and check_management(col, dialect_name)
         ):
             col.type = col._actual_type
             del col._actual_type

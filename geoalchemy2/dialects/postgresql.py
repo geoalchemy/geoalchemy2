@@ -11,6 +11,7 @@ from geoalchemy2.dialects.common import _spatial_idx_name
 # from geoalchemy2.dialects.common import after_drop
 # from geoalchemy2.dialects.common import before_create
 # from geoalchemy2.dialects.common import before_drop
+from geoalchemy2.dialects.common import check_management
 from geoalchemy2.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
@@ -98,7 +99,7 @@ def before_create(table, bind, **kw):
         for col in table.info["_saved_columns"]:
             if (
                 _check_spatial_type(col.type, Geometry, dialect)
-                and col.type.use_typmod is False
+                and check_management(col, dialect_name)
             ) and col in idx.columns.values():
                 table.indexes.remove(idx)
                 if (
@@ -116,22 +117,13 @@ def after_create(table, bind, **kw):
 
     table.columns = table.info.pop('_saved_columns')
 
-    print()
-    print("++++++++++ In AFTER CREATE:", table)
-
     for col in table.columns:
-        try:
-            use_typmod = col.type.use_typmod
-        except:
-            use_typmod = None
-        print("++++++++++ In AFTER CREATE:", col, col.type, use_typmod)
         # Add the managed Geometry columns with AddGeometryColumn()
         if (
             _check_spatial_type(col.type, Geometry, dialect)
-            and col.type.use_typmod is False
+            and check_management(col, dialect_name)
         ):
             dimension = col.type.dimension
-            create_func = func.AddGeometryColumn
             args = [table.schema] if table.schema else []
             args.extend([
                 table.name,
@@ -143,8 +135,7 @@ def after_create(table, bind, **kw):
             if col.type.use_typmod is not None:
                 args.append(col.type.use_typmod)
 
-            print("++++++++++ AFTER CREATE:", args)
-            stmt = select(*_format_select_args(create_func(*args)))
+            stmt = select(*_format_select_args(func.AddGeometryColumn(*args)))
             stmt = stmt.execution_options(autocommit=True)
             bind.execute(stmt)
 
@@ -156,7 +147,7 @@ def after_create(table, bind, **kw):
             # If the index does not exist, define it and create it
             if (
                 not [i for i in table.indexes if col in i.columns.values()]
-                and col.type.use_typmod is False
+                and check_management(col, dialect_name)
             ):
                 if col.type.use_N_D_index:
                     postgresql_ops = {col.name: "gist_geometry_ops_nd"}
@@ -176,18 +167,16 @@ def after_create(table, bind, **kw):
         idx.create(bind=bind)
 
 
-
 def before_drop(table, bind, **kw):
     """Handle spatial indexes during the before_drop event."""
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
 
     # Drop the managed Geometry columns
     for col in gis_cols:
-        drop_func = 'DropGeometryColumn'
         args = [table.schema] if table.schema else []
         args.extend([table.name, col.name])
 
-        stmt = select(*_format_select_args(getattr(func, drop_func)(*args)))
+        stmt = select(*_format_select_args(func.DropGeometryColumn(*args)))
         stmt = stmt.execution_options(autocommit=True)
         bind.execute(stmt)
 

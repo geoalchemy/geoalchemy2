@@ -78,7 +78,7 @@ def setup_create_drop(table, bind):
 
 
 def check_management(column, dialect_name):
-    return getattr(column.type, "management", False) is True or dialect.name == 'sqlite'
+    return getattr(column.type, "management", False) is True or dialect_name == 'sqlite'
 
 
 def before_create(table, bind, **kw):
