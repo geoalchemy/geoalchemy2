@@ -3,21 +3,14 @@ from sqlalchemy import Column
 from sqlalchemy import Index
 from sqlalchemy import Table
 from sqlalchemy import event
-from sqlalchemy.sql import expression
 from sqlalchemy.sql import func
-from sqlalchemy.sql import select
 
 from geoalchemy2 import functions  # noqa
 from geoalchemy2 import types  # noqa
-from geoalchemy2.dialects import common
 from geoalchemy2.dialects import postgresql
 from geoalchemy2.dialects import sqlite
 from geoalchemy2.dialects.common import _check_spatial_type
-from geoalchemy2.dialects.common import _format_select_args
-from geoalchemy2.dialects.common import _get_gis_cols
 from geoalchemy2.dialects.common import _spatial_idx_name
-from geoalchemy2.dialects.common import check_management
-from geoalchemy2.dialects.sqlite import get_col_dim
 from geoalchemy2.dialects.sqlite import load_spatialite  # noqa
 from geoalchemy2.elements import RasterElement  # noqa
 from geoalchemy2.elements import WKBElement  # noqa

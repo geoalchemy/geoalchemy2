@@ -207,7 +207,6 @@ def after_create(table, bind, **kw):
 def before_drop(table, bind, **kw):
     """Handle spatial indexes during the before_drop event."""
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
-    dialect_name = dialect.name
     for col in gis_cols:
         # Disable spatial indexes if present
         disable_spatial_index(bind, table, col)

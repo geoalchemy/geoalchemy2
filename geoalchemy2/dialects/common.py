@@ -2,8 +2,8 @@
 import sqlalchemy
 from packaging import version
 from sqlalchemy import Column
-from sqlalchemy.types import TypeDecorator
 from sqlalchemy.sql import expression
+from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2.types import Geometry
 
