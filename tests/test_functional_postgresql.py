@@ -153,14 +153,14 @@ class TestIndex:
                 Geometry(
                     geometry_type="POINT",
                     spatial_index=False,
-                    management=True,
+                    # management=True,
                 )
             )
             geom_managed_index = Column(
                 Geometry(
                     geometry_type="POINT",
                     spatial_index=True,
-                    management=True,
+                    # management=True,
                 )
             )
             # Test indexes on Geometry columns with ND index.
@@ -179,7 +179,7 @@ class TestIndex:
                     dimension=3,
                     spatial_index=True,
                     use_N_D_index=True,
-                    management=True,
+                    # management=True,
                 )
             )
             # Test indexes on Geography columns.
@@ -201,14 +201,14 @@ class TestIndex:
                 Geography(
                     geometry_type="POINT",
                     spatial_index=False,
-                    management=True,
+                    # management=True,
                 )
             )
             geog_managed_index = Column(
                 Geography(
                     geometry_type="POINT",
                     spatial_index=True,
-                    management=True,
+                    # management=True,
                 )
             )
             # Test indexes on Raster columns.

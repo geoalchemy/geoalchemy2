@@ -13,6 +13,11 @@ from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 
 
+def check_management(column, dialect_name):
+    """Check if the column should be managed."""
+    return getattr(column.type, "use_typmod", None) is False
+
+
 def create_spatial_index(bind, table, col):
     """Create spatial index on the given column."""
     if col.type.use_N_D_index:
@@ -80,7 +85,7 @@ def reflect_geometry_column(inspector, table, column_info):
 
 def before_create(table, bind, **kw):
     """Handle spatial indexes during the before_create event."""
-    dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
+    dialect, gis_cols, regular_cols = setup_create_drop(table, bind, check_management)
     dialect_name = dialect.name
 
     # Remove the spatial indexes from the table metadata because they should not be
@@ -140,7 +145,7 @@ def after_create(table, bind, **kw):
 
 def before_drop(table, bind, **kw):
     """Handle spatial indexes during the before_drop event."""
-    dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
+    dialect, gis_cols, regular_cols = setup_create_drop(table, bind, check_management)
 
     # Drop the managed Geometry columns
     for col in gis_cols:

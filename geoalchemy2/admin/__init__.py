@@ -66,9 +66,7 @@ def setup_ddl_event_listeners():
         ):
             raise ArgumentError("Arg Error(use_N_D_index): spatial_index must be True")
 
-        if getattr(column.type, "management", True) or not getattr(
-            column.type, "spatial_index", False
-        ):
+        if not getattr(column.type, "spatial_index", False):
             # If the column is managed, the indexes are created after the table
             return
 

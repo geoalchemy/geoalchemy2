@@ -525,7 +525,7 @@ def render_drop_geo_table(autogen_context, op):
 def create_geo_table(context, revision, op):
     """Replace the default CreateTableOp by a geospatial-specific one."""
     dialect = context.bind.dialect
-    gis_cols = _get_gis_cols(op, (Geometry, Geography, Raster), dialect, check_col_management=False)
+    gis_cols = _get_gis_cols(op, (Geometry, Geography, Raster), dialect)
 
     if gis_cols:
         new_op = CreateGeospatialTableOp(
@@ -547,7 +547,7 @@ def drop_geo_table(context, revision, op):
     dialect = context.bind.dialect
     table = op.to_table()
     gis_cols = _get_gis_cols(
-        table, (Geometry, Geography, Raster), dialect, check_col_management=False
+        table, (Geometry, Geography, Raster), dialect
     )
 
     if gis_cols:

@@ -21,14 +21,23 @@ def _format_select_args(*args):
         return args
 
 
-def _get_gis_cols(table, spatial_types, dialect, check_col_management=False):
+def check_management(*args):
+    """Default function to check management."""
+    return True
+
+
+def _get_gis_cols(table, spatial_types, dialect, check_col_management=None):
+    if check_col_management is not None:
+        func = check_col_management
+    else:
+        func = check_management
     return [
         col
         for col in table.columns
         if (
             isinstance(col, Column)
             and _check_spatial_type(col.type, spatial_types, dialect)
-            and (not check_col_management or check_management(col, dialect.name))
+            and func(col, dialect.name)
         )
     ]
 
@@ -40,13 +49,13 @@ def _check_spatial_type(tested_type, spatial_types, dialect=None):
     )
 
 
-def _get_dispatch_info(table, bind):
+def _get_dispatch_info(table, bind, check_col_management=None):
     """Get info required for dispatch events."""
     dialect = bind.dialect
 
     # Filter Geometry columns from the table with management=True
     # Note: Geography and PostGIS >= 2.0 don't need this
-    gis_cols = _get_gis_cols(table, Geometry, dialect, check_col_management=True)
+    gis_cols = _get_gis_cols(table, Geometry, dialect, check_col_management=check_col_management)
 
     # Find all other columns that are not managed Geometries
     regular_cols = [x for x in table.columns if x not in gis_cols]
@@ -67,9 +76,9 @@ def _update_table_for_dispatch(table, regular_cols):
     table.columns = column_collection
 
 
-def setup_create_drop(table, bind):
+def setup_create_drop(table, bind, check_col_management=None):
     """Prepare the table for before_create and before_drop events."""
-    dialect, gis_cols, regular_cols = _get_dispatch_info(table, bind)
+    dialect, gis_cols, regular_cols = _get_dispatch_info(table, bind, check_col_management)
     _update_table_for_dispatch(table, regular_cols)
     return dialect, gis_cols, regular_cols
 

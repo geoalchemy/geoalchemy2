@@ -174,7 +174,6 @@ def reflect_geometry_column(inspector, table, column_info):
 def before_create(table, bind, **kw):
     """Handle spatial indexes during the before_create event."""
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
-    dialect_name = dialect.name
 
     # Remove the spatial indexes from the table metadata because they should not be
     # created during the table.create() step since the associated columns do not exist
@@ -185,7 +184,6 @@ def before_create(table, bind, **kw):
         for col in table.info["_saved_columns"]:
             if (
                 _check_spatial_type(col.type, Geometry, dialect)
-                and check_management(col, dialect_name)
             ) and col in idx.columns.values():
                 table.indexes.remove(idx)
                 if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
@@ -199,12 +197,11 @@ def before_create(table, bind, **kw):
 def after_create(table, bind, **kw):
     """Handle spatial indexes during the after_create event."""
     dialect = bind.dialect
-    dialect_name = dialect.name
 
     table.columns = table.info.pop("_saved_columns")
     for col in table.columns:
         # Add the managed Geometry columns with RecoverGeometryColumn()
-        if _check_spatial_type(col.type, Geometry, dialect) and check_management(col, dialect_name):
+        if _check_spatial_type(col.type, Geometry, dialect):
             col.type = col._actual_type
             del col._actual_type
             dimension = get_col_dim(col)

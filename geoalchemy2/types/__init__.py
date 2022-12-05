@@ -131,7 +131,7 @@ class _GISType(UserDefinedType):
         dimension=2,
         spatial_index=True,
         use_N_D_index=False,
-        management=False,
+        management=None,
         use_typmod=None,
         from_text=None,
         name=None,
@@ -150,13 +150,13 @@ class _GISType(UserDefinedType):
         self.dimension = dimension
         self.spatial_index = spatial_index
         self.use_N_D_index = use_N_D_index
-        if management:
+        if management is not None:
             warnings.warn(
-                "The 'management' parameter is going to be deprecated and will raise an error in "
-                "the version 0.14",
-                PendingDeprecationWarning,
+                "The 'management' parameter is deprecated and will raise an error in the "
+                "version 0.14",
+                DeprecationWarning,
             )
-        self.management = management
+        self.management = (management is True)
         self.use_typmod = use_typmod
         self.extended = self.as_binary == "ST_AsEWKB"
         self.nullable = nullable
