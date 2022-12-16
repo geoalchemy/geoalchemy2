@@ -36,7 +36,6 @@ def _select_dialect(dialect_name):
 
 
 def _setup_ddl_event_listeners():
-
     @event.listens_for(Table, "before_create")
     def before_create(table, bind, **kw):
         """Handle spatial indexes."""
@@ -57,7 +56,7 @@ def _setup_ddl_event_listeners():
         """Restore original column list including managed Geometry columns."""
         _select_dialect(bind.dialect.name).after_drop(table, bind, **kw)
 
-    @event.listens_for(Column, 'after_parent_attach')
+    @event.listens_for(Column, "after_parent_attach")
     def after_parent_attach(column, table):
         """Automatically add spatial indexes."""
         if not isinstance(table, Table):
@@ -65,15 +64,13 @@ def _setup_ddl_event_listeners():
             # with a selectable as table, so we want to skip this case.
             return
 
-        if (
-            not getattr(column.type, "spatial_index", False)
-            and getattr(column.type, "use_N_D_index", False)
+        if not getattr(column.type, "spatial_index", False) and getattr(
+            column.type, "use_N_D_index", False
         ):
-            raise ArgumentError('Arg Error(use_N_D_index): spatial_index must be True')
+            raise ArgumentError("Arg Error(use_N_D_index): spatial_index must be True")
 
-        if (
-            getattr(column.type, "management", True)
-            or not getattr(column.type, "spatial_index", False)
+        if getattr(column.type, "management", True) or not getattr(
+            column.type, "spatial_index", False
         ):
             # If the column is managed, the indexes are created after the table
             return
@@ -85,13 +82,13 @@ def _setup_ddl_event_listeners():
             pass
 
         kwargs = {
-            'postgresql_using': 'gist',
-            '_column_flag': True,
+            "postgresql_using": "gist",
+            "_column_flag": True,
         }
         col = column
         if _check_spatial_type(column.type, (Geometry, Geography)):
             if column.type.use_N_D_index:
-                kwargs['postgresql_ops'] = {column.name: "gist_geometry_ops_nd"}
+                kwargs["postgresql_ops"] = {column.name: "gist_geometry_ops_nd"}
         elif _check_spatial_type(column.type, Raster):
             col = func.ST_ConvexHull(column)
 
@@ -133,11 +130,11 @@ except ImportError:
         pass
     else:
         try:
-            __version__ = get_distribution('GeoAlchemy2').version
+            __version__ = get_distribution("GeoAlchemy2").version
         except DistributionNotFound:  # pragma: no cover
             pass
 else:
     try:
-        __version__ = importlib.metadata.version('GeoAlchemy2')
+        __version__ = importlib.metadata.version("GeoAlchemy2")
     except importlib.metadata.PackageNotFoundError:  # pragma: no cover
         pass

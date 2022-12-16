@@ -36,39 +36,38 @@ def get_postgres_major_version(bind):
     try:
         return re.match(
             r"([0-9]*)\.([0-9]*).*",
-            bind.execute(
-                text("""SELECT current_setting('server_version');""")
-            ).scalar()
+            bind.execute(text("""SELECT current_setting('server_version');""")).scalar(),
         ).group(1)
     except OperationalError:
         return "0"
 
 
 def skip_postgis1(bind):
-    if get_postgis_version(bind).startswith('1.'):
+    if get_postgis_version(bind).startswith("1."):
         pytest.skip("requires PostGIS != 1")
 
 
 def skip_postgis2(bind):
-    if get_postgis_version(bind).startswith('2.'):
+    if get_postgis_version(bind).startswith("2."):
         pytest.skip("requires PostGIS != 2")
 
 
 def skip_postgis3(bind):
-    if get_postgis_version(bind).startswith('3.'):
+    if get_postgis_version(bind).startswith("3."):
         pytest.skip("requires PostGIS != 3")
 
 
 def skip_case_insensitivity():
     return pytest.mark.skipif(
         parse_version(SA_VERSION) < parse_version("1.3.4"),
-        reason='Case-insensitivity is only available for sqlalchemy>=1.3.4')
+        reason="Case-insensitivity is only available for sqlalchemy>=1.3.4",
+    )
 
 
 def skip_pg12_sa1217(bind):
     if (
-            parse_version(SA_VERSION) < parse_version("1.2.17")
-            and int(get_postgres_major_version(bind)) >= 12
+        parse_version(SA_VERSION) < parse_version("1.2.17")
+        and int(get_postgres_major_version(bind)) >= 12
     ):
         pytest.skip("Reflection for PostgreSQL-12 is only supported by sqlalchemy>=1.2.17")
 
@@ -85,14 +84,14 @@ def format_wkt(wkt):
 
 
 def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo):
-    if 'SPATIALITE_LIBRARY_PATH' not in os.environ:
-        pytest.skip('SPATIALITE_LIBRARY_PATH is not defined, skip SpatiaLite tests')
+    if "SPATIALITE_LIBRARY_PATH" not in os.environ:
+        pytest.skip("SPATIALITE_LIBRARY_PATH is not defined, skip SpatiaLite tests")
 
     shutil.copyfile(input_db, tmp_db)
 
     db_url = f"sqlite:///{tmp_db}"
     engine = create_engine(db_url, echo=engine_echo)
-    listen(engine, 'connect', load_spatialite)
+    listen(engine, "connect", load_spatialite)
     print(f"""SPATIALITE VERSION: {engine.execute("SELECT spatialite_version();").fetchone()[0]}""")
 
     if input_db.endswith("spatialite_lt_4.sqlite"):
@@ -113,13 +112,17 @@ def check_indexes(conn, expected, table_name):
             FROM pg_indexes
             WHERE
                 tablename = '{}'
-            ORDER BY indexname;""".format(table_name)
+            ORDER BY indexname;""".format(
+                table_name
+            )
         ),
         "sqlite": text(
             """SELECT *
             FROM geometry_columns
             WHERE f_table_name = '{}'
-            ORDER BY f_table_name, f_geometry_column;""".format(table_name)
+            ORDER BY f_table_name, f_geometry_column;""".format(
+                table_name
+            )
         ),
     }
 
@@ -128,10 +131,7 @@ def check_indexes(conn, expected, table_name):
 
     expected_indexes = expected[conn.dialect.name]
     if conn.dialect.name == "postgresql":
-        expected_indexes = [
-            (i[0], re.sub("\n *", " ", i[1]))
-            for i in expected_indexes
-        ]
+        expected_indexes = [(i[0], re.sub("\n *", " ", i[1])) for i in expected_indexes]
 
     try:
         assert actual_indexes == expected_indexes

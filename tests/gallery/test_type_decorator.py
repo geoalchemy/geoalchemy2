@@ -29,6 +29,7 @@ Base = declarative_base(metadata=metadata)
 
 class TransformedGeometry(TypeDecorator):
     """This class is used to insert a ST_Transform() in each insert or select."""
+
     impl = Geometry
 
     cache_ok = True
@@ -49,18 +50,20 @@ class TransformedGeometry(TypeDecorator):
         """
         return getattr(func, self.impl.as_binary)(
             func.ST_Transform(col, self.app_srid),
-            type_=self.__class__(db_srid=self.app_srid, app_srid=self.app_srid)
+            type_=self.__class__(db_srid=self.app_srid, app_srid=self.app_srid),
         )
 
     def bind_expression(self, bindvalue):
         return func.ST_Transform(
-            self.impl.bind_expression(bindvalue), self.db_srid,
+            self.impl.bind_expression(bindvalue),
+            self.db_srid,
             type_=self,
         )
 
 
 class ThreeDGeometry(TypeDecorator):
     """This class is used to insert a ST_Force3D() in each insert."""
+
     impl = Geometry
 
     cache_ok = True
@@ -84,11 +87,8 @@ class Point(Base):
     __tablename__ = "point"
     id = Column(Integer, primary_key=True)
     raw_geom = Column(Geometry(srid=4326, geometry_type="POINT"))
-    geom = Column(
-        TransformedGeometry(
-            db_srid=2154, app_srid=4326, geometry_type="POINT"))
-    three_d_geom = Column(
-        ThreeDGeometry(srid=4326, geometry_type="POINTZ", dimension=3))
+    geom = Column(TransformedGeometry(db_srid=2154, app_srid=4326, geometry_type="POINT"))
+    three_d_geom = Column(ThreeDGeometry(srid=4326, geometry_type="POINTZ", dimension=3))
 
 
 def check_wkb(wkb, x, y):
@@ -98,8 +98,7 @@ def check_wkb(wkb, x, y):
 
 
 @test_only_with_dialects("postgresql")
-class TestTypeDecorator():
-
+class TestTypeDecorator:
     def _create_one_point(self, session, conn):
         metadata.drop_all(conn, checkfirst=True)
         metadata.create_all(conn)
@@ -165,4 +164,5 @@ class TestTypeDecorator():
         assert pt.id == 1
         assert pt.three_d_geom.srid == 4326
         assert pt.three_d_geom.desc.lower() == (
-            '01010000a0e6100000000000000000144000000000008046400000000000000000')
+            "01010000a0e6100000000000000000144000000000008046400000000000000000"
+        )

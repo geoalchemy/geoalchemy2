@@ -1,0 +1,45 @@
+# SETUPTOOLS
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "setuptools_scm[toml]>=3.4",
+]
+
+# BLACK
+[tool.black]
+line-length = 100
+target-version = [
+    "py37",
+    "py38",
+    "py39",
+    "py310",
+]
+
+# PYDOCSTYLE
+[tool.pydocstyle]
+# ignore the following:
+#   - D107: Missing docstring in __init__
+add-ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+]
+convention = "google"
+
+# ISORT
+[tool.isort]
+profile = "black"
+line_length = 100
+force_single_line = true
+
+# PYTEST
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]

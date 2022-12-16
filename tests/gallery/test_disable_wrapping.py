@@ -31,8 +31,7 @@ class Point(Base):
     __tablename__ = "point"
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry(srid=4326, geometry_type="POINT"))
-    raw_geom = Column(
-        RawGeometry(srid=4326, geometry_type="POINT"))
+    raw_geom = Column(RawGeometry(srid=4326, geometry_type="POINT"))
 
 
 def test_no_wrapping():
@@ -42,24 +41,25 @@ def test_no_wrapping():
     # Check that the 'geom' column is wrapped by 'ST_AsEWKB()' and that the column
     # 'raw_geom' is not.
     assert str(select_query) == (
-        "SELECT point.id, ST_AsEWKB(point.geom) AS geom, point.raw_geom \n"
-        "FROM point"
+        "SELECT point.id, ST_AsEWKB(point.geom) AS geom, point.raw_geom \nFROM point"
     )
 
 
 def test_func_no_wrapping():
     # Select query with function
-    select_query = select([
-        func.ST_Buffer(Point.geom),  # with wrapping (default behavior)
-        func.ST_Buffer(Point.geom, type_=Geometry),  # with wrapping
-        func.ST_Buffer(Point.geom, type_=RawGeometry)  # without wrapping
-    ])
+    select_query = select(
+        [
+            func.ST_Buffer(Point.geom),  # with wrapping (default behavior)
+            func.ST_Buffer(Point.geom, type_=Geometry),  # with wrapping
+            func.ST_Buffer(Point.geom, type_=RawGeometry),  # without wrapping
+        ]
+    )
 
     # Check the query
     assert str(select_query) == (
         "SELECT "
-        "ST_AsEWKB(ST_Buffer(point.geom)) AS \"ST_Buffer_1\", "
-        "ST_AsEWKB(ST_Buffer(point.geom)) AS \"ST_Buffer_2\", "
-        "ST_Buffer(point.geom) AS \"ST_Buffer_3\" \n"
+        'ST_AsEWKB(ST_Buffer(point.geom)) AS "ST_Buffer_1", '
+        'ST_AsEWKB(ST_Buffer(point.geom)) AS "ST_Buffer_2", '
+        'ST_Buffer(point.geom) AS "ST_Buffer_3" \n'
         "FROM point"
     )

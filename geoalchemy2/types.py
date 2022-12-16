@@ -1,10 +1,8 @@
-""" This module defines the :class:`geoalchemy2.types.Geometry`,
-:class:`geoalchemy2.types.Geography`, and :class:`geoalchemy2.types.Raster`
-classes, that are used when defining geometry, geography and raster
-columns/properties in models.
+"""This module defines the Column types.
 
-Reference
----------
+The :class:`geoalchemy2.types.Geometry`, :class:`geoalchemy2.types.Geography`, and
+:class:`geoalchemy2.types.Raster` classes are used when defining geometry, geography and raster
+columns/properties in models.
 """
 import warnings
 
@@ -18,6 +16,7 @@ from sqlalchemy.types import UserDefinedType
 
 try:
     from .shape import to_shape
+
     SHAPELY = True
 except ImportError:
     SHAPELY = False
@@ -33,9 +32,7 @@ from .exc import ArgumentError
 
 
 class _GISType(UserDefinedType):
-    """
-    The base class for :class:`geoalchemy2.types.Geometry` and
-    :class:`geoalchemy2.types.Geography`.
+    """The base class for spatial types.
 
     This class defines ``bind_expression`` and ``column_expression`` methods
     that wrap column expressions in ``ST_GeomFromEWKT``, ``ST_GeogFromText``,
@@ -123,11 +120,23 @@ class _GISType(UserDefinedType):
     cache_ok = False
     """ Disable cache for this type. """
 
-    def __init__(self, geometry_type='GEOMETRY', srid=-1, dimension=2,
-                 spatial_index=True, use_N_D_index=False, management=False, use_typmod=None,
-                 from_text=None, name=None, nullable=True, _spatial_index_reflected=None):
+    def __init__(
+        self,
+        geometry_type="GEOMETRY",
+        srid=-1,
+        dimension=2,
+        spatial_index=True,
+        use_N_D_index=False,
+        management=False,
+        use_typmod=None,
+        from_text=None,
+        name=None,
+        nullable=True,
+        _spatial_index_reflected=None,
+    ):
         geometry_type, srid = self.check_ctor_args(
-            geometry_type, srid, dimension, management, use_typmod, nullable)
+            geometry_type, srid, dimension, management, use_typmod, nullable
+        )
         self.geometry_type = geometry_type
         self.srid = srid
         if name is not None:
@@ -145,62 +154,68 @@ class _GISType(UserDefinedType):
             )
         self.management = management
         self.use_typmod = use_typmod
-        self.extended = self.as_binary == 'ST_AsEWKB'
+        self.extended = self.as_binary == "ST_AsEWKB"
         self.nullable = nullable
         self._spatial_index_reflected = _spatial_index_reflected
 
     def get_col_spec(self):
         if not self.geometry_type:
             return self.name
-        return '%s(%s,%d)' % (self.name, self.geometry_type, self.srid)
+        return "%s(%s,%d)" % (self.name, self.geometry_type, self.srid)
 
     def column_expression(self, col):
-        """Specific column_expression that automatically adds a conversion function"""
+        """Specific column_expression that automatically adds a conversion function."""
         return getattr(func, self.as_binary)(col, type_=self)
 
     def result_processor(self, dialect, coltype):
-        """Specific result_processor that automatically process spatial elements"""
+        """Specific result_processor that automatically process spatial elements."""
+
         def process(value):
             if value is not None:
                 kwargs = {}
                 if self.srid > 0:
-                    kwargs['srid'] = self.srid
+                    kwargs["srid"] = self.srid
                 if self.extended is not None:
-                    kwargs['extended'] = self.extended
+                    kwargs["extended"] = self.extended
                 return self.ElementType(value, **kwargs)
+
         return process
 
     def bind_expression(self, bindvalue):
-        """Specific bind_expression that automatically adds a conversion function"""
+        """Specific bind_expression that automatically adds a conversion function."""
         return getattr(func, self.from_text)(bindvalue, type_=self)
 
     def bind_processor(self, dialect):
-        """Specific bind_processor that automatically process spatial elements"""
+        """Specific bind_processor that automatically process spatial elements."""
+
         def process(bindvalue):
             if isinstance(bindvalue, WKTElement):
                 if bindvalue.extended:
-                    return '%s' % (bindvalue.data)
+                    return "%s" % (bindvalue.data)
                 else:
-                    return 'SRID=%d;%s' % (bindvalue.srid, bindvalue.data)
+                    return "SRID=%d;%s" % (bindvalue.srid, bindvalue.data)
             elif isinstance(bindvalue, WKBElement):
-                if dialect.name == 'sqlite' or not bindvalue.extended:
+                if dialect.name == "sqlite" or not bindvalue.extended:
                     # With SpatiaLite or when the WKBElement includes a WKB value rather
                     # than a EWKB value we use Shapely to convert the WKBElement to an
                     # EWKT string
                     if not SHAPELY:
-                        raise ArgumentError('Shapely is required for handling WKBElement bind '
-                                            'values when using SpatiaLite or when the bind value '
-                                            'is a WKB rather than an EWKB')
+                        raise ArgumentError(
+                            "Shapely is required for handling WKBElement bind "
+                            "values when using SpatiaLite or when the bind value "
+                            "is a WKB rather than an EWKB"
+                        )
                     shape = to_shape(bindvalue)
-                    return 'SRID=%d;%s' % (bindvalue.srid, shape.wkt)
+                    return "SRID=%d;%s" % (bindvalue.srid, shape.wkt)
                 else:
                     # PostGIS ST_GeomFromEWKT works with EWKT strings as well
                     # as EWKB hex strings
                     return bindvalue.desc
             elif isinstance(bindvalue, RasterElement):
-                return '%s' % (bindvalue.data)
+                return "%s" % (bindvalue.data)
             else:
                 return bindvalue
+
         return process
 
     @staticmethod
@@ -208,31 +223,32 @@ class _GISType(UserDefinedType):
         try:
             srid = int(srid)
         except ValueError:
-            raise ArgumentError('srid must be convertible to an integer')
+            raise ArgumentError("srid must be convertible to an integer")
         if geometry_type:
             geometry_type = geometry_type.upper()
             if management:
-                if geometry_type.endswith('ZM'):
+                if geometry_type.endswith("ZM"):
                     # PostGIS' AddGeometryColumn does not work with ZM geometry types. Instead
                     # the simple geometry type (e.g. POINT rather POINTZM) should be used with
                     # dimension set to 4
                     raise ArgumentError(
-                        'with management=True use geometry_type={!r} and '
-                        'dimension=4 for {!r} geometries'.format(geometry_type[:-2], geometry_type))
-                elif geometry_type[-1] in ('Z', 'M') and dimension != 3:
+                        "with management=True use geometry_type={!r} and "
+                        "dimension=4 for {!r} geometries".format(geometry_type[:-2], geometry_type)
+                    )
+                elif geometry_type[-1] in ("Z", "M") and dimension != 3:
                     # If a Z or M geometry type is used then dimension must be set to 3
                     raise ArgumentError(
-                        'with management=True dimension must be 3 for '
-                        '{!r} geometries'.format(geometry_type))
+                        "with management=True dimension must be 3 for "
+                        "{!r} geometries".format(geometry_type)
+                    )
         else:
             if management:
-                raise ArgumentError('geometry_type set to None not compatible '
-                                    'with management')
+                raise ArgumentError("geometry_type set to None not compatible with management")
             if srid > 0:
-                warnings.warn('srid not enforced when geometry_type is None')
+                warnings.warn("srid not enforced when geometry_type is None")
 
         if use_typmod and not management:
-            warnings.warn('use_typmod ignored when management is False')
+            warnings.warn("use_typmod ignored when management is False")
         if use_typmod is not None and not nullable:
             raise ArgumentError(
                 'The "nullable" and "use_typmod" arguments can not be used together'
@@ -242,8 +258,7 @@ class _GISType(UserDefinedType):
 
 
 class Geometry(_GISType):
-    """
-    The Geometry type.
+    """The Geometry type.
 
     Creating a geometry column is done like this::
 
@@ -259,14 +274,14 @@ class Geometry(_GISType):
     from the data returned by the database.
     """
 
-    name = 'geometry'
+    name = "geometry"
     """ Type name used for defining geometry columns in ``CREATE TABLE``. """
 
-    from_text = 'ST_GeomFromEWKT'
+    from_text = "ST_GeomFromEWKT"
     """ The "from text" geometry constructor. Used by the parent class'
         ``bind_expression`` method. """
 
-    as_binary = 'ST_AsEWKB'
+    as_binary = "ST_AsEWKB"
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
 
@@ -279,8 +294,7 @@ class Geometry(_GISType):
 
 
 class Geography(_GISType):
-    """
-    The Geography type.
+    """The Geography type.
 
     Creating a geography column is done like this::
 
@@ -288,17 +302,16 @@ class Geography(_GISType):
 
     See :class:`geoalchemy2.types._GISType` for the list of arguments that can
     be passed to the constructor.
-
     """
 
-    name = 'geography'
+    name = "geography"
     """ Type name used for defining geography columns in ``CREATE TABLE``. """
 
-    from_text = 'ST_GeogFromText'
+    from_text = "ST_GeogFromText"
     """ The ``FromText`` geography constructor. Used by the parent class'
         ``bind_expression`` method. """
 
-    as_binary = 'ST_AsBinary'
+    as_binary = "ST_AsBinary"
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
 
@@ -311,8 +324,7 @@ class Geography(_GISType):
 
 
 class Raster(_GISType):
-    """
-    The Raster column type.
+    """The Raster column type.
 
     Creating a raster column is done like this::
 
@@ -324,7 +336,6 @@ class Raster(_GISType):
 
     Args:
         spatial_index: Indicate if a spatial index should be created. Default is ``True``.
-
     """
 
     comparator_factory = BaseComparator
@@ -333,14 +344,14 @@ class Raster(_GISType):
     defined for raster columns.
     """
 
-    name = 'raster'
+    name = "raster"
     """ Type name used for defining raster columns in ``CREATE TABLE``. """
 
-    from_text = 'raster'
+    from_text = "raster"
     """ The "from text" raster constructor. Used by the parent class'
         ``bind_expression`` method. """
 
-    as_binary = 'raster'
+    as_binary = "raster"
     """ The "as binary" function to use. Used by the parent class'
         ``column_expression`` method. """
 
@@ -372,11 +383,12 @@ class _DummyGeometry(Geometry):
     """A dummy type only used with SQLite."""
 
     def get_col_spec(self):
-        return 'GEOMETRY'
+        return "GEOMETRY"
 
 
 class CompositeType(UserDefinedType):
-    """
+    """A composite type used by some spatial functions.
+
     A wrapper for :class:`geoalchemy2.elements.CompositeElement`, that can be
     used as the return type in PostgreSQL functions that return composite
     values.
@@ -393,19 +405,19 @@ class CompositeType(UserDefinedType):
             try:
                 type_ = self.type.typemap[key]
             except KeyError:
-                raise AttributeError("Type '%s' doesn't have an attribute: '%s'"
-                                     % (self.type, key))
+                raise AttributeError("Type '%s' doesn't have an attribute: '%s'" % (self.type, key))
 
             return CompositeElement(self.expr, key, type_)
 
 
 class GeometryDump(CompositeType):
-    """
-    The return type for functions like ``ST_Dump``, consisting of a path and
-    a geom field. You should normally never use this class directly.
+    """The return type for functions like ``ST_Dump``.
+
+    The type consists in a path and a geom field.
+    You should normally never use this class directly.
     """
 
-    typemap = {'path': postgresql.ARRAY(Integer), 'geom': Geometry}
+    typemap = {"path": postgresql.ARRAY(Integer), "geom": Geometry}
     """ Dictionary defining the contents of a ``geometry_dump``. """
 
     cache_ok = True
@@ -413,31 +425,32 @@ class GeometryDump(CompositeType):
 
 
 # Register Geometry, Geography and Raster to SQLAlchemy's reflection subsystems.
-postgresql_ischema_names['geometry'] = Geometry
-postgresql_ischema_names['geography'] = Geography
-postgresql_ischema_names['raster'] = Raster
+postgresql_ischema_names["geometry"] = Geometry
+postgresql_ischema_names["geography"] = Geography
+postgresql_ischema_names["raster"] = Raster
 
-sqlite_ischema_names['GEOMETRY'] = Geometry
-sqlite_ischema_names['POINT'] = Geometry
-sqlite_ischema_names['LINESTRING'] = Geometry
-sqlite_ischema_names['POLYGON'] = Geometry
-sqlite_ischema_names['MULTIPOINT'] = Geometry
-sqlite_ischema_names['MULTILINESTRING'] = Geometry
-sqlite_ischema_names['MULTIPOLYGON'] = Geometry
-sqlite_ischema_names['CURVE'] = Geometry
-sqlite_ischema_names['GEOMETRYCOLLECTION'] = Geometry
-sqlite_ischema_names['RASTER'] = Raster
+sqlite_ischema_names["GEOMETRY"] = Geometry
+sqlite_ischema_names["POINT"] = Geometry
+sqlite_ischema_names["LINESTRING"] = Geometry
+sqlite_ischema_names["POLYGON"] = Geometry
+sqlite_ischema_names["MULTIPOINT"] = Geometry
+sqlite_ischema_names["MULTILINESTRING"] = Geometry
+sqlite_ischema_names["MULTIPOLYGON"] = Geometry
+sqlite_ischema_names["CURVE"] = Geometry
+sqlite_ischema_names["GEOMETRYCOLLECTION"] = Geometry
+sqlite_ischema_names["RASTER"] = Raster
 
 
 class SummaryStats(CompositeType):
-    """Define the composite type returned by the function ST_SummaryStatsAgg"""
+    """Define the composite type returned by the function ST_SummaryStatsAgg."""
+
     typemap = {
-        'count': Integer,
-        'sum': Float,
-        'mean': Float,
-        'stddev': Float,
-        'min': Float,
-        'max': Float,
+        "count": Integer,
+        "sum": Float,
+        "mean": Float,
+        "stddev": Float,
+        "min": Float,
+        "max": Float,
     }
 
     cache_ok = True

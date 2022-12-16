@@ -20,6 +20,7 @@ function_registry = set()
 
 class HasFunction(object):
     """Base class used as a marker to know if a given element has a 'geom_from' function."""
+
     pass
 
 
@@ -45,8 +46,11 @@ class _SpatialElement(HasFunction):
         return self.desc
 
     def __repr__(self):
-        return "<%s at 0x%x; %s>" % \
-            (self.__class__.__name__, id(self), self)  # pragma: no cover
+        return "<%s at 0x%x; %s>" % (
+            self.__class__.__name__,
+            id(self),
+            self,
+        )  # pragma: no cover
 
     def __eq__(self, other):
         try:
@@ -88,16 +92,16 @@ class _SpatialElement(HasFunction):
 
     def __getstate__(self):
         state = {
-            'srid': self.srid,
-            'data': str(self),
-            'extended': self.extended,
+            "srid": self.srid,
+            "data": str(self),
+            "extended": self.extended,
         }
         return state
 
     def __setstate__(self, state):
-        self.srid = state['srid']
-        self.extended = state['extended']
-        self.data = self._data_from_desc(state['data'])
+        self.srid = state["srid"]
+        self.extended = state["extended"]
+        self.data = self._data_from_desc(state["data"])
 
     @staticmethod
     def _data_from_desc(desc):
@@ -105,8 +109,7 @@ class _SpatialElement(HasFunction):
 
 
 class WKTElement(_SpatialElement):
-    """
-    Instances of this class wrap a WKT or EWKT value.
+    """Instances of this class wrap a WKT or EWKT value.
 
     Usage examples::
 
@@ -115,29 +118,27 @@ class WKTElement(_SpatialElement):
         wkt_element_3 = WKTElement('SRID=4326;POINT(5 45)', extended=True)
     """
 
-    geom_from = 'ST_GeomFromText'
-    geom_from_extended_version = 'ST_GeomFromEWKT'
+    geom_from = "ST_GeomFromText"
+    geom_from_extended_version = "ST_GeomFromEWKT"
 
     def __init__(self, data, srid=-1, extended=False):
         if extended and srid == -1:
             # read srid from EWKT
-            if not data.startswith('SRID='):
-                raise ArgumentError('invalid EWKT string {}'.format(data))
-            data_s = data.split(';', 1)
+            if not data.startswith("SRID="):
+                raise ArgumentError("invalid EWKT string {}".format(data))
+            data_s = data.split(";", 1)
             if len(data_s) != 2:
-                raise ArgumentError('invalid EWKT string {}'.format(data))
+                raise ArgumentError("invalid EWKT string {}".format(data))
             header = data_s[0]
             try:
                 srid = int(header[5:])
             except ValueError:
-                raise ArgumentError('invalid EWKT string {}'.format(data))
+                raise ArgumentError("invalid EWKT string {}".format(data))
         _SpatialElement.__init__(self, data, srid, extended)
 
     @property
     def desc(self):
-        """
-        This element's description string.
-        """
+        """This element's description string."""
         return self.data
 
     @staticmethod
@@ -146,8 +147,7 @@ class WKTElement(_SpatialElement):
 
 
 class WKBElement(_SpatialElement):
-    """
-    Instances of this class wrap a WKB or EWKB value.
+    """Instances of this class wrap a WKB or EWKB value.
 
     Geometry values read from the database are converted to instances of this
     type. In most cases you won't need to create ``WKBElement`` instances
@@ -160,8 +160,8 @@ class WKBElement(_SpatialElement):
     using the :func:`geoalchemy2.shape.from_shape` function.
     """
 
-    geom_from = 'ST_GeomFromWKB'
-    geom_from_extended_version = 'ST_GeomFromEWKB'
+    geom_from = "ST_GeomFromWKB"
+    geom_from_extended_version = "ST_GeomFromEWKB"
 
     def __init__(self, data, srid=-1, extended=False):
         if extended and srid == -1:
@@ -184,14 +184,12 @@ class WKBElement(_SpatialElement):
             else:
                 header = data[:9]
             byte_order, srid = header[0], header[5:]
-            srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
+            srid = struct.unpack("<I" if byte_order else ">I", srid)[0]
         _SpatialElement.__init__(self, data, srid, extended)
 
     @property
     def desc(self):
-        """
-        This element's description string.
-        """
+        """This element's description string."""
         if isinstance(self.data, str):
             # SpatiaLite case
             return self.data.lower()
@@ -205,14 +203,13 @@ class WKBElement(_SpatialElement):
 
 
 class RasterElement(_SpatialElement):
-    """
-    Instances of this class wrap a ``raster`` value. Raster values read
-    from the database are converted to instances of this type. In
-    most cases you won't need to create ``RasterElement`` instances
-    yourself.
+    """Instances of this class wrap a ``raster`` value.
+
+    Raster values read from the database are converted to instances of this type. In
+    most cases you won't need to create ``RasterElement`` instances yourself.
     """
 
-    geom_from_extended_version = 'raster'
+    geom_from_extended_version = "raster"
 
     def __init__(self, data):
         # read srid from the WKB (binary or hexadecimal format)
@@ -222,17 +219,15 @@ class RasterElement(_SpatialElement):
             bin_data = binascii.unhexlify(data[:114])
         except BinasciiError:
             bin_data = data
-            data = str(binascii.hexlify(data).decode(encoding='utf-8'))
+            data = str(binascii.hexlify(data).decode(encoding="utf-8"))
         byte_order = bin_data[0]
         srid = bin_data[53:57]
-        srid = struct.unpack('<I' if byte_order else '>I', srid)[0]
+        srid = struct.unpack("<I" if byte_order else ">I", srid)[0]
         _SpatialElement.__init__(self, data, srid, True)
 
     @property
     def desc(self):
-        """
-        This element's description string.
-        """
+        """This element's description string."""
         return self.data
 
     @staticmethod
@@ -255,4 +250,4 @@ class CompositeElement(FunctionElement):
 
 @compiles(CompositeElement)
 def _compile_pgelem(expr, compiler, **kw):
-    return '(%s).%s' % (compiler.process(expr.clauses, **kw), expr.name)
+    return "(%s).%s" % (compiler.process(expr.clauses, **kw), expr.name)

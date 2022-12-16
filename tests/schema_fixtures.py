@@ -17,10 +17,10 @@ def Lake(base, postgis_version, schema):
     with_management = postgis_version.startswith("1.")
 
     class Lake(base):
-        __tablename__ = 'lake'
-        __table_args__ = {'schema': schema}
+        __tablename__ = "lake"
+        __table_args__ = {"schema": schema}
         id = Column(Integer, primary_key=True)
-        geom = Column(Geometry(geometry_type='LINESTRING', srid=4326, management=with_management))
+        geom = Column(Geometry(geometry_type="LINESTRING", srid=4326, management=with_management))
 
         def __init__(self, geom):
             self.geom = geom
@@ -31,12 +31,12 @@ def Lake(base, postgis_version, schema):
 @pytest.fixture
 def Poi(base, engine, schema):
     class Poi(base):
-        __tablename__ = 'poi'
-        __table_args__ = {'schema': schema}
+        __tablename__ = "poi"
+        __table_args__ = {"schema": schema}
         id = Column(Integer, primary_key=True)
-        geom = Column(Geometry(geometry_type='POINT', srid=4326))
+        geom = Column(Geometry(geometry_type="POINT", srid=4326))
         geog = (
-            Column(Geography(geometry_type='POINT', srid=4326))
+            Column(Geography(geometry_type="POINT", srid=4326))
             if engine.dialect.name == "postgresql"
             else None
         )
@@ -52,11 +52,17 @@ def Summit(base, postgis_version, schema):
     with_use_typemod = postgis_version.startswith("1.")
 
     class Summit(base):
-        __tablename__ = 'summit'
-        __table_args__ = {'schema': schema}
+        __tablename__ = "summit"
+        __table_args__ = {"schema": schema}
         id = Column(Integer, primary_key=True)
-        geom = Column(Geometry(
-            geometry_type='POINT', srid=4326, management=True, use_typmod=with_use_typemod))
+        geom = Column(
+            Geometry(
+                geometry_type="POINT",
+                srid=4326,
+                management=True,
+                use_typmod=with_use_typemod,
+            )
+        )
 
         def __init__(self, geom):
             self.geom = geom
@@ -67,11 +73,11 @@ def Summit(base, postgis_version, schema):
 @pytest.fixture
 def Ocean(base, postgis_version):
     # The raster type is only available on PostGIS 2.0 and above
-    if postgis_version.startswith('1.'):
+    if postgis_version.startswith("1."):
         pytest.skip("The raster type is only available on PostGIS 2.0 and above")
 
     class Ocean(base):
-        __tablename__ = 'ocean'
+        __tablename__ = "ocean"
         id = Column(Integer, primary_key=True)
         rast = Column(Raster)
 
@@ -83,6 +89,7 @@ def Ocean(base, postgis_version):
 
 class ThreeDGeometry(TypeDecorator):
     """This class is used to insert a ST_Force3D() in each insert."""
+
     impl = Geometry
 
     def bind_expression(self, bindvalue):
@@ -101,6 +108,7 @@ def PointZ(base):
 
 class TransformedGeometry(TypeDecorator):
     """This class is used to insert a ST_Transform() in each insert or select."""
+
     impl = Geometry
 
     def __init__(self, db_srid, app_srid, **kwargs):
@@ -120,8 +128,7 @@ class TransformedGeometry(TypeDecorator):
         )
 
     def bind_expression(self, bindvalue):
-        return func.ST_Transform(
-            self.impl.bind_expression(bindvalue), self.db_srid)
+        return func.ST_Transform(self.impl.bind_expression(bindvalue), self.db_srid)
 
 
 @pytest.fixture
@@ -131,10 +138,12 @@ def LocalPoint(base):
         id = Column(Integer, primary_key=True)
         geom = Column(
             TransformedGeometry(
-                db_srid=2154, app_srid=4326, geometry_type="POINT", management=False))
+                db_srid=2154, app_srid=4326, geometry_type="POINT", management=False
+            )
+        )
         managed_geom = Column(
-            TransformedGeometry(
-                db_srid=2154, app_srid=4326, geometry_type="POINT", management=True))
+            TransformedGeometry(db_srid=2154, app_srid=4326, geometry_type="POINT", management=True)
+        )
 
     return LocalPoint
 
@@ -142,11 +151,11 @@ def LocalPoint(base):
 @pytest.fixture
 def IndexTestWithSchema(base, schema):
     class IndexTestWithSchema(base):
-        __tablename__ = 'indextestwithschema'
-        __table_args__ = {'schema': schema} if schema else {}
+        __tablename__ = "indextestwithschema"
+        __table_args__ = {"schema": schema} if schema else {}
         id = Column(Integer, primary_key=True)
-        geom1 = Column(Geometry(geometry_type='POINT', srid=4326))
-        geom2 = Column(Geometry(geometry_type='POINT', srid=4326, management=True))
+        geom1 = Column(Geometry(geometry_type="POINT", srid=4326))
+        geom2 = Column(Geometry(geometry_type="POINT", srid=4326, management=True))
 
     return IndexTestWithSchema
 
@@ -154,10 +163,10 @@ def IndexTestWithSchema(base, schema):
 @pytest.fixture
 def IndexTestWithNDIndex(base, schema):
     class IndexTestWithNDIndex(base):
-        __tablename__ = 'index_test_with_nd_index'
-        __table_args__ = {'schema': schema}
+        __tablename__ = "index_test_with_nd_index"
+        __table_args__ = {"schema": schema}
         id = Column(Integer, primary_key=True)
-        geom1 = Column(Geometry(geometry_type='POINTZ', dimension=3, use_N_D_index=True))
+        geom1 = Column(Geometry(geometry_type="POINTZ", dimension=3, use_N_D_index=True))
 
     return IndexTestWithNDIndex
 
@@ -165,10 +174,10 @@ def IndexTestWithNDIndex(base, schema):
 @pytest.fixture
 def IndexTestWithoutSchema(base):
     class IndexTestWithoutSchema(base):
-        __tablename__ = 'indextestwithoutschema'
+        __tablename__ = "indextestwithoutschema"
         id = Column(Integer, primary_key=True)
-        geom1 = Column(Geometry(geometry_type='POINT', srid=4326))
-        geom2 = Column(Geometry(geometry_type='POINT', srid=4326, management=True))
+        geom1 = Column(Geometry(geometry_type="POINT", srid=4326))
+        geom2 = Column(Geometry(geometry_type="POINT", srid=4326, management=True))
 
     return IndexTestWithoutSchema
 
@@ -179,12 +188,12 @@ def reflection_tables_metadata():
     base = declarative_base(metadata=metadata)
 
     class Lake(base):
-        __tablename__ = 'lake'
+        __tablename__ = "lake"
         id = Column(Integer, primary_key=True)
-        geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
-        geom_no_idx = Column(Geometry(geometry_type='LINESTRING', srid=4326, spatial_index=False))
-        geom_z = Column(Geometry(geometry_type='LINESTRINGZ', srid=4326, dimension=3))
-        geom_m = Column(Geometry(geometry_type='LINESTRINGM', srid=4326, dimension=3))
-        geom_zm = Column(Geometry(geometry_type='LINESTRINGZM', srid=4326, dimension=4))
+        geom = Column(Geometry(geometry_type="LINESTRING", srid=4326))
+        geom_no_idx = Column(Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=False))
+        geom_z = Column(Geometry(geometry_type="LINESTRINGZ", srid=4326, dimension=3))
+        geom_m = Column(Geometry(geometry_type="LINESTRINGM", srid=4326, dimension=3))
+        geom_zm = Column(Geometry(geometry_type="LINESTRINGZM", srid=4326, dimension=4))
 
     return metadata

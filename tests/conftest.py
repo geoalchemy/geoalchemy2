@@ -16,25 +16,25 @@ from .schema_fixtures import *  # noqa
 
 def pytest_addoption(parser):
     parser.addoption(
-        '--postgresql_dburl',
-        action='store',
-        help='PostgreSQL DB URL used for tests (`postgresql://user:password@host:port/dbname`).',
+        "--postgresql_dburl",
+        action="store",
+        help="PostgreSQL DB URL used for tests (`postgresql://user:password@host:port/dbname`).",
     )
     parser.addoption(
-        '--sqlite_spatialite3_dburl',
-        action='store',
-        help='SQLite DB URL used for tests with SpatiaLite3 (`sqlite:///path_to_db_file`).',
+        "--sqlite_spatialite3_dburl",
+        action="store",
+        help="SQLite DB URL used for tests with SpatiaLite3 (`sqlite:///path_to_db_file`).",
     )
     parser.addoption(
-        '--sqlite_spatialite4_dburl',
-        action='store',
-        help='SQLite DB URL used for tests with SpatiaLite4 (`sqlite:///path_to_db_file`).',
+        "--sqlite_spatialite4_dburl",
+        action="store",
+        help="SQLite DB URL used for tests with SpatiaLite4 (`sqlite:///path_to_db_file`).",
     )
     parser.addoption(
-        '--engine-echo',
-        action='store_true',
+        "--engine-echo",
+        action="store_true",
         default=False,
-        help='If set to True, all statements of the engine are logged.',
+        help="If set to True, all statements of the engine are logged.",
     )
 
 
@@ -62,44 +62,44 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("db_url", dialects, indirect=True)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db_url_postgresql(request):
     return (
-        request.config.getoption('--postgresql_dburl')
-        or os.getenv('PYTEST_POSTGRESQL_DB_URL')
-        or 'postgresql://gis:gis@localhost/gis'
+        request.config.getoption("--postgresql_dburl")
+        or os.getenv("PYTEST_POSTGRESQL_DB_URL")
+        or "postgresql://gis:gis@localhost/gis"
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db_url_sqlite(request, tmpdir_factory):
     return (
-        request.config.getoption('--sqlite_spatialite4_dburl')
-        or os.getenv('PYTEST_SQLITE_DB_URL')
+        request.config.getoption("--sqlite_spatialite4_dburl")
+        or os.getenv("PYTEST_SQLITE_DB_URL")
         # or f"sqlite:///{tmpdir_factory.getbasetemp() / 'spatialdb'}"
         or "sqlite-auto"
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db_url_sqlite_spatialite3(request, tmpdir_factory):
     return (
-        request.config.getoption('--sqlite_spatialite3_dburl')
-        or os.getenv('PYTEST_SPATIALITE3_DB_URL')
+        request.config.getoption("--sqlite_spatialite3_dburl")
+        or os.getenv("PYTEST_SPATIALITE3_DB_URL")
         or f"sqlite:///{Path(__file__).parent / 'data' / 'spatialite_lt_4.sqlite'}"
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db_url_sqlite_spatialite4(request, tmpdir_factory):
     return (
-        request.config.getoption('--sqlite_spatialite4_dburl')
-        or os.getenv('PYTEST_SPATIALITE4_DB_URL')
+        request.config.getoption("--sqlite_spatialite4_dburl")
+        or os.getenv("PYTEST_SPATIALITE4_DB_URL")
         or f"sqlite:///{Path(__file__).parent / 'data' / 'spatialite_ge_4.sqlite'}"
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db_url(request, db_url_postgresql, db_url_sqlite_spatialite3, db_url_sqlite_spatialite4):
     if request.param == "postgresql":
         return db_url_postgresql
@@ -110,9 +110,9 @@ def db_url(request, db_url_postgresql, db_url_sqlite_spatialite3, db_url_sqlite_
     return None
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def _engine_echo(request):
-    _engine_echo = request.config.getoption('--engine-echo')
+    _engine_echo = request.config.getoption("--engine-echo")
     return _engine_echo
 
 
@@ -122,11 +122,7 @@ def engine(tmpdir, db_url, _engine_echo):
     if db_url.startswith("sqlite:///"):
         # Copy the input SQLite DB to a temporary file and return an engine to it
         input_url = str(db_url)[10:]
-        return copy_and_connect_sqlite_db(
-            input_url,
-            tmpdir / "test_spatial_db",
-            _engine_echo
-        )
+        return copy_and_connect_sqlite_db(input_url, tmpdir / "test_spatial_db", _engine_echo)
 
     # For other dialects the engine is directly returned
     engine = create_engine(db_url, echo=_engine_echo)
@@ -139,7 +135,7 @@ def engine(tmpdir, db_url, _engine_echo):
 def session(engine):
     session = sessionmaker(bind=engine)()
     if engine.dialect.name == "sqlite":
-        session.execute(text('SELECT InitSpatialMetaData()'))
+        session.execute(text("SELECT InitSpatialMetaData()"))
     yield session
     session.rollback()
 

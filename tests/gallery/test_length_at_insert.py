@@ -33,8 +33,7 @@ table = Table(
 
 
 @test_only_with_dialects("postgresql")
-class TestLengthAtInsert():
-
+class TestLengthAtInsert:
     def test_query(self, conn):
         metadata.drop_all(conn, checkfirst=True)
         metadata.create_all(conn)
@@ -42,7 +41,7 @@ class TestLengthAtInsert():
         # Define geometries to insert
         values = [
             {"ewkt": "SRID=4326;LINESTRING(0 0, 1 0)"},
-            {"ewkt": "SRID=4326;LINESTRING(0 0, 0 1)"}
+            {"ewkt": "SRID=4326;LINESTRING(0 0, 0 1)"},
         ]
 
         # Define the query to compute distance (without spheroid)
