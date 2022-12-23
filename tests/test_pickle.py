@@ -13,23 +13,22 @@ Base = declarative_base(metadata=metadata)
 
 
 class PickledLake(Base):
-    __tablename__ = 'pickled_lake'
+    __tablename__ = "pickled_lake"
     id = Column(Integer, primary_key=True)
-    geom = Column(Geometry(geometry_type='LINESTRING', srid=4326))
+    geom = Column(Geometry(geometry_type="LINESTRING", srid=4326))
 
     def __init__(self, geom):
         self.geom = geom
 
 
-class TestPickle():
-
+class TestPickle:
     @pytest.fixture
     def setup_one_lake(self, session):
         conn = session.bind
         metadata.drop_all(conn, checkfirst=True)
         metadata.create_all(conn)
 
-        lake = PickledLake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        lake = PickledLake(WKTElement("LINESTRING(0 0,1 1)", srid=4326))
         session.add(lake)
         session.flush()
         session.expire(lake)

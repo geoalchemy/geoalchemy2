@@ -39,9 +39,7 @@ def _monkey_patch_get_indexes_for_sqlite():
     normal_behavior = SQLiteDialect.get_indexes
 
     def spatial_behavior(self, connection, table_name, schema=None, **kw):
-        indexes = self._get_indexes_normal_behavior(
-            connection, table_name, schema=None, **kw
-        )
+        indexes = self._get_indexes_normal_behavior(connection, table_name, schema=None, **kw)
 
         # Check that SpatiaLite was loaded into the DB
         is_spatial_db = connection.exec_driver_sql(
@@ -106,29 +104,25 @@ def include_object(obj, name, obj_type, reflected, compare_to):
         In such case, you should create your own function to handle your specific table names.
 
     """
-    if (
-        obj_type == "table"
-        and (
-            name.startswith("geometry_columns")
-            or name.startswith("spatial_ref_sys")
-            or name.startswith("spatialite_history")
-            or name.startswith("sqlite_sequence")
-            or name.startswith("views_geometry_columns")
-            or name.startswith("virts_geometry_columns")
-            or name.startswith("idx_")
-        )
+    if obj_type == "table" and (
+        name.startswith("geometry_columns")
+        or name.startswith("spatial_ref_sys")
+        or name.startswith("spatialite_history")
+        or name.startswith("sqlite_sequence")
+        or name.startswith("views_geometry_columns")
+        or name.startswith("virts_geometry_columns")
+        or name.startswith("idx_")
     ):
         return False
     return True
 
 
 @Operations.register_operation("add_geospatial_column")
-@BatchOperations.register_operation(
-    "add_geospatial_column", "batch_add_geospatial_column"
-)
+@BatchOperations.register_operation("add_geospatial_column", "batch_add_geospatial_column")
 class AddGeospatialColumnOp(ops.AddColumnOp):
-    """
-    Add a Geospatial Column in an Alembic migration context. This methodology originates from:
+    """Add a Geospatial Column in an Alembic migration context.
+
+    This method originates from:
     https://alembic.sqlalchemy.org/en/latest/api/operations.html#operation-plugins
     """
 
@@ -169,16 +163,12 @@ class AddGeospatialColumnOp(ops.AddColumnOp):
 
 
 @Operations.register_operation("drop_geospatial_column")
-@BatchOperations.register_operation(
-    "drop_geospatial_column", "batch_drop_geospatial_column"
-)
+@BatchOperations.register_operation("drop_geospatial_column", "batch_drop_geospatial_column")
 class DropGeospatialColumnOp(ops.DropColumnOp):
     """Drop a Geospatial Column in an Alembic migration context."""
 
     @classmethod
-    def drop_geospatial_column(
-        cls, operations, table_name, column_name, schema=None, **kw
-    ):
+    def drop_geospatial_column(cls, operations, table_name, column_name, schema=None, **kw):
         """Handle the different situations arising from dropping geospatial column from a DB."""
         op = cls(table_name, column_name, schema=schema, **kw)
         return operations.invoke(op)
@@ -210,7 +200,6 @@ def add_geospatial_column(operations, operation):
         operation: AddGeospatialColumnOp call, with attributes for table_name, column_name,
             column_type, and optional keywords.
     """
-
     table_name = operation.table_name
     column_name = operation.column.name
 
@@ -250,7 +239,6 @@ def drop_geospatial_column(operations, operation):
         operation: AddGeospatialColumnOp call, with attributes for table_name, column_name,
             column_type, and optional keywords.
     """
-
     table_name = operation.table_name
     column = operation.to_column(operations.migration_context)
 
@@ -258,9 +246,7 @@ def drop_geospatial_column(operations, operation):
 
     if dialect.name == "sqlite":
         _SPATIAL_TABLES.add(table_name)
-    operations.impl.drop_column(
-        table_name, column, schema=operation.schema, **operation.kw
-    )
+    operations.impl.drop_column(table_name, column, schema=operation.schema, **operation.kw)
 
 
 @compiles(RenameTable, "sqlite")
@@ -340,8 +326,9 @@ def drop_geo_column(context, revision, op):
 
 @Operations.register_operation("create_geospatial_table")
 class CreateGeospatialTableOp(ops.CreateTableOp):
-    """
-    Create a Geospatial Table in an Alembic migration context. This methodology originates from:
+    """Create a Geospatial Table in an Alembic migration context.
+
+    This method originates from:
     https://alembic.sqlalchemy.org/en/latest/api/operations.html#operation-plugins
     """
 
@@ -381,7 +368,6 @@ class DropGeospatialTableOp(ops.DropTableOp):
     @classmethod
     def drop_geospatial_table(cls, operations, table_name, schema=None, **kw):
         """Handle the different situations arising from dropping geospatial table from a DB."""
-
         op = cls(table_name, schema=schema, table_kw=kw)
         return operations.invoke(op)
 
@@ -457,9 +443,7 @@ def render_drop_geo_table(autogen_context, op):
 def create_geo_table(context, revision, op):
     """Replace the default CreateTableOp by a geospatial-specific one."""
     dialect = context.bind.dialect
-    gis_cols = _get_gis_cols(
-        op, (Geometry, Geography, Raster), dialect, check_col_management=False
-    )
+    gis_cols = _get_gis_cols(op, (Geometry, Geography, Raster), dialect, check_col_management=False)
 
     if gis_cols:
         new_op = CreateGeospatialTableOp(
@@ -493,9 +477,7 @@ def drop_geo_table(context, revision, op):
 
 
 @Operations.register_operation("create_geospatial_index")
-@BatchOperations.register_operation(
-    "create_geospatial_index", "batch_create_geospatial_index"
-)
+@BatchOperations.register_operation("create_geospatial_index", "batch_create_geospatial_index")
 class CreateGeospatialIndexOp(ops.CreateIndexOp):
     @classmethod
     def create_geospatial_index(
@@ -541,9 +523,7 @@ class CreateGeospatialIndexOp(ops.CreateIndexOp):
 
 
 @Operations.register_operation("drop_geospatial_index")
-@BatchOperations.register_operation(
-    "drop_geospatial_index", "batch_drop_geospatial_index"
-)
+@BatchOperations.register_operation("drop_geospatial_index", "batch_drop_geospatial_index")
 class DropGeospatialIndexOp(ops.DropIndexOp):
     def __init__(self, *args, column_name, **kwargs):
         super().__init__(*args, **kwargs)
@@ -620,12 +600,8 @@ def create_geospatial_index(operations, operation):
     dialect = bind.dialect
 
     if dialect.name == "sqlite":
-        assert (
-            len(operation.columns) == 1
-        ), "A spatial index must be set on one column only"
-        operations.execute(
-            func.CreateSpatialIndex(operation.table_name, operation.columns[0])
-        )
+        assert len(operation.columns) == 1, "A spatial index must be set on one column only"
+        operations.execute(func.CreateSpatialIndex(operation.table_name, operation.columns[0]))
     else:
         idx = operation.to_index(operations.migration_context)
         operations.impl.create_index(idx)
@@ -644,9 +620,7 @@ def drop_geospatial_index(operations, operation):
     dialect = bind.dialect
 
     if dialect.name == "sqlite":
-        operations.execute(
-            func.DisableSpatialIndex(operation.table_name, operation.column_name)
-        )
+        operations.execute(func.DisableSpatialIndex(operation.table_name, operation.column_name))
     else:
         operations.impl.drop_index(operation.to_index(operations.migration_context))
 

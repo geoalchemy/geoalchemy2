@@ -2,6 +2,7 @@
 # flake8: noqa
 from . import types
 
+# fmt: off
 _FUNCTIONS = [
     ('AddGeometryColumn', None,
      '''Adds a geometry column to an existing table.'''),
@@ -820,3 +821,4 @@ _FUNCTIONS = [
     ('ST_Distance_Sphere', None,
      '''Returns minimum distance in meters between two lon/lat geometries. Uses a spherical earth and radius of 6370986 meters. Faster than ``ST_Distance_Spheroid``, but less accurate. PostGIS versions prior to 1.5 only implemented for points.'''),
 ]
+# fmt: on

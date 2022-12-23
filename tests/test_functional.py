@@ -47,13 +47,13 @@ from . import select
 from . import skip_case_insensitivity
 from . import skip_pg12_sa1217
 from . import skip_postgis1
+from . import skip_postgis3
 from . import test_only_with_dialects
 
 SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("1.999")
 
 
-class TestAdmin():
-
+class TestAdmin:
     def test_create_drop_tables(
         self,
         conn,
@@ -73,8 +73,7 @@ class TestAdmin():
         metadata.drop_all(conn, checkfirst=True)
 
 
-class TestMiscellaneous():
-
+class TestMiscellaneous:
     @test_only_with_dialects("sqlite")
     def test_load_spatialite(self, monkeypatch, conn):
         geoalchemy2.load_spatialite(conn.connection.dbapi_connection, None)
@@ -84,17 +83,19 @@ class TestMiscellaneous():
             geoalchemy2.load_spatialite(conn.connection.dbapi_connection, None)
 
 
-class TestInsertionCore():
-
+class TestInsertionCore:
     def test_insert(self, conn, Lake, setup_tables):
         # Issue inserts using DBAPI's executemany() method. This tests the
         # Geometry type's bind_processor and bind_expression functions.
-        conn.execute(Lake.__table__.insert(), [
-            {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'},
-            {'geom': WKTElement('LINESTRING(0 0,2 2)', srid=4326)},
-            {'geom': WKTElement('SRID=4326;LINESTRING(0 0,2 2)', extended=True)},
-            {'geom': from_shape(LineString([[0, 0], [3, 3]]), srid=4326)}
-        ])
+        conn.execute(
+            Lake.__table__.insert(),
+            [
+                {"geom": "SRID=4326;LINESTRING(0 0,1 1)"},
+                {"geom": WKTElement("LINESTRING(0 0,2 2)", srid=4326)},
+                {"geom": WKTElement("SRID=4326;LINESTRING(0 0,2 2)", extended=True)},
+                {"geom": from_shape(LineString([[0, 0], [3, 3]]), srid=4326)},
+            ],
+        )
 
         results = conn.execute(Lake.__table__.select())
         rows = results.fetchall()
@@ -102,39 +103,42 @@ class TestInsertionCore():
         row = rows[0]
         assert isinstance(row[1], WKBElement)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert format_wkt(wkt) == 'LINESTRING(0 0,1 1)'
+        assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
         row = rows[1]
         assert isinstance(row[1], WKBElement)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert format_wkt(wkt) == 'LINESTRING(0 0,2 2)'
+        assert format_wkt(wkt) == "LINESTRING(0 0,2 2)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
         row = rows[2]
         assert isinstance(row[1], WKBElement)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert format_wkt(wkt) == 'LINESTRING(0 0,2 2)'
+        assert format_wkt(wkt) == "LINESTRING(0 0,2 2)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
         row = rows[3]
         assert isinstance(row[1], WKBElement)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert format_wkt(wkt) == 'LINESTRING(0 0,3 3)'
+        assert format_wkt(wkt) == "LINESTRING(0 0,3 3)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
     def test_insert_geom_poi(self, conn, Poi, setup_tables):
-        conn.execute(Poi.__table__.insert(), [
-            {'geom': 'SRID=4326;POINT(1 1)'},
-            {'geom': WKTElement('POINT(1 1)', srid=4326)},
-            {'geom': WKTElement('SRID=4326;POINT(1 1)', extended=True)},
-            {'geom': from_shape(Point(1, 1), srid=4326)},
-            {'geom': from_shape(Point(1, 1), srid=4326, extended=True)}
-        ])
+        conn.execute(
+            Poi.__table__.insert(),
+            [
+                {"geom": "SRID=4326;POINT(1 1)"},
+                {"geom": WKTElement("POINT(1 1)", srid=4326)},
+                {"geom": WKTElement("SRID=4326;POINT(1 1)", extended=True)},
+                {"geom": from_shape(Point(1, 1), srid=4326)},
+                {"geom": from_shape(Point(1, 1), srid=4326, extended=True)},
+            ],
+        )
 
         results = conn.execute(Poi.__table__.select())
         rows = results.fetchall()
@@ -142,20 +146,19 @@ class TestInsertionCore():
         for row in rows:
             assert isinstance(row[1], WKBElement)
             wkt = conn.execute(row[1].ST_AsText()).scalar()
-            assert format_wkt(wkt) == 'POINT(1 1)'
+            assert format_wkt(wkt) == "POINT(1 1)"
             srid = conn.execute(row[1].ST_SRID()).scalar()
             assert srid == 4326
             assert row[1] == from_shape(Point(1, 1), srid=4326, extended=True)
 
 
-class TestSelectBindParam():
-
+class TestSelectBindParam:
     @pytest.fixture
     def setup_one_lake(self, conn, Lake, setup_tables):
-        conn.execute(Lake.__table__.insert(), {'geom': 'SRID=4326;LINESTRING(0 0,1 1)'})
+        conn.execute(Lake.__table__.insert(), {"geom": "SRID=4326;LINESTRING(0 0,1 1)"})
 
     def test_select_bindparam(self, conn, Lake, setup_one_lake):
-        s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
+        s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam("geom"))
         params = {"geom": "SRID=4326;LINESTRING(0 0,1 1)"}
         if SQLA_LT_2:
             results = conn.execute(s, **params)
@@ -166,12 +169,12 @@ class TestSelectBindParam():
         row = rows[0]
         assert isinstance(row[1], WKBElement)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert format_wkt(wkt) == 'LINESTRING(0 0,1 1)'
+        assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
     def test_select_bindparam_WKBElement(self, conn, Lake, setup_one_lake):
-        s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
+        s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam("geom"))
         wkbelement = from_shape(LineString([[0, 0], [1, 1]]), srid=4326)
         params = {"geom": wkbelement}
         if SQLA_LT_2:
@@ -183,7 +186,7 @@ class TestSelectBindParam():
         row = rows[0]
         assert isinstance(row[1], WKBElement)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert format_wkt(wkt) == 'LINESTRING(0 0,1 1)'
+        assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
@@ -195,7 +198,7 @@ class TestSelectBindParam():
         assert isinstance(geom, WKBElement)
         assert geom.extended is True
 
-        s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam('geom'))
+        s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam("geom"))
         params = {"geom": geom}
         if SQLA_LT_2:
             results = conn.execute(s, **params)
@@ -206,13 +209,12 @@ class TestSelectBindParam():
         row = rows[0]
         assert isinstance(row[1], WKBElement)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert format_wkt(wkt) == 'LINESTRING(0 0,1 1)'
+        assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
 
-class TestInsertionORM():
-
+class TestInsertionORM:
     def test_WKT(self, session, Lake, setup_tables):
         # With PostGIS 1.5:
         # IntegrityError: (IntegrityError) new row for relation "lake" violates
@@ -221,24 +223,29 @@ class TestInsertionORM():
         # With PostGIS 2.0:
         # DataError: (DataError) Geometry SRID (0) does not match column SRID
         # (4326)
-        lake = Lake('LINESTRING(0 0,1 1)')
+        #
+        # With PostGIS 3.0:
+        # The SRID is taken from the Column definition so no error is reported
+        skip_postgis3(session.connection())
+
+        lake = Lake("LINESTRING(0 0,1 1)")
         session.add(lake)
 
         with pytest.raises((DataError, IntegrityError)):
             session.flush()
 
     def test_WKTElement(self, session, Lake, setup_tables):
-        lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        lake = Lake(WKTElement("LINESTRING(0 0,1 1)", srid=4326))
         session.add(lake)
         session.flush()
         session.expire(lake)
         assert isinstance(lake.geom, WKBElement)
         assert str(lake.geom) == (
-            '0102000020e6100000020000000000000000000000000000000000000000000'
-            '0000000f03f000000000000f03f'
+            "0102000020e6100000020000000000000000000000000000000000000000000"
+            "0000000f03f000000000000f03f"
         )
         wkt = session.execute(lake.geom.ST_AsText()).scalar()
-        assert format_wkt(wkt) == 'LINESTRING(0 0,1 1)'
+        assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
@@ -250,11 +257,11 @@ class TestInsertionORM():
         session.expire(lake)
         assert isinstance(lake.geom, WKBElement)
         assert str(lake.geom) == (
-            '0102000020e6100000020000000000000000000000000000000000000000000'
-            '0000000f03f000000000000f03f'
+            "0102000020e6100000020000000000000000000000000000000000000000000"
+            "0000000f03f000000000000f03f"
         )
         wkt = session.execute(lake.geom.ST_AsText()).scalar()
-        assert format_wkt(wkt) == 'LINESTRING(0 0,1 1)'
+        assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
@@ -296,10 +303,9 @@ class TestInsertionORM():
             assert round(float(y), 3) == 6435414.748
 
 
-class TestUpdateORM():
-
+class TestUpdateORM:
     def test_WKTElement(self, session, Lake, setup_tables):
-        raw_wkt = 'LINESTRING(0 0,1 1)'
+        raw_wkt = "LINESTRING(0 0,1 1)"
         lake = Lake(WKTElement(raw_wkt, srid=4326))
         session.add(lake)
 
@@ -349,7 +355,7 @@ class TestUpdateORM():
         # Check what was inserted in DB
         assert isinstance(lake.geom, WKBElement)
         wkt = session.execute(lake.geom.ST_AsText()).scalar()
-        assert format_wkt(wkt) == 'LINESTRING(0 0,1 1)'
+        assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
@@ -373,7 +379,7 @@ class TestUpdateORM():
         # Check what was inserted in DB
         assert isinstance(lake.geom, WKBElement)
         wkt = session.execute(lake.geom.ST_AsText()).scalar()
-        assert format_wkt(wkt) == 'LINESTRING(0 0,1 1)'
+        assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
@@ -405,10 +411,10 @@ class TestUpdateORM():
             assert lake.geom is None
 
 
-class TestCallFunction():
+class TestCallFunction:
     @pytest.fixture
     def setup_one_lake(self, session, Lake, setup_tables):
-        lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        lake = Lake(WKTElement("LINESTRING(0 0,1 1)", srid=4326))
         session.add(lake)
         session.flush()
         session.expire(lake)
@@ -416,7 +422,7 @@ class TestCallFunction():
 
     @pytest.fixture
     def setup_one_poi(self, session, Poi, setup_tables):
-        p = Poi('POINT(5 45)')
+        p = Poi("POINT(5 45)")
         session.add(p)
         session.flush()
         session.expire(p)
@@ -426,9 +432,9 @@ class TestCallFunction():
         lake_id = setup_one_lake
 
         if session.bind.dialect.name == "postgresql":
-            expected_geometry_type = 'ST_LineString'
+            expected_geometry_type = "ST_LineString"
         else:
-            expected_geometry_type = 'LINESTRING'
+            expected_geometry_type = "LINESTRING"
 
         s = select([func.ST_GeometryType(Lake.__table__.c.geom)])
         r1 = session.execute(s).scalar()
@@ -441,8 +447,7 @@ class TestCallFunction():
         r3 = session.query(Lake.geom.ST_GeometryType()).scalar()
         assert r3 == expected_geometry_type
 
-        r4 = session.query(Lake).filter(
-            Lake.geom.ST_GeometryType() == expected_geometry_type).one()
+        r4 = session.query(Lake).filter(Lake.geom.ST_GeometryType() == expected_geometry_type).one()
         assert isinstance(r4, Lake)
         assert r4.id == lake_id
 
@@ -463,9 +468,11 @@ class TestCallFunction():
 
         assert r1.data == r2.data == r3.data
 
-        r4 = session.query(Lake).filter(
-            func.ST_Within(WKTElement('POINT(0 0)', srid=4326),
-                           Lake.geom.ST_Buffer(2))).one()
+        r4 = (
+            session.query(Lake)
+            .filter(func.ST_Within(WKTElement("POINT(0 0)", srid=4326), Lake.geom.ST_Buffer(2)))
+            .one()
+        )
         assert isinstance(r4, Lake)
         assert r4.id == lake_id
 
@@ -476,44 +483,29 @@ class TestCallFunction():
         # Test geometry
         s1 = select([func.ST_AsGeoJSON(Lake.__table__.c.geom)])
         r1 = session.execute(s1).scalar()
-        assert loads(r1) == {
-            "type": "LineString",
-            "coordinates": [[0, 0], [1, 1]]
-        }
+        assert loads(r1) == {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}
 
         # Test geometry ORM
         s1_orm = lake.geom.ST_AsGeoJSON()
         r1_orm = session.execute(s1_orm).scalar()
-        assert loads(r1_orm) == {
-            "type": "LineString",
-            "coordinates": [[0, 0], [1, 1]]
-        }
+        assert loads(r1_orm) == {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}
 
         # Test from WKTElement
         s1_wkt = WKTElement("LINESTRING(0 0,1 1)", srid=4326, extended=False).ST_AsGeoJSON()
         r1_wkt = session.execute(s1_wkt).scalar()
-        assert loads(r1_wkt) == {
-            "type": "LineString",
-            "coordinates": [[0, 0], [1, 1]]
-        }
+        assert loads(r1_wkt) == {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}
 
         # Test from extended WKTElement
         s1_ewkt = WKTElement("SRID=4326;LINESTRING(0 0,1 1)", extended=True).ST_AsGeoJSON()
         r1_ewkt = session.execute(s1_ewkt).scalar()
-        assert loads(r1_ewkt) == {
-            "type": "LineString",
-            "coordinates": [[0, 0], [1, 1]]
-        }
+        assert loads(r1_ewkt) == {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}
 
         # Test with function inside
-        s1_func = select([
-            func.ST_AsGeoJSON(func.ST_Translate(Lake.__table__.c.geom, 0.0, 0.0, 0.0))
-        ])
+        s1_func = select(
+            [func.ST_AsGeoJSON(func.ST_Translate(Lake.__table__.c.geom, 0.0, 0.0, 0.0))]
+        )
         r1_func = session.execute(s1_func).scalar()
-        assert loads(r1_func) == {
-            "type": "LineString",
-            "coordinates": [[0, 0], [1, 1]]
-        }
+        assert loads(r1_func) == {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}
 
     @skip_case_insensitivity()
     def test_comparator_case_insensitivity(self, session, Lake, setup_one_lake):
@@ -544,9 +536,7 @@ class TestCallFunction():
         r7 = session.query(Lake.geom.St_BuFfEr(2)).scalar()
         assert isinstance(r7, WKBElement)
 
-        assert (
-            r1.data == r2.data == r3.data == r4.data == r5.data == r6.data
-            == r7.data)
+        assert r1.data == r2.data == r3.data == r4.data == r5.data == r6.data == r7.data
 
     def test_unknown_function_column(self, session, Lake, setup_one_lake):
         s = select([func.ST_UnknownFunction(Lake.__table__.c.geom, 2)])
@@ -574,14 +564,14 @@ class TestCallFunction():
             select([lake.geom.ST_UnknownFunction(2)])
 
 
-class TestShapely():
+class TestShapely:
     def test_to_shape(self, session, Lake, setup_tables):
         if session.bind.dialect.name == "sqlite":
             data_type = str
         else:
             data_type = memoryview
 
-        lake = Lake(WKTElement('LINESTRING(0 0,1 1)', srid=4326))
+        lake = Lake(WKTElement("LINESTRING(0 0,1 1)", srid=4326))
         session.add(lake)
         session.flush()
         session.expire(lake)
@@ -591,7 +581,7 @@ class TestShapely():
         assert lake.geom.srid == 4326
         s = to_shape(lake.geom)
         assert isinstance(s, LineString)
-        assert s.wkt == 'LINESTRING (0 0, 1 1)'
+        assert s.wkt == "LINESTRING (0 0, 1 1)"
         lake = Lake(lake.geom)
         session.add(lake)
         session.flush()
@@ -601,21 +591,21 @@ class TestShapely():
         assert lake.geom.srid == 4326
 
 
-class TestContraint():
-
+class TestContraint:
     @pytest.fixture
     def ConstrainedLake(self, base):
         class ConstrainedLake(base):
-            __tablename__ = 'contrained_lake'
+            __tablename__ = "contrained_lake"
             __table_args__ = (
                 CheckConstraint(
-                    '(geom is null and a_str is null) = (checked_str is null)', 'check_geom_sk'
+                    "(geom is null and a_str is null) = (checked_str is null)",
+                    "check_geom_sk",
                 ),
             )
             id = Column(Integer, primary_key=True)
             a_str = Column(String, nullable=True)
             checked_str = Column(String, nullable=True)
-            geom = Column(Geometry(geometry_type='LINESTRING', srid=4326, management=False))
+            geom = Column(Geometry(geometry_type="LINESTRING", srid=4326, management=False))
 
             def __init__(self, geom):
                 self.geom = geom
@@ -624,21 +614,30 @@ class TestContraint():
 
     def test_insert(self, conn, ConstrainedLake, setup_tables):
         # Insert geometries
-        conn.execute(ConstrainedLake.__table__.insert(), [
-            {'a_str': None, 'geom': 'SRID=4326;LINESTRING(0 0,1 1)', 'checked_str': 'test'},
-            {'a_str': 'test', 'geom': None, 'checked_str': 'test'},
-            {'a_str': None, 'geom': None, 'checked_str': None},
-        ])
+        conn.execute(
+            ConstrainedLake.__table__.insert(),
+            [
+                {
+                    "a_str": None,
+                    "geom": "SRID=4326;LINESTRING(0 0,1 1)",
+                    "checked_str": "test",
+                },
+                {"a_str": "test", "geom": None, "checked_str": "test"},
+                {"a_str": None, "geom": None, "checked_str": None},
+            ],
+        )
 
         # Fail when trying to insert null geometry
         with pytest.raises(IntegrityError):
-            conn.execute(ConstrainedLake.__table__.insert(), [
-                {'a_str': None, 'geom': None, 'checked_str': 'should fail'},
-            ])
+            conn.execute(
+                ConstrainedLake.__table__.insert(),
+                [
+                    {"a_str": None, "geom": None, "checked_str": "should fail"},
+                ],
+            )
 
 
-class TestReflection():
-
+class TestReflection:
     @pytest.fixture
     def setup_reflection_tables(self, reflection_tables_metadata, conn):
         reflection_tables_metadata.drop_all(conn, checkfirst=True)
@@ -647,63 +646,54 @@ class TestReflection():
     def test_reflection(self, conn, setup_reflection_tables):
         skip_pg12_sa1217(conn)
         t = Table(
-            'lake',
+            "lake",
             MetaData(),
             autoload_with=conn,
         )
 
         if conn.dialect.name == "postgresql":
             # Check index query with explicit schema
-            t_with_schema = Table(
-                'lake',
-                MetaData(),
-                autoload_with=conn,
-                schema="gis"
-            )
-            assert sorted(
-                [col.name for col in t.columns]
-            ) == sorted(
+            t_with_schema = Table("lake", MetaData(), autoload_with=conn, schema="gis")
+            assert sorted([col.name for col in t.columns]) == sorted(
                 [col.name for col in t_with_schema.columns]
             )
-            assert sorted(
-                [idx.name for idx in t.indexes]
-            ) == sorted(
+            assert sorted([idx.name for idx in t.indexes]) == sorted(
                 [idx.name for idx in t_with_schema.indexes]
             )
 
-        if get_postgis_version(conn).startswith('1.'):
+        if get_postgis_version(conn).startswith("1."):
             type_ = t.c.geom.type
             assert isinstance(type_, Geometry)
-            assert type_.geometry_type == 'GEOMETRY'
+            assert type_.geometry_type == "GEOMETRY"
             assert type_.srid == -1
         else:
             type_ = t.c.geom.type
             assert isinstance(type_, Geometry)
-            assert type_.geometry_type == 'LINESTRING'
+            assert type_.geometry_type == "LINESTRING"
             assert type_.srid == 4326
             assert type_.dimension == 2
 
             type_ = t.c.geom_no_idx.type
             assert isinstance(type_, Geometry)
-            assert type_.geometry_type == 'LINESTRING'
+            assert type_.geometry_type == "LINESTRING"
             assert type_.srid == 4326
             assert type_.dimension == 2
 
             type_ = t.c.geom_z.type
             assert isinstance(type_, Geometry)
-            assert type_.geometry_type == 'LINESTRINGZ'
+            assert type_.geometry_type == "LINESTRINGZ"
             assert type_.srid == 4326
             assert type_.dimension == 3
 
             type_ = t.c.geom_m.type
             assert isinstance(type_, Geometry)
-            assert type_.geometry_type == 'LINESTRINGM'
+            assert type_.geometry_type == "LINESTRINGM"
             assert type_.srid == 4326
             assert type_.dimension == 3
 
             type_ = t.c.geom_zm.type
             assert isinstance(type_, Geometry)
-            assert type_.geometry_type == 'LINESTRINGZM'
+            assert type_.geometry_type == "LINESTRINGZM"
             assert type_.srid == 4326
             assert type_.dimension == 4
 
@@ -727,43 +717,43 @@ class TestReflection():
         col_attributes = _get_spatialite_attrs(conn, t.name, "geom")
         if isinstance(col_attributes[2], int):
             sqlite_indexes = [
-                ('lake', 'geom', 2, 2, 4326, 1),
-                ('lake', 'geom_m', 2002, 3, 4326, 1),
-                ('lake', 'geom_no_idx', 2, 2, 4326, 0),
-                ('lake', 'geom_z', 1002, 3, 4326, 1),
-                ('lake', 'geom_zm', 3002, 4, 4326, 1),
+                ("lake", "geom", 2, 2, 4326, 1),
+                ("lake", "geom_m", 2002, 3, 4326, 1),
+                ("lake", "geom_no_idx", 2, 2, 4326, 0),
+                ("lake", "geom_z", 1002, 3, 4326, 1),
+                ("lake", "geom_zm", 3002, 4, 4326, 1),
             ]
         else:
             sqlite_indexes = [
-                ('lake', 'geom', 'LINESTRING', 'XY', 4326, 1),
-                ('lake', 'geom_m', 'LINESTRING', 'XYM', 4326, 1),
-                ('lake', 'geom_no_idx', 'LINESTRING', 'XY', 4326, 0),
-                ('lake', 'geom_z', 'LINESTRING', 'XYZ', 4326, 1),
-                ('lake', 'geom_zm', 'LINESTRING', 'XYZM', 4326, 1),
+                ("lake", "geom", "LINESTRING", "XY", 4326, 1),
+                ("lake", "geom_m", "LINESTRING", "XYM", 4326, 1),
+                ("lake", "geom_no_idx", "LINESTRING", "XY", 4326, 0),
+                ("lake", "geom_z", "LINESTRING", "XYZ", 4326, 1),
+                ("lake", "geom_zm", "LINESTRING", "XYZM", 4326, 1),
             ]
         check_indexes(
             conn,
             {
                 "postgresql": [
                     (
-                        'idx_lake_geom',
-                        'CREATE INDEX idx_lake_geom ON gis.lake USING gist (geom)',
+                        "idx_lake_geom",
+                        "CREATE INDEX idx_lake_geom ON gis.lake USING gist (geom)",
                     ),
                     (
-                        'idx_lake_geom_m',
-                        'CREATE INDEX idx_lake_geom_m ON gis.lake USING gist (geom_m)',
+                        "idx_lake_geom_m",
+                        "CREATE INDEX idx_lake_geom_m ON gis.lake USING gist (geom_m)",
                     ),
                     (
-                        'idx_lake_geom_z',
-                        'CREATE INDEX idx_lake_geom_z ON gis.lake USING gist (geom_z)',
+                        "idx_lake_geom_z",
+                        "CREATE INDEX idx_lake_geom_z ON gis.lake USING gist (geom_z)",
                     ),
                     (
-                        'idx_lake_geom_zm',
-                        'CREATE INDEX idx_lake_geom_zm ON gis.lake USING gist (geom_zm)',
+                        "idx_lake_geom_zm",
+                        "CREATE INDEX idx_lake_geom_zm ON gis.lake USING gist (geom_zm)",
                     ),
                     (
-                        'lake_pkey',
-                        'CREATE UNIQUE INDEX lake_pkey ON gis.lake USING btree (id)',
+                        "lake_pkey",
+                        "CREATE UNIQUE INDEX lake_pkey ON gis.lake USING btree (id)",
                     ),
                 ],
                 "sqlite": sqlite_indexes,
@@ -775,7 +765,7 @@ class TestReflection():
         skip_pg12_sa1217(conn)
         skip_postgis1(conn)
         with pytest.warns(SAWarning):
-            t = Table('ocean', MetaData(), autoload_with=conn)
+            t = Table("ocean", MetaData(), autoload_with=conn)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
 
@@ -784,7 +774,7 @@ class TestReflection():
         """Test that a discarded geometry column is not properly reflected with SQLite."""
         conn.execute("""DELETE FROM "geometry_columns" WHERE f_table_name = 'lake';""")
         t = Table(
-            'lake',
+            "lake",
             MetaData(),
             autoload_with=conn,
         )
@@ -812,13 +802,12 @@ class TestReflection():
         """
         skip_pg12_sa1217(conn)
         skip_postgis1(conn)
-        t = Table('test_view', MetaData(), autoload_with=conn)
+        t = Table("test_view", MetaData(), autoload_with=conn)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
 
 
 class TestToMetadata(ComparesTables):
-
     def test_to_metadata(self, Lake):
         new_meta = MetaData()
         new_Lake = Lake.__table__.to_metadata(new_meta)

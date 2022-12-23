@@ -1,6 +1,4 @@
 """Test alembic migrations of spatial columns."""
-import platform
-
 import pytest
 import sqlalchemy as sa  # noqa (This import is only used in the migration scripts)
 from alembic import command
@@ -141,9 +139,7 @@ def test_script_path(alembic_dir):
 
 
 @pytest.fixture
-def alembic_env(
-    engine, alembic_dir, alembic_config_path, alembic_env_path, test_script_path
-):
+def alembic_env(engine, alembic_dir, alembic_config_path, alembic_env_path, test_script_path):
     cfg_tmp = Config(alembic_config_path)
     engine.execute("DROP TABLE IF EXISTS alembic_version;")
     command.init(cfg_tmp, str(alembic_dir), template="generic")
@@ -196,7 +192,7 @@ finally:
 
 """.format(
                 str(test_script_path),
-                True if engine.dialect.name == "sqlite" else False
+                True if engine.dialect.name == "sqlite" else False,
             )
         )
     with test_script_path.open(mode="w", encoding="utf8") as f:
@@ -254,12 +250,7 @@ datefmt = %%H:%%M:%%S
 
 
 @test_only_with_dialects("postgresql", "sqlite-spatialite4")
-def test_migration_revision(
-    conn, metadata, alembic_config, alembic_env_path, test_script_path
-):
-    if platform.python_implementation().lower() == 'pypy':
-        pytest.skip('skip SpatiaLite tests on PyPy', allow_module_level=True)
-
+def test_migration_revision(conn, metadata, alembic_config, alembic_env_path, test_script_path):
     initial_rev = command.revision(
         alembic_config,
         "Initial state",

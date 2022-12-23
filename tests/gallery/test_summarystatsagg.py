@@ -26,13 +26,14 @@ from tests import test_only_with_dialects
 
 class SummaryStatsCustomType(CompositeType):
     """Define the composite type returned by the function ST_SummaryStatsAgg."""
+
     typemap = {
-        'count': Integer,
-        'sum': Float,
-        'mean': Float,
-        'stddev': Float,
-        'min': Float,
-        'max': Float,
+        "count": Integer,
+        "sum": Float,
+        "mean": Float,
+        "stddev": Float,
+        "min": Float,
+        "max": Float,
     }
 
     cache_ok = True
@@ -51,7 +52,7 @@ Base = declarative_base(metadata=metadata)
 
 
 class Ocean(Base):
-    __tablename__ = 'ocean'
+    __tablename__ = "ocean"
     id = Column(Integer, primary_key=True)
     rast = Column(Raster)
 
@@ -60,8 +61,7 @@ class Ocean(Base):
 
 
 @test_only_with_dialects("postgresql")
-class TestSTSummaryStatsAgg():
-
+class TestSTSummaryStatsAgg:
     @pytest.mark.skipif(
         parse_version(SA_VERSION) < parse_version("1.4"),
         reason="requires SQLAlchely>1.4",
@@ -71,26 +71,26 @@ class TestSTSummaryStatsAgg():
         metadata.create_all(conn)
 
         # Create a new raster
-        polygon = WKTElement('POLYGON((0 0,1 1,0 1,0 0))', srid=4326)
+        polygon = WKTElement("POLYGON((0 0,1 1,0 1,0 0))", srid=4326)
         o = Ocean(polygon.ST_AsRaster(5, 6))
         session.add(o)
         session.flush()
 
         # Define the query to compute stats
-        stats_agg = select([
-            Ocean.rast.ST_SummaryStatsAgg_custom(1, True, 1).label("stats")
-        ])
+        stats_agg = select([Ocean.rast.ST_SummaryStatsAgg_custom(1, True, 1).label("stats")])
         stats_agg_alias = stats_agg.alias("stats_agg")
 
         # Use these stats
-        query = select([
-            stats_agg_alias.c.stats.count.label("count"),
-            stats_agg_alias.c.stats.sum.label("sum"),
-            stats_agg_alias.c.stats.mean.label("mean"),
-            stats_agg_alias.c.stats.stddev.label("stddev"),
-            stats_agg_alias.c.stats.min.label("min"),
-            stats_agg_alias.c.stats.max.label("max")
-        ])
+        query = select(
+            [
+                stats_agg_alias.c.stats.count.label("count"),
+                stats_agg_alias.c.stats.sum.label("sum"),
+                stats_agg_alias.c.stats.mean.label("mean"),
+                stats_agg_alias.c.stats.stddev.label("stddev"),
+                stats_agg_alias.c.stats.min.label("min"),
+                stats_agg_alias.c.stats.max.label("max"),
+            ]
+        )
 
         # Check the query
         assert str(query.compile(dialect=session.bind.dialect)) == (

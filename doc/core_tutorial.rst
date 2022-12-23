@@ -31,7 +31,7 @@ accomplished via Python's standard logging module. With it is enabled, we'll
 see all the generated SQL produced.
 
 The return value of ``create_engine`` is an ``Engine`` object, which
-respresents the core interface to the database.
+represents the core interface to the database.
 
 Define a Table
 --------------

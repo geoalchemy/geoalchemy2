@@ -36,7 +36,7 @@ table = Table(
 
 
 class RasterTable(Base):
-    __tablename__ = 'raster_table_orm'
+    __tablename__ = "raster_table_orm"
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry("POLYGON", 4326))
     rast = Column(Raster())
@@ -47,67 +47,67 @@ class RasterTable(Base):
 
 def test_transform_core():
     # Define the transform query for both the geometry and the raster in a naive way
-    wrong_query = select([
-        func.ST_Transform(table.c.geom, 2154),
-        func.ST_Transform(table.c.rast, 2154)
-    ])
+    wrong_query = select(
+        [func.ST_Transform(table.c.geom, 2154), func.ST_Transform(table.c.rast, 2154)]
+    )
 
     # Check the query
     assert str(wrong_query) == (
         "SELECT "
         "ST_AsEWKB("
-        "ST_Transform(raster_table.geom, :ST_Transform_2)) AS \"ST_Transform_1\", "
+        'ST_Transform(raster_table.geom, :ST_Transform_2)) AS "ST_Transform_1", '
         "ST_AsEWKB("  # <= Note that the raster is processed as a Geometry here
-        "ST_Transform(raster_table.rast, :ST_Transform_4)) AS \"ST_Transform_3\" \n"
+        'ST_Transform(raster_table.rast, :ST_Transform_4)) AS "ST_Transform_3" \n'
         "FROM raster_table"
     )
 
     # Define the transform query for both the geometry and the raster in the correct way
-    correct_query = select([
-        func.ST_Transform(table.c.geom, 2154),
-        func.ST_Transform(table.c.rast, 2154, type_=Raster)
-    ])
+    correct_query = select(
+        [
+            func.ST_Transform(table.c.geom, 2154),
+            func.ST_Transform(table.c.rast, 2154, type_=Raster),
+        ]
+    )
 
     # Check the query
     assert str(correct_query) == (
         "SELECT "
         "ST_AsEWKB("
-        "ST_Transform(raster_table.geom, :ST_Transform_2)) AS \"ST_Transform_1\", "
+        'ST_Transform(raster_table.geom, :ST_Transform_2)) AS "ST_Transform_1", '
         "raster("  # <= This time the raster is correctly processed as a Raster
-        "ST_Transform(raster_table.rast, :ST_Transform_4)) AS \"ST_Transform_3\" \n"
+        'ST_Transform(raster_table.rast, :ST_Transform_4)) AS "ST_Transform_3" \n'
         "FROM raster_table"
     )
 
 
 def test_transform_ORM():
     # Define the transform query for both the geometry and the raster in a naive way
-    wrong_query = Query([
-        RasterTable.geom.ST_Transform(2154),
-        RasterTable.rast.ST_Transform(2154)
-    ])
+    wrong_query = Query([RasterTable.geom.ST_Transform(2154), RasterTable.rast.ST_Transform(2154)])
 
     # Check the query
     assert str(wrong_query) == (
         "SELECT "
         "ST_AsEWKB("
-        "ST_Transform(raster_table_orm.geom, :ST_Transform_2)) AS \"ST_Transform_1\", "
+        'ST_Transform(raster_table_orm.geom, :ST_Transform_2)) AS "ST_Transform_1", '
         "ST_AsEWKB("  # <= Note that the raster is processed as a Geometry here
-        "ST_Transform(raster_table_orm.rast, :ST_Transform_4)) AS \"ST_Transform_3\" \n"
+        'ST_Transform(raster_table_orm.rast, :ST_Transform_4)) AS "ST_Transform_3" \n'
         "FROM raster_table_orm"
     )
 
     # Define the transform query for both the geometry and the raster in the correct way
-    correct_query = Query([
-        RasterTable.geom.ST_Transform(2154),
-        RasterTable.rast.ST_Transform(2154, type_=Raster)
-    ])
+    correct_query = Query(
+        [
+            RasterTable.geom.ST_Transform(2154),
+            RasterTable.rast.ST_Transform(2154, type_=Raster),
+        ]
+    )
 
     # Check the query
     assert str(correct_query) == (
         "SELECT "
         "ST_AsEWKB("
-        "ST_Transform(raster_table_orm.geom, :ST_Transform_2)) AS \"ST_Transform_1\", "
+        'ST_Transform(raster_table_orm.geom, :ST_Transform_2)) AS "ST_Transform_1", '
         "raster("  # <= This time the raster is correctly processed as a Raster
-        "ST_Transform(raster_table_orm.rast, :ST_Transform_4)) AS \"ST_Transform_3\" \n"
+        'ST_Transform(raster_table_orm.rast, :ST_Transform_4)) AS "ST_Transform_3" \n'
         "FROM raster_table_orm"
     )

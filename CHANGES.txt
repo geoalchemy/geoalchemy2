@@ -204,10 +204,6 @@ GeoAlchemy 2 Changelog
 * Fix build_sphinx maximum recursion depth. @ifedapoolarewaju (#148)
 * Fix typo in elements code. @elemoine (#153)
 
-#153 fixed a typo in the _SpatialElement class, where the attribute "extended"
-was incorrectly spelled "extented". So if your application code refers to this
-attribute on WKTElement or WKBElement objects you will need that code as well.
-
 0.4.0
 -----
 

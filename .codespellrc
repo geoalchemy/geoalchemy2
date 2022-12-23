@@ -1,0 +1,3 @@
+[codespell]
+skip = .git/*,doc/_build*,doc/gallery/*,.tox/*,reports/*,issues/*
+ignore-words-list = nd
