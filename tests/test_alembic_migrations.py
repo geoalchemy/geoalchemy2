@@ -1,6 +1,4 @@
 """Test alembic migrations of spatial columns."""
-import platform
-
 import pytest
 import sqlalchemy as sa  # noqa (This import is only used in the migration scripts)
 from alembic import command
@@ -253,9 +251,6 @@ datefmt = %%H:%%M:%%S
 
 @test_only_with_dialects("postgresql", "sqlite-spatialite4")
 def test_migration_revision(conn, metadata, alembic_config, alembic_env_path, test_script_path):
-    if platform.python_implementation().lower() == "pypy":
-        pytest.skip("skip SpatiaLite tests on PyPy", allow_module_level=True)
-
     initial_rev = command.revision(
         alembic_config,
         "Initial state",

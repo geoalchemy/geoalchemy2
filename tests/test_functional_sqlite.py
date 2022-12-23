@@ -1,5 +1,3 @@
-import platform
-
 import pytest
 from shapely.geometry import LineString
 from sqlalchemy import CheckConstraint
@@ -18,9 +16,6 @@ from geoalchemy2.shape import from_shape
 
 from . import select
 from . import test_only_with_dialects
-
-if platform.python_implementation().lower() == "pypy":
-    pytest.skip("skip SpatiaLite tests on PyPy", allow_module_level=True)
 
 
 class TestIndex:
