@@ -47,6 +47,7 @@ from . import select
 from . import skip_case_insensitivity
 from . import skip_pg12_sa1217
 from . import skip_postgis1
+from . import skip_postgis3
 from . import test_only_with_dialects
 
 SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("1.999")
@@ -222,6 +223,11 @@ class TestInsertionORM:
         # With PostGIS 2.0:
         # DataError: (DataError) Geometry SRID (0) does not match column SRID
         # (4326)
+        #
+        # With PostGIS 3.0:
+        # The SRID is taken from the Column definition so no error is reported
+        skip_postgis3(session.connection())
+
         lake = Lake("LINESTRING(0 0,1 1)")
         session.add(lake)
 

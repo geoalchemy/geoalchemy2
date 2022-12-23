@@ -8,6 +8,8 @@ are projected in the DB. To avoid having to always tweak the query with a
 ``ST_Transform()``, it is possible to define a `TypeDecorator
 <https://docs.sqlalchemy.org/en/13/core/custom_types.html#sqlalchemy.types.TypeDecorator>`_
 """
+import re
+
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
@@ -132,7 +134,7 @@ class TestTypeDecorator:
         q = text("SELECT id, ST_AsEWKT(geom) AS geom FROM point;")
         res_q = session.execute(q).fetchone()
         assert res_q.id == 1
-        assert res_q.geom == "SRID=2154;POINT(857581.899319668 6435414.7478354)"
+        assert re.match(r"SRID=2154;POINT\(857581\.8993196681? 6435414\.7478354\)", res_q.geom)
 
         # Compare geom, raw_geom with auto transform and explicit transform
         pt_trans = session.query(
