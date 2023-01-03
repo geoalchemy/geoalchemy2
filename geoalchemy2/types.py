@@ -378,6 +378,10 @@ class Raster(_GISType):
         )
         self.extended = None
 
+    @staticmethod
+    def check_ctor_args(*args, **kwargs):
+        return None, -1
+
 
 class _DummyGeometry(Geometry):
     """A dummy type only used with SQLite."""
