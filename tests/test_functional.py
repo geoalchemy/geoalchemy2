@@ -32,6 +32,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.testing.assertions import ComparesTables
 
 import geoalchemy2
+from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
 from geoalchemy2.dialects.sqlite import _get_spatialite_attrs
@@ -71,6 +72,25 @@ class TestAdmin:
         metadata.drop_all(conn, checkfirst=True)
         metadata.create_all(conn)
         metadata.drop_all(conn, checkfirst=True)
+
+    def test_no_geom_type(self, conn):
+        with pytest.warns(UserWarning, match="srid not enforced when geometry_type is None"):
+            # Define the table
+            t = Table(
+                "no_geom_type",
+                MetaData(),
+                Column("id", Integer, primary_key=True),
+                Column("geom", Geometry(geometry_type=None)),
+                Column("geom_with_srid", Geometry(geometry_type=None, srid=4326)),
+                Column("geog", Geography(geometry_type=None)),
+                Column("geog_with_srid", Geography(geometry_type=None, srid=4326)),
+            )
+
+            # Create the table
+            t.create(bind=conn)
+
+            # Drop the table
+            t.drop(bind=conn)
 
 
 class TestMiscellaneous:
