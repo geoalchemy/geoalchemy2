@@ -87,14 +87,6 @@ def reflect_geometry_column(inspector, table, column_info):
     return
 
 
-def check_management(column, dialect_name):
-    return getattr(column.type, "management", False) is True or dialect_name in [
-        "geopackage",
-        "sqlite",
-        "mysql",
-    ]
-
-
 def before_create(table, bind, **kw):
     return
 

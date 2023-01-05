@@ -156,7 +156,7 @@ class _GISType(UserDefinedType):
                 "version 0.14",
                 DeprecationWarning,
             )
-        self.management = (management is True)
+        self.management = management is True
         self.use_typmod = use_typmod
         self.extended = self.as_binary == "ST_AsEWKB"
         self.nullable = nullable

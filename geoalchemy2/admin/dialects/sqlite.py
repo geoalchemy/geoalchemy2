@@ -182,9 +182,7 @@ def before_create(table, bind, **kw):
     current_indexes = set(table.indexes)
     for idx in current_indexes:
         for col in table.info["_saved_columns"]:
-            if (
-                _check_spatial_type(col.type, Geometry, dialect)
-            ) and col in idx.columns.values():
+            if (_check_spatial_type(col.type, Geometry, dialect)) and col in idx.columns.values():
                 table.indexes.remove(idx)
                 if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
                     col.type, "spatial_index", False

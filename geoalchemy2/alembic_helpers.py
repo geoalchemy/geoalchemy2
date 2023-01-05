@@ -546,9 +546,7 @@ def drop_geo_table(context, revision, op):
     """Replace the default DropTableOp by a geospatial-specific one."""
     dialect = context.bind.dialect
     table = op.to_table()
-    gis_cols = _get_gis_cols(
-        table, (Geometry, Geography, Raster), dialect
-    )
+    gis_cols = _get_gis_cols(table, (Geometry, Geography, Raster), dialect)
 
     if gis_cols:
         new_op = DropGeospatialTableOp(op.table_name, schema=op.schema)
