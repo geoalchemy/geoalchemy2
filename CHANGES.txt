@@ -1,6 +1,16 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.13.0
+------
+
+* Remove some irrelevant checks for Raster type @adrien-berchet (#418)
+* Add precommit and format the code @adrien-berchet (#416)
+* Refactor: Reorganize functions into dialect-specific functions @adrien-berchet (#414)
+* Add dependabot config @adrien-berchet (#411)
+* Use build package in publish job and remove useless wheel config @adrien-berchet (#407)
+
+
 0.12.5
 ------
 
