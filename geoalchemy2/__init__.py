@@ -8,6 +8,7 @@ from sqlalchemy.sql import func
 from geoalchemy2 import functions  # noqa
 from geoalchemy2 import types  # noqa
 from geoalchemy2.dialects import common
+from geoalchemy2.dialects import mysql
 from geoalchemy2.dialects import postgresql
 from geoalchemy2.dialects import sqlite
 from geoalchemy2.dialects.common import _check_spatial_type
@@ -25,6 +26,7 @@ from geoalchemy2.types import Raster
 def _select_dialect(dialect_name):
     """Select the dialect from its name."""
     known_dialects = {
+        "mysql": mysql,
         "postgresql": postgresql,
         "sqlite": sqlite,
     }

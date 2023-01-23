@@ -9,6 +9,7 @@ import warnings
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names as postgresql_ischema_names
 from sqlalchemy.dialects.sqlite.base import ischema_names as sqlite_ischema_names
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
 from sqlalchemy.types import Float
 from sqlalchemy.types import Integer
@@ -255,6 +256,20 @@ class _GISType(UserDefinedType):
             )
 
         return geometry_type, srid
+
+
+@compiles(_GISType, "mysql")
+def get_col_spec(self, *args, **kwargs):
+    if not self.geometry_type:
+        return self.name
+
+    spec = "%s" % self.geometry_type
+
+    if not self.nullable:
+        spec += " NOT NULL"
+    if self.srid > 0:
+        spec += " SRID %d" % self.srid
+    return spec
 
 
 class Geometry(_GISType):
