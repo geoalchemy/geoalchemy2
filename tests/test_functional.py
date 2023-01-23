@@ -32,6 +32,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.testing.assertions import ComparesTables
 
 import geoalchemy2
+import geoalchemy2.dialects
 from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
@@ -91,6 +92,39 @@ class TestAdmin:
 
             # Drop the table
             t.drop(bind=conn)
+
+    @test_only_with_dialects("postgresql")
+    def test_common_dialect(self, conn, monkeypatch, metadata, Lake):
+        monkeypatch.setattr(conn.dialect, "name", "UNKNOWN DIALECT")
+
+        marks = []
+
+        def before_create(table, bind, **kw):
+            marks.append("before_create")
+            return
+
+        def after_create(table, bind, **kw):
+            marks.append("after_create")
+            return
+
+        def before_drop(table, bind, **kw):
+            marks.append("before_drop")
+            return
+
+        def after_drop(table, bind, **kw):
+            marks.append("after_drop")
+            return
+
+        monkeypatch.setattr(geoalchemy2.dialects.common, "before_create", value=before_create)
+        monkeypatch.setattr(geoalchemy2.dialects.common, "after_create", value=after_create)
+        monkeypatch.setattr(geoalchemy2.dialects.common, "before_drop", value=before_drop)
+        monkeypatch.setattr(geoalchemy2.dialects.common, "after_drop", value=after_drop)
+
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+        metadata.drop_all(conn, checkfirst=True)
+
+        assert marks == ["before_create", "after_create", "before_drop", "after_drop"]
 
 
 class TestMiscellaneous:

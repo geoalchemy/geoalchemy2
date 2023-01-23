@@ -7,6 +7,7 @@ from sqlalchemy.sql import func
 
 from geoalchemy2 import functions  # noqa
 from geoalchemy2 import types  # noqa
+from geoalchemy2.dialects import common
 from geoalchemy2.dialects import postgresql
 from geoalchemy2.dialects import sqlite
 from geoalchemy2.dialects.common import _check_spatial_type
@@ -27,12 +28,7 @@ def _select_dialect(dialect_name):
         "postgresql": postgresql,
         "sqlite": sqlite,
     }
-    try:
-        return known_dialects[dialect_name]
-    except KeyError:
-        raise ValueError(
-            f"The dialect '{dialect_name}' is unknown, please choose one of {known_dialects.keys()}"
-        )
+    return known_dialects.get(dialect_name, common)
 
 
 def _setup_ddl_event_listeners():
