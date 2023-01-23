@@ -1,6 +1,11 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.13.1
+------
+
+* Fix: Use empty event for unsupported dialects @adrien-berchet (#418)
+
 0.13.0
 ------
 
