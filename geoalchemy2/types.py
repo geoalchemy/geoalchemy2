@@ -184,13 +184,23 @@ class _GISType(UserDefinedType):
 
     def bind_expression(self, bindvalue):
         """Specific bind_expression that automatically adds a conversion function."""
+        import pdb
+
+        pdb.set_trace()
         return getattr(func, self.from_text)(bindvalue, type_=self)
 
     def bind_processor(self, dialect):
         """Specific bind_processor that automatically process spatial elements."""
 
         def process(bindvalue):
+            # import pdb
+            # pdb.set_trace()
             if isinstance(bindvalue, WKTElement):
+                # if dialect.name == "mysql":
+                #     if bindvalue.extended:
+                #         import pdb
+                #         pdb.set_trace()
+                #     return "%s" % (bindvalue.data, ), "%s" % (bindvalue.srid, )
                 if bindvalue.extended:
                     return "%s" % (bindvalue.data)
                 else:
@@ -270,6 +280,13 @@ def get_col_spec(self, *args, **kwargs):
     if self.srid > 0:
         spec += " SRID %d" % self.srid
     return spec
+
+
+# @compiles(_GISType, "mysql")
+# def bind_expression(self, bindvalue, *args, **kwargs):
+#     import pdb
+#     pdb.set_trace()
+#     return getattr(func, self.from_text)(bindvalue, self.srid, type_=self)
 
 
 class Geometry(_GISType):

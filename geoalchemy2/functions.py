@@ -277,3 +277,75 @@ for name, type_, doc in _FUNCTIONS:
         attributes["__doc__"] = "\n\n".join(docs)
 
     globals()[name] = type(name, (GenericFunction,), attributes)
+
+
+#
+# Define compiled versions for functions in SpatiaLite whose names don't have
+# the ST_ prefix.
+#
+
+
+_SQLITE_FUNCTIONS = {
+    "ST_GeomFromEWKT": "GeomFromEWKT",
+    "ST_GeomFromEWKB": "GeomFromEWKB",
+    "ST_AsBinary": "AsBinary",
+    "ST_AsEWKB": "AsEWKB",
+    "ST_AsGeoJSON": "AsGeoJSON",
+}
+
+
+# Default handlers are required for SQLAlchemy < 1.1
+# See more details in https://github.com/geoalchemy/geoalchemy2/issues/213
+def _compiles_default(cls):
+    def _compile_default(element, compiler, **kw):
+        return "{}({})".format(cls, compiler.process(element.clauses, **kw))
+
+    compiles(globals()[cls])(_compile_default)
+
+
+def _compiles_sqlite(cls, fn):
+    def _compile_sqlite(element, compiler, **kw):
+        return "{}({})".format(fn, compiler.process(element.clauses, **kw))
+
+    compiles(globals()[cls], "sqlite")(_compile_sqlite)
+
+
+def register_sqlite_mapping(mapping):
+    """Register compilation mappings for the given functions.
+
+    Args:
+        mapping: Should have the following form::
+
+                {
+                    "function_name_1": "sqlite_function_name_1",
+                    "function_name_2": "sqlite_function_name_2",
+                    ...
+                }
+    """
+    for cls, fn in mapping.items():
+        _compiles_default(cls)
+        _compiles_sqlite(cls, fn)
+
+
+register_sqlite_mapping(_SQLITE_FUNCTIONS)
+
+# Compile ST_GeomFromText for MySQL
+def _compile_MySQL_ST_GeomFromText(element, compiler, **kw):
+    data = compiler.process(element.clauses, **kw)
+    _, srid, wkt = re.match(r"(SRID=(\d+);)?(.*)", data).groups()
+    if srid is not None:
+        return "ST_GeomFromText({}, {})".format(wkt, srid)
+    import pdb
+
+    pdb.set_trace()
+    # return data
+    return "ST_GeomFromText({}, {})".format(data, data)
+    # if data.startswith("SRID")
+    # if element.extended:
+    #     return "ST_GeomFromText({}, {})".format(compiler.process(element.clauses, **kw), element.srid)
+    # else:
+    #     return "ST_GeomFromText({}, {})".format(compiler.process(element.clauses, **kw), element.srid)
+
+
+compiles(globals()["ST_GeomFromText"], "mysql")(_compile_MySQL_ST_GeomFromText)
+compiles(globals()["ST_GeomFromEWKT"], "mysql")(_compile_MySQL_ST_GeomFromText)
