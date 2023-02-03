@@ -63,6 +63,8 @@ jobs:
         # Add PostGIS extension to "gis" database
         psql -h localhost -p 5432 -U gis -d gis -c 'CREATE EXTENSION IF NOT EXISTS postgis;'
 
+        psql -h localhost -p 5432 -U gis -d gis -c 'DROP EXTENSION IF EXISTS postgis_tiger_geocoder CASCADE;'
+
     # Check python version
     - name: Display Python version
       run: python -c "import sys; print(sys.version)"
