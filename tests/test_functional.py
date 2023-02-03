@@ -818,7 +818,10 @@ class TestReflection:
     def test_raster_reflection(self, conn, Ocean, setup_tables):
         skip_pg12_sa1217(conn)
         skip_postgis1(conn)
-        with pytest.warns(SAWarning):
+        if SQLA_LT_2:
+            with pytest.warns(SAWarning):
+                t = Table("ocean", MetaData(), autoload_with=conn)
+        else:
             t = Table("ocean", MetaData(), autoload_with=conn)
         type_ = t.c.rast.type
         assert isinstance(type_, Raster)
@@ -826,7 +829,7 @@ class TestReflection:
     @test_only_with_dialects("sqlite")
     def test_sqlite_reflection_with_discarded_col(self, conn, Lake, setup_tables):
         """Test that a discarded geometry column is not properly reflected with SQLite."""
-        conn.execute("""DELETE FROM "geometry_columns" WHERE f_table_name = 'lake';""")
+        conn.execute(text("""DELETE FROM "geometry_columns" WHERE f_table_name = 'lake';"""))
         t = Table(
             "lake",
             MetaData(),
@@ -844,9 +847,9 @@ class TestReflection:
 
     @pytest.fixture
     def ocean_view(self, conn, Ocean):
-        conn.execute("CREATE VIEW test_view AS SELECT * FROM ocean;")
+        conn.execute(text("CREATE VIEW test_view AS SELECT * FROM ocean;"))
         yield Ocean
-        conn.execute("DROP VIEW test_view;")
+        conn.execute(text("DROP VIEW test_view;"))
 
     def test_view_reflection(self, conn, Ocean, setup_tables, ocean_view):
         """Test reflection of a view.

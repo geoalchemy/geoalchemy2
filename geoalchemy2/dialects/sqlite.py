@@ -185,8 +185,7 @@ def after_create(table, bind, **kw):
             col.type = col._actual_type
             del col._actual_type
             dimension = get_col_dim(col)
-            args = [table.schema] if table.schema else []
-            args.extend([table.name, col.name, col.type.srid, col.type.geometry_type, dimension])
+            args = [table.name, col.name, col.type.srid, col.type.geometry_type, dimension]
 
             stmt = select(*_format_select_args(func.RecoverGeometryColumn(*args)))
             stmt = stmt.execution_options(autocommit=True)
@@ -211,8 +210,7 @@ def before_drop(table, bind, **kw):
         # Disable spatial indexes if present
         disable_spatial_index(bind, table, col)
 
-        args = [table.schema] if table.schema else []
-        args.extend([table.name, col.name])
+        args = [table.name, col.name]
 
         stmt = select(*_format_select_args(func.DiscardGeometryColumn(*args)))
         stmt = stmt.execution_options(autocommit=True)

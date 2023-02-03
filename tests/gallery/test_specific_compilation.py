@@ -31,7 +31,7 @@ This example uses SQLAlchemy core queries.
 from sqlalchemy import MetaData
 from sqlalchemy import func
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql.expression import BindParameter
 
 from geoalchemy2 import WKTElement

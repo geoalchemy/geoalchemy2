@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import MetaData
 from sqlalchemy import create_engine
 from sqlalchemy import text
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from . import copy_and_connect_sqlite_db
