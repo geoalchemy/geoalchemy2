@@ -77,7 +77,6 @@ class BaseComparator(UserDefinedType.Comparator):
     key = None
 
     def __getattr__(self, name):
-
         # Function names that don't start with "ST_" are rejected.
         # This is not to mess up with SQLAlchemy's use of
         # hasattr/getattr on Column objects.

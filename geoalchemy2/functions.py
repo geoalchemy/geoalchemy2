@@ -125,7 +125,6 @@ except ImportError:
 
 
 class TableRowElement(ColumnElement):
-
     inherit_cache = False
     """The cache is disabled for this class."""
 

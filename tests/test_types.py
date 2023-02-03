@@ -252,7 +252,6 @@ class TestRaster:
         eq_sql(s, 'SELECT ST_Height("table".rast) ' 'AS "ST_Height_1" FROM "table"')
 
     def test_non_ST_function_call(self, raster_table):
-
         with pytest.raises(AttributeError):
             raster_table.c.geom.Height()
 
