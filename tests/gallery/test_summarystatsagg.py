@@ -12,7 +12,7 @@ from sqlalchemy import Float
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import __version__ as SA_VERSION
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 from geoalchemy2 import Raster
 from geoalchemy2 import WKTElement

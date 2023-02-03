@@ -10,6 +10,7 @@ from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
+from sqlalchemy import text
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import alembic_helpers
@@ -141,7 +142,8 @@ def test_script_path(alembic_dir):
 @pytest.fixture
 def alembic_env(engine, alembic_dir, alembic_config_path, alembic_env_path, test_script_path):
     cfg_tmp = Config(alembic_config_path)
-    engine.execute("DROP TABLE IF EXISTS alembic_version;")
+    with engine.begin() as connection:
+        connection.execute(text("DROP TABLE IF EXISTS alembic_version;"))
     command.init(cfg_tmp, str(alembic_dir), template="generic")
     with alembic_env_path.open(mode="w", encoding="utf8") as f:
         f.write(
@@ -243,7 +245,7 @@ format = %%(levelname)-5.5s [%%(name)s] %%(message)s
 datefmt = %%H:%%M:%%S
 
 """.format(
-                alembic_dir, engine.url
+                alembic_dir, str(engine.url).replace("***", engine.url.password or "")
             )
         )
     return cfg
@@ -353,7 +355,8 @@ new_table = Table(
     # Insert data in new table to check that everything works when Alembic copies the tables
     from_text = "GeomFromEWKT" if conn.dialect.name == "sqlite" else "ST_GeomFromEWKT"
     conn.execute(
-        """INSERT INTO new_spatial_table (
+        text(
+            """INSERT INTO new_spatial_table (
             geom_with_idx,
             geom_without_idx,
             geom_without_idx_2
@@ -363,10 +366,11 @@ new_table = Table(
             {from_text}('SRID=4326;LINESTRING(0 0, 1 1)')
         )
         """.format(
-            from_text=from_text
+                from_text=from_text
+            )
         )
     )
-    conn.execute("COMMIT")
+    conn.execute(text("COMMIT"))
 
     # Remove spatial columns and add new ones
     with test_script_path.open(mode="w", encoding="utf8") as f:

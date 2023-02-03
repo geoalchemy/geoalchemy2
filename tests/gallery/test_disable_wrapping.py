@@ -10,7 +10,7 @@ This example uses SQLAlchemy ORM queries.
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import func
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 from geoalchemy2 import Geometry
 

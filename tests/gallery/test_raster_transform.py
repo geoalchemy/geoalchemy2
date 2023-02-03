@@ -14,8 +14,8 @@ from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import func
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Query
+from sqlalchemy.orm import declarative_base
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
