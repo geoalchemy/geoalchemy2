@@ -612,7 +612,6 @@ class TestSTAsGeoJson:
 
 class TestSTSummaryStatsAgg:
     def test_st_summary_stats_agg(self, session, Ocean, setup_tables):
-
         # Create a new raster
         polygon = WKTElement("POLYGON((0 0,1 1,0 1,0 0))", srid=4326)
         o = Ocean(polygon.ST_AsRaster(5, 6))

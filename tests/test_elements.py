@@ -82,7 +82,6 @@ class TestWKTElement:
 
 
 class TestExtendedWKTElement:
-
     _srid = 3857  # expected srid
     _wkt = "POINT (1 2 3)"  # expected wkt
     _ewkt = "SRID=3857;POINT (1 2 3)"  # expected ewkt
@@ -208,7 +207,6 @@ class TestExtendedWKTElementFunction:
 
 
 class TestExtendedWKBElement:
-
     # _bin/_hex computed by following query:
     # SELECT ST_GeomFromEWKT('SRID=3;POINT(1 2)');
     _bin = memoryview(
@@ -328,7 +326,6 @@ class TestWKBElement:
 
 
 class TestNotEqualSpatialElement:
-
     # _bin/_hex computed by following query:
     # SELECT ST_GeomFromEWKT('SRID=3;POINT(1 2)');
     _ewkb = memoryview(
@@ -368,7 +365,6 @@ class TestNotEqualSpatialElement:
 
 
 class TestRasterElement:
-
     rast_data = (
         b"\x01\x00\x00\x01\x00\x9a\x99\x99\x99\x99\x99\xc9?\x9a\x99\x99\x99\x99\x99"
         b"\xc9\xbf\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00"
