@@ -54,6 +54,15 @@ jobs:
         python-version: ${{ matrix.python-version }}
         architecture: x64
 
+    # Setup Conda for Pypy
+    - uses: conda-incubator/setup-miniconda@v2
+      if: ${{matrix.python-version == 'pypy-3.8'}}
+      with:
+        auto-update-conda: false
+        python-version: ${{ matrix.python-version }}
+    - run: |
+        conda install -c conda-forge pypy-3.8
+
     # Config PostgreSQL
     - name: Configure PostgreSQL
       run: |
