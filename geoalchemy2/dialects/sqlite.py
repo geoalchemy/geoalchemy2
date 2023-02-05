@@ -2,9 +2,11 @@
 import os
 
 from sqlalchemy import text
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
 
+from geoalchemy2 import functions
 from geoalchemy2.dialects.common import _check_spatial_type
 from geoalchemy2.dialects.common import _format_select_args
 from geoalchemy2.dialects.common import _spatial_idx_name
@@ -220,3 +222,40 @@ def before_drop(table, bind, **kw):
 def after_drop(table, bind, **kw):
     """Handle spatial indexes during the after_drop event."""
     table.columns = table.info.pop("_saved_columns")
+
+
+# Define compiled versions for functions in SpatiaLite whose names don't have
+# the ST_ prefix.
+_SQLITE_FUNCTIONS = {
+    "ST_GeomFromEWKT": "GeomFromEWKT",
+    "ST_GeomFromEWKB": "GeomFromEWKB",
+    "ST_AsBinary": "AsBinary",
+    "ST_AsEWKB": "AsEWKB",
+    "ST_AsGeoJSON": "AsGeoJSON",
+}
+
+
+def _compiles_sqlite(cls, fn):
+    def _compile_sqlite(element, compiler, **kw):
+        return "{}({})".format(fn, compiler.process(element.clauses, **kw))
+
+    compiles(getattr(functions, cls), "sqlite")(_compile_sqlite)
+
+
+def register_sqlite_mapping(mapping):
+    """Register compilation mappings for the given functions.
+
+    Args:
+        mapping: Should have the following form::
+
+                {
+                    "function_name_1": "sqlite_function_name_1",
+                    "function_name_2": "sqlite_function_name_2",
+                    ...
+                }
+    """
+    for cls, fn in mapping.items():
+        _compiles_sqlite(cls, fn)
+
+
+register_sqlite_mapping(_SQLITE_FUNCTIONS)
