@@ -68,7 +68,7 @@ jobs:
     - name: Install Pypy and Spatialite with Conda
       if: ${{matrix.python-version == 'pypy-3.8'}}
       run: |
-        conda install -c conda-forge "libedit==3.1.20191231" "libgcc-ng==12.2.0" "ncurses==6.3" "openssl==3.0.7" "sqlite==3.40.0" "zlib==1.2.13" "pypy3.8==7.3.11" "libspatialite==5.0.1"
+        conda install -c conda-forge -y "pypy3.8" "libspatialite>=5"
 
     # Config PostgreSQL
     - name: Configure PostgreSQL
