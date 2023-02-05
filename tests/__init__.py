@@ -90,7 +90,9 @@ def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo):
     shutil.copyfile(input_db, tmp_db)
 
     db_url = f"sqlite:///{tmp_db}"
-    engine = create_engine(db_url, echo=engine_echo)
+    engine = create_engine(
+        db_url, echo=engine_echo, execution_options={"schema_translate_map": {"gis": None}}
+    )
     listen(engine, "connect", load_spatialite)
     with engine.begin() as connection:
         print(
