@@ -93,6 +93,22 @@ class TestAdmin:
             # Drop the table
             t.drop(bind=conn)
 
+    def test_explicit_schema(self, conn):
+        # Define the table
+        t = Table(
+            "a_table",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry()),
+            schema="gis",
+        )
+
+        # Create the table
+        t.create(bind=conn)
+
+        # Drop the table
+        t.drop(bind=conn)
+
     @test_only_with_dialects("postgresql")
     def test_common_dialect(self, conn, monkeypatch, metadata, Lake):
         monkeypatch.setattr(conn.dialect, "name", "UNKNOWN DIALECT")

@@ -19,7 +19,6 @@ from geoalchemy2.shape import to_shape
 
 # Tests imports
 from tests import select
-from tests import test_only_with_dialects
 
 metadata = MetaData()
 
@@ -32,7 +31,6 @@ table = Table(
 )
 
 
-@test_only_with_dialects("postgresql")
 class TestLengthAtInsert:
     def test_query(self, conn):
         metadata.drop_all(conn, checkfirst=True)
@@ -45,7 +43,7 @@ class TestLengthAtInsert:
         ]
 
         # Define the query to compute distance (without spheroid)
-        distance = func.ST_Length(func.ST_GeomFromText(bindparam("ewkt")), False)
+        distance = func.ST_Length(func.ST_GeomFromEWKT(bindparam("ewkt")), False)
 
         i = table.insert()
         i = i.values(geom=bindparam("ewkt"), distance=distance)
