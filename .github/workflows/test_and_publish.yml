@@ -68,7 +68,8 @@ jobs:
     - name: Install Pypy and Spatialite with Conda
       if: ${{matrix.python-version == 'pypy-3.8'}}
       run: |
-        conda install -c conda-forge -y "pypy3.8" "libspatialite>=5"
+        conda install -n base -c conda-forge mamba
+        mamba install -c conda-forge -y "pypy3.8" "libspatialite>=5"
 
     # Config PostgreSQL
     - name: Configure PostgreSQL
