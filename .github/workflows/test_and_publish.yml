@@ -49,6 +49,7 @@ jobs:
 
     # Setup Python
     - name: Set up Python ${{ matrix.python-version }}
+      if: ${{matrix.python-version != 'pypy-3.8'}}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
@@ -58,10 +59,16 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2
       if: ${{matrix.python-version == 'pypy-3.8'}}
       with:
-        auto-update-conda: false
-        python-version: ${{ matrix.python-version }}
-    - run: |
-        conda install -c conda-forge pypy-3.8
+        # use-mamba: true
+        # mamba-version: "*"
+        channels: conda-forge,defaults
+        # activate-environment: anaconda-client-env
+        # auto-update-conda: true
+        # python-version: py38
+    - name: Install Pypy and Spatialite with Conda
+      if: ${{matrix.python-version == 'pypy-3.8'}}
+      run: |
+        conda install -c conda-forge "libedit==3.1.20191231" "libgcc-ng==12.2.0" "ncurses==6.3" "openssl==3.0.7" "sqlite==3.40.0" "zlib==1.2.13" "pypy3.8==7.3.11" "libspatialite==5.0.1"
 
     # Config PostgreSQL
     - name: Configure PostgreSQL
