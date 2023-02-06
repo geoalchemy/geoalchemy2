@@ -22,10 +22,10 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [
-          # {"pkg_name": "python==3.7", "flag": "3.7"},
-          # {"pkg_name": "python==3.8", "flag": "3.8"},
-          # {"pkg_name": "python==3.9", "flag": "3.9"},
-          # {"pkg_name": "python==3.10", "flag": "3.10"},
+          {"pkg_name": "python==3.7", "flag": "3.7"},
+          {"pkg_name": "python==3.8", "flag": "3.8"},
+          {"pkg_name": "python==3.9", "flag": "3.9"},
+          {"pkg_name": "python==3.10", "flag": "3.10"},
           {"pkg_name": "pypy3.8", "flag": "pypy3.8"},
         ]
 
@@ -83,7 +83,6 @@ jobs:
       shell: bash -l {0}
       run: |
         /home/runner/micromamba-bin/micromamba info
-        ls /home/runner/micromamba-root/envs/test_pypy3.8/lib
         python -c "import sys; print(sys.version)"
 
     # Install dependencies
