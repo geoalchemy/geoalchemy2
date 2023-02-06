@@ -22,10 +22,10 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [
-          {"pkg_name": "python==3.7", "flag": "3.7"},
-          {"pkg_name": "python==3.8", "flag": "3.8"},
-          {"pkg_name": "python==3.9", "flag": "3.9"},
-          {"pkg_name": "python==3.10", "flag": "3.10"},
+          # {"pkg_name": "python==3.7", "flag": "3.7"},
+          # {"pkg_name": "python==3.8", "flag": "3.8"},
+          # {"pkg_name": "python==3.9", "flag": "3.9"},
+          # {"pkg_name": "python==3.10", "flag": "3.10"},
           {"pkg_name": "pypy3.8", "flag": "pypy3.8"},
         ]
 
@@ -55,16 +55,16 @@ jobs:
 
     # Setup Conda for Python and Pypy
     - name: Install Conda environment with Micromamba
-      if: ${{matrix.python-version == 'pypy3.8'}}
       uses: mamba-org/provision-with-micromamba@main
       with:
         environment-file: false
-        environment-name: test_pypy3.8
+        environment-name: test_${{ matrix.python-version.flag }}
         channels: conda-forge,defaults
         cache-downloads: true
         extra-specs: |
           ${{ matrix.python-version.pkg_name }}
-          libspatialite>=5
+          libspatialite
+          pyproj
 
     # Config PostgreSQL
     - name: Configure PostgreSQL
@@ -80,7 +80,11 @@ jobs:
 
     # Check python version
     - name: Display Python version
-      run: python -c "import sys; print(sys.version)"
+      shell: bash -l {0}
+      run: |
+        /home/runner/micromamba-bin/micromamba info
+        ls /home/runner/micromamba-root/envs/test_pypy3.8/lib
+        python -c "import sys; print(sys.version)"
 
     # Install dependencies
     - name: Install dependencies
@@ -91,7 +95,8 @@ jobs:
     # Run the test suite
     - name: Run the tests
       env:
-        SPATIALITE_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/mod_spatialite.so
+        SPATIALITE_LIBRARY_PATH: /home/runner/micromamba-root/envs/test_${{ matrix.python-version.flag }}/lib/mod_spatialite.so
+        PROJ_LIB: /home/runner/micromamba-root/envs/test_${{ matrix.python-version.flag }}/share/proj
         COVERAGE_FILE: .coverage
       run: |
         # Run the unit test suite with SQLAlchemy=1.1.2 and then with the latest version of SQLAlchemy

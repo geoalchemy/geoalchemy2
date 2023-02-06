@@ -26,7 +26,7 @@ def load_spatialite(dbapi_conn, connection_record):
     dbapi_conn.enable_load_extension(True)
     dbapi_conn.load_extension(os.environ["SPATIALITE_LIBRARY_PATH"])
     dbapi_conn.enable_load_extension(False)
-    dbapi_conn.execute("SELECT InitSpatialMetaData();")
+    dbapi_conn.execute("SELECT InitSpatialMetaDataFull();")
 
 
 def _get_spatialite_attrs(bind, table_name, col_name):

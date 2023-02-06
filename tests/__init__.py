@@ -99,6 +99,18 @@ def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo):
             "SPATIALITE VERSION:",
             connection.execute(text("SELECT spatialite_version();")).fetchone()[0],
         )
+        print(
+            "PROJ VERSION:",
+            connection.execute(text("SELECT proj_version();")).fetchone()[0],
+        )
+        print(
+            "GEOS VERSION:",
+            connection.execute(text("SELECT geos_version();")).fetchone()[0],
+        )
+        print(
+            "PROJ DB PATH:",
+            connection.execute(text("SELECT PROJ_GetDatabasePath();")).fetchone()[0],
+        )
 
     if input_db.endswith("spatialite_lt_4.sqlite"):
         engine._spatialite_version = 3

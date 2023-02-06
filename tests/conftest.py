@@ -4,7 +4,6 @@ from pathlib import Path
 import pytest
 from sqlalchemy import MetaData
 from sqlalchemy import create_engine
-from sqlalchemy import text
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -137,8 +136,6 @@ def engine(tmpdir, db_url, _engine_echo):
 @pytest.fixture
 def session(engine):
     session = sessionmaker(bind=engine)()
-    if engine.dialect.name == "sqlite":
-        session.execute(text("SELECT InitSpatialMetaData()"))
     yield session
     session.rollback()
 
