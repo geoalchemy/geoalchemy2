@@ -22,6 +22,8 @@ Install the Python dependencies::
     $ pip install -r requirements.txt
     $ pip install psycopg2
 
+Or you can use the Conda environment provided in the `GeoAlchemy2_dev.yml` file.
+
 Set up the PostGIS database
 ===========================
 
