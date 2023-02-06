@@ -56,20 +56,18 @@ jobs:
         architecture: x64
 
     # Setup Conda for Pypy
-    - uses: conda-incubator/setup-miniconda@v2
+
+    - name: Install Conda environment with Micromamba
       if: ${{matrix.python-version == 'pypy-3.8'}}
+      uses: mamba-org/provision-with-micromamba@main
       with:
-        # use-mamba: true
-        # mamba-version: "*"
+        environment-file: false
+        environment-name: test_pypy3.8
         channels: conda-forge,defaults
-        # activate-environment: anaconda-client-env
-        # auto-update-conda: true
-        # python-version: py38
-    - name: Install Pypy and Spatialite with Conda
-      if: ${{matrix.python-version == 'pypy-3.8'}}
-      run: |
-        conda install -n base -c conda-forge mamba
-        mamba install -c conda-forge -y "pypy3.8" "libspatialite>=5"
+        cache-downloads: true
+        extra-specs: |
+          pypy3.8
+          libspatialite>=5
 
     # Config PostgreSQL
     - name: Configure PostgreSQL
