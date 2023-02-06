@@ -21,7 +21,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "pypy-3.8"]
+        python-version: [
+          {"pkg_name": "python==3.7", "flag": "3.7"},
+          {"pkg_name": "python==3.8", "flag": "3.8"},
+          {"pkg_name": "python==3.9", "flag": "3.9"},
+          {"pkg_name": "python==3.10", "flag": "3.10"},
+          {"pkg_name": "pypy3.8", "flag": "pypy3.8"},
+        ]
 
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
@@ -47,18 +53,9 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v3
 
-    # Setup Python
-    - name: Set up Python ${{ matrix.python-version }}
-      if: ${{matrix.python-version != 'pypy-3.8'}}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: x64
-
-    # Setup Conda for Pypy
-
+    # Setup Conda for Python and Pypy
     - name: Install Conda environment with Micromamba
-      if: ${{matrix.python-version == 'pypy-3.8'}}
+      if: ${{matrix.python-version == 'pypy3.8'}}
       uses: mamba-org/provision-with-micromamba@main
       with:
         environment-file: false
@@ -66,7 +63,7 @@ jobs:
         channels: conda-forge,defaults
         cache-downloads: true
         extra-specs: |
-          pypy3.8
+          ${{ matrix.python-version.pkg_name }}
           libspatialite>=5
 
     # Config PostgreSQL
@@ -78,6 +75,7 @@ jobs:
         # Add PostGIS extension to "gis" database
         psql -h localhost -p 5432 -U gis -d gis -c 'CREATE EXTENSION IF NOT EXISTS postgis;'
 
+        # Drop PostGIS Tiger Geocoder extension to "gis" database
         psql -h localhost -p 5432 -U gis -d gis -c 'DROP EXTENSION IF EXISTS postgis_tiger_geocoder CASCADE;'
 
     # Check python version
@@ -87,18 +85,6 @@ jobs:
     # Install dependencies
     - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y autotools-dev \
-                                git \
-                                libexpat1-dev \
-                                libfreexl-dev \
-                                libgeos-dev \
-                                libproj-dev \
-                                libreadline-dev \
-                                libsqlite3-dev \
-                                libsqlite3-mod-spatialite \
-                                libxml2-dev \
-                                zlib1g-dev
         pip install --upgrade pip setuptools
         pip install tox-gh-actions
 
@@ -116,7 +102,7 @@ jobs:
       uses: AndreMiras/coveralls-python-action@v20201129
       with:
         parallel: true
-        flag-name: run-${{ matrix.python-version }}
+        flag-name: run-${{ matrix.python-version.flag }}
 
 
   # This workflow aggregates coverages from all jobs and export it to Coveralls
