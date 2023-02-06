@@ -1,0 +1,8 @@
+name: GeoAlchemy2_dev
+channels:
+  - conda-forge
+dependencies:
+  - libspatialite
+  - python=3.7.*
+  - pyproj
+  - psycopg2
