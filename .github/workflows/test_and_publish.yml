@@ -17,15 +17,20 @@ jobs:
   # This workflow runs the tests
   tests:
 
+    # Set shell to work properly with Mamba
+    defaults:
+      run:
+        shell: bash -l {0}
+
     # Setup test matrix
     strategy:
       fail-fast: false
       matrix:
         python-version: [
-          {"pkg_name": "python==3.7", "flag": "3.7"},
-          {"pkg_name": "python==3.8", "flag": "3.8"},
-          {"pkg_name": "python==3.9", "flag": "3.9"},
-          {"pkg_name": "python==3.10", "flag": "3.10"},
+          {"pkg_name": "python==3.7.*", "flag": "3.7"},
+          {"pkg_name": "python==3.8.*", "flag": "3.8"},
+          {"pkg_name": "python==3.9.*", "flag": "3.9"},
+          {"pkg_name": "python==3.10.*", "flag": "3.10"},
           {"pkg_name": "pypy3.8", "flag": "pypy3.8"},
         ]
 
@@ -80,15 +85,15 @@ jobs:
 
     # Check python version
     - name: Display Python version
-      shell: bash -l {0}
       run: |
         /home/runner/micromamba-bin/micromamba info
+        /home/runner/micromamba-bin/micromamba list
         python -c "import sys; print(sys.version)"
 
     # Install dependencies
     - name: Install dependencies
       run: |
-        pip install --upgrade pip setuptools
+        python -m pip install --upgrade pip setuptools
         pip install tox-gh-actions
 
     # Run the test suite
@@ -98,7 +103,7 @@ jobs:
         PROJ_LIB: /home/runner/micromamba-root/envs/test_${{ matrix.python-version.flag }}/share/proj
         COVERAGE_FILE: .coverage
       run: |
-        # Run the unit test suite with SQLAlchemy=1.1.2 and then with the latest version of SQLAlchemy
+        # Run the unit test suite with SQLAlchemy=1.4.* and then with the latest version of SQLAlchemy
         tox -vv
 
     # Export coverage to Coveralls
