@@ -193,5 +193,12 @@ def reflection_tables_metadata(dialect_name):
                 geom_z = Column(Geometry(geometry_type="LINESTRINGZ", srid=4326, dimension=3))
                 geom_m = Column(Geometry(geometry_type="LINESTRINGM", srid=4326, dimension=3))
                 geom_zm = Column(Geometry(geometry_type="LINESTRINGZM", srid=4326, dimension=4))
+            if dialect_name in ["postgresql"]:
+                geom_geog = Column(Geography(geometry_type="LINESTRING"))
+                geom_geog_no_idx = Column(
+                    Geography(geometry_type="LINESTRING", spatial_index=False)
+                )
+                rast = Column(Raster())
+                rast_no_idx = Column(Raster(spatial_index=False))
 
     return metadata

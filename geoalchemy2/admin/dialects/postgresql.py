@@ -25,6 +25,9 @@ _postgresql_ischema_names["raster"] = Raster
 
 def check_management(column):
     """Check if the column should be managed."""
+    if _check_spatial_type(column.type, Raster):
+        # Raster columns are not managed
+        return False
     return getattr(column.type, "use_typmod", None) is False
 
 
@@ -34,27 +37,34 @@ def create_spatial_index(bind, table, col):
         postgresql_ops = {col.name: "gist_geometry_ops_nd"}
     else:
         postgresql_ops = {}
+    if _check_spatial_type(col.type, Raster):
+        col_func = func.ST_Envelope(col)
+    else:
+        col_func = col
     idx = Index(
         _spatial_idx_name(table.name, col.name),
-        col,
+        col_func,
         postgresql_using="gist",
         postgresql_ops=postgresql_ops,
         _column_flag=True,
     )
-    idx.create(bind=bind)
+    if bind is not None:
+        idx.create(bind=bind)
+    return idx
 
 
 def reflect_geometry_column(inspector, table, column_info):
     """Reflect a column of type Geometry with Postgresql dialect."""
-    if not isinstance(column_info.get("type"), Geometry):
+    if not _check_spatial_type(column_info.get("type"), (Geometry, Geography, Raster)):
         return
     geo_type = column_info["type"]
     geometry_type = geo_type.geometry_type
     coord_dimension = geo_type.dimension
-    if geometry_type.endswith("ZM"):
-        coord_dimension = 4
-    elif geometry_type[-1] in ["Z", "M"]:
-        coord_dimension = 3
+    if geometry_type is not None:
+        if geometry_type.endswith("ZM"):
+            coord_dimension = 4
+        elif geometry_type[-1] in ["Z", "M"]:
+            coord_dimension = 3
 
     # Query to check a given column has spatial index
     if table.schema is not None:
@@ -74,8 +84,7 @@ def reflect_geometry_column(inspector, table, column_info):
             INNER JOIN pg_class c ON (a.attrelid=c.oid)
             INNER JOIN pg_type t ON (a.atttypid=t.oid)
             INNER JOIN pg_namespace n ON (c.relnamespace=n.oid)
-            WHERE t.typname='geometry'
-                    AND c.relkind='r'
+            WHERE c.relkind='r'
         ) g
         LEFT JOIN pg_index i ON (g.relid = i.indrelid AND g.attnum = ANY(i.indkey))
         WHERE relname = '{}' AND attname = '{}'{};
@@ -105,7 +114,7 @@ def before_create(table, bind, **kw):
     for idx in current_indexes:
         for col in table.info["_saved_columns"]:
             if (
-                _check_spatial_type(col.type, Geometry, dialect) and check_management(col)
+                _check_spatial_type(col.type, (Geometry, Raster), dialect) and check_management(col)
             ) and col in idx.columns.values():
                 table.indexes.remove(idx)
                 if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
@@ -134,9 +143,9 @@ def after_create(table, bind, **kw):
             stmt = stmt.execution_options(autocommit=True)
             bind.execute(stmt)
 
-        # Add spatial indices for the Geometry and Geography columns
+        # Add spatial indices for the Geometry, Geography and Raster columns
         if (
-            _check_spatial_type(col.type, (Geometry, Geography), dialect)
+            _check_spatial_type(col.type, (Geometry, Geography, Raster), dialect)
             and col.type.spatial_index is True
         ):
             # If the index does not exist, define it and create it
@@ -156,6 +165,9 @@ def before_drop(table, bind, **kw):
 
     # Drop the managed Geometry columns
     for col in gis_cols:
+        if _check_spatial_type(col.type, Raster):
+            # Raster columns are dropped with the table, no need to drop them separately
+            continue
         args = [table.schema] if table.schema else []
         args.extend([table.name, col.name])
 

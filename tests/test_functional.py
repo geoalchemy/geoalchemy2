@@ -1230,6 +1230,19 @@ class TestReflection:
                 assert type_.srid == 4326
                 assert type_.dimension == 4
 
+            if dialect_name == "postgresql":
+                type_ = t.c.geom_geog.type
+                assert isinstance(type_, Geography)
+                assert type_.geometry_type == "LINESTRING"
+                assert type_.srid == 4326
+                assert type_.dimension == 2
+
+                type_ = t.c.geom_geog_no_idx.type
+                assert isinstance(type_, Geography)
+                assert type_.geometry_type == "LINESTRING"
+                assert type_.srid == 4326
+                assert type_.dimension == 2
+
         # Drop the table
         t.drop(bind=conn)
 
@@ -1282,6 +1295,10 @@ class TestReflection:
                         "CREATE INDEX idx_lake_geom ON gis.lake USING gist (geom)",
                     ),
                     (
+                        "idx_lake_geom_geog",
+                        "CREATE INDEX idx_lake_geom_geog ON gis.lake USING gist (geom_geog)",
+                    ),
+                    (
                         "idx_lake_geom_m",
                         "CREATE INDEX idx_lake_geom_m ON gis.lake USING gist (geom_m)",
                     ),
@@ -1292,6 +1309,10 @@ class TestReflection:
                     (
                         "idx_lake_geom_zm",
                         "CREATE INDEX idx_lake_geom_zm ON gis.lake USING gist (geom_zm)",
+                    ),
+                    (
+                        "idx_lake_rast",
+                        "CREATE INDEX idx_lake_rast ON gis.lake USING gist (st_convexhull(rast))",
                     ),
                     (
                         "lake_pkey",
