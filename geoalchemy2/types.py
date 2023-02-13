@@ -4,6 +4,7 @@ The :class:`geoalchemy2.types.Geometry`, :class:`geoalchemy2.types.Geography`, a
 :class:`geoalchemy2.types.Raster` classes are used when defining geometry, geography and raster
 columns/properties in models.
 """
+import re
 import warnings
 
 from sqlalchemy.dialects import postgresql
@@ -30,6 +31,8 @@ from .elements import RasterElement
 from .elements import WKBElement
 from .elements import WKTElement
 from .exc import ArgumentError
+
+_REMOVE_SRID = re.compile("SRID=([0-9]+); *")
 
 
 class _GISType(UserDefinedType):
@@ -184,23 +187,30 @@ class _GISType(UserDefinedType):
 
     def bind_expression(self, bindvalue):
         """Specific bind_expression that automatically adds a conversion function."""
-        import pdb
-
-        pdb.set_trace()
         return getattr(func, self.from_text)(bindvalue, type_=self)
 
     def bind_processor(self, dialect):
         """Specific bind_processor that automatically process spatial elements."""
 
         def process(bindvalue):
-            # import pdb
-            # pdb.set_trace()
             if isinstance(bindvalue, WKTElement):
-                # if dialect.name == "mysql":
-                #     if bindvalue.extended:
-                #         import pdb
-                #         pdb.set_trace()
-                #     return "%s" % (bindvalue.data, ), "%s" % (bindvalue.srid, )
+                if dialect.name == "mysql":
+                    if bindvalue.extended:
+                        if bindvalue.srid != self.srid:
+                            raise ArgumentError(
+                                f"The SRID ({bindvalue.srid}) of the supplied value is different "
+                                f"from the one of the column ({self.srid})"
+                            )
+                    elif bindvalue.data.startswith("SRID="):
+                        srid_match = _REMOVE_SRID.match(bindvalue.data)
+                        if not srid_match:
+                            raise ArgumentError(f"The provided value is invalid: {bindvalue.data}")
+                        srid = srid_match.group(1)
+                        raise ArgumentError(
+                            f"The SRID ({srid}) of the supplied value is different from the one "
+                            f"of the column ({self.srid})"
+                        )
+                    return _REMOVE_SRID.sub("", bindvalue.data)
                 if bindvalue.extended:
                     return "%s" % (bindvalue.data)
                 else:
