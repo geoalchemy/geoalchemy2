@@ -119,7 +119,7 @@ class TestInsertionORM:
 
 
 class TestShapely:
-    def test_to_shape(self, session, NotNullableLake, setup_tables):
+    def test_to_shape(self, conn, session, NotNullableLake, setup_tables):
         element = WKTElement("LINESTRING(0 0,1 1)", srid=4326)
         lake = NotNullableLake(geom=element)
         session.add(lake)
@@ -132,6 +132,22 @@ class TestShapely:
         s = to_shape(lake.geom)
         assert isinstance(s, LineString)
         assert s.wkt == "LINESTRING (0 0, 1 1)"
+
+        conn.execute(
+            NotNullableLake.__table__.insert(geom="SRID=4326;LINESTRING(0 0,1 1)"),
+        )
+
+        conn.execute(
+            NotNullableLake.__table__.insert(),
+            [
+                {"geom": "SRID=4326;LINESTRING(0 0,1 1)"},
+                # {"geom": ("LINESTRING(0 0,2 2)", 4326)},
+                # {"geom": WKTElement("LINESTRING(0 0,2 2)")},
+                # {"geom": from_shape(LineString([[0, 0], [3, 3]]), srid=4326)},
+                # {"geom": None},
+            ],
+        )
+
         lake = NotNullableLake(lake.geom)
         session.add(lake)
         session.flush()

@@ -329,23 +329,66 @@ def register_sqlite_mapping(mapping):
 
 register_sqlite_mapping(_SQLITE_FUNCTIONS)
 
-# Compile ST_GeomFromText for MySQL
-def _compile_MySQL_ST_GeomFromText(element, compiler, **kw):
-    data = compiler.process(element.clauses, **kw)
-    _, srid, wkt = re.match(r"(SRID=(\d+);)?(.*)", data).groups()
-    if srid is not None:
-        return "ST_GeomFromText({}, {})".format(wkt, srid)
-    import pdb
+# # Compile ST_GeomFromText for MySQL
+# def _compile_MySQL_ST_GeomFromText(element, compiler, **kw):
+#     data = compiler.process(element.clauses, **kw)
+#     # _, srid, wkt = re.match(r"(SRID=(\d+);)?(.*)", data).groups()
+#     # import pdb
+#     # pdb.set_trace()
+#     # if srid is not None:
+#     #     return "ST_GeomFromText({}, {})".format(wkt, srid)
 
-    pdb.set_trace()
-    # return data
-    return "ST_GeomFromText({}, {})".format(data, data)
-    # if data.startswith("SRID")
-    # if element.extended:
-    #     return "ST_GeomFromText({}, {})".format(compiler.process(element.clauses, **kw), element.srid)
-    # else:
-    #     return "ST_GeomFromText({}, {})".format(compiler.process(element.clauses, **kw), element.srid)
+#     # return data
+#     return "ST_GeomFromText({})".format(data)
+#     # return "ST_GeomFromText({}, {})".format(data, data)
+#     # if data.startswith("SRID")
+#     # if element.extended:
+#     #     return "ST_GeomFromText({}, {})".format(compiler.process(element.clauses, **kw), element.srid)
+#     # else:
+#     #     return "ST_GeomFromText({}, {})".format(compiler.process(element.clauses, **kw), element.srid)
+
+# # Compile ST_AsBinary for MySQL
+# def _compile_MySQL_ST_GeomFromText(element, compiler, **kw):
+#     data = compiler.process(element.clauses, **kw)
+#     return "ST_AsBinary({})".format(data)
 
 
-compiles(globals()["ST_GeomFromText"], "mysql")(_compile_MySQL_ST_GeomFromText)
-compiles(globals()["ST_GeomFromEWKT"], "mysql")(_compile_MySQL_ST_GeomFromText)
+# compiles(globals()["ST_GeomFromText"], "mysql")(_compile_MySQL_ST_GeomFromText)
+# compiles(globals()["ST_GeomFromEWKT"], "mysql")(_compile_MySQL_ST_GeomFromText)
+# compiles(globals()["ST_AsBinary"], "mysql")(_compile_MySQL_ST_AsBinary)
+# compiles(globals()["ST_AsEWKB"], "mysql")(_compile_MySQL_ST_AsBinary)
+
+
+_MYSQL_FUNCTIONS = {
+    "ST_GeomFromEWKT": "ST_GeomFromText",
+    # "ST_GeomFromWKT": "ST_GeomFromText",
+    # "ST_AsBinary": "AsBinary",
+    "ST_AsEWKB": "ST_AsBinary",
+}
+
+
+def _compiles_mysql(cls, fn):
+    def _compile_mysql(element, compiler, **kw):
+        return "{}({})".format(fn, compiler.process(element.clauses, **kw))
+
+    compiles(globals()[cls], "mysql")(_compile_mysql)
+
+
+def register_mysql_mapping(mapping):
+    """Register compilation mappings for the given functions.
+
+    Args:
+        mapping: Should have the following form::
+
+                {
+                    "function_name_1": "sqlite_function_name_1",
+                    "function_name_2": "sqlite_function_name_2",
+                    ...
+                }
+    """
+    for cls, fn in mapping.items():
+        _compiles_default(cls)
+        _compiles_mysql(cls, fn)
+
+
+register_mysql_mapping(_MYSQL_FUNCTIONS)

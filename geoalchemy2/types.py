@@ -7,6 +7,7 @@ columns/properties in models.
 import re
 import warnings
 
+from sqlalchemy import BindParameter
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names as postgresql_ischema_names
 from sqlalchemy.dialects.sqlite.base import ischema_names as sqlite_ischema_names
@@ -30,6 +31,7 @@ from .elements import CompositeElement
 from .elements import RasterElement
 from .elements import WKBElement
 from .elements import WKTElement
+from .elements import _SpatialElement
 from .exc import ArgumentError
 
 _REMOVE_SRID = re.compile("SRID=([0-9]+); *")
@@ -187,12 +189,36 @@ class _GISType(UserDefinedType):
 
     def bind_expression(self, bindvalue):
         """Specific bind_expression that automatically adds a conversion function."""
-        return getattr(func, self.from_text)(bindvalue, type_=self)
+        # import pdb
+        # pdb.set_trace()
+        # if isinstance(bindvalue, str):
+        #     try:
+        #         if bindvalue.startswith("SRID="):
+        #             bindvalue = WKTElement(bindvalue, extended=True)
+        #         else:
+        #             bindvalue = WKTElement(bindvalue)
+        #     except:
+        #         try:
+        #             bindvalue = WKBElement(bindvalue)
+        #         except:
+        #             pass
+        if isinstance(bindvalue, _SpatialElement):
+            print("========================== BIND WITH BINDVALUE SRID", type(bindvalue))
+            return getattr(func, self.from_text)(bindvalue, bindvalue.srid, type_=self)
+        elif isinstance(bindvalue, BindParameter) and isinstance(bindvalue.type, _GISType):
+            print("========================== BIND WITH BINDVALUE.TYPE SRID", type(bindvalue))
+            return getattr(func, self.from_text)(bindvalue, bindvalue.type.srid, type_=self)
+        else:
+            print("========================== BIND WITH SELF SRID", type(bindvalue))
+            return getattr(func, self.from_text)(bindvalue, self.srid, type_=self)
 
     def bind_processor(self, dialect):
         """Specific bind_processor that automatically process spatial elements."""
 
         def process(bindvalue):
+            import pdb
+
+            pdb.set_trace()
             if isinstance(bindvalue, WKTElement):
                 if dialect.name == "mysql":
                     if bindvalue.extended:
