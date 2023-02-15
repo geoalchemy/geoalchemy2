@@ -118,18 +118,21 @@ class WKTElement(_SpatialElement):
     geom_from_extended_version = "ST_GeomFromEWKT"
 
     def __init__(self, data, srid=-1, extended=False):
-        if extended and srid == -1:
+        if srid == -1:
+            has_srid = data.startswith("SRID=")
+            extended = extended or has_srid
             # read srid from EWKT
-            if not data.startswith("SRID="):
-                raise ArgumentError("invalid EWKT string {}".format(data))
-            data_s = data.split(";", 1)
-            if len(data_s) != 2:
-                raise ArgumentError("invalid EWKT string {}".format(data))
-            header = data_s[0]
-            try:
-                srid = int(header[5:])
-            except ValueError:
-                raise ArgumentError("invalid EWKT string {}".format(data))
+            if extended:
+                if not has_srid:
+                    raise ArgumentError("invalid EWKT string {}".format(data))
+                data_s = data.split(";", 1)
+                if len(data_s) != 2:
+                    raise ArgumentError("invalid EWKT string {}".format(data))
+                header = data_s[0]
+                try:
+                    srid = int(header[5:])
+                except ValueError:
+                    raise ArgumentError("invalid EWKT string {}".format(data))
         _SpatialElement.__init__(self, data, srid, extended)
 
     @property
@@ -166,7 +169,7 @@ class WKBElement(_SpatialElement):
     geom_from_extended_version = "ST_GeomFromEWKB"
 
     def __init__(self, data, srid=-1, extended=False):
-        if extended and srid == -1:
+        if srid == -1:
             # read srid from the EWKB
             #
             # WKB struct {
@@ -185,8 +188,18 @@ class WKBElement(_SpatialElement):
                 header = binascii.unhexlify(data[:18])
             else:
                 header = data[:9]
-            byte_order, srid = header[0], header[5:]
-            srid = struct.unpack("<I" if byte_order else ">I", srid)[0]
+            byte_order, wkb_type, wkb_srid = header[0], header[1:5], header[5:]
+            byte_order_marker = "<I" if byte_order else ">I"
+            wkb_type = (
+                struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else False
+            )
+            if not wkb_type:
+                extended = False
+            else:
+                extended = extended or bool(wkb_type & 536870912)
+            if extended:
+                wkb_srid = struct.unpack(byte_order_marker, wkb_srid)[0]
+                srid = int(wkb_srid)
         _SpatialElement.__init__(self, data, srid, extended)
 
     @property

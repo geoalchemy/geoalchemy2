@@ -87,8 +87,10 @@ class TestExtendedWKTElement:
     _ewkt = "SRID=3857;POINT (1 2 3)"  # expected ewkt
 
     def test_desc(self):
-        e = WKTElement(self._ewkt, extended=True)
-        assert e.desc == self._ewkt
+        e1 = WKTElement(self._ewkt, extended=True)
+        e2 = WKTElement(self._ewkt)
+        assert e1.desc == self._ewkt
+        assert e2.desc == self._ewkt
 
     def test_function_call(self):
         e = WKTElement(self._ewkt, extended=True)
@@ -218,8 +220,10 @@ class TestExtendedWKBElement:
     _wkt = "POINT (1 2)"  # expected wkt
 
     def test_desc(self):
-        e = WKBElement(self._bin, extended=True)
-        assert e.desc == self._hex
+        e1 = WKBElement(self._bin, extended=True)
+        e2 = WKBElement(self._bin)
+        assert e1.desc == self._hex
+        assert e2.desc == self._hex
 
     def test_desc_str(self):
         e = WKBElement(self._hex)
