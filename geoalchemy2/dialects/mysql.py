@@ -102,7 +102,6 @@ register_mysql_mapping(_MYSQL_FUNCTIONS)
 
 
 def _compile_GeomFromText_MySql(element, compiler, **kw):
-    # Get the side parameters
     element.identifier = "ST_GeomFromText"
     compiled = compiler.process(element.clauses, **kw)
     srid = element.type.srid
@@ -114,7 +113,6 @@ def _compile_GeomFromText_MySql(element, compiler, **kw):
 
 
 def _compile_GeomFromWKB_MySql(element, compiler, **kw):
-    # Get the side parameters
     element.identifier = "ST_GeomFromWKB"
     compiled = compiler.process(element.clauses, **kw)
     srid = element.type.srid
