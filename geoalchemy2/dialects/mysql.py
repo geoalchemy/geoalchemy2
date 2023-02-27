@@ -1,13 +1,10 @@
 """This module defines specific functions for MySQL dialect."""
-from sqlalchemy import Index
 from sqlalchemy import text
+from sqlalchemy.ext.compiler import compiles
 
-# from geoalchemy2.dialects.common import before_create
-# from geoalchemy2.dialects.common import after_create
+from geoalchemy2 import functions
 from geoalchemy2.dialects.common import _check_spatial_type
 from geoalchemy2.dialects.common import _spatial_idx_name
-from geoalchemy2.dialects.common import after_drop
-from geoalchemy2.dialects.common import before_drop
 from geoalchemy2.dialects.common import check_management
 from geoalchemy2.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
@@ -48,22 +45,6 @@ def after_create(table, bind, **kw):
     # table.columns = table.info.pop("_saved_columns")
 
     for col in table.columns:
-        # Add the managed Geometry columns with AddGeometryColumn()
-        # if _check_spatial_type(col.type, Geometry, dialect) and check_management(col, dialect_name):
-        #     dimension = col.type.dimension
-
-        #     # Add geometry columns for MySQL
-        #     spec = '%s' % col.type.geometry_type
-        #     if not col.type.nullable:
-        #         spec += ' NOT NULL'
-        #     if col.type.srid > 0:
-        #         spec += ' SRID %d' % col.type.srid
-        #     sql = "ALTER TABLE {} ADD COLUMN {} {}".format(table.name, col.name, spec)
-        #     stmt = text(sql)
-        #     stmt = stmt.execution_options(autocommit=True)
-        #     bind.execute(stmt)
-        #     create_func = None
-
         # Add spatial indices for the Geometry and Geography columns
         if (
             _check_spatial_type(col.type, (Geometry, Geography), dialect)
@@ -73,17 +54,6 @@ def after_create(table, bind, **kw):
             if not [i for i in table.indexes if col in i.columns.values()] and check_management(
                 col, dialect_name
             ):
-                # if col.type.use_N_D_index:
-                #     postgresql_ops = {col.name: "gist_geometry_ops_nd"}
-                # else:
-                #     postgresql_ops = {}
-                # idx = Index(
-                #     _spatial_idx_name(table.name, col.name),
-                #     col,
-                #     postgresql_using="gist",
-                #     postgresql_ops=postgresql_ops,
-                #     _column_flag=True,
-                # )
                 sql = "ALTER TABLE {} ADD SPATIAL INDEX({});".format(table.name, col.name)
                 q = text(sql)
                 bind.execute(q)
@@ -92,9 +62,84 @@ def after_create(table, bind, **kw):
         table.indexes.add(idx)
 
 
-# def before_drop(table, bind, **kw):
-#     return
+def before_drop(table, bind, **kw):
+    return
 
 
-# def after_drop(table, bind, **kw):
-#     return
+def after_drop(table, bind, **kw):
+    return
+
+
+_MYSQL_FUNCTIONS = {
+    "ST_AsEWKB": "ST_AsBinary",
+}
+
+
+def _compiles_mysql(cls, fn):
+    def _compile_mysql(element, compiler, **kw):
+        return "{}({})".format(fn, compiler.process(element.clauses, **kw))
+
+    compiles(getattr(functions, cls), "mysql")(_compile_mysql)
+
+
+def register_mysql_mapping(mapping):
+    """Register compilation mappings for the given functions.
+
+    Args:
+        mapping: Should have the following form::
+
+                {
+                    "function_name_1": "sqlite_function_name_1",
+                    "function_name_2": "sqlite_function_name_2",
+                    ...
+                }
+    """
+    for cls, fn in mapping.items():
+        _compiles_mysql(cls, fn)
+
+
+register_mysql_mapping(_MYSQL_FUNCTIONS)
+
+
+def _compile_GeomFromText_MySql(element, compiler, **kw):
+    # Get the side parameters
+    element.identifier = "ST_GeomFromText"
+    compiled = compiler.process(element.clauses, **kw)
+    srid = element.type.srid
+
+    if srid > 0:
+        return "{}({}, {})".format(element.identifier, compiled, srid)
+    else:
+        return "{}({})".format(element.identifier, compiled)
+
+
+def _compile_GeomFromWKB_MySql(element, compiler, **kw):
+    # Get the side parameters
+    element.identifier = "ST_GeomFromWKB"
+    compiled = compiler.process(element.clauses, **kw)
+    srid = element.type.srid
+
+    if srid > 0:
+        return "{}({}, {})".format(element.identifier, compiled, srid)
+    else:
+        return "{}({})".format(element.identifier, compiled)
+
+
+@compiles(functions.ST_GeomFromText, "mysql")
+def _MySQL_ST_GeomFromText(element, compiler, **kw):
+    return _compile_GeomFromText_MySql(element, compiler, **kw)
+
+
+@compiles(functions.ST_GeomFromEWKT, "mysql")
+def _MySQL_ST_GeomFromEWKT(element, compiler, **kw):
+    return _compile_GeomFromText_MySql(element, compiler, **kw)
+
+
+@compiles(functions.ST_GeomFromWKB, "mysql")
+def _MySQL_ST_GeomFromWKB(element, compiler, **kw):
+    return _compile_GeomFromWKB_MySql(element, compiler, **kw)
+
+
+@compiles(functions.ST_GeomFromEWKB, "mysql")
+def _MySQL_ST_GeomFromEWKB(element, compiler, **kw):
+    return _compile_GeomFromWKB_MySql(element, compiler, **kw)

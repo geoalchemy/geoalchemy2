@@ -44,10 +44,9 @@ class TestInsertionCore:
             NotNullableLake.__table__.insert(),
             [
                 {"geom": "SRID=4326;LINESTRING(0 0,1 1)"},
-                # {"geom": ("LINESTRING(0 0,2 2)", 4326)},
-                # {"geom": WKTElement("LINESTRING(0 0,2 2)")},
-                # {"geom": from_shape(LineString([[0, 0], [3, 3]]), srid=4326)},
-                # {"geom": None},
+                {"geom": "LINESTRING(0 0,1 1)"},
+                {"geom": WKTElement("LINESTRING(0 0,2 2)")},
+                {"geom": from_shape(LineString([[0, 0], [3, 3]]), srid=4326)},
             ],
         )
 
@@ -57,25 +56,30 @@ class TestInsertionCore:
         row = rows[0]
         assert isinstance(row[1], WKBElement)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert wkt == "LINESTRING(0 0, 1 1)"
+        assert wkt == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
         row = rows[1]
         assert isinstance(row[1], WKBElement)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert wkt == "LINESTRING(0 0, 2 2)"
+        assert wkt == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
         row = rows[2]
         assert isinstance(row[1], WKBElement)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert wkt == "LINESTRING(0 0, 3 3)"
+        assert wkt == "LINESTRING(0 0,2 2)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
-        assert rows[3] == (4, None)
+        row = rows[3]
+        assert isinstance(row[1], WKBElement)
+        wkt = conn.execute(row[1].ST_AsText()).scalar()
+        assert wkt == "LINESTRING(0 0,3 3)"
+        srid = conn.execute(row[1].ST_SRID()).scalar()
+        assert srid == 4326
 
 
 class TestInsertionORM:

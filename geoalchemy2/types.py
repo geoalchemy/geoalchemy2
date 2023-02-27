@@ -4,10 +4,8 @@ The :class:`geoalchemy2.types.Geometry`, :class:`geoalchemy2.types.Geography`, a
 :class:`geoalchemy2.types.Raster` classes are used when defining geometry, geography and raster
 columns/properties in models.
 """
-import re
 import warnings
 
-from sqlalchemy import BindParameter
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names as postgresql_ischema_names
 from sqlalchemy.dialects.sqlite.base import ischema_names as sqlite_ischema_names
@@ -33,8 +31,6 @@ from .elements import WKBElement
 from .elements import WKTElement
 from .elements import _SpatialElement
 from .exc import ArgumentError
-
-_REMOVE_SRID = re.compile("SRID=([0-9]+); *")
 
 
 class _GISType(UserDefinedType):
@@ -183,60 +179,50 @@ class _GISType(UserDefinedType):
                     kwargs["srid"] = self.srid
                 if self.extended is not None:
                     kwargs["extended"] = self.extended
+                if dialect.name == "mysql":
+                    kwargs["extended"] = False
                 return self.ElementType(value, **kwargs)
 
         return process
 
     def bind_expression(self, bindvalue):
         """Specific bind_expression that automatically adds a conversion function."""
-        # import pdb
-        # pdb.set_trace()
-        # if isinstance(bindvalue, str):
-        #     try:
-        #         if bindvalue.startswith("SRID="):
-        #             bindvalue = WKTElement(bindvalue, extended=True)
-        #         else:
-        #             bindvalue = WKTElement(bindvalue)
-        #     except:
-        #         try:
-        #             bindvalue = WKBElement(bindvalue)
-        #         except:
-        #             pass
-        if isinstance(bindvalue, _SpatialElement):
-            print("========================== BIND WITH BINDVALUE SRID", type(bindvalue))
-            return getattr(func, self.from_text)(bindvalue, bindvalue.srid, type_=self)
-        elif isinstance(bindvalue, BindParameter) and isinstance(bindvalue.type, _GISType):
-            print("========================== BIND WITH BINDVALUE.TYPE SRID", type(bindvalue))
-            return getattr(func, self.from_text)(bindvalue, bindvalue.type.srid, type_=self)
-        else:
-            print("========================== BIND WITH SELF SRID", type(bindvalue))
-            return getattr(func, self.from_text)(bindvalue, self.srid, type_=self)
+        return getattr(func, self.from_text)(bindvalue, type_=self)
 
     def bind_processor(self, dialect):
         """Specific bind_processor that automatically process spatial elements."""
 
         def process(bindvalue):
-            import pdb
+            # MySQL-specific process
+            if dialect.name == "mysql":
+                if isinstance(bindvalue, str):
+                    return WKTElement._REMOVE_SRID.match(bindvalue).group(3)
 
-            pdb.set_trace()
-            if isinstance(bindvalue, WKTElement):
-                if dialect.name == "mysql":
-                    if bindvalue.extended:
-                        if bindvalue.srid != self.srid:
-                            raise ArgumentError(
-                                f"The SRID ({bindvalue.srid}) of the supplied value is different "
-                                f"from the one of the column ({self.srid})"
-                            )
-                    elif bindvalue.data.startswith("SRID="):
-                        srid_match = _REMOVE_SRID.match(bindvalue.data)
-                        if not srid_match:
-                            raise ArgumentError(f"The provided value is invalid: {bindvalue.data}")
-                        srid = srid_match.group(1)
+                if (
+                    isinstance(bindvalue, _SpatialElement)
+                    and bindvalue.srid != -1
+                    and bindvalue.srid != self.srid
+                ):
+                    raise ArgumentError(
+                        f"The SRID ({bindvalue.srid}) of the supplied value is different "
+                        f"from the one of the column ({self.srid})"
+                    )
+
+                if isinstance(bindvalue, WKTElement):
+                    bindvalue = bindvalue.as_wkt()
+                    if bindvalue.srid == -1:
+                        bindvalue.srid = self.srid
+                    return bindvalue
+                elif isinstance(bindvalue, WKBElement):
+                    if not SHAPELY:
                         raise ArgumentError(
-                            f"The SRID ({srid}) of the supplied value is different from the one "
-                            f"of the column ({self.srid})"
+                            "Shapely is required for handling WKBElement bind "
+                            "values when using MySQL"
                         )
-                    return _REMOVE_SRID.sub("", bindvalue.data)
+                    return to_shape(bindvalue).wkt
+
+            # Other dialects
+            if isinstance(bindvalue, WKTElement):
                 if bindvalue.extended:
                     return "%s" % (bindvalue.data)
                 else:
@@ -316,13 +302,6 @@ def get_col_spec(self, *args, **kwargs):
     if self.srid > 0:
         spec += " SRID %d" % self.srid
     return spec
-
-
-# @compiles(_GISType, "mysql")
-# def bind_expression(self, bindvalue, *args, **kwargs):
-#     import pdb
-#     pdb.set_trace()
-#     return getattr(func, self.from_text)(bindvalue, self.srid, type_=self)
 
 
 class Geometry(_GISType):

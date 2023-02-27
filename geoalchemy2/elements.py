@@ -1,4 +1,5 @@
 import binascii
+import re
 import struct
 
 try:
@@ -118,6 +119,8 @@ class WKTElement(_SpatialElement):
         wkt_element_3 = WKTElement('SRID=4326;POINT(5 45)', extended=True)
     """
 
+    _REMOVE_SRID = re.compile("(SRID=([0-9]+); ?)?(.*)")
+
     geom_from = "ST_GeomFromText"
     geom_from_extended_version = "ST_GeomFromEWKT"
 
@@ -144,6 +147,12 @@ class WKTElement(_SpatialElement):
     @staticmethod
     def _data_from_desc(desc):
         return desc
+
+    def as_wkt(self):
+        if self.extended:
+            srid_match = self._REMOVE_SRID.match(self.data)
+            return WKTElement(srid_match.group(3), self.srid)
+        return WKTElement(self.data, self.srid)
 
 
 class WKBElement(_SpatialElement):
@@ -200,6 +209,17 @@ class WKBElement(_SpatialElement):
     def _data_from_desc(desc):
         desc = desc.encode(encoding="utf-8")
         return binascii.unhexlify(desc)
+
+    def as_wkb(self):
+        if self.extended:
+            if isinstance(self.data, str):
+                # SpatiaLite case
+                # assume that the string is an hex value
+                data = self.data[:10] + self.data[18:]
+            else:
+                data = self.data[:5] + self.data[9:]
+            return WKBElement(data, self.srid)
+        return WKBElement(self.data, self.srid)
 
 
 class RasterElement(_SpatialElement):
