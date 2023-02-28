@@ -1,6 +1,7 @@
 """This module defines specific functions for MySQL dialect."""
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.sqltypes import NullType
 
 from geoalchemy2 import functions
 from geoalchemy2.dialects.common import _check_spatial_type
@@ -9,6 +10,59 @@ from geoalchemy2.dialects.common import check_management
 from geoalchemy2.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
+
+_POSSIBLE_TYPES = [
+    "geometry",
+    "point",
+    "linestring",
+    "polygon",
+    "multipoint",
+    "multilinestring",
+    "multipolygon",
+    "geometrycollection",
+]
+
+
+def reflect_geometry_column(inspector, table, column_info):
+    """Reflect a column of type Geometry with Postgresql dialect."""
+    if not isinstance(column_info.get("type"), (Geometry, NullType)):
+        return
+
+    column_name = column_info.get("name")
+
+    # Check geometry type, SRID and if the column is nullable
+    geometry_type_query = """SELECT DATA_TYPE, SRS_ID, IS_NULLABLE
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_NAME = '{}' and COLUMN_NAME = '{}'""".format(
+        table.name, column_name
+    )
+    if table.schema is not None:
+        geometry_type_query += """ and table_schema = '{}'""".format(table.schema)
+    geometry_type, srid, nullable = inspector.bind.execute(text(geometry_type_query)).one()
+
+    if geometry_type not in _POSSIBLE_TYPES:
+        return
+
+    # Check if the column has spatial index
+    has_index_query = """SELECT DISTINCT
+                INDEX_TYPE
+            FROM INFORMATION_SCHEMA.STATISTICS
+            WHERE TABLE_NAME = '{}' and COLUMN_NAME = '{}'""".format(
+        table.name, column_name
+    )
+    if table.schema is not None:
+        has_index_query += """ and TABLE_SCHEMA = '{}'""".format(table.schema)
+    spatial_index_res = inspector.bind.execute(text(has_index_query)).scalar()
+    spatial_index = str(spatial_index_res).lower() == "spatial"
+
+    # Set attributes
+    column_info["type"] = Geometry(
+        geometry_type=geometry_type.upper(),
+        srid=srid,
+        spatial_index=spatial_index,
+        nullable=str(nullable).lower() == "yes",
+        _spatial_index_reflected=True,
+    )
 
 
 def before_create(table, bind, **kw):

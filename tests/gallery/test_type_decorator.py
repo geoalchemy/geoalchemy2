@@ -134,7 +134,9 @@ class TestTypeDecorator:
         q = text("SELECT id, ST_AsEWKT(geom) AS geom FROM point;")
         res_q = session.execute(q).fetchone()
         assert res_q.id == 1
-        assert re.match(r"SRID=2154;POINT\(857581\.8993196681? 6435414\.7478354\)", res_q.geom)
+        assert re.match(
+            r"SRID=2154;POINT\(857581\.8993196681? 6435414\.7478354[0-9]*\)", res_q.geom
+        )
 
         # Compare geom, raw_geom with auto transform and explicit transform
         pt_trans = session.query(

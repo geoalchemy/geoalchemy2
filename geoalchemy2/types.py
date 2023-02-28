@@ -196,7 +196,22 @@ class _GISType(UserDefinedType):
             # MySQL-specific process
             if dialect.name == "mysql":
                 if isinstance(bindvalue, str):
-                    return WKTElement._REMOVE_SRID.match(bindvalue).group(3)
+                    wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
+                    srid = wkt_match.group(2)
+                    try:
+                        if srid is not None:
+                            srid = int(srid)
+                    except (ValueError, TypeError):
+                        raise ArgumentError(
+                            f"The SRID ({srid}) of the supplied value can not be casted to integer"
+                        )
+
+                    if srid is not None and srid != self.srid:
+                        raise ArgumentError(
+                            f"The SRID ({srid}) of the supplied value is different "
+                            f"from the one of the column ({self.srid})"
+                        )
+                    return wkt_match.group(3)
 
                 if (
                     isinstance(bindvalue, _SpatialElement)
@@ -214,12 +229,14 @@ class _GISType(UserDefinedType):
                         bindvalue.srid = self.srid
                     return bindvalue
                 elif isinstance(bindvalue, WKBElement):
-                    if not SHAPELY:
-                        raise ArgumentError(
-                            "Shapely is required for handling WKBElement bind "
-                            "values when using MySQL"
-                        )
-                    return to_shape(bindvalue).wkt
+                    if "wkb" not in self.from_text.lower():
+                        if not SHAPELY:
+                            raise ArgumentError(
+                                "Shapely is required for handling WKBElement bind "
+                                "values when using MySQL"
+                            )
+                        return to_shape(bindvalue).wkt
+                    return bindvalue
 
             # Other dialects
             if isinstance(bindvalue, WKTElement):

@@ -34,6 +34,8 @@ def create_spatial_index(bind, table, col):
 
 def reflect_geometry_column(inspector, table, column_info):
     """Reflect a column of type Geometry with Postgresql dialect."""
+    if not isinstance(column_info.get("type"), Geometry):
+        return
     geo_type = column_info["type"]
     geometry_type = geo_type.geometry_type
     coord_dimension = geo_type.dimension

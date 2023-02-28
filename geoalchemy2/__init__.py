@@ -100,13 +100,9 @@ def _setup_ddl_event_listeners():
 
     @event.listens_for(Table, "column_reflect")
     def _reflect_geometry_column(inspector, table, column_info):
-        if not isinstance(column_info.get("type"), Geometry):
-            return
-
-        if inspector.bind.dialect.name == "postgresql":
-            postgresql.reflect_geometry_column(inspector, table, column_info)
-        elif inspector.bind.dialect.name == "sqlite":
-            sqlite.reflect_geometry_column(inspector, table, column_info)
+        _select_dialect(inspector.bind.dialect.name).reflect_geometry_column(
+            inspector, table, column_info
+        )
 
 
 _setup_ddl_event_listeners()

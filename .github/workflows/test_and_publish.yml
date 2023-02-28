@@ -69,6 +69,7 @@ jobs:
         extra-specs: |
           ${{ matrix.python-version.pkg_name }}
           libspatialite
+          mysql
           pyproj
 
     # Config PostgreSQL

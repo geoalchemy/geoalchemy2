@@ -102,6 +102,8 @@ def disable_spatial_index(bind, table, col):
 def reflect_geometry_column(inspector, table, column_info):
     """Reflect a column of type Geometry with SQLite dialect."""
     # Get geometry type, SRID and spatial index from the SpatiaLite metadata
+    if not isinstance(column_info.get("type"), Geometry):
+        return
     col_attributes = _get_spatialite_attrs(inspector.bind, table.name, column_info["name"])
     if col_attributes is not None:
         _, _, geometry_type, coord_dimension, srid, spatial_index = col_attributes
