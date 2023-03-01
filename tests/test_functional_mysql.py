@@ -11,6 +11,7 @@ from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import bindparam
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import StatementError
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
@@ -139,6 +140,18 @@ class TestInsertionORM:
         assert wkt == "LINESTRING(0 0,1 1)"
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
+
+    def test_raise_wrong_srid_str(self, session, NotNullableLake, setup_tables):
+        lake = NotNullableLake("SRID=2154;LINESTRING(0 0,1 1)")
+        session.add(lake)
+        with pytest.raises(StatementError):
+            session.flush()
+
+    def test_raise_wrong_srid_WKTElement(self, session, NotNullableLake, setup_tables):
+        lake = NotNullableLake(WKTElement("LINESTRING(0 0,1 1)", srid=2154))
+        session.add(lake)
+        with pytest.raises(StatementError):
+            session.flush()
 
 
 class TestShapely:

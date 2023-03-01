@@ -81,23 +81,16 @@ def db_url_postgresql(request):
 
 
 @pytest.fixture(scope="session")
-def db_url_sqlite(request, tmpdir_factory):
-    return (
-        request.config.getoption("--sqlite_spatialite4_dburl")
-        or os.getenv("PYTEST_SQLITE_DB_URL")
-        # or f"sqlite:///{tmpdir_factory.getbasetemp() / 'spatialdb'}"
-        or "sqlite-auto"
-    )
-
-
-@pytest.fixture(scope="session")
 def db_url_mysql(request, tmpdir_factory):
-    return (
+    url = (
         request.config.getoption("--mysql_dburl")
         or os.getenv("PYTEST_MYSQL_DB_URL")
-        # or f"sqlite:///{tmpdir_factory.getbasetemp() / 'spatialdb'}"
         or "mysql://gis:gis@localhost/gis"
     )
+    print("#########################################################")
+    print(url)
+    print("#########################################################")
+    return url
 
 
 @pytest.fixture(scope="session")

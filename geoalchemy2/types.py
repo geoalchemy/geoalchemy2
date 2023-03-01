@@ -201,7 +201,7 @@ class _GISType(UserDefinedType):
                     try:
                         if srid is not None:
                             srid = int(srid)
-                    except (ValueError, TypeError):
+                    except (ValueError, TypeError):  # pragma: no cover
                         raise ArgumentError(
                             f"The SRID ({srid}) of the supplied value can not be casted to integer"
                         )
