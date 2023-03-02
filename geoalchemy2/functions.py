@@ -74,8 +74,8 @@ from sqlalchemy.sql import annotation
 from sqlalchemy.sql import functions
 from sqlalchemy.sql.elements import ColumnElement
 
-from . import elements
-from ._functions import _FUNCTIONS
+from geoalchemy2 import elements
+from geoalchemy2._functions import _FUNCTIONS
 
 try:
     # SQLAlchemy < 2

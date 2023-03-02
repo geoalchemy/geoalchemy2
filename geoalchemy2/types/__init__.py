@@ -15,22 +15,23 @@ from sqlalchemy.types import Float
 from sqlalchemy.types import Integer
 from sqlalchemy.types import UserDefinedType
 
-try:
-    from .shape import to_shape
+from geoalchemy2.comparator import BaseComparator
+from geoalchemy2.comparator import Comparator
+from geoalchemy2.elements import CompositeElement
+from geoalchemy2.elements import RasterElement
+from geoalchemy2.elements import WKBElement
+from geoalchemy2.exc import ArgumentError
+from geoalchemy2.types import dialects
 
-    SHAPELY = True
-except ImportError:
-    SHAPELY = False
 
-
-from .comparator import BaseComparator
-from .comparator import Comparator
-from .elements import CompositeElement
-from .elements import RasterElement
-from .elements import WKBElement
-from .elements import WKTElement
-from .elements import _SpatialElement
-from .exc import ArgumentError
+def select_dialect(dialect_name):
+    """Select the dialect from its name."""
+    known_dialects = {
+        "mysql": dialects.mysql,
+        "postgresql": dialects.postgresql,
+        "sqlite": dialects.sqlite,
+    }
+    return known_dialects.get(dialect_name, dialects.common)
 
 
 class _GISType(UserDefinedType):
@@ -191,78 +192,7 @@ class _GISType(UserDefinedType):
         """Specific bind_processor that automatically process spatial elements."""
 
         def process(bindvalue):
-            # MySQL-specific process
-            if dialect.name == "mysql":
-                if isinstance(bindvalue, str):
-                    wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
-                    srid = wkt_match.group(2)
-                    try:
-                        if srid is not None:
-                            srid = int(srid)
-                    except (ValueError, TypeError):  # pragma: no cover
-                        raise ArgumentError(
-                            f"The SRID ({srid}) of the supplied value can not be casted to integer"
-                        )
-
-                    if srid is not None and srid != self.srid:
-                        raise ArgumentError(
-                            f"The SRID ({srid}) of the supplied value is different "
-                            f"from the one of the column ({self.srid})"
-                        )
-                    return wkt_match.group(3)
-
-                if (
-                    isinstance(bindvalue, _SpatialElement)
-                    and bindvalue.srid != -1
-                    and bindvalue.srid != self.srid
-                ):
-                    raise ArgumentError(
-                        f"The SRID ({bindvalue.srid}) of the supplied value is different "
-                        f"from the one of the column ({self.srid})"
-                    )
-
-                if isinstance(bindvalue, WKTElement):
-                    bindvalue = bindvalue.as_wkt()
-                    if bindvalue.srid == -1:
-                        bindvalue.srid = self.srid
-                    return bindvalue
-                elif isinstance(bindvalue, WKBElement):
-                    if "wkb" not in self.from_text.lower():
-                        if not SHAPELY:
-                            raise ArgumentError(
-                                "Shapely is required for handling WKBElement bind "
-                                "values when using MySQL"
-                            )
-                        return to_shape(bindvalue).wkt
-                    return bindvalue
-
-            # Other dialects
-            if isinstance(bindvalue, WKTElement):
-                if bindvalue.extended:
-                    return "%s" % (bindvalue.data)
-                else:
-                    return "SRID=%d;%s" % (bindvalue.srid, bindvalue.data)
-            elif isinstance(bindvalue, WKBElement):
-                if dialect.name == "sqlite" or not bindvalue.extended:
-                    # With SpatiaLite or when the WKBElement includes a WKB value rather
-                    # than a EWKB value we use Shapely to convert the WKBElement to an
-                    # EWKT string
-                    if not SHAPELY:
-                        raise ArgumentError(
-                            "Shapely is required for handling WKBElement bind "
-                            "values when using SpatiaLite or when the bind value "
-                            "is a WKB rather than an EWKB"
-                        )
-                    shape = to_shape(bindvalue)
-                    return "SRID=%d;%s" % (bindvalue.srid, shape.wkt)
-                else:
-                    # PostGIS ST_GeomFromEWKT works with EWKT strings as well
-                    # as EWKB hex strings
-                    return bindvalue.desc
-            elif isinstance(bindvalue, RasterElement):
-                return "%s" % (bindvalue.data)
-            else:
-                return bindvalue
+            return select_dialect(dialect.name).bind_processor_process(self, bindvalue)
 
         return process
 

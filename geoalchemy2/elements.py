@@ -12,7 +12,7 @@ except ImportError:  # SQLA < 0.9  # pragma: no cover
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.types import to_instance
 
-from .exc import ArgumentError
+from geoalchemy2.exc import ArgumentError
 
 BinasciiError = binascii.Error
 
@@ -21,8 +21,6 @@ function_registry = set()
 
 class HasFunction(object):
     """Base class used as a marker to know if a given element has a 'geom_from' function."""
-
-    pass
 
 
 class _SpatialElement(HasFunction):

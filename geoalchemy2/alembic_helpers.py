@@ -13,6 +13,7 @@ from alembic.ddl.base import visit_rename_table
 from alembic.operations import BatchOperations
 from alembic.operations import Operations
 from alembic.operations import ops
+from sqlalchemy import Column
 from sqlalchemy import text
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.ext.compiler import compiles
@@ -20,13 +21,12 @@ from sqlalchemy.schema import DropTable
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
 
-from geoalchemy2 import Column
 from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
-from geoalchemy2.dialects.common import _check_spatial_type
-from geoalchemy2.dialects.common import _get_gis_cols
-from geoalchemy2.dialects.common import _spatial_idx_name
+from geoalchemy2.admin.dialects.common import _check_spatial_type
+from geoalchemy2.admin.dialects.common import _get_gis_cols
+from geoalchemy2.admin.dialects.common import _spatial_idx_name
 
 writer = rewriter.Rewriter()
 """Rewriter object for Alembic."""
