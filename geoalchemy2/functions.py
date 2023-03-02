@@ -252,6 +252,13 @@ class GenericFunction(_GeoFunctionBase):
         _GeoFunctionParent.__init__(self, *args, **kwargs)
 
 
+__all__ = [
+    "GenericFunction",
+    "ST_AsGeoJSON",
+    "TableRowElement",
+]
+
+
 # Iterate through _FUNCTIONS and create GenericFunction classes dynamically
 for name, type_, doc in _FUNCTIONS:
     attributes = {
@@ -277,3 +284,8 @@ for name, type_, doc in _FUNCTIONS:
         attributes["__doc__"] = "\n\n".join(docs)
 
     globals()[name] = type(name, (GenericFunction,), attributes)
+    __all__.append(name)
+
+
+def __dir__():
+    return __all__

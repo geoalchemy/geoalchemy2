@@ -1,8 +1,12 @@
 """GeoAlchemy2 package."""
 from geoalchemy2 import admin
+from geoalchemy2 import elements  # noqa
+from geoalchemy2 import exc  # noqa
 from geoalchemy2 import functions  # noqa
+from geoalchemy2 import shape  # noqa
 from geoalchemy2 import types  # noqa
 from geoalchemy2.admin.dialects.sqlite import load_spatialite  # noqa
+from geoalchemy2.elements import CompositeElement  # noqa
 from geoalchemy2.elements import RasterElement  # noqa
 from geoalchemy2.elements import WKBElement  # noqa
 from geoalchemy2.elements import WKTElement  # noqa
@@ -11,7 +15,7 @@ from geoalchemy2.types import Geography  # noqa
 from geoalchemy2.types import Geometry  # noqa
 from geoalchemy2.types import Raster  # noqa
 
-admin._setup_ddl_event_listeners()
+admin.setup_ddl_event_listeners()
 
 
 # Get version number
@@ -38,3 +42,26 @@ else:
         __version__ = importlib.metadata.version("GeoAlchemy2")
     except importlib.metadata.PackageNotFoundError:  # pragma: no cover
         pass
+
+
+__all__ = [
+    "__version__",
+    "ArgumentError",
+    "CompositeElement",
+    "Geography",
+    "Geometry",
+    "Raster",
+    "RasterElement",
+    "WKBElement",
+    "WKTElement",
+    "admin",
+    "elements",
+    "exc",
+    "load_spatialite",
+    "shape",
+    "types",
+]
+
+
+def __dir__():
+    return __all__

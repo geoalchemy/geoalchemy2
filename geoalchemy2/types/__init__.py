@@ -7,8 +7,8 @@ columns/properties in models.
 import warnings
 
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql.base import ischema_names as postgresql_ischema_names
-from sqlalchemy.dialects.sqlite.base import ischema_names as sqlite_ischema_names
+from sqlalchemy.dialects.postgresql.base import ischema_names as _postgresql_ischema_names
+from sqlalchemy.dialects.sqlite.base import ischema_names as _sqlite_ischema_names
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
 from sqlalchemy.types import Float
@@ -421,20 +421,20 @@ class GeometryDump(CompositeType):
 
 
 # Register Geometry, Geography and Raster to SQLAlchemy's reflection subsystems.
-postgresql_ischema_names["geometry"] = Geometry
-postgresql_ischema_names["geography"] = Geography
-postgresql_ischema_names["raster"] = Raster
+_postgresql_ischema_names["geometry"] = Geometry
+_postgresql_ischema_names["geography"] = Geography
+_postgresql_ischema_names["raster"] = Raster
 
-sqlite_ischema_names["GEOMETRY"] = Geometry
-sqlite_ischema_names["POINT"] = Geometry
-sqlite_ischema_names["LINESTRING"] = Geometry
-sqlite_ischema_names["POLYGON"] = Geometry
-sqlite_ischema_names["MULTIPOINT"] = Geometry
-sqlite_ischema_names["MULTILINESTRING"] = Geometry
-sqlite_ischema_names["MULTIPOLYGON"] = Geometry
-sqlite_ischema_names["CURVE"] = Geometry
-sqlite_ischema_names["GEOMETRYCOLLECTION"] = Geometry
-sqlite_ischema_names["RASTER"] = Raster
+_sqlite_ischema_names["GEOMETRY"] = Geometry
+_sqlite_ischema_names["POINT"] = Geometry
+_sqlite_ischema_names["LINESTRING"] = Geometry
+_sqlite_ischema_names["POLYGON"] = Geometry
+_sqlite_ischema_names["MULTIPOINT"] = Geometry
+_sqlite_ischema_names["MULTILINESTRING"] = Geometry
+_sqlite_ischema_names["MULTIPOLYGON"] = Geometry
+_sqlite_ischema_names["CURVE"] = Geometry
+_sqlite_ischema_names["GEOMETRYCOLLECTION"] = Geometry
+_sqlite_ischema_names["RASTER"] = Raster
 
 
 class SummaryStats(CompositeType):
@@ -451,3 +451,20 @@ class SummaryStats(CompositeType):
 
     cache_ok = True
     """ Enable cache for this type. """
+
+
+__all__ = [
+    "_GISType",
+    "CompositeType",
+    "Geography",
+    "Geometry",
+    "GeometryDump",
+    "Raster",
+    "SummaryStats",
+    "dialects",
+    "select_dialect",
+]
+
+
+def __dir__():
+    return __all__

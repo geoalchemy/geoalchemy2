@@ -96,3 +96,13 @@ def from_shape(shape, srid=-1, extended=False):
         srid=srid,
         extended=extended,
     )
+
+
+__all__ = [
+    "from_shape",
+    "to_shape",
+]
+
+
+def __dir__():
+    return __all__

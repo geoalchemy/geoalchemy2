@@ -24,7 +24,7 @@ def select_dialect(dialect_name):
     return known_dialects.get(dialect_name, dialects.common)
 
 
-def _setup_ddl_event_listeners():
+def setup_ddl_event_listeners():
     @event.listens_for(Table, "before_create")
     def before_create(table, bind, **kw):
         """Handle spatial indexes."""
@@ -94,3 +94,14 @@ def _setup_ddl_event_listeners():
         select_dialect(inspector.bind.dialect.name).reflect_geometry_column(
             inspector, table, column_info
         )
+
+
+__all__ = [
+    "dialects",
+    "select_dialect",
+    "setup_ddl_event_listeners",
+]
+
+
+def __dir__():
+    return __all__
