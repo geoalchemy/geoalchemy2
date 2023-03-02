@@ -82,15 +82,11 @@ def db_url_postgresql(request):
 
 @pytest.fixture(scope="session")
 def db_url_mysql(request, tmpdir_factory):
-    url = (
+    return (
         request.config.getoption("--mysql_dburl")
         or os.getenv("PYTEST_MYSQL_DB_URL")
         or "mysql://gis:gis@localhost/gis"
     )
-    print("#########################################################")
-    print(url)
-    print("#########################################################")
-    return url
 
 
 @pytest.fixture(scope="session")

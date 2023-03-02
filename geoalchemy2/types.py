@@ -177,10 +177,8 @@ class _GISType(UserDefinedType):
                 kwargs = {}
                 if self.srid > 0:
                     kwargs["srid"] = self.srid
-                if self.extended is not None:
+                if self.extended is not None and dialect.name != "mysql":
                     kwargs["extended"] = self.extended
-                if dialect.name == "mysql":
-                    kwargs["extended"] = False
                 return self.ElementType(value, **kwargs)
 
         return process
