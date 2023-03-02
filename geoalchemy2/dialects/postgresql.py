@@ -15,21 +15,18 @@ from geoalchemy2.types import Geometry
 
 def create_spatial_index(bind, table, col):
     """Create spatial index on the given column."""
-    # If the index does not exist (which might be the case when
-    # management=False), define it and create it
-    if not [i for i in table.indexes if col in i.columns.values()]:
-        if col.type.use_N_D_index:
-            postgresql_ops = {col.name: "gist_geometry_ops_nd"}
-        else:
-            postgresql_ops = {}
-        idx = Index(
-            _spatial_idx_name(table.name, col.name),
-            col,
-            postgresql_using="gist",
-            postgresql_ops=postgresql_ops,
-            _column_flag=True,
-        )
-        idx.create(bind=bind)
+    if col.type.use_N_D_index:
+        postgresql_ops = {col.name: "gist_geometry_ops_nd"}
+    else:
+        postgresql_ops = {}
+    idx = Index(
+        _spatial_idx_name(table.name, col.name),
+        col,
+        postgresql_using="gist",
+        postgresql_ops=postgresql_ops,
+        _column_flag=True,
+    )
+    idx.create(bind=bind)
 
 
 def reflect_geometry_column(inspector, table, column_info):
@@ -134,18 +131,7 @@ def after_create(table, bind, **kw):
             if not [i for i in table.indexes if col in i.columns.values()] and check_management(
                 col, dialect_name
             ):
-                if col.type.use_N_D_index:
-                    postgresql_ops = {col.name: "gist_geometry_ops_nd"}
-                else:
-                    postgresql_ops = {}
-                idx = Index(
-                    _spatial_idx_name(table.name, col.name),
-                    col,
-                    postgresql_using="gist",
-                    postgresql_ops=postgresql_ops,
-                    _column_flag=True,
-                )
-                idx.create(bind=bind)
+                create_spatial_index(bind, table, col)
 
     for idx in table.info.pop("_after_create_indexes"):
         table.indexes.add(idx)
