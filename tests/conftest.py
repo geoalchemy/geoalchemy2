@@ -4,14 +4,16 @@ from pathlib import Path
 import pytest
 from sqlalchemy import MetaData
 from sqlalchemy import create_engine
+from sqlalchemy.dialects.mysql.base import MySQLDialect
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+from geoalchemy2.alembic_helpers import _monkey_patch_get_indexes_for_mysql
 from geoalchemy2.alembic_helpers import _monkey_patch_get_indexes_for_sqlite
 
 from . import copy_and_connect_sqlite_db
-from . import get_postgis_version
+from . import get_postgis_major_version
 from . import get_postgres_major_version
 from .schema_fixtures import *  # noqa
 
@@ -63,7 +65,7 @@ def pytest_generate_tests(metafunc):
             dialects = metafunc.cls.tested_dialects
 
         if dialects is None:
-            dialects = ["postgresql", "sqlite-spatialite3", "sqlite-spatialite4"]
+            dialects = ["mysql", "postgresql", "sqlite-spatialite3", "sqlite-spatialite4"]
 
         if "sqlite" in dialects:
             dialects = [i for i in dialects if i != "sqlite"] + sqlite_dialects
@@ -144,17 +146,24 @@ def engine(tmpdir, db_url, _engine_echo):
 
 
 @pytest.fixture
-def session(engine):
-    session = sessionmaker(bind=engine)()
-    yield session
-    session.rollback()
+def dialect_name(engine):
+    return engine.dialect.name
 
 
 @pytest.fixture
-def conn(session):
+def conn(engine):
     """Provide a connection to test database."""
-    conn = session.connection()
-    yield conn
+    with engine.connect() as connection:
+        trans = connection.begin()
+        yield connection
+        trans.rollback()
+
+
+@pytest.fixture
+def session(engine, conn):
+    Session = sessionmaker(bind=conn)
+    with Session(bind=conn) as session:
+        yield session
 
 
 @pytest.fixture
@@ -177,7 +186,7 @@ def base(metadata):
 
 @pytest.fixture
 def postgis_version(conn):
-    return get_postgis_version(conn)
+    return get_postgis_major_version(conn)
 
 
 @pytest.fixture
@@ -186,25 +195,29 @@ def postgres_major_version(conn):
 
 
 @pytest.fixture(autouse=True)
-def reset_sqlite_monkeypatch():
+def reset_alembic_monkeypatch():
     """Disable Alembic monkeypatching by default."""
     try:
-        normal_behavior = SQLiteDialect._get_indexes_normal_behavior
-        SQLiteDialect.get_indexes = normal_behavior
-        SQLiteDialect._get_indexes_normal_behavior = normal_behavior
+        normal_behavior_sqlite = SQLiteDialect._get_indexes_normal_behavior
+        SQLiteDialect.get_indexes = normal_behavior_sqlite
+        SQLiteDialect._get_indexes_normal_behavior = normal_behavior_sqlite
+
+        normal_behavior_mysql = MySQLDialect._get_indexes_normal_behavior
+        MySQLDialect.get_indexes = normal_behavior_mysql
+        MySQLDialect._get_indexes_normal_behavior = normal_behavior_mysql
     except AttributeError:
         pass
 
 
-@pytest.fixture(autouse=True)
-def use_sqlite_monkeypatch():
+@pytest.fixture()
+def use_alembic_monkeypatch():
     """Enable Alembic monkeypatching ."""
     _monkey_patch_get_indexes_for_sqlite()
+    _monkey_patch_get_indexes_for_mysql()
 
 
 @pytest.fixture
-def setup_tables(session, metadata):
-    conn = session.connection()
+def setup_tables(conn, metadata):
     metadata.drop_all(conn, checkfirst=True)
     metadata.create_all(conn)
     yield

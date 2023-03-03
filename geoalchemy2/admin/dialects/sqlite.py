@@ -55,7 +55,6 @@ def _setup_dummy_type(table, gis_cols):
         # Add dummy columns with GEOMETRY type
         col._actual_type = col.type
         col.type = _DummyGeometry()
-        col.nullable = col._actual_type.nullable
     table.columns = table.info["_saved_columns"]
 
 

@@ -38,7 +38,7 @@ class TestPickle:
         session.rollback()
         metadata.drop_all(session.bind, checkfirst=True)
 
-    def test_pickle_unpickle(self, session, setup_one_lake):
+    def test_pickle_unpickle(self, session, setup_one_lake, dialect_name):
         import pickle
 
         lake_id = setup_one_lake
@@ -51,4 +51,7 @@ class TestPickle:
         unpickled = pickle.loads(pickled)
         assert unpickled.geom.srid == 4326
         assert str(unpickled.geom) == data_desc
-        assert unpickled.geom.extended is True
+        if dialect_name == "mysql":
+            assert unpickled.geom.extended is False
+        else:
+            assert unpickled.geom.extended is True

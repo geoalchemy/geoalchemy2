@@ -19,6 +19,7 @@ from geoalchemy2.shape import to_shape
 
 # Tests imports
 from tests import select
+from tests import test_only_with_dialects
 
 metadata = MetaData()
 
@@ -32,6 +33,7 @@ table = Table(
 
 
 class TestLengthAtInsert:
+    @test_only_with_dialects("postgresql", "sqlite")
     def test_query(self, conn):
         metadata.drop_all(conn, checkfirst=True)
         metadata.create_all(conn)

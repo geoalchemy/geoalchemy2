@@ -53,6 +53,11 @@ def setup_ddl_event_listeners():
             # with a selectable as table, so we want to skip this case.
             return
 
+        if not getattr(column.type, "nullable", True):
+            column.nullable = column.type.nullable
+        elif hasattr(column.type, "nullable"):
+            column.type.nullable = column.nullable
+
         if not getattr(column.type, "spatial_index", False) and getattr(
             column.type, "use_N_D_index", False
         ):

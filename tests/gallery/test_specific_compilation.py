@@ -40,6 +40,7 @@ from geoalchemy2 import functions
 # Tests imports
 from tests import format_wkt
 from tests import select
+from tests import test_only_with_dialects
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
@@ -87,6 +88,7 @@ compiles(functions.ST_Buffer)(_compile_buffer_default)
 compiles(functions.ST_Buffer, "sqlite")(_compile_buffer_sqlite)
 
 
+@test_only_with_dialects("postgresql", "sqlite")
 def test_specific_compilation(conn):
     # Build a query with a sided buffer
     query = select(

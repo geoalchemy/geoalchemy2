@@ -38,16 +38,17 @@ def reflect_geometry_column(inspector, table, column_info):
     )
     if table.schema is not None:
         geometry_type_query += """ and table_schema = '{}'""".format(table.schema)
-    geometry_type, srid, nullable = inspector.bind.execute(text(geometry_type_query)).one()
+    geometry_type, srid, nullable_str = inspector.bind.execute(text(geometry_type_query)).one()
+    is_nullable = str(nullable_str).lower() == "yes"
 
     if geometry_type not in _POSSIBLE_TYPES:
         return
 
     # Check if the column has spatial index
     has_index_query = """SELECT DISTINCT
-                INDEX_TYPE
-            FROM INFORMATION_SCHEMA.STATISTICS
-            WHERE TABLE_NAME = '{}' and COLUMN_NAME = '{}'""".format(
+            INDEX_TYPE
+        FROM INFORMATION_SCHEMA.STATISTICS
+        WHERE TABLE_NAME = '{}' and COLUMN_NAME = '{}'""".format(
         table.name, column_name
     )
     if table.schema is not None:
@@ -60,7 +61,7 @@ def reflect_geometry_column(inspector, table, column_info):
         geometry_type=geometry_type.upper(),
         srid=srid,
         spatial_index=spatial_index,
-        nullable=str(nullable).lower() == "yes",
+        nullable=is_nullable,
         _spatial_index_reflected=True,
     )
 
@@ -168,6 +169,9 @@ def _compile_GeomFromText_MySql(element, compiler, **kw):
 
 def _compile_GeomFromWKB_MySql(element, compiler, **kw):
     element.identifier = "ST_GeomFromWKB"
+    wkb_data = list(element.clauses)[0].value
+    if isinstance(wkb_data, memoryview):
+        list(element.clauses)[0].value = wkb_data.tobytes()
     compiled = compiler.process(element.clauses, **kw)
     srid = element.type.srid
 
