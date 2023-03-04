@@ -9,8 +9,8 @@ import shapely.wkb
 import shapely.wkt
 from packaging import version
 
-from .elements import WKBElement
-from .elements import WKTElement
+from geoalchemy2.elements import WKBElement
+from geoalchemy2.elements import WKTElement
 
 if version.parse(shapely.__version__) < version.parse("1.7"):  # pragma: no cover
     ######################################################################
@@ -71,6 +71,8 @@ def to_shape(element):
             return shapely.wkt.loads(element.data.split(";", 1)[1])
         else:
             return shapely.wkt.loads(element.data)
+    else:
+        raise TypeError("Only WKBElement and WKTElement objects are supported")
 
 
 def from_shape(shape, srid=-1, extended=False):
@@ -94,3 +96,13 @@ def from_shape(shape, srid=-1, extended=False):
         srid=srid,
         extended=extended,
     )
+
+
+__all__ = [
+    "from_shape",
+    "to_shape",
+]
+
+
+def __dir__():
+    return __all__

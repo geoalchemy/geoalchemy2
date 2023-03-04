@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
-from . import types
+from geoalchemy2 import types
 
 # fmt: off
 _FUNCTIONS = [

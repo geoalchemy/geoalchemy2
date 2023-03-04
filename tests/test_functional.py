@@ -32,11 +32,11 @@ from sqlalchemy.sql import func
 from sqlalchemy.testing.assertions import ComparesTables
 
 import geoalchemy2
-import geoalchemy2.dialects
+import geoalchemy2.admin.dialects
 from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
-from geoalchemy2.dialects.sqlite import _get_spatialite_attrs
+from geoalchemy2.admin.dialects.sqlite import _get_spatialite_attrs
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
@@ -131,10 +131,10 @@ class TestAdmin:
             marks.append("after_drop")
             return
 
-        monkeypatch.setattr(geoalchemy2.dialects.common, "before_create", value=before_create)
-        monkeypatch.setattr(geoalchemy2.dialects.common, "after_create", value=after_create)
-        monkeypatch.setattr(geoalchemy2.dialects.common, "before_drop", value=before_drop)
-        monkeypatch.setattr(geoalchemy2.dialects.common, "after_drop", value=after_drop)
+        monkeypatch.setattr(geoalchemy2.admin.dialects.common, "before_create", value=before_create)
+        monkeypatch.setattr(geoalchemy2.admin.dialects.common, "after_create", value=after_create)
+        monkeypatch.setattr(geoalchemy2.admin.dialects.common, "before_drop", value=before_drop)
+        monkeypatch.setattr(geoalchemy2.admin.dialects.common, "after_drop", value=after_drop)
 
         metadata.drop_all(conn, checkfirst=True)
         metadata.create_all(conn)

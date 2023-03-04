@@ -74,8 +74,8 @@ from sqlalchemy.sql import annotation
 from sqlalchemy.sql import functions
 from sqlalchemy.sql.elements import ColumnElement
 
-from . import elements
-from ._functions import _FUNCTIONS
+from geoalchemy2 import elements
+from geoalchemy2._functions import _FUNCTIONS
 
 try:
     # SQLAlchemy < 2
@@ -252,6 +252,13 @@ class GenericFunction(_GeoFunctionBase):
         _GeoFunctionParent.__init__(self, *args, **kwargs)
 
 
+__all__ = [
+    "GenericFunction",
+    "ST_AsGeoJSON",
+    "TableRowElement",
+]
+
+
 # Iterate through _FUNCTIONS and create GenericFunction classes dynamically
 for name, type_, doc in _FUNCTIONS:
     attributes = {
@@ -277,3 +284,8 @@ for name, type_, doc in _FUNCTIONS:
         attributes["__doc__"] = "\n\n".join(docs)
 
     globals()[name] = type(name, (GenericFunction,), attributes)
+    __all__.append(name)
+
+
+def __dir__():
+    return __all__

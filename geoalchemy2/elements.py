@@ -2,17 +2,12 @@ import binascii
 import re
 import struct
 
-try:
-    from sqlalchemy.sql import functions
-    from sqlalchemy.sql.functions import FunctionElement
-except ImportError:  # SQLA < 0.9  # pragma: no cover
-    from sqlalchemy.sql import expression as functions
-    from sqlalchemy.sql.expression import FunctionElement
-
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql import functions
+from sqlalchemy.sql.functions import FunctionElement
 from sqlalchemy.types import to_instance
 
-from .exc import ArgumentError
+from geoalchemy2.exc import ArgumentError
 
 BinasciiError = binascii.Error
 
@@ -21,8 +16,6 @@ function_registry = set()
 
 class HasFunction(object):
     """Base class used as a marker to know if a given element has a 'geom_from' function."""
-
-    pass
 
 
 class _SpatialElement(HasFunction):
@@ -271,3 +264,16 @@ class CompositeElement(FunctionElement):
 @compiles(CompositeElement)
 def _compile_pgelem(expr, compiler, **kw):
     return "(%s).%s" % (compiler.process(expr.clauses, **kw), expr.name)
+
+
+__all__ = [
+    "_SpatialElement",
+    "CompositeElement",
+    "RasterElement",
+    "WKBElement",
+    "WKTElement",
+]
+
+
+def __dir__():
+    return __all__
