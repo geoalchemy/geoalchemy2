@@ -44,18 +44,18 @@ from geoalchemy2.shape import to_shape
 
 from . import check_indexes
 from . import format_wkt
-from . import get_postgis_version
+from . import get_postgis_major_version
 from . import select
 from . import skip_case_insensitivity
 from . import skip_pg12_sa1217
 from . import skip_postgis1
-from . import skip_postgis3
 from . import test_only_with_dialects
 
 SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("1.999")
 
 
 class TestAdmin:
+    @test_only_with_dialects("postgresql", "sqlite")
     def test_create_drop_tables(
         self,
         conn,
@@ -73,6 +73,89 @@ class TestAdmin:
         metadata.drop_all(conn, checkfirst=True)
         metadata.create_all(conn)
         metadata.drop_all(conn, checkfirst=True)
+
+    def test_nullable(self, conn, metadata, setup_tables, dialect_name):
+        # Define the table
+        t = Table(
+            "nullable_geom_type",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom_not_nullable",
+                Geometry(geometry_type=None, srid=4326, spatial_index=False, nullable=False),
+            ),
+            Column(
+                "geom_nullable",
+                Geometry(geometry_type=None, srid=4326, spatial_index=False, nullable=True),
+            ),
+            Column(
+                "geom_col_not_nullable",
+                Geometry(geometry_type=None, srid=4326, spatial_index=False),
+                nullable=False,
+            ),
+            Column(
+                "geom_col_nullable",
+                Geometry(geometry_type=None, srid=4326, spatial_index=False),
+                nullable=True,
+            ),
+        )
+
+        # Create the table
+        t.create(bind=conn)
+
+        conn.execute(
+            t.insert(),
+            [
+                {
+                    "geom_not_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
+                    "geom_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
+                    "geom_col_not_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
+                    "geom_col_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
+                },
+                {
+                    "geom_not_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
+                    "geom_nullable": None,
+                    "geom_col_not_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
+                    "geom_col_nullable": None,
+                },
+            ],
+        )
+
+        with pytest.raises((IntegrityError, OperationalError)):
+            with conn.begin_nested():
+                conn.execute(
+                    t.insert(),
+                    [
+                        {
+                            "geom_not_nullable": None,
+                            "geom_nullable": None,
+                            "geom_col_not_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
+                            "geom_col_nullable": None,
+                        },
+                    ],
+                )
+
+        with pytest.raises((IntegrityError, OperationalError)):
+            with conn.begin_nested():
+                conn.execute(
+                    t.insert(),
+                    [
+                        {
+                            "geom_not_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
+                            "geom_nullable": None,
+                            "geom_col_not_nullable": None,
+                            "geom_col_nullable": None,
+                        },
+                    ],
+                )
+
+        results = conn.execute(t.select())
+        rows = results.fetchall()
+
+        assert len(rows) == 2
+
+        # Drop the table
+        t.drop(bind=conn)
 
     def test_no_geom_type(self, conn):
         with pytest.warns(UserWarning, match="srid not enforced when geometry_type is None"):
@@ -198,6 +281,7 @@ class TestInsertionCore:
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
+    @test_only_with_dialects("postgresql", "sqlite")
     def test_insert_geom_poi(self, conn, Poi, setup_tables):
         conn.execute(
             Poi.__table__.insert(),
@@ -260,13 +344,16 @@ class TestSelectBindParam:
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
-    def test_select_bindparam_WKBElement_extented(self, conn, Lake, setup_one_lake):
+    def test_select_bindparam_WKBElement_extented(self, conn, Lake, setup_one_lake, dialect_name):
         s = Lake.__table__.select()
         results = conn.execute(s)
         rows = results.fetchall()
         geom = rows[0][1]
         assert isinstance(geom, WKBElement)
-        assert geom.extended is True
+        if dialect_name == "mysql":
+            assert geom.extended is False
+        else:
+            assert geom.extended is True
 
         s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam("geom"))
         params = {"geom": geom}
@@ -285,7 +372,7 @@ class TestSelectBindParam:
 
 
 class TestInsertionORM:
-    def test_WKT(self, session, Lake, setup_tables):
+    def test_WKT(self, session, Lake, setup_tables, dialect_name, postgis_version):
         # With PostGIS 1.5:
         # IntegrityError: (IntegrityError) new row for relation "lake" violates
         # check constraint "enforce_srid_geom"
@@ -296,50 +383,72 @@ class TestInsertionORM:
         #
         # With PostGIS 3.0:
         # The SRID is taken from the Column definition so no error is reported
-        skip_postgis3(session.connection())
-
         lake = Lake("LINESTRING(0 0,1 1)")
         session.add(lake)
 
-        with pytest.raises((DataError, IntegrityError)):
+        if (dialect_name == "postgresql" and postgis_version < 3) or dialect_name == "sqlite":
+            with pytest.raises((DataError, IntegrityError)):
+                session.flush()
+        else:
             session.flush()
 
-    def test_WKTElement(self, session, Lake, setup_tables):
+    def test_WKTElement(self, session, Lake, setup_tables, dialect_name):
         lake = Lake(WKTElement("LINESTRING(0 0,1 1)", srid=4326))
         session.add(lake)
         session.flush()
         session.expire(lake)
         assert isinstance(lake.geom, WKBElement)
-        assert str(lake.geom) == (
-            "0102000020e6100000020000000000000000000000000000000000000000000"
-            "0000000f03f000000000000f03f"
-        )
+        if dialect_name == "mysql":
+            # Not extended case
+            assert str(lake.geom) == (
+                "0102000000020000000000000000000000000000000000000000000"
+                "0000000f03f000000000000f03f"
+            )
+        else:
+            assert str(lake.geom) == (
+                "0102000020e6100000020000000000000000000000000000000000000000000"
+                "0000000f03f000000000000f03f"
+            )
         wkt = session.execute(lake.geom.ST_AsText()).scalar()
         assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-    def test_WKBElement(self, session, Lake, setup_tables):
+    def test_WKBElement(self, session, Lake, setup_tables, dialect_name):
         shape = LineString([[0, 0], [1, 1]])
         lake = Lake(from_shape(shape, srid=4326))
         session.add(lake)
         session.flush()
         session.expire(lake)
         assert isinstance(lake.geom, WKBElement)
-        assert str(lake.geom) == (
-            "0102000020e6100000020000000000000000000000000000000000000000000"
-            "0000000f03f000000000000f03f"
-        )
+        if dialect_name == "mysql":
+            # Not extended case
+            assert str(lake.geom) == (
+                "0102000000020000000000000000000000000000000000000000000"
+                "0000000f03f000000000000f03f"
+            )
+        else:
+            assert str(lake.geom) == (
+                "0102000020e6100000020000000000000000000000000000000000000000000"
+                "0000000f03f000000000000f03f"
+            )
         wkt = session.execute(lake.geom.ST_AsText()).scalar()
         assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
     def test_transform(self, session, LocalPoint, setup_tables):
+        if session.bind.dialect.name == "mysql":
+            pytest.skip(
+                reason=(
+                    "The SRID is not properly retrieved so an exception is raised. TODO: This "
+                    "should be fixed later"
+                )
+            )
         # Create new point instance
         p = LocalPoint()
-        p.geom = "SRID=4326;POINT(5 45)"  # Insert 2D geometry into 3D column
-        p.managed_geom = "SRID=4326;POINT(5 45)"  # Insert 2D geometry into 3D column
+        p.geom = "SRID=4326;POINT(5 45)"  # Insert geometry with wrong SRID
+        p.managed_geom = "SRID=4326;POINT(5 45)"  # Insert geometry with wrong SRID
 
         # Insert point
         session.add(p)
@@ -374,7 +483,7 @@ class TestInsertionORM:
 
 
 class TestUpdateORM:
-    def test_WKTElement(self, session, Lake, setup_tables):
+    def test_WKTElement(self, session, Lake, setup_tables, dialect_name):
         raw_wkt = "LINESTRING(0 0,1 1)"
         lake = Lake(WKTElement(raw_wkt, srid=4326))
         session.add(lake)
@@ -389,16 +498,17 @@ class TestUpdateORM:
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-        # Set geometry to None
-        lake.geom = None
+        if dialect_name != "mysql":
+            # Set geometry to None
+            lake.geom = None
 
-        # Update in DB
-        session.flush()
+            # Update in DB
+            session.flush()
 
-        # Check what was updated in DB
-        assert lake.geom is None
-        cols = [Lake.id, Lake.geom]
-        assert session.execute(select(cols)).fetchall() == [(1, None)]
+            # Check what was updated in DB
+            assert lake.geom is None
+            cols = [Lake.id, Lake.geom]
+            assert session.execute(select(cols)).fetchall() == [(1, None)]
 
         # Reset geometry to initial value
         lake.geom = WKTElement(raw_wkt, srid=4326)
@@ -413,7 +523,7 @@ class TestUpdateORM:
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-    def test_WKBElement(self, session, Lake, setup_tables):
+    def test_WKBElement(self, session, Lake, setup_tables, dialect_name):
         shape = LineString([[0, 0], [1, 1]])
         initial_value = from_shape(shape, srid=4326)
         lake = Lake(initial_value)
@@ -424,21 +534,23 @@ class TestUpdateORM:
 
         # Check what was inserted in DB
         assert isinstance(lake.geom, WKBElement)
-        wkt = session.execute(lake.geom.ST_AsText()).scalar()
+        wkt_query = lake.geom.ST_AsText()
+        wkt = session.execute(wkt_query).scalar()
         assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-        # Set geometry to None
-        lake.geom = None
+        if dialect_name != "mysql":
+            # Set geometry to None
+            lake.geom = None
 
-        # Update in DB
-        session.flush()
+            # Update in DB
+            session.flush()
 
-        # Check what was updated in DB
-        assert lake.geom is None
-        cols = [Lake.id, Lake.geom]
-        assert session.execute(select(cols)).fetchall() == [(1, None)]
+            # Check what was updated in DB
+            assert lake.geom is None
+            cols = [Lake.id, Lake.geom]
+            assert session.execute(select(cols)).fetchall() == [(1, None)]
 
         # Reset geometry to initial value
         lake.geom = initial_value
@@ -456,7 +568,7 @@ class TestUpdateORM:
         session.refresh(lake)
         assert to_shape(lake.geom) == to_shape(initial_value)
 
-    def test_other_type_fail(self, session, Lake, setup_tables):
+    def test_other_type_fail(self, session, Lake, setup_tables, dialect_name):
         shape = LineString([[0, 0], [1, 1]])
         lake = Lake(from_shape(shape, srid=4326))
         session.add(lake)
@@ -468,17 +580,22 @@ class TestUpdateORM:
         lake.geom = 1
 
         # Update in DB
-        if session.bind.dialect.name != "sqlite":
+        if dialect_name == "postgresql":
             with pytest.raises(ProgrammingError):
                 # Call __eq__() operator of _SpatialElement with 'other' argument equal to 1
                 # so the lake instance is detected as different and is thus updated but with
                 # an invalid geometry.
                 session.flush()
-        else:
+        elif dialect_name == "sqlite":
             # SQLite silently set the geom attribute to NULL
             session.flush()
             session.refresh(lake)
             assert lake.geom is None
+        elif dialect_name == "mysql":
+            with pytest.raises(OperationalError):
+                session.flush()
+        else:
+            raise ValueError(f"Unexpected dialect: {dialect_name}")
 
 
 class TestCallFunction:
@@ -498,10 +615,10 @@ class TestCallFunction:
         session.expire(p)
         return p.id
 
-    def test_ST_GeometryType(self, session, Lake, setup_one_lake):
+    def test_ST_GeometryType(self, session, Lake, setup_one_lake, dialect_name):
         lake_id = setup_one_lake
 
-        if session.bind.dialect.name == "postgresql":
+        if dialect_name == "postgresql":
             expected_geometry_type = "ST_LineString"
         else:
             expected_geometry_type = "LINESTRING"
@@ -521,6 +638,7 @@ class TestCallFunction:
         assert isinstance(r4, Lake)
         assert r4.id == lake_id
 
+    @test_only_with_dialects("postgresql", "sqlite")
     def test_ST_Buffer(self, session, Lake, setup_one_lake):
         lake_id = setup_one_lake
 
@@ -546,6 +664,7 @@ class TestCallFunction:
         assert isinstance(r4, Lake)
         assert r4.id == lake_id
 
+    @test_only_with_dialects("postgresql", "sqlite")
     def test_ST_AsGeoJson(self, session, Lake, setup_one_lake):
         lake_id = setup_one_lake
         lake = session.query(Lake).get(lake_id)
@@ -581,45 +700,44 @@ class TestCallFunction:
     def test_comparator_case_insensitivity(self, session, Lake, setup_one_lake):
         lake_id = setup_one_lake
 
-        s = select([func.ST_Buffer(Lake.__table__.c.geom, 2)])
+        s = select([func.ST_Transform(Lake.__table__.c.geom, 2154)])
         r1 = session.execute(s).scalar()
         assert isinstance(r1, WKBElement)
 
         lake = session.query(Lake).get(lake_id)
-        assert isinstance(lake.geom, WKBElement)
 
-        r2 = session.execute(lake.geom.ST_Buffer(2)).scalar()
+        r2 = session.execute(lake.geom.ST_Transform(2154)).scalar()
         assert isinstance(r2, WKBElement)
 
-        r3 = session.execute(lake.geom.st_buffer(2)).scalar()
+        r3 = session.execute(lake.geom.st_transform(2154)).scalar()
         assert isinstance(r3, WKBElement)
 
-        r4 = session.execute(lake.geom.St_BuFfEr(2)).scalar()
+        r4 = session.execute(lake.geom.St_TrAnSfOrM(2154)).scalar()
         assert isinstance(r4, WKBElement)
 
-        r5 = session.query(Lake.geom.ST_Buffer(2)).scalar()
+        r5 = session.query(Lake.geom.ST_Transform(2154)).scalar()
         assert isinstance(r5, WKBElement)
 
-        r6 = session.query(Lake.geom.st_buffer(2)).scalar()
+        r6 = session.query(Lake.geom.st_transform(2154)).scalar()
         assert isinstance(r6, WKBElement)
 
-        r7 = session.query(Lake.geom.St_BuFfEr(2)).scalar()
+        r7 = session.query(Lake.geom.St_TrAnSfOrM(2154)).scalar()
         assert isinstance(r7, WKBElement)
 
         assert r1.data == r2.data == r3.data == r4.data == r5.data == r6.data == r7.data
 
-    def test_unknown_function_column(self, session, Lake, setup_one_lake):
+    def test_unknown_function_column(self, session, Lake, setup_one_lake, dialect_name):
         s = select([func.ST_UnknownFunction(Lake.__table__.c.geom, 2)])
-        exc = ProgrammingError if session.bind.dialect.name == "postgresql" else OperationalError
+        exc = ProgrammingError if dialect_name == "postgresql" else OperationalError
         with pytest.raises(exc, match="ST_UnknownFunction"):
             session.execute(s)
 
-    def test_unknown_function_element(self, session, Lake, setup_one_lake):
+    def test_unknown_function_element(self, session, Lake, setup_one_lake, dialect_name):
         lake_id = setup_one_lake
         lake = session.query(Lake).get(lake_id)
 
         s = select([func.ST_UnknownFunction(lake.geom, 2)])
-        exc = ProgrammingError if session.bind.dialect.name == "postgresql" else OperationalError
+        exc = ProgrammingError if dialect_name == "postgresql" else OperationalError
         with pytest.raises(exc):
             # TODO: here the query fails because of a
             # "(psycopg2.ProgrammingError) can't adapt type 'WKBElement'"
@@ -635,9 +753,11 @@ class TestCallFunction:
 
 
 class TestShapely:
-    def test_to_shape(self, session, Lake, setup_tables):
-        if session.bind.dialect.name == "sqlite":
+    def test_to_shape(self, session, Lake, setup_tables, dialect_name):
+        if dialect_name == "sqlite":
             data_type = str
+        elif dialect_name == "mysql":
+            data_type = bytes
         else:
             data_type = memoryview
 
@@ -682,6 +802,7 @@ class TestContraint:
 
         return ConstrainedLake
 
+    @test_only_with_dialects("postgresql", "sqlite")
     def test_insert(self, conn, ConstrainedLake, setup_tables):
         # Insert geometries
         conn.execute(
@@ -713,7 +834,8 @@ class TestReflection:
         reflection_tables_metadata.drop_all(conn, checkfirst=True)
         reflection_tables_metadata.create_all(conn)
 
-    def test_reflection(self, conn, setup_reflection_tables):
+    @test_only_with_dialects("postgresql", "sqlite")
+    def test_reflection(self, conn, setup_reflection_tables, dialect_name):
         skip_pg12_sa1217(conn)
         t = Table(
             "lake",
@@ -721,7 +843,7 @@ class TestReflection:
             autoload_with=conn,
         )
 
-        if conn.dialect.name == "postgresql":
+        if dialect_name == "postgresql":
             # Check index query with explicit schema
             t_with_schema = Table("lake", MetaData(), autoload_with=conn, schema="gis")
             assert sorted([col.name for col in t.columns]) == sorted(
@@ -731,7 +853,7 @@ class TestReflection:
                 [idx.name for idx in t_with_schema.indexes]
             )
 
-        if get_postgis_version(conn).startswith("1."):
+        if get_postgis_major_version(conn) == 1:
             type_ = t.c.geom.type
             assert isinstance(type_, Geometry)
             assert type_.geometry_type == "GEOMETRY"
@@ -831,6 +953,7 @@ class TestReflection:
             table_name=t.name,
         )
 
+    @test_only_with_dialects("postgresql", "sqlite")
     def test_raster_reflection(self, conn, Ocean, setup_tables):
         skip_pg12_sa1217(conn)
         skip_postgis1(conn)
@@ -867,6 +990,7 @@ class TestReflection:
         yield Ocean
         conn.execute(text("DROP VIEW test_view;"))
 
+    @test_only_with_dialects("postgresql", "sqlite")
     def test_view_reflection(self, conn, Ocean, setup_tables, ocean_view):
         """Test reflection of a view.
 

@@ -15,6 +15,7 @@ from alembic.operations import Operations
 from alembic.operations import ops
 from sqlalchemy import Column
 from sqlalchemy import text
+from sqlalchemy.dialects.mysql.base import MySQLDialect
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import DropTable
@@ -86,6 +87,51 @@ def _monkey_patch_get_indexes_for_sqlite():
 
 
 _monkey_patch_get_indexes_for_sqlite()
+
+
+def _monkey_patch_get_indexes_for_mysql():
+    """Monkey patch SQLAlchemy to fix spatial index reflection."""
+    normal_behavior = MySQLDialect.get_indexes
+
+    def spatial_behavior(self, connection, table_name, schema=None, **kw):
+        indexes = self._get_indexes_normal_behavior(connection, table_name, schema=None, **kw)
+
+        # Get spatial indexes
+        has_index_query = """SELECT DISTINCT
+                COLUMN_NAME
+            FROM INFORMATION_SCHEMA.STATISTICS
+            WHERE TABLE_NAME = '{}' AND INDEX_TYPE = 'SPATIAL'""".format(
+            table_name
+        )
+        if schema is not None:
+            has_index_query += """ AND TABLE_SCHEMA = '{}'""".format(schema)
+        spatial_indexes = connection.execute(text(has_index_query)).fetchall()
+
+        if spatial_indexes:
+            reflected_names = set([i["name"] for i in indexes])
+            for idx in spatial_indexes:
+                idx_col = idx[0]
+                idx_name = _spatial_idx_name(table_name, idx_col)
+                if idx_name in reflected_names:
+                    continue
+                indexes.append(
+                    {
+                        "name": idx_name,
+                        "column_names": [idx_col],
+                        "unique": 0,
+                        "dialect_options": {"_column_flag": True},
+                    }
+                )
+                reflected_names.add(idx_name)
+
+        return indexes
+
+    spatial_behavior.__doc__ = normal_behavior.__doc__
+    MySQLDialect.get_indexes = spatial_behavior
+    MySQLDialect._get_indexes_normal_behavior = normal_behavior
+
+
+_monkey_patch_get_indexes_for_mysql()
 
 
 def render_item(obj_type, obj, autogen_context):

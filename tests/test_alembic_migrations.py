@@ -25,7 +25,7 @@ def filter_tables(name, type_, parent_names):
 
 
 class TestAutogenerate:
-    def test_no_diff(self, conn, Lake, setup_tables, use_sqlite_monkeypatch):
+    def test_no_diff(self, conn, Lake, setup_tables, use_alembic_monkeypatch, dialect_name):
         """Check that the autogeneration detects spatial types properly."""
         metadata = MetaData()
 
@@ -39,6 +39,7 @@ class TestAutogenerate:
                     geometry_type="LINESTRING",
                     srid=4326,
                     management=Lake.__table__.c.geom.type.management,
+                    nullable=dialect_name != "mysql",
                 ),
             ),
             schema=Lake.__table__.schema,
@@ -56,7 +57,7 @@ class TestAutogenerate:
 
         assert diff == []
 
-    def test_diff(self, conn, Lake, setup_tables, use_sqlite_monkeypatch):
+    def test_diff(self, conn, Lake, setup_tables, use_alembic_monkeypatch):
         """Check that the autogeneration detects spatial types properly."""
         metadata = MetaData()
 
@@ -253,7 +254,7 @@ datefmt = %%H:%%M:%%S
 
 @test_only_with_dialects("postgresql", "sqlite-spatialite4")
 def test_migration_revision(
-    conn, metadata, alembic_config, alembic_env_path, test_script_path, use_sqlite_monkeypatch
+    conn, metadata, alembic_config, alembic_env_path, test_script_path, use_alembic_monkeypatch
 ):
     initial_rev = command.revision(
         alembic_config,

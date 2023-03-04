@@ -237,12 +237,12 @@ class _GISType(UserDefinedType):
 
 @compiles(_GISType, "mysql")
 def get_col_spec(self, *args, **kwargs):
-    if not self.geometry_type:
-        return self.name
+    if self.geometry_type is not None:
+        spec = "%s" % self.geometry_type
+    else:
+        spec = "GEOMETRY"
 
-    spec = "%s" % self.geometry_type
-
-    if not self.nullable:
+    if not self.nullable or self.spatial_index:
         spec += " NOT NULL"
     if self.srid > 0:
         spec += " SRID %d" % self.srid

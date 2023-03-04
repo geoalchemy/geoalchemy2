@@ -14,7 +14,7 @@ from geoalchemy2 import Raster
 
 @pytest.fixture
 def Lake(base, postgis_version, schema):
-    with_management = postgis_version.startswith("1.")
+    with_management = postgis_version == 1
 
     class Lake(base):
         __tablename__ = "lake"
@@ -49,7 +49,7 @@ def Poi(base, engine, schema):
 
 @pytest.fixture
 def Summit(base, postgis_version, schema):
-    with_use_typemod = postgis_version.startswith("1.")
+    with_use_typemod = postgis_version == 1
 
     class Summit(base):
         __tablename__ = "summit"
@@ -73,7 +73,7 @@ def Summit(base, postgis_version, schema):
 @pytest.fixture
 def Ocean(base, postgis_version):
     # The raster type is only available on PostGIS 2.0 and above
-    if postgis_version.startswith("1."):
+    if postgis_version == 1:
         pytest.skip("The raster type is only available on PostGIS 2.0 and above")
 
     class Ocean(base):

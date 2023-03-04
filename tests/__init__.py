@@ -26,11 +26,11 @@ class test_only_with_dialects:
         return test_obj
 
 
-def get_postgis_version(bind):
+def get_postgis_major_version(bind):
     try:
-        return bind.execute(func.postgis_lib_version()).scalar()
+        return version.parse(bind.execute(func.postgis_lib_version()).scalar()).major
     except OperationalError:
-        return "0"
+        return version.parse("0").major
 
 
 def get_postgres_major_version(bind):
@@ -44,17 +44,17 @@ def get_postgres_major_version(bind):
 
 
 def skip_postgis1(bind):
-    if get_postgis_version(bind).startswith("1."):
+    if get_postgis_major_version(bind) == 1:
         pytest.skip("requires PostGIS != 1")
 
 
 def skip_postgis2(bind):
-    if get_postgis_version(bind).startswith("2."):
+    if get_postgis_major_version(bind) == 2:
         pytest.skip("requires PostGIS != 2")
 
 
 def skip_postgis3(bind):
-    if get_postgis_version(bind).startswith("3."):
+    if get_postgis_major_version(bind) == 3:
         pytest.skip("requires PostGIS != 3")
 
 
