@@ -83,6 +83,14 @@ jobs:
         # Drop PostGIS Tiger Geocoder extension to "gis" database
         psql -h localhost -p 5432 -U gis -d gis -c 'DROP EXTENSION IF EXISTS postgis_tiger_geocoder CASCADE;'
 
+    # Setup MySQL
+    - name: Set up MySQL
+      run: |
+        sudo systemctl start mysql
+        sudo mysql --user=root --password=root --host=127.0.0.1 -e "CREATE USER 'gis'@'%' IDENTIFIED BY 'gis';"
+        sudo mysql --user=root --password=root --host=127.0.0.1 -e "GRANT ALL PRIVILEGES ON *.* TO 'gis'@'%' WITH GRANT OPTION;"
+        mysql --user=gis --password=gis -e "CREATE DATABASE gis;"
+
     # Check python version
     - name: Display Python version
       run: |
@@ -102,6 +110,7 @@ jobs:
         SPATIALITE_LIBRARY_PATH: /home/runner/micromamba-root/envs/test_${{ matrix.python-version.flag }}/lib/mod_spatialite.so
         PROJ_LIB: /home/runner/micromamba-root/envs/test_${{ matrix.python-version.flag }}/share/proj
         COVERAGE_FILE: .coverage
+        PYTEST_MYSQL_DB_URL: mysql://gis:gis@127.0.0.1/gis
       run: |
         # Run the unit test suite with SQLAlchemy=1.4.* and then with the latest version of SQLAlchemy
         tox -vv

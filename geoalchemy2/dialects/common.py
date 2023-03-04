@@ -74,8 +74,12 @@ def setup_create_drop(table, bind):
     return dialect, gis_cols, regular_cols
 
 
+def reflect_geometry_column(inspector, table, column_info):
+    return
+
+
 def check_management(column, dialect_name):
-    return getattr(column.type, "management", False) is True or dialect_name == "sqlite"
+    return getattr(column.type, "management", False) is True or dialect_name in ["sqlite", "mysql"]
 
 
 def before_create(table, bind, **kw):

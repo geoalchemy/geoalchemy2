@@ -33,6 +33,11 @@ def pytest_addoption(parser):
         help="SQLite DB URL used for tests with SpatiaLite4 (`sqlite:///path_to_db_file`).",
     )
     parser.addoption(
+        "--mysql_dburl",
+        action="store",
+        help="MySQL DB URL used for tests with MySQL (`mysql://user:password@host:port/dbname`).",
+    )
+    parser.addoption(
         "--engine-echo",
         action="store_true",
         default=False,
@@ -49,6 +54,8 @@ def pytest_generate_tests(metafunc):
             dialects = ["postgresql"]
         elif metafunc.module.__name__ == "tests.test_functional_sqlite":
             dialects = sqlite_dialects
+        elif metafunc.module.__name__ == "tests.test_functional_mysql":
+            dialects = ["mysql"]
 
         if getattr(metafunc.function, "tested_dialects", False):
             dialects = metafunc.function.tested_dialects
@@ -74,12 +81,11 @@ def db_url_postgresql(request):
 
 
 @pytest.fixture(scope="session")
-def db_url_sqlite(request, tmpdir_factory):
+def db_url_mysql(request, tmpdir_factory):
     return (
-        request.config.getoption("--sqlite_spatialite4_dburl")
-        or os.getenv("PYTEST_SQLITE_DB_URL")
-        # or f"sqlite:///{tmpdir_factory.getbasetemp() / 'spatialdb'}"
-        or "sqlite-auto"
+        request.config.getoption("--mysql_dburl")
+        or os.getenv("PYTEST_MYSQL_DB_URL")
+        or "mysql://gis:gis@localhost/gis"
     )
 
 
@@ -102,9 +108,13 @@ def db_url_sqlite_spatialite4(request, tmpdir_factory):
 
 
 @pytest.fixture(scope="session")
-def db_url(request, db_url_postgresql, db_url_sqlite_spatialite3, db_url_sqlite_spatialite4):
+def db_url(
+    request, db_url_postgresql, db_url_sqlite_spatialite3, db_url_sqlite_spatialite4, db_url_mysql
+):
     if request.param == "postgresql":
         return db_url_postgresql
+    if request.param == "mysql":
+        return db_url_mysql
     elif request.param == "sqlite-spatialite3":
         return db_url_sqlite_spatialite3
     elif request.param == "sqlite-spatialite4":

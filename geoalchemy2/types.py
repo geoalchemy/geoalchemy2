@@ -9,6 +9,7 @@ import warnings
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names as postgresql_ischema_names
 from sqlalchemy.dialects.sqlite.base import ischema_names as sqlite_ischema_names
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
 from sqlalchemy.types import Float
 from sqlalchemy.types import Integer
@@ -28,6 +29,7 @@ from .elements import CompositeElement
 from .elements import RasterElement
 from .elements import WKBElement
 from .elements import WKTElement
+from .elements import _SpatialElement
 from .exc import ArgumentError
 
 
@@ -175,7 +177,7 @@ class _GISType(UserDefinedType):
                 kwargs = {}
                 if self.srid > 0:
                     kwargs["srid"] = self.srid
-                if self.extended is not None:
+                if self.extended is not None and dialect.name != "mysql":
                     kwargs["extended"] = self.extended
                 return self.ElementType(value, **kwargs)
 
@@ -189,6 +191,52 @@ class _GISType(UserDefinedType):
         """Specific bind_processor that automatically process spatial elements."""
 
         def process(bindvalue):
+            # MySQL-specific process
+            if dialect.name == "mysql":
+                if isinstance(bindvalue, str):
+                    wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
+                    srid = wkt_match.group(2)
+                    try:
+                        if srid is not None:
+                            srid = int(srid)
+                    except (ValueError, TypeError):  # pragma: no cover
+                        raise ArgumentError(
+                            f"The SRID ({srid}) of the supplied value can not be casted to integer"
+                        )
+
+                    if srid is not None and srid != self.srid:
+                        raise ArgumentError(
+                            f"The SRID ({srid}) of the supplied value is different "
+                            f"from the one of the column ({self.srid})"
+                        )
+                    return wkt_match.group(3)
+
+                if (
+                    isinstance(bindvalue, _SpatialElement)
+                    and bindvalue.srid != -1
+                    and bindvalue.srid != self.srid
+                ):
+                    raise ArgumentError(
+                        f"The SRID ({bindvalue.srid}) of the supplied value is different "
+                        f"from the one of the column ({self.srid})"
+                    )
+
+                if isinstance(bindvalue, WKTElement):
+                    bindvalue = bindvalue.as_wkt()
+                    if bindvalue.srid == -1:
+                        bindvalue.srid = self.srid
+                    return bindvalue
+                elif isinstance(bindvalue, WKBElement):
+                    if "wkb" not in self.from_text.lower():
+                        if not SHAPELY:
+                            raise ArgumentError(
+                                "Shapely is required for handling WKBElement bind "
+                                "values when using MySQL"
+                            )
+                        return to_shape(bindvalue).wkt
+                    return bindvalue
+
+            # Other dialects
             if isinstance(bindvalue, WKTElement):
                 if bindvalue.extended:
                     return "%s" % (bindvalue.data)
@@ -255,6 +303,20 @@ class _GISType(UserDefinedType):
             )
 
         return geometry_type, srid
+
+
+@compiles(_GISType, "mysql")
+def get_col_spec(self, *args, **kwargs):
+    if not self.geometry_type:
+        return self.name
+
+    spec = "%s" % self.geometry_type
+
+    if not self.nullable:
+        spec += " NOT NULL"
+    if self.srid > 0:
+        spec += " SRID %d" % self.srid
+    return spec
 
 
 class Geometry(_GISType):
