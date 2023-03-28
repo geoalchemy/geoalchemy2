@@ -29,7 +29,7 @@ setup(
     },
     license="MIT",
     python_requires=">=3.7",
-    packages=find_namespace_packages(include=["geoalchemy2"]),
+    packages=find_namespace_packages(include=["geoalchemy2*"]),
     include_package_data=True,
     zip_safe=False,
     setup_requires=["setuptools_scm"],
