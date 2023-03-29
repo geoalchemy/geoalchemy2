@@ -144,7 +144,7 @@ class WKTElement(_SpatialElement):
     def as_wkt(self):
         if self.extended:
             srid_match = self._REMOVE_SRID.match(self.data)
-            return WKTElement(srid_match.group(3), self.srid)
+            return WKTElement(srid_match.group(3), self.srid, extended=False)
         return WKTElement(self.data, self.srid, self.extended)
 
     def as_ewkt(self):
@@ -227,16 +227,18 @@ class WKBElement(_SpatialElement):
             if isinstance(self.data, str):
                 # SpatiaLite case
                 # assume that the string is an hex value
+                is_hex = True
                 header = binascii.unhexlify(self.data[:10])
                 byte_order, wkb_type = header[0], header[1:5]
             else:
+                is_hex = False
                 byte_order, wkb_type = self.data[0], self.data[1:5]
 
             byte_order_marker = "<I" if byte_order else ">I"
             wkb_type = struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else 0
             wkb_type &= 3758096383  # Set SRID bit to 0 and keep all other bits
 
-            if isinstance(self.data, str):
+            if is_hex:
                 wkb_type_hex = binascii.hexlify(
                     wkb_type.to_bytes(4, "little" if byte_order else "big")
                 )
@@ -247,7 +249,7 @@ class WKBElement(_SpatialElement):
                 buffer.extend(struct.pack(byte_order_marker, wkb_type))
                 buffer.extend(self.data[9:])
                 data = memoryview(buffer)
-            return WKBElement(data, self.srid)
+            return WKBElement(data, self.srid, extended=False)
         return WKBElement(self.data, self.srid)
 
     def as_ewkb(self):
@@ -284,7 +286,7 @@ class WKBElement(_SpatialElement):
                 buffer.extend(self.data[5:])
                 data = memoryview(buffer)
 
-            return WKBElement(data)
+            return WKBElement(data, self.srid, extended=True)
         return WKBElement(self.data, self.srid)
 
 
