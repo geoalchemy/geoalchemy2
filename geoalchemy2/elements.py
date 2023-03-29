@@ -185,6 +185,8 @@ class WKBElement(_SpatialElement):
             #     WKB_XDR = 0,  // Most Significant Byte First
             #     WKB_NDR = 1,  // Least Significant Byte First
             # }
+            # See https://trac.osgeo.org/postgis/browser/branches/3.0/doc/ZMSgeoms.txt
+            # for more details about WKB/EWKB specifications.
             if isinstance(data, str):
                 # SpatiaLite case
                 # assume that the string is an hex value
