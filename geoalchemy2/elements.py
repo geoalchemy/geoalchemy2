@@ -27,11 +27,11 @@ class _SpatialElement(HasFunction):
         srid: An integer representing the spatial reference system. E.g. ``4326``.
             Default value is ``-1``, which means no/unknown reference system.
         extended: A boolean indicating whether the extended format (EWKT or EWKB)
-            is used. Default is ``False``.
+            is used. Default is ``None``.
 
     """
 
-    def __init__(self, data, srid=-1, extended=False):
+    def __init__(self, data, srid=-1, extended=None):
         self.srid = srid
         self.data = data
         self.extended = extended
@@ -117,22 +117,19 @@ class WKTElement(_SpatialElement):
     geom_from = "ST_GeomFromText"
     geom_from_extended_version = "ST_GeomFromEWKT"
 
-    def __init__(self, data, srid=-1, extended=False):
-        if srid == -1:
-            has_srid = data.startswith("SRID=")
-            extended = extended or has_srid
+    def __init__(self, data, srid=-1, extended=None):
+        if extended is None:
+            extended = data.startswith("SRID=")
+        if extended and srid == -1:
             # read srid from EWKT
-            if extended:
-                if not has_srid:
-                    raise ArgumentError("invalid EWKT string {}".format(data))
-                data_s = data.split(";", 1)
-                if len(data_s) != 2:
-                    raise ArgumentError("invalid EWKT string {}".format(data))
-                header = data_s[0]
-                try:
-                    srid = int(header[5:])
-                except ValueError:
-                    raise ArgumentError("invalid EWKT string {}".format(data))
+            data_s = data.split(";")
+            if len(data_s) != 2:
+                raise ArgumentError("invalid EWKT string {}".format(data))
+            header = data_s[0]
+            try:
+                srid = int(header[5:])
+            except ValueError:
+                raise ArgumentError("invalid EWKT string {}".format(data))
         _SpatialElement.__init__(self, data, srid, extended)
 
     @property
@@ -148,7 +145,13 @@ class WKTElement(_SpatialElement):
         if self.extended:
             srid_match = self._REMOVE_SRID.match(self.data)
             return WKTElement(srid_match.group(3), self.srid)
-        return WKTElement(self.data, self.srid)
+        return WKTElement(self.data, self.srid, self.extended)
+
+    def as_ewkt(self):
+        if not self.extended and self.srid != -1:
+            data = f"SRID={self.srid};" + self.data
+            return WKTElement(data, extended=True)
+        return WKTElement(self.data, self.srid, self.extended)
 
 
 class WKBElement(_SpatialElement):
@@ -168,8 +171,8 @@ class WKBElement(_SpatialElement):
     geom_from = "ST_GeomFromWKB"
     geom_from_extended_version = "ST_GeomFromEWKB"
 
-    def __init__(self, data, srid=-1, extended=False):
-        if srid == -1:
+    def __init__(self, data, srid=-1, extended=None):
+        if srid == -1 or extended is None or extended:
             # read srid from the EWKB
             #
             # WKB struct {
@@ -193,11 +196,12 @@ class WKBElement(_SpatialElement):
             wkb_type = (
                 struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else False
             )
-            if not wkb_type:
-                extended = False
-            else:
-                extended = extended or bool(wkb_type & 536870912)
-            if extended:
+            if extended is None:
+                if not wkb_type:
+                    extended = False
+                else:
+                    extended = extended or bool(wkb_type & 536870912)  # Check SRID bit
+            if extended and srid == -1:
                 wkb_srid = struct.unpack(byte_order_marker, wkb_srid)[0]
                 srid = int(wkb_srid)
         _SpatialElement.__init__(self, data, srid, extended)
@@ -221,10 +225,64 @@ class WKBElement(_SpatialElement):
             if isinstance(self.data, str):
                 # SpatiaLite case
                 # assume that the string is an hex value
-                data = self.data[:10] + self.data[18:]
+                header = binascii.unhexlify(self.data[:10])
+                byte_order, wkb_type = header[0], header[1:5]
             else:
-                data = self.data[:5] + self.data[9:]
+                byte_order, wkb_type = self.data[0], self.data[1:5]
+
+            byte_order_marker = "<I" if byte_order else ">I"
+            wkb_type = struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else 0
+            wkb_type &= 3758096383  # Set SRID bit to 0 and keep all other bits
+
+            if isinstance(self.data, str):
+                wkb_type_hex = binascii.hexlify(
+                    wkb_type.to_bytes(4, "little" if byte_order else "big")
+                )
+                data = self.data[:2] + wkb_type_hex.decode("ascii") + self.data[18:]
+            else:
+                buffer = bytearray()
+                buffer.extend(self.data[:1])
+                buffer.extend(struct.pack(byte_order_marker, wkb_type))
+                buffer.extend(self.data[9:])
+                data = memoryview(buffer)
             return WKBElement(data, self.srid)
+        return WKBElement(self.data, self.srid)
+
+    def as_ewkb(self):
+        if not self.extended and self.srid != -1:
+            if isinstance(self.data, str):
+                # SpatiaLite case
+                # assume that the string is an hex value
+                header = binascii.unhexlify(self.data[:10])
+                byte_order, wkb_type = header[0], header[1:5]
+            else:
+                byte_order, wkb_type = self.data[0], self.data[1:5]
+            byte_order_marker = "<I" if byte_order else ">I"
+            wkb_type = struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else 0
+            wkb_type |= 536870912  # Set SRID bit to 1 and keep all other bits
+
+            if isinstance(self.data, str):
+                wkb_type_hex = binascii.hexlify(
+                    wkb_type.to_bytes(4, "little" if byte_order else "big")
+                )
+                wkb_srid_hex = binascii.hexlify(
+                    self.srid.to_bytes(4, "little" if byte_order else "big")
+                )
+                data = (
+                    self.data[:2]
+                    + wkb_type_hex.decode("ascii")
+                    + wkb_srid_hex.decode("ascii")
+                    + self.data[10:]
+                )
+            else:
+                buffer = bytearray()
+                buffer.extend(self.data[:1])
+                buffer.extend(struct.pack(byte_order_marker, wkb_type))
+                buffer.extend(struct.pack(byte_order_marker, self.srid))
+                buffer.extend(self.data[5:])
+                data = memoryview(buffer)
+
+            return WKBElement(data)
         return WKBElement(self.data, self.srid)
 
 
