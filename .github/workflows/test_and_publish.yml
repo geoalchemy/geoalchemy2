@@ -68,6 +68,7 @@ jobs:
         cache-downloads: true
         extra-specs: |
           ${{ matrix.python-version.pkg_name }}
+          libgdal
           libspatialite
           pyproj
 
