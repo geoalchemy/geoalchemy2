@@ -1,5 +1,8 @@
 # Additional requirements for running the testsuite and development
+alembic
 flake8
+mysql
 pytest
 pytest-cov
 pytest-html
+rasterio
