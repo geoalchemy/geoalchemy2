@@ -126,7 +126,7 @@ jobs:
   # This workflow aggregates coverages from all jobs and export it to Coveralls
   coveralls:
     needs: tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - name: Coveralls Finished
       uses: AndreMiras/coveralls-python-action@v20201129
@@ -138,17 +138,17 @@ jobs:
   deploy:
 
     needs: tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
 
     steps:
 
     - uses: actions/checkout@v3
 
-    - name: Set up Python 3.7
+    - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
-        python-version: 3.7
+        python-version: 3.10
 
     # Build distribution and deploy to Pypi
     - name: Build and deploy package
