@@ -109,13 +109,13 @@ class TestWKTElement:
         e3 = e1.as_ewkt()
         assert e3.desc == self._wkt
         assert e3.srid == -1
-        assert e3.extended == False
+        assert e3.extended is False
 
         # With SRID
         e4 = e2.as_ewkt()
         assert e4.desc == f"SRID={self._srid};{self._wkt}"
         assert e4.srid == self._srid
-        assert e4.extended == True
+        assert e4.extended is True
 
         assert e3.as_wkt() == e3.as_wkt().as_wkt() == e1
         assert e4.as_wkt() == e4.as_wkt().as_wkt() == e2
@@ -215,14 +215,14 @@ class TestExtendedWKTElement:
         e3 = e1.as_wkt()
         assert e3.desc == self._wkt
         assert e3.srid == self._srid
-        assert e3.extended == False
+        assert e3.extended is False
         assert e3.as_ewkt() == e1
 
         # With arbitrary SRID
         e4 = e2.as_wkt()
         assert e4.desc == self._wkt
         assert e4.srid == arbitrary_srid
-        assert e4.extended == False
+        assert e4.extended is False
         # The arbitrary SRID overwrites the original SRID in the EWKT string
         assert e4.as_ewkt() == WKTElement(f"SRID={arbitrary_srid};{self._wkt}")
 
@@ -378,14 +378,14 @@ class TestExtendedWKBElement:
         e5 = e1.as_wkb()
         assert e5.desc == self._hex_wkb
         assert e5.srid == self._srid
-        assert e5.extended == False
+        assert e5.extended is False
         assert e5.as_ewkb() == e1
 
         # Bin with arbitrary SRID
         e6 = e2.as_wkb()
         assert e6.desc == self._hex_wkb
         assert e6.srid == arbitrary_srid
-        assert e6.extended == False
+        assert e6.extended is False
         # The arbitrary SRID overwrites the original SRID in the EWKB string
         e6_ewkb = WKBElement(self._bin_ewkb, srid=arbitrary_srid)
         data = bytearray(e6_ewkb.data)
@@ -397,14 +397,14 @@ class TestExtendedWKBElement:
         e7 = e3.as_wkb()
         assert e7.desc == self._hex_wkb
         assert e7.srid == self._srid
-        assert e7.extended == False
+        assert e7.extended is False
         assert e7.as_ewkb() == e3
 
         # Hex with arbitrary SRID
         e8 = e4.as_wkb()
         assert e8.desc == self._hex_wkb
         assert e8.srid == arbitrary_srid
-        assert e8.extended == False
+        assert e8.extended is False
         # The arbitrary SRID overwrites the original SRID in the EWKB string
         e8_ewkb = WKBElement(self._hex_ewkb, srid=arbitrary_srid)
         e8_ewkb.data = e8_ewkb.data[:11] + "4" + e8_ewkb.data[12:]
