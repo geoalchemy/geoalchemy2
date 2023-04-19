@@ -5,50 +5,34 @@
     As GeoAlchemy 2 itself has no dependency on `Shapely`, applications using
     functions of this module have to ensure that `Shapely` is available.
 """
-import shapely.wkb
-import shapely.wkt
-from packaging import version
+from contextlib import contextmanager
+
+try:
+    import shapely.wkb
+    import shapely.wkt
+    from shapely.wkb import dumps
+
+    HAS_SHAPELY = True
+    _shapely_exc = None
+except ImportError as exc:
+    HAS_SHAPELY = False
+    _shapely_exc = exc
 
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 
-if version.parse(shapely.__version__) < version.parse("1.7"):  # pragma: no cover
-    ######################################################################
-    # Backport function from Shapely 1.7
-    from shapely.geometry.base import geom_factory
-    from shapely.geos import WKBWriter
-    from shapely.geos import lgeos
 
-    def dumps(ob, hex=False, srid=None, **kw):
-        """Dump a WKB representation of a geometry to a byte or hex string.
-
-        Args:
-            ob (geometry): The geometry to export to well-known binary (WKB) representation
-            hex (bool): If true, export the WKB as a hexadecimal string. The default is to
-                return a binary string/bytes object.
-            srid (int): Spatial reference system ID to include in the output. The default
-                value means no SRID is included.
-
-        Keyword Args:
-            kwargs: See available keyword output settings in ``shapely.geos.WKBWriter``.
-        """
-        if srid is not None:
-            # clone the object and set the SRID before dumping
-            geom = lgeos.GEOSGeom_clone(ob._geom)
-            lgeos.GEOSSetSRID(geom, srid)
-            ob = geom_factory(geom)
-            kw["include_srid"] = True
-        writer = WKBWriter(lgeos, **kw)
-        if hex:
-            return writer.write_hex(ob)
-        else:
-            return writer.write(ob)
-
-    ######################################################################
-else:
-    from shapely.wkb import dumps  # noqa
+@contextmanager
+def check_shapely():
+    if not HAS_SHAPELY:
+        raise ImportError(
+            "This feature needs the optional Shapely dependency. "
+            "Please install it with 'pip install geoalchemy2[shapely]'."
+        ) from _shapely_exc
+    yield
 
 
+@check_shapely()
 def to_shape(element):
     """Function to convert a :class:`geoalchemy2.types.SpatialElement` to a Shapely geometry.
 
@@ -75,6 +59,7 @@ def to_shape(element):
         raise TypeError("Only WKBElement and WKTElement objects are supported")
 
 
+@check_shapely()
 def from_shape(shape, srid=-1, extended=False):
     """Function to convert a Shapely geometry to a :class:`geoalchemy2.types.WKBElement`.
 

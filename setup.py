@@ -34,4 +34,7 @@ setup(
     zip_safe=False,
     setup_requires=["setuptools_scm"],
     install_requires=["SQLAlchemy>=1.4", "packaging"],
+    extras_require={
+        "shapely": ["Shapely>=1.7"],
+    },
 )
