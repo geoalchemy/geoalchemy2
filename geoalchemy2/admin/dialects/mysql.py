@@ -29,6 +29,7 @@ def reflect_geometry_column(inspector, table, column_info):
         return
 
     column_name = column_info.get("name")
+    schema = table.schema or inspector.default_schema_name
 
     # Check geometry type, SRID and if the column is nullable
     geometry_type_query = """SELECT DATA_TYPE, SRS_ID, IS_NULLABLE
@@ -36,8 +37,8 @@ def reflect_geometry_column(inspector, table, column_info):
         WHERE TABLE_NAME = '{}' and COLUMN_NAME = '{}'""".format(
         table.name, column_name
     )
-    if table.schema is not None:
-        geometry_type_query += """ and table_schema = '{}'""".format(table.schema)
+    if schema is not None:
+        geometry_type_query += """ and table_schema = '{}'""".format(schema)
     geometry_type, srid, nullable_str = inspector.bind.execute(text(geometry_type_query)).one()
     is_nullable = str(nullable_str).lower() == "yes"
 
@@ -51,8 +52,8 @@ def reflect_geometry_column(inspector, table, column_info):
         WHERE TABLE_NAME = '{}' and COLUMN_NAME = '{}'""".format(
         table.name, column_name
     )
-    if table.schema is not None:
-        has_index_query += """ and TABLE_SCHEMA = '{}'""".format(table.schema)
+    if schema is not None:
+        has_index_query += """ and TABLE_SCHEMA = '{}'""".format(schema)
     spatial_index_res = inspector.bind.execute(text(has_index_query)).scalar()
     spatial_index = str(spatial_index_res).lower() == "spatial"
 

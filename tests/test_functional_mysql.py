@@ -9,7 +9,7 @@ from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import bindparam
-from sqlalchemy import text
+from sqlalchemy import text, create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import StatementError
 from sqlalchemy.orm import declarative_base
@@ -329,26 +329,34 @@ class TestNullable:
 
 class TestReflection:
     @pytest.fixture
-    def reflection_tables_metadata_mysql(self):
-        metadata = MetaData()
-        base = declarative_base(metadata=metadata)
+    def create_temp_db(self, reflection_tables_metadata):
+        """
+        Temporary database, that is dropped on fixture teardown.
+        Used to make sure reflection methods always uses the correct schema.
+        """
+        engine = create_engine("mysql://gis:gis@localhost")
+        temp_db_name = "geoalchemy_test_reflection"
+        drop = text(f"DROP DATABASE IF EXISTS {temp_db_name};")
 
-        class Lake(base):
-            __tablename__ = "lake"
-            id = Column(Integer, primary_key=True)
-            geom = Column(Geometry(geometry_type="LINESTRING", srid=4326, nullable=False))
-            geom_no_idx = Column(
-                Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=False, nullable=True)
-            )
+        with engine.connect() as connection:
+            with connection.begin():
+                connection.execute(drop)
+                connection.execute(text(f"CREATE DATABASE {temp_db_name};"))
+                connection.execute(text(f"USE {temp_db_name};"))
+                reflection_tables_metadata.drop_all(connection, checkfirst=True)
+                reflection_tables_metadata.create_all(connection)
 
-        return metadata
+            yield
+
+            with connection.begin():
+                connection.execute(drop)
 
     @pytest.fixture
-    def setup_reflection_tables(self, reflection_tables_metadata_mysql, conn):
-        reflection_tables_metadata_mysql.drop_all(conn, checkfirst=True)
-        reflection_tables_metadata_mysql.create_all(conn)
+    def setup_reflection_tables(self, reflection_tables_metadata, conn):
+        reflection_tables_metadata.drop_all(conn, checkfirst=True)
+        reflection_tables_metadata.create_all(conn)
 
-    def test_reflection_mysql(self, conn, setup_reflection_tables):
+    def test_reflection_mysql(self, conn, setup_reflection_tables, create_temp_db):
         t = Table("lake", MetaData(), autoload_with=conn)
 
         type_ = t.c.geom.type
@@ -386,8 +394,11 @@ class TestReflection:
                 B.INDEX_TYPE
             FROM INFORMATION_SCHEMA.COLUMNS AS A
             LEFT JOIN INFORMATION_SCHEMA.STATISTICS AS B
-            ON A.TABLE_NAME = B.TABLE_NAME AND A.COLUMN_NAME = B.COLUMN_NAME
-            WHERE A.TABLE_SCHEMA = 'gis' AND A.TABLE_NAME = 'lake'
+            ON A.TABLE_NAME = B.TABLE_NAME 
+                AND A.COLUMN_NAME = B.COLUMN_NAME
+                AND A.TABLE_SCHEMA = B.TABLE_SCHEMA
+            WHERE A.TABLE_SCHEMA = 'gis'
+            AND A.TABLE_NAME = 'lake'
             ORDER BY TABLE_NAME, COLUMN_NAME;"""
         )
 

@@ -183,7 +183,7 @@ def IndexTestWithoutSchema(base):
 
 
 @pytest.fixture
-def reflection_tables_metadata():
+def reflection_tables_metadata(engine):
     metadata = MetaData()
     base = declarative_base(metadata=metadata)
 
@@ -192,8 +192,9 @@ def reflection_tables_metadata():
         id = Column(Integer, primary_key=True)
         geom = Column(Geometry(geometry_type="LINESTRING", srid=4326))
         geom_no_idx = Column(Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=False))
-        geom_z = Column(Geometry(geometry_type="LINESTRINGZ", srid=4326, dimension=3))
-        geom_m = Column(Geometry(geometry_type="LINESTRINGM", srid=4326, dimension=3))
-        geom_zm = Column(Geometry(geometry_type="LINESTRINGZM", srid=4326, dimension=4))
+        if engine.dialect.name != "mysql":
+            geom_z = Column(Geometry(geometry_type="LINESTRINGZ", srid=4326, dimension=3))
+            geom_m = Column(Geometry(geometry_type="LINESTRINGM", srid=4326, dimension=3))
+            geom_zm = Column(Geometry(geometry_type="LINESTRINGZM", srid=4326, dimension=4))
 
     return metadata
