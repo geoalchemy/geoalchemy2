@@ -58,6 +58,11 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v3
 
+    # Remove native SQLite
+    - name: Remove packages replaced by Conda packages
+      run: |
+        sudo apt-get remove sqlite3 libsqlite3-0 libsqlite3-dev
+
     # Setup Conda for Python and Pypy
     - name: Install Conda environment with Micromamba
       uses: mamba-org/provision-with-micromamba@main
