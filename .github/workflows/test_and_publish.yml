@@ -33,7 +33,7 @@ jobs:
           {"pkg_name": "python==3.10.*", "flag": "3.10"},
           {"pkg_name": "python==3.11.*", "flag": "3.11"},
           {"pkg_name": "python==3.12.*", "flag": "3.12"},
-          {"pkg_name": "pypy3.8", "flag": "pypy3.8"},
+          {"pkg_name": "pypy3.10", "flag": "pypy3.10"},
         ]
 
     # The type of runner that the job will run on
