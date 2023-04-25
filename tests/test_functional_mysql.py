@@ -342,7 +342,11 @@ class TestReflection:
             with connection.begin():
                 connection.execute(drop)
                 connection.execute(text(f"CREATE DATABASE {temp_db_name};"))
-                connection.execute(text(f"USE {temp_db_name};"))
+
+        engine = create_engine(f"mysql://gis:gis@localhost/{temp_db_name}")
+
+        with engine.connect() as connection:
+            with connection.begin():
                 reflection_tables_metadata.drop_all(connection, checkfirst=True)
                 reflection_tables_metadata.create_all(connection)
 
