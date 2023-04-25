@@ -329,31 +329,23 @@ class TestNullable:
 
 class TestReflection:
     @pytest.fixture
-    def create_temp_db(self, reflection_tables_metadata):
-        """
-        Temporary database, that is dropped on fixture teardown.
+    def create_temp_db(self, request, conn, reflection_tables_metadata):
+        """Temporary database, that is dropped on fixture teardown.
         Used to make sure reflection methods always uses the correct schema.
         """
-        engine = create_engine("mysql://gis:gis@localhost")
         temp_db_name = "geoalchemy_test_reflection"
-        drop = text(f"DROP DATABASE IF EXISTS {temp_db_name};")
-
-        with engine.connect() as connection:
-            with connection.begin():
-                connection.execute(drop)
-                connection.execute(text(f"CREATE DATABASE {temp_db_name};"))
-
-        engine = create_engine(f"mysql://gis:gis@localhost/{temp_db_name}")
-
+        engine = create_engine(
+            f"mysql://gis:gis@localhost/{temp_db_name}",
+            echo=request.config.getoption("--engine-echo"),
+        )
+        conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {temp_db_name};"))
         with engine.connect() as connection:
             with connection.begin():
                 reflection_tables_metadata.drop_all(connection, checkfirst=True)
                 reflection_tables_metadata.create_all(connection)
+                yield connection
+        conn.execute(text(f"DROP DATABASE IF EXISTS {temp_db_name};"))
 
-            yield
-
-            with connection.begin():
-                connection.execute(drop)
 
     @pytest.fixture
     def setup_reflection_tables(self, reflection_tables_metadata, conn):
