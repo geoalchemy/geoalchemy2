@@ -307,7 +307,7 @@ def add_geo_column(context, revision, op):
     if isinstance(col_type, (Geometry, Geography, Raster)):
         op.column.type.spatial_index = False
         op.column.type._spatial_index_reflected = None
-        new_op = AddGeospatialColumnOp(op.table_name, op.column, op.schema)
+        new_op = AddGeospatialColumnOp(op.table_name, op.column, schema=op.schema)
     else:
         new_op = op
     return new_op
@@ -321,7 +321,7 @@ def drop_geo_column(context, revision, op):
         dialect = context.bind.dialect
         col_type = col_type.load_dialect_impl(dialect)
     if isinstance(col_type, (Geometry, Geography, Raster)):
-        new_op = DropGeospatialColumnOp(op.table_name, op.column_name, op.schema)
+        new_op = DropGeospatialColumnOp(op.table_name, op.column_name, schema=op.schema)
     else:
         new_op = op
     return new_op
@@ -425,7 +425,7 @@ def drop_geospatial_table(operations, operation):
 
     if dialect.name == "sqlite":
         _SPATIAL_TABLES.add(table_name)
-    operations.drop_table(table_name, operation.schema, **operation.table_kw)
+    operations.drop_table(table_name, schema=operation.schema, **operation.table_kw)
 
 
 @renderers.dispatch_for(CreateGeospatialTableOp)
@@ -452,9 +452,9 @@ def create_geo_table(context, revision, op):
         new_op = CreateGeospatialTableOp(
             op.table_name,
             op.columns,
-            op.schema,
-            op._namespace_metadata,
-            op._constraints_included,
+            schema=op.schema,
+            _namespace_metadata=op._namespace_metadata,
+            _constraints_included=op._constraints_included,
         )
     else:
         new_op = op
@@ -472,7 +472,7 @@ def drop_geo_table(context, revision, op):
     )
 
     if gis_cols:
-        new_op = DropGeospatialTableOp(op.table_name, op.schema)
+        new_op = DropGeospatialTableOp(op.table_name, schema=op.schema)
     else:
         new_op = op
 
@@ -546,7 +546,7 @@ class DropGeospatialIndexOp(ops.DropIndexOp):
         """Handle the different situations arising from dropping geospatial index from a DB."""
         op = cls(
             index_name,
-            table_name,
+            table_name=table_name,
             column_name=column_name,
             schema=schema,
             unique=unique,
@@ -668,7 +668,12 @@ def create_geo_index(context, revision, op):
             op.kw["postgresql_ops"] = op.kw.get("postgresql_ops", postgresql_ops)
 
             return CreateGeospatialIndexOp(
-                op.index_name, op.table_name, op.columns, op.schema, op.unique, **op.kw
+                op.index_name,
+                op.table_name,
+                op.columns,
+                schema=op.schema,
+                unique=op.unique,
+                **op.kw,
             )
 
     return op
@@ -687,7 +692,7 @@ def drop_geo_index(context, revision, op):
         ):
             return DropGeospatialIndexOp(
                 op.index_name,
-                op.table_name,
+                table_name=op.table_name,
                 column_name=col.name,
                 schema=op.schema,
                 **op.kw,
