@@ -31,6 +31,7 @@ jobs:
           {"pkg_name": "python==3.8.*", "flag": "3.8"},
           {"pkg_name": "python==3.9.*", "flag": "3.9"},
           {"pkg_name": "python==3.10.*", "flag": "3.10"},
+          {"pkg_name": "python==3.11.*", "flag": "3.11"},
           {"pkg_name": "pypy3.8", "flag": "pypy3.8"},
         ]
 
