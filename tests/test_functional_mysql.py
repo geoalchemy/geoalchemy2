@@ -3,16 +3,14 @@ from json import loads
 import pytest
 from pkg_resources import parse_version
 from shapely.geometry import LineString
-from sqlalchemy import Column
-from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import bindparam
-from sqlalchemy import text, create_engine
+from sqlalchemy import create_engine
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import StatementError
-from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
 
@@ -346,7 +344,6 @@ class TestReflection:
                 yield connection
         conn.execute(text(f"DROP DATABASE IF EXISTS {temp_db_name};"))
 
-
     @pytest.fixture
     def setup_reflection_tables(self, reflection_tables_metadata, conn):
         reflection_tables_metadata.drop_all(conn, checkfirst=True)
@@ -390,7 +387,7 @@ class TestReflection:
                 B.INDEX_TYPE
             FROM INFORMATION_SCHEMA.COLUMNS AS A
             LEFT JOIN INFORMATION_SCHEMA.STATISTICS AS B
-            ON A.TABLE_NAME = B.TABLE_NAME 
+            ON A.TABLE_NAME = B.TABLE_NAME
                 AND A.COLUMN_NAME = B.COLUMN_NAME
                 AND A.TABLE_SCHEMA = B.TABLE_SCHEMA
             WHERE A.TABLE_SCHEMA = 'gis'
