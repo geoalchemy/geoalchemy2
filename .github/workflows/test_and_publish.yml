@@ -61,17 +61,20 @@ jobs:
 
     # Setup Conda for Python and Pypy
     - name: Install Conda environment with Micromamba
-      uses: mamba-org/provision-with-micromamba@main
+      uses: mamba-org/setup-micromamba@v1
       with:
-        environment-file: false
         environment-name: test_${{ matrix.python-version.flag }}
-        channels: conda-forge,defaults
-        cache-downloads: true
-        extra-specs: |
+        cache-environment: true
+        create-args: >-
           ${{ matrix.python-version.pkg_name }}
           libgdal
           libspatialite
           pyproj
+        condarc: |
+          channels:
+            - conda-forge
+            - defaults
+          channel_priority: strict
 
     # Config PostgreSQL
     - name: Configure PostgreSQL
