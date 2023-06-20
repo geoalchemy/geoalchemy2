@@ -112,8 +112,8 @@ jobs:
     # Run the test suite
     - name: Run the tests
       env:
-        SPATIALITE_LIBRARY_PATH: /home/runner/micromamba-root/envs/test_${{ matrix.python-version.flag }}/lib/mod_spatialite.so
-        PROJ_LIB: /home/runner/micromamba-root/envs/test_${{ matrix.python-version.flag }}/share/proj
+        SPATIALITE_LIBRARY_PATH: /home/runner/micromamba/envs/test_${{ matrix.python-version.flag }}/lib/mod_spatialite.so
+        PROJ_LIB: /home/runner/micromamba/envs/test_${{ matrix.python-version.flag }}/share/proj
         COVERAGE_FILE: .coverage
         PYTEST_MYSQL_DB_URL: mysql://gis:gis@127.0.0.1/gis
       run: |
