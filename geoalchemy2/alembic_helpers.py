@@ -28,6 +28,7 @@ from geoalchemy2 import Raster
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _get_gis_cols
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
+from geoalchemy2.admin.dialects.sqlite import is_gpkg
 
 writer = rewriter.Rewriter()
 """Rewriter object for Alembic."""
@@ -43,25 +44,51 @@ def _monkey_patch_get_indexes_for_sqlite():
         indexes = self._get_indexes_normal_behavior(connection, table_name, schema=None, **kw)
 
         try:
+            # Check if the DB is a GeoPackage
+            is_gpkg_conn = is_gpkg(connection)
+
             # Check that SpatiaLite was loaded into the DB
-            is_spatial_db = connection.exec_driver_sql(
-                """PRAGMA main.table_info(geometry_columns)"""
-            ).fetchall()
+            if is_gpkg_conn:
+                is_spatial_db = connection.exec_driver_sql(
+                    """PRAGMA main.table_info(gpkg_geometry_columns)"""
+                ).fetchall()
+            else:
+                is_spatial_db = connection.exec_driver_sql(
+                    """PRAGMA main.table_info(geometry_columns)"""
+                ).fetchall()
             if not is_spatial_db:
                 return indexes
         except AttributeError:
             return indexes
 
         # Get spatial indexes
-        spatial_index_query = text(
-            """SELECT *
-            FROM geometry_columns
-            WHERE f_table_name = '{}'
-            ORDER BY f_table_name, f_geometry_column;""".format(
-                table_name
+        if is_gpkg_conn:
+            spatial_index_query = text(
+                """SELECT A.table_name, A.column_name, IFNULL(B.has_index, 0) AS has_index
+                FROM "gpkg_geometry_columns"
+                AS A
+                LEFT JOIN (
+                    SELECT table_name, column_name, COUNT(*) AS has_index
+                    FROM gpkg_extensions
+                    WHERE table_name = '{table_name}' AND extension_name = 'gpkg_rtree_index'
+                ) AS B
+                ON A.table_name = B.table_name
+                WHERE A.table_name = '{table_name}';
+            """.format(
+                    table_name=table_name
+                )
             )
-        )
-        spatial_indexes = connection.execute(spatial_index_query).fetchall()
+            spatial_indexes = connection.execute(spatial_index_query).fetchall()
+        else:
+            spatial_index_query = text(
+                """SELECT *
+                FROM geometry_columns
+                WHERE f_table_name = '{}'
+                ORDER BY f_table_name, f_geometry_column;""".format(
+                    table_name
+                )
+            )
+            spatial_indexes = connection.execute(spatial_index_query).fetchall()
         if spatial_indexes:
             reflected_names = set([i["name"] for i in indexes])
             for idx in spatial_indexes:

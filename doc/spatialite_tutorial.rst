@@ -7,47 +7,37 @@ GeoAlchemy 2's main target is PostGIS. But GeoAlchemy 2 also supports SpatiaLite
 extension to SQLite. This tutorial describes how to use GeoAlchemy 2 with SpatiaLite. It's based on
 the :ref:`orm_tutorial`, which you may want to read first.
 
+.. _spatialite_connect:
+
 Connect to the DB
 -----------------
 
 Just like when using PostGIS connecting to a SpatiaLite database requires an ``Engine``. This is how
 you create one for SpatiaLite::
 
+    >>> from geoalchemy2 import load_spatialite
     >>> from sqlalchemy import create_engine
     >>> from sqlalchemy.event import listen
     >>>
-    >>> def load_spatialite(dbapi_conn, connection_record):
-    ...     dbapi_conn.enable_load_extension(True)
-    ...     dbapi_conn.load_extension('/usr/lib/x86_64-linux-gnu/mod_spatialite.so')
-    ...
-    >>>
-    >>> engine = create_engine('sqlite:///gis.db', echo=True)
-    >>> listen(engine, 'connect', load_spatialite)
+    >>> engine = create_engine("sqlite:///gis.db", echo=True)
+    >>> listen(engine, "connect", load_spatialite)
 
 The call to ``create_engine`` creates an engine bound to the database file ``gis.db``. After that
 a ``connect`` listener is registered on the engine. The listener is responsible for loading the
-SpatiaLite extension, which is a necessary operation for using SpatiaLite through SQL.
+SpatiaLite extension, which is a necessary operation for using SpatiaLite through SQL. The path to
+the ``mod_spatialite`` file should be stored in the ``SPATIALITE_LIBRARY_PATH`` environment
+variable before using the ``load_spatialite`` function.
 
 At this point you can test that you are able to connect to the database::
 
      >> conn = engine.connect()
-     2018-05-30 17:12:02,675 INFO sqlalchemy.engine.base.Engine SELECT CAST('test plain returns' AS VARCHAR(60)) AS anon_1
-     2018-05-30 17:12:02,676 INFO sqlalchemy.engine.base.Engine ()
-     2018-05-30 17:12:02,676 INFO sqlalchemy.engine.base.Engine SELECT CAST('test unicode returns' AS VARCHAR(60)) AS anon_1
-     2018-05-30 17:12:02,676 INFO sqlalchemy.engine.base.Engine ()
 
-You can also check that the ``gis.db`` SQLite database file was created on the file system.
+Note that this call will internally call the ``load_spatialite`` function, which can take some time
+to execute on a new database because it actually calls the ``InitSpatialMetaData`` function from
+SpatiaLite.
+Then you can also check that the ``gis.db`` SQLite database file was created on the file system.
 
-One additional step is required for using SpatiaLite: create the ``geometry_columns`` and
-``spatial_ref_sys`` metadata tables. This is done by calling SpatiaLite's ``InitSpatialMetaData``
-function::
-
-    >>> from sqlalchemy.sql import select, func
-    >>>
-    >>> conn.execute(select([func.InitSpatialMetaData()]))
-
-Note that this operation may take some time the first time it is executed for a database. When
-``InitSpatialMetaData`` is executed again it will report an error::
+Note that when ``InitSpatialMetaData`` is executed again it will report an error::
 
     InitSpatiaMetaData() error:"table spatial_ref_sys already exists"
 
@@ -61,9 +51,7 @@ Declare a Mapping
 -----------------
 
 Now that we have a working connection we can go ahead and create a mapping between
-a Python class and a database table.
-
-::
+a Python class and a database table::
 
     >>> from sqlalchemy.ext.declarative import declarative_base
     >>> from sqlalchemy import Column, Integer, String
@@ -72,17 +60,14 @@ a Python class and a database table.
     >>> Base = declarative_base()
     >>>
     >>> class Lake(Base):
-    ...     __tablename__ = 'lake'
+    ...     __tablename__ = "lake"
     ...     id = Column(Integer, primary_key=True)
     ...     name = Column(String)
-    ...     geom = Column(Geometry(geometry_type='POLYGON', management=True))
+    ...     geom = Column(Geometry(geometry_type="POLYGON"))
 
-This basically works in the way as with PostGIS. The difference is the ``management``
-argument that must be set to ``True``.
-
-Setting ``management`` to ``True`` indicates that the ``AddGeometryColumn`` and
-``DiscardGeometryColumn`` management functions will be used for the creation and removal of the
-geometry column. This is required with SpatiaLite.
+From the user point of view this works in the same way as with PostGIS. The difference is that
+internally the ``RecoverGeometryColumn`` and ``DiscardGeometryColumn`` management functions will be
+used for the creation and removal of the geometry column.
 
 Create the Table in the Database
 --------------------------------
@@ -117,25 +102,25 @@ do it using GeoAlchemy 2 with PostGIS.
 
 ::
 
-    >>> lake = Lake(name='Majeur', geom='POLYGON((0 0,1 0,1 1,0 1,0 0))')
+    >>> lake = Lake(name="Majeur", geom="POLYGON((0 0,1 0,1 1,0 1,0 0))")
     >>> session.add(lake)
     >>> session.commit()
 
 We can now query the database for ``Majeur``::
 
-    >>> our_lake = session.query(Lake).filter_by(name='Majeur').first()
+    >>> our_lake = session.query(Lake).filter_by(name="Majeur").first()
     >>> our_lake.name
-    u'Majeur'
+    u"Majeur"
     >>> our_lake.geom
-    <WKBElement at 0x9af594c; '0103000000010000000500000000000000000000000000000000000000000000000000f03f0000000000000000000000000000f03f000000000000f03f0000000000000000000000000000f03f00000000000000000000000000000000'>
+    <WKBElement at 0x9af594c; "0103000000010000000500000000000000000000000000000000000000000000000000f03f0000000000000000000000000000f03f000000000000f03f0000000000000000000000000000f03f00000000000000000000000000000000">
     >>> our_lake.id
     1
 
 Let's add more lakes::
 
     >>> session.add_all([
-    ...     Lake(name='Garde', geom='POLYGON((1 0,3 0,3 2,1 2,1 0))'),
-    ...     Lake(name='Orta', geom='POLYGON((3 0,6 0,6 3,3 3,3 0))')
+    ...     Lake(name="Garde", geom="POLYGON((1 0,3 0,3 2,1 2,1 0))"),
+    ...     Lake(name="Orta", geom="POLYGON((3 0,6 0,6 3,3 3,3 0))")
     ... ])
     >>> session.commit()
 
@@ -156,7 +141,7 @@ Now a spatial query::
 
     >>> from geolachemy2 import WKTElement
     >>> query = session.query(Lake).filter(
-    ...             func.ST_Contains(Lake.geom, WKTElement('POINT(4 1)')))
+    ...             func.ST_Contains(Lake.geom, WKTElement("POINT(4 1)")))
     ...
     >>> for lake in query:
     ...     print(lake.name)
@@ -166,7 +151,7 @@ Now a spatial query::
 Here's another spatial query, using ``ST_Intersects`` this time::
 
     >>> query = session.query(Lake).filter(
-    ...             Lake.geom.ST_Intersects(WKTElement('LINESTRING(2 1,4 1)')))
+    ...             Lake.geom.ST_Intersects(WKTElement("LINESTRING(2 1,4 1)")))
     ...
     >>> for lake in query:
     ...     print(lake.name)
@@ -176,8 +161,8 @@ Here's another spatial query, using ``ST_Intersects`` this time::
 
 We can also apply relationship functions to :class:`geoalchemy2.elements.WKBElement`. For example::
 
-    >>> lake = session.query(Lake).filter_by(name='Garde').one()
-    >>> print(session.scalar(lake.geom.ST_Intersects(WKTElement('LINESTRING(2 1,4 1)'))))
+    >>> lake = session.query(Lake).filter_by(name="Garde").one()
+    >>> print(session.scalar(lake.geom.ST_Intersects(WKTElement("LINESTRING(2 1,4 1)"))))
     1
 
 ``session.scalar`` allows executing a clause and returning a scalar value (an integer value in this
@@ -191,22 +176,47 @@ Function mapping
 
 Several functions have different names in SpatiaLite than in PostGIS. The GeoAlchemy 2 package is
 based on the PostGIS syntax but it is possible to automatically translate the queries into
-SpatiaLite ones. For example, the function `ST_GeomFromEWKT` is automatically translated into
-`GeomFromEWKT`. Unfortunately, only a few functions are automatically mapped (the ones internally
-used by GeoAlchemy 2). Nevertheless, it is possible to define new mappings in order to translate
-the queries automatically. Here is an example to register a mapping for the `ST_Buffer` function::
+SpatiaLite ones. For example, the function ``ST_GeomFromEWKT`` is automatically translated into
+``GeomFromEWKT``. Unfortunately, only a few functions are automatically mapped (mainly the ones
+internally used by GeoAlchemy 2). Nevertheless, it is possible to define new mappings in order to
+translate the queries automatically. Here is an example to register a mapping for the ``ST_Buffer``
+function::
 
     >>> geoalchemy2.functions.register_sqlite_mapping(
-    ...     {'ST_Buffer': 'Buffer'}
+    ...     {"ST_Buffer": "Buffer"}
     ... )
 
-After this command, all `ST_Buffer` calls in the queries will be translated to `Buffer` calls when
-the query is executed on a SQLite DB.
+After this command, all ``ST_Buffer`` calls in the queries will be translated to ``Buffer`` calls
+when the query is executed on a SQLite DB.
 
-A more complex example is provided for when the `PostGIS` function should be mapped depending on
-the given parameters. For example, the `ST_Buffer` function can actually be translate into either
-the `Buffer` function or the `SingleSidedBuffer` function (only when `side=right` or `side=left` is
-passed). See the :ref:`sphx_glr_gallery_test_specific_compilation.py` example in the gallery.
+A more complex example is provided for when the PostGIS function should be mapped depending on
+the given parameters. For example, the ``ST_Buffer`` function can actually be translate into either
+the ``Buffer`` function or the ``SingleSidedBuffer`` function (only when ``side=right`` or ``side=left``
+is passed). See the :ref:`sphx_glr_gallery_test_specific_compilation.py` example in the gallery.
+
+GeoPackage format
+-----------------
+
+Starting from the version ``4.2`` of Spatialite, it is possible to use GeoPackage files as DB
+containers. GeoAlchemy 2 is able to handle most of the GeoPackage features automatically if the
+SpatiaLite extension is loaded. Usually, this extension should be loaded using the
+``load_spatialite`` listener, as described :ref:`above<spatialite_connect>`.
+
+When using the ``load_spatialite`` listener, all SQLite databases pointing to a ``*.gpkg`` file
+will be considered as a GoePackage. In this case, specific processes are activated:
+
+* the base tables are created if they are missing,
+* the ``Amphibious`` mode is enabled using the ``EnableGpkgAmphibiousMode`` function,
+* the ``VirtualGPKG`` wrapper is activated using the ``AutoGpkgStart`` function.
+
+After that it should be possible to use a GeoPackage the same way as a standard SpatiaLite
+database. GeoAlchemy 2 should be able to handle the following features in a transparent way for the
+user:
+
+* create/drop spatial tables,
+* automatically create/drop spatial indexes if required,
+* reflect spatial tables,
+* use spatial functions on inserted geometries.
 
 Further Reference
 -----------------

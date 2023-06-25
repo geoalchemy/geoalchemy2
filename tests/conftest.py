@@ -35,6 +35,11 @@ def pytest_addoption(parser):
         help="SQLite DB URL used for tests with SpatiaLite4 (`sqlite:///path_to_db_file`).",
     )
     parser.addoption(
+        "--sqlite_GeoPackage_dburl",
+        action="store",
+        help="SQLite DB URL used for tests with GeoPackage (`sqlite:///path_to_db_file.gpkg`).",
+    )
+    parser.addoption(
         "--mysql_dburl",
         action="store",
         help="MySQL DB URL used for tests with MySQL (`mysql://user:password@host:port/dbname`).",
@@ -49,7 +54,7 @@ def pytest_addoption(parser):
 
 def pytest_generate_tests(metafunc):
     if "db_url" in metafunc.fixturenames:
-        sqlite_dialects = ["sqlite-spatialite3", "sqlite-spatialite4"]
+        sqlite_dialects = ["sqlite-spatialite3", "sqlite-spatialite4", "sqlite-geopackage"]
         dialects = None
 
         if metafunc.module.__name__ == "tests.test_functional_postgresql":
@@ -65,9 +70,10 @@ def pytest_generate_tests(metafunc):
             dialects = metafunc.cls.tested_dialects
 
         if dialects is None:
-            dialects = ["mysql", "postgresql", "sqlite-spatialite3", "sqlite-spatialite4"]
+            dialects = ["mysql", "postgresql"] + sqlite_dialects
 
         if "sqlite" in dialects:
+            # Order dialects
             dialects = [i for i in dialects if i != "sqlite"] + sqlite_dialects
 
         metafunc.parametrize("db_url", dialects, indirect=True)
@@ -110,8 +116,22 @@ def db_url_sqlite_spatialite4(request, tmpdir_factory):
 
 
 @pytest.fixture(scope="session")
+def db_url_geopackage(request, tmpdir_factory):
+    return (
+        request.config.getoption("--sqlite_GeoPackage_dburl")
+        or os.getenv("PYTEST_GEOPACKAGE_DB_URL")
+        or f"sqlite:///{Path(__file__).parent / 'data' / 'spatialite_geopackage.gpkg'}"
+    )
+
+
+@pytest.fixture(scope="session")
 def db_url(
-    request, db_url_postgresql, db_url_sqlite_spatialite3, db_url_sqlite_spatialite4, db_url_mysql
+    request,
+    db_url_postgresql,
+    db_url_sqlite_spatialite3,
+    db_url_sqlite_spatialite4,
+    db_url_geopackage,
+    db_url_mysql,
 ):
     if request.param == "postgresql":
         return db_url_postgresql
@@ -121,6 +141,8 @@ def db_url(
         return db_url_sqlite_spatialite3
     elif request.param == "sqlite-spatialite4":
         return db_url_sqlite_spatialite4
+    elif request.param == "sqlite-geopackage":
+        return db_url_geopackage
     return None
 
 
@@ -136,7 +158,11 @@ def engine(tmpdir, db_url, _engine_echo):
     if db_url.startswith("sqlite:///"):
         # Copy the input SQLite DB to a temporary file and return an engine to it
         input_url = str(db_url)[10:]
-        return copy_and_connect_sqlite_db(input_url, tmpdir / "test_spatial_db", _engine_echo)
+        if input_url.endswith(".gpkg"):
+            output_file = "test_spatial_db.gpkg"
+        else:
+            output_file = "test_spatial_db.sqlite"
+        return copy_and_connect_sqlite_db(input_url, tmpdir / output_file, _engine_echo)
 
     # For other dialects the engine is directly returned
     engine = create_engine(db_url, echo=_engine_echo)
@@ -147,7 +173,10 @@ def engine(tmpdir, db_url, _engine_echo):
 
 @pytest.fixture
 def dialect_name(engine):
-    return engine.dialect.name
+    name = engine.dialect.name
+    if name == "sqlite" and engine.url.render_as_string().endswith(".gpkg"):
+        name += "-gpkg"
+    return name
 
 
 @pytest.fixture
