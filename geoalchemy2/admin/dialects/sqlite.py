@@ -1,6 +1,5 @@
 """This module defines specific functions for SQLite dialect."""
 import os
-import re
 
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
@@ -18,117 +17,64 @@ from geoalchemy2.types import Geometry
 from geoalchemy2.types import _DummyGeometry
 
 
-def is_gpkg(bind):
-    """Check if a connection is linked to a GeoPackage."""
-    try:
-        return bind.info["_is_gpkg"]
-    except KeyError:
-        if bool(bind.execute(text("""SELECT HasGeopackage();""")).scalar()) and bool(
-            bind.execute(text("""SELECT CheckGeoPackageMetaData();""")).scalar()
-        ):
-            db_is_gpkg = True
-        else:
-            db_is_gpkg = False
-        bind.info["_is_gpkg"] = db_is_gpkg
-        return db_is_gpkg
-
-
-def load_spatialite(dbapi_conn, connection_record):
+def load_spatialite(dbapi_conn, connection_record, init_mode=None):
     """Load SpatiaLite extension in SQLite DB.
 
     The path to the SpatiaLite module should be set in the `SPATIALITE_LIBRARY_PATH` environment
     variable.
+
+    The init_mode argument can be `'NONE'` to load all EPSG SRIDs, `'WGS84'` to load only the ones
+    related to WGS84 or `'EMPTY'` to not load any EPSG SRID.
+
+    .. Note::
+
+        It is possible to load other EPSG SRIDs afterwards using the `InsertEpsgSrid(srid)`.
     """
     if "SPATIALITE_LIBRARY_PATH" not in os.environ:
         raise RuntimeError("The SPATIALITE_LIBRARY_PATH environment variable is not set.")
     dbapi_conn.enable_load_extension(True)
     dbapi_conn.load_extension(os.environ["SPATIALITE_LIBRARY_PATH"])
     dbapi_conn.enable_load_extension(False)
-    try:
-        databases = [
-            i[-1].endswith(".gpkg") for i in dbapi_conn.execute("PRAGMA database_list;").fetchall()
-        ]
-        is_GeoPkg = any(databases)
-    except Exception:
-        is_GeoPkg = False
-    if is_GeoPkg:
-        if not dbapi_conn.execute("SELECT CheckGeoPackageMetaData();").fetchone()[0]:
-            # This only works on the main database
-            dbapi_conn.execute("SELECT gpkgCreateBaseTables();")
-        dbapi_conn.execute("SELECT AutoGpkgStart();")
-        dbapi_conn.execute("SELECT EnableGpkgAmphibiousMode();")
-    else:
-        dbapi_conn.execute("SELECT InitSpatialMetaData();")
+
+    init_mode_values = [None, "WGS84", "EMPTY"]
+    if isinstance(init_mode, str):
+        init_mode = init_mode.upper()
+    if init_mode not in init_mode_values:
+        raise ValueError("The 'init_mode' must be in {}".format(init_mode_values))
+
+    if dbapi_conn.execute("SELECT CheckSpatialMetaData();").fetchone()[0] < 1:
+        if init_mode is not None:
+            dbapi_conn.execute("SELECT InitSpatialMetaData('{}');".format(init_mode))
+        else:
+            dbapi_conn.execute("SELECT InitSpatialMetaData();")
 
 
 def _get_spatialite_attrs(bind, table_name, col_name):
-    if is_gpkg(bind):
-        attrs = bind.execute(
-            text(
-                """SELECT
-                    A.geometry_type_name,
-                    A.srs_id,
-                    A.z,
-                    A.m,
-                    IFNULL(B.has_index, 0) AS has_index
-                FROM gpkg_geometry_columns
-                AS A
-                LEFT JOIN (
-                    SELECT table_name, column_name, COUNT(*) AS has_index
-                    FROM gpkg_extensions
-                    WHERE table_name = '{table_name}'
-                        AND column_name = '{column_name}'
-                        AND extension_name = 'gpkg_rtree_index'
-                ) AS B
-                ON A.table_name = B.table_name AND A.column_name = B.column_name
-                WHERE A.table_name = '{table_name}' AND A.column_name = '{column_name}';
-            """.format(
-                    table_name=table_name, column_name=col_name
-                )
-            )
-        ).fetchone()
-        if attrs is None:
-            # If the column is not registered as a spatial column we ignore it
-            return None
-        geometry_type, srid, has_z, has_m, has_index = attrs
-        coord_dimension = "XY"
-        if has_z:
-            coord_dimension += "Z"
-        if has_m:
-            coord_dimension += "M"
-        col_attributes = geometry_type, coord_dimension, srid, has_index
-    else:
-        attrs = bind.execute(
-            text(
-                """SELECT * FROM "geometry_columns"
-               WHERE f_table_name = '{}' and f_geometry_column = '{}'
-            """.format(
-                    table_name, col_name
-                )
-            )
-        ).fetchone()
-        if attrs is None:
-            # If the column is not registered as a spatial column we ignore it
-            return None
-        col_attributes = attrs[2:]
-    return col_attributes
+    attrs = bind.execute(
+        text(
+            """SELECT * FROM "geometry_columns"
+            WHERE LOWER(f_table_name) = LOWER(:table_name)
+                AND LOWER(f_geometry_column) = LOWER(:column_name)
+        """
+        ).bindparams(table_name=table_name, column_name=col_name)
+    ).fetchone()
+    if attrs is None:
+        # If the column is not registered as a spatial column we ignore it
+        return None
+    return attrs[2:]
 
 
 def get_spatialite_version(bind):
     """Get the version of the currently loaded Spatialite extension."""
-    return bind.execute(text("""SELECT spatialite_version();""")).fetchone()[0]
+    return bind.execute(text("SELECT spatialite_version();")).fetchone()[0]
 
 
-def _setup_dummy_type(table, gis_cols, gpkg=False):
-    """Setup dummy type for new Geometry columns so they can be updated later into."""
+def _setup_dummy_type(table, gis_cols):
+    """Setup dummy type for new Geometry columns so they can be updated later."""
     for col in gis_cols:
         # Add dummy columns with GEOMETRY type
-        if gpkg:
-            type_str = re.fullmatch("(.+?)[ZMzm]*", col.type.geometry_type).group(1)
-        else:
-            type_str = "GEOMETRY"
         col._actual_type = col.type
-        col.type = _DummyGeometry(geometry_type=type_str)
+        col.type = _DummyGeometry()
     table.columns = table.info["_saved_columns"]
 
 
@@ -148,56 +94,28 @@ def get_col_dim(col):
 
 def create_spatial_index(bind, table, col):
     """Create spatial index on the given column."""
-    if is_gpkg(bind):
-        index_func = func.gpkgAddSpatialIndex
-    else:
-        index_func = func.CreateSpatialIndex
-    stmt = select(*_format_select_args(index_func(table.name, col.name)))
+    stmt = select(*_format_select_args(func.CreateSpatialIndex(table.name, col.name)))
     stmt = stmt.execution_options(autocommit=True)
     bind.execute(stmt)
 
 
 def disable_spatial_index(bind, table, col):
     """Disable spatial indexes if present."""
-    if is_gpkg(bind):
-        # return
-        for i in ["", "_node", "_parent", "_rowid"]:
-            bind.execute(
-                text(
-                    """DROP TABLE IF EXISTS rtree_{}_{}{};""".format(
-                        table.name,
-                        col.name,
-                        i,
-                    )
-                )
-            )
+    stmt = select(*_format_select_args(func.CheckSpatialIndex(table.name, col.name)))
+    if bind.execute(stmt).fetchone()[0] is not None:
+        stmt = select(*_format_select_args(func.DisableSpatialIndex(table.name, col.name)))
+        stmt = stmt.execution_options(autocommit=True)
+        bind.execute(stmt)
         bind.execute(
             text(
-                """DELETE FROM gpkg_extensions
-                WHERE table_name = '{}'
-                    AND column_name = '{}'
-                    AND extension_name = 'gpkg_rtree_index';""".format(
-                    table.name,
-                    col.name,
+                "DROP TABLE IF EXISTS {};".format(
+                    _spatial_idx_name(
+                        table.name,
+                        col.name,
+                    )
                 )
             )
         )
-    else:
-        stmt = select(*_format_select_args(func.CheckSpatialIndex(table.name, col.name)))
-        if bind.execute(stmt).fetchone()[0] is not None:
-            stmt = select(*_format_select_args(func.DisableSpatialIndex(table.name, col.name)))
-            stmt = stmt.execution_options(autocommit=True)
-            bind.execute(stmt)
-            bind.execute(
-                text(
-                    """DROP TABLE IF EXISTS {};""".format(
-                        _spatial_idx_name(
-                            table.name,
-                            col.name,
-                        )
-                    )
-                )
-            )
 
 
 def reflect_geometry_column(inspector, table, column_info):
@@ -257,7 +175,6 @@ def before_create(table, bind, **kw):
     """Handle spatial indexes during the before_create event."""
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
     dialect_name = dialect.name
-    db_is_gpkg = is_gpkg(bind)
 
     # Remove the spatial indexes from the table metadata because they should not be
     # created during the table.create() step since the associated columns do not exist
@@ -276,107 +193,26 @@ def before_create(table, bind, **kw):
                 ):
                     table.info["_after_create_indexes"].append(idx)
 
-    if db_is_gpkg:
-        if len(gis_cols) > 1:
-            raise ValueError(
-                "Only one geometry column is allowed for a table stored in a GeoPackage."
-            )
-        elif len(gis_cols) == 1:
-            col = gis_cols[0]
-            srid = col.type.srid
-
-            if col.type.geometry_type is None:
-                col.type.geometry_type = "GEOMETRY"
-
-            # Add the SRID of the table in 'gpkg_spatial_ref_sys' if this table exists
-            if (
-                bind.execute(text("""PRAGMA main.table_info("gpkg_spatial_ref_sys");""")).fetchall()
-                and not bind.execute(
-                    text(
-                        """SELECT COUNT(*) FROM gpkg_spatial_ref_sys WHERE srs_id = {};""".format(
-                            srid
-                        )
-                    )
-                ).scalar()
-            ):
-                bind.execute(text("SELECT gpkgInsertEpsgSRID({})".format(srid)))
-            # table.columns = table.info.pop("_saved_columns")
-        _setup_dummy_type(table, gis_cols, gpkg=True)
-    else:
-        _setup_dummy_type(table, gis_cols, gpkg=False)
+    _setup_dummy_type(table, gis_cols)
 
 
 def after_create(table, bind, **kw):
     """Handle spatial indexes during the after_create event."""
     dialect = bind.dialect
     dialect_name = dialect.name
-    db_is_gpkg = is_gpkg(bind)
 
-    if db_is_gpkg:
-        for col in table.columns:
-            # Add the managed Geometry columns with gpkgAddGeometryColumn()
-            if _check_spatial_type(col.type, Geometry, dialect) and check_management(
-                col, dialect_name
-            ):
-                col.type = col._actual_type
-                del col._actual_type
-                dimension = get_col_dim(col)
-                has_z = "Z" in dimension
-                has_m = "M" in dimension
+    table.columns = table.info.pop("_saved_columns")
+    for col in table.columns:
+        # Add the managed Geometry columns with RecoverGeometryColumn()
+        if _check_spatial_type(col.type, Geometry, dialect) and check_management(col, dialect_name):
+            col.type = col._actual_type
+            del col._actual_type
+            dimension = get_col_dim(col)
+            args = [table.name, col.name, col.type.srid, col.type.geometry_type, dimension]
 
-                bind.execute(
-                    text(
-                        """INSERT INTO gpkg_contents
-                        VALUES (
-                            '{}',
-                            'features',
-                            NULL,
-                            NULL,
-                            strftime('%Y-%m-%dT%H:%M:%fZ', CURRENT_TIMESTAMP),
-                            NULL,
-                            NULL,
-                            NULL,
-                            NULL,
-                            {}
-                        );""".format(
-                            table.name,
-                            col.type.srid,
-                        )
-                    )
-                )
-                bind.execute(
-                    text(
-                        """INSERT INTO gpkg_geometry_columns
-                        VALUES ('{}', '{}', '{}', {}, {}, {});""".format(
-                            table.name,
-                            col.name,
-                            col.type.geometry_type,
-                            col.type.srid,
-                            has_z,
-                            has_m,
-                        )
-                    )
-                )
-                stmt = select(
-                    *_format_select_args(func.gpkgAddGeometryTriggers(table.name, col.name))
-                )
-                stmt = stmt.execution_options(autocommit=True)
-                bind.execute(stmt)
-    else:
-        table.columns = table.info.pop("_saved_columns")
-        for col in table.columns:
-            # Add the managed Geometry columns with RecoverGeometryColumn()
-            if _check_spatial_type(col.type, Geometry, dialect) and check_management(
-                col, dialect_name
-            ):
-                col.type = col._actual_type
-                del col._actual_type
-                dimension = get_col_dim(col)
-                args = [table.name, col.name, col.type.srid, col.type.geometry_type, dimension]
-
-                stmt = select(*_format_select_args(func.RecoverGeometryColumn(*args)))
-                stmt = stmt.execution_options(autocommit=True)
-                bind.execute(stmt)
+            stmt = select(*_format_select_args(func.RecoverGeometryColumn(*args)))
+            stmt = stmt.execution_options(autocommit=True)
+            bind.execute(stmt)
 
     for col in table.columns:
         # Add spatial indexes for the Geometry and Geography columns
@@ -395,55 +231,16 @@ def after_create(table, bind, **kw):
 def before_drop(table, bind, **kw):
     """Handle spatial indexes during the before_drop event."""
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
-    db_is_gpkg = is_gpkg(bind)
 
-    if not db_is_gpkg:
-        for col in gis_cols:
-            # Disable spatial indexes if present
-            disable_spatial_index(bind, table, col)
+    for col in gis_cols:
+        # Disable spatial indexes if present
+        disable_spatial_index(bind, table, col)
 
-            args = [table.name, col.name]
+        args = [table.name, col.name]
 
-            stmt = select(*_format_select_args(func.DiscardGeometryColumn(*args)))
-            stmt = stmt.execution_options(autocommit=True)
-            bind.execute(stmt)
-    else:
-        for col in gis_cols:
-            # Disable spatial indexes if present
-            # TODO: This is useless but if we remove it then the disable_spatial_index should be
-            # tested separately
-            disable_spatial_index(bind, table, col)
-
-            # Remove metadata from internal tables
-            # (this is equivalent to DiscardGeometryColumn but for GeoPackage)
-            bind.execute(
-                text(
-                    """DELETE FROM gpkg_extensions
-                    WHERE table_name = '{}'
-                        AND column_name = '{}';""".format(
-                        table.name,
-                        col.name,
-                    )
-                )
-            )
-            bind.execute(
-                text(
-                    """DELETE FROM gpkg_geometry_columns
-                    WHERE table_name = '{}'
-                        AND column_name = '{}';""".format(
-                        table.name,
-                        col.name,
-                    )
-                )
-            )
-            bind.execute(
-                text(
-                    """DELETE FROM gpkg_contents
-                    WHERE table_name = '{}';""".format(
-                        table.name
-                    )
-                )
-            )
+        stmt = select(*_format_select_args(func.DiscardGeometryColumn(*args)))
+        stmt = stmt.execution_options(autocommit=True)
+        bind.execute(stmt)
 
 
 def after_drop(table, bind, **kw):

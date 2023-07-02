@@ -37,7 +37,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--sqlite_GeoPackage_dburl",
         action="store",
-        help="SQLite DB URL used for tests with GeoPackage (`sqlite:///path_to_db_file.gpkg`).",
+        help="SQLite DB URL used for tests with GeoPackage (`gpkg:///path_to_db_file.gpkg`).",
     )
     parser.addoption(
         "--mysql_dburl",
@@ -54,7 +54,7 @@ def pytest_addoption(parser):
 
 def pytest_generate_tests(metafunc):
     if "db_url" in metafunc.fixturenames:
-        sqlite_dialects = ["sqlite-spatialite3", "sqlite-spatialite4", "sqlite-geopackage"]
+        sqlite_dialects = ["sqlite-spatialite3", "sqlite-spatialite4", "geopackage"]
         dialects = None
 
         if metafunc.module.__name__ == "tests.test_functional_postgresql":
@@ -63,6 +63,8 @@ def pytest_generate_tests(metafunc):
             dialects = sqlite_dialects
         elif metafunc.module.__name__ == "tests.test_functional_mysql":
             dialects = ["mysql"]
+        elif metafunc.module.__name__ == "tests.test_functional_geopackage":
+            dialects = ["geopackage"]
 
         if getattr(metafunc.function, "tested_dialects", False):
             dialects = metafunc.function.tested_dialects
@@ -120,7 +122,7 @@ def db_url_geopackage(request, tmpdir_factory):
     return (
         request.config.getoption("--sqlite_GeoPackage_dburl")
         or os.getenv("PYTEST_GEOPACKAGE_DB_URL")
-        or f"sqlite:///{Path(__file__).parent / 'data' / 'spatialite_geopackage.gpkg'}"
+        or f"gpkg:///{Path(__file__).parent / 'data' / 'spatialite_geopackage.gpkg'}"
     )
 
 
@@ -141,7 +143,7 @@ def db_url(
         return db_url_sqlite_spatialite3
     elif request.param == "sqlite-spatialite4":
         return db_url_sqlite_spatialite4
-    elif request.param == "sqlite-geopackage":
+    elif request.param == "geopackage":
         return db_url_geopackage
     return None
 
@@ -158,11 +160,14 @@ def engine(tmpdir, db_url, _engine_echo):
     if db_url.startswith("sqlite:///"):
         # Copy the input SQLite DB to a temporary file and return an engine to it
         input_url = str(db_url)[10:]
-        if input_url.endswith(".gpkg"):
-            output_file = "test_spatial_db.gpkg"
-        else:
-            output_file = "test_spatial_db.sqlite"
-        return copy_and_connect_sqlite_db(input_url, tmpdir / output_file, _engine_echo)
+        output_file = "test_spatial_db.sqlite"
+        return copy_and_connect_sqlite_db(input_url, tmpdir / output_file, _engine_echo, "sqlite")
+
+    if db_url.startswith("gpkg:///"):
+        # Copy the input SQLite DB to a temporary file and return an engine to it
+        input_url = str(db_url)[8:]
+        output_file = "test_spatial_db.gpkg"
+        return copy_and_connect_sqlite_db(input_url, tmpdir / output_file, _engine_echo, "gpkg")
 
     # For other dialects the engine is directly returned
     engine = create_engine(db_url, echo=_engine_echo)
@@ -173,10 +178,7 @@ def engine(tmpdir, db_url, _engine_echo):
 
 @pytest.fixture
 def dialect_name(engine):
-    name = engine.dialect.name
-    if name == "sqlite" and engine.url.render_as_string().endswith(".gpkg"):
-        name += "-gpkg"
-    return name
+    return engine.dialect.name
 
 
 @pytest.fixture

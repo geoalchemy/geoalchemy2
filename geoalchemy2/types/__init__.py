@@ -27,6 +27,7 @@ from geoalchemy2.types import dialects
 def select_dialect(dialect_name):
     """Select the dialect from its name."""
     known_dialects = {
+        "geopackage": dialects.geopackage,
         "mysql": dialects.mysql,
         "postgresql": dialects.postgresql,
         "sqlite": dialects.sqlite,
@@ -435,6 +436,17 @@ _sqlite_ischema_names["MULTIPOLYGON"] = Geometry
 _sqlite_ischema_names["CURVE"] = Geometry
 _sqlite_ischema_names["GEOMETRYCOLLECTION"] = Geometry
 _sqlite_ischema_names["RASTER"] = Raster
+
+# _gpkg_ischema_names["GEOMETRY"] = Geometry
+# _gpkg_ischema_names["POINT"] = Geometry
+# _gpkg_ischema_names["LINESTRING"] = Geometry
+# _gpkg_ischema_names["POLYGON"] = Geometry
+# _gpkg_ischema_names["MULTIPOINT"] = Geometry
+# _gpkg_ischema_names["MULTILINESTRING"] = Geometry
+# _gpkg_ischema_names["MULTIPOLYGON"] = Geometry
+# _gpkg_ischema_names["CURVE"] = Geometry
+# _gpkg_ischema_names["GEOMETRYCOLLECTION"] = Geometry
+# _gpkg_ischema_names["RASTER"] = Raster
 
 
 class SummaryStats(CompositeType):

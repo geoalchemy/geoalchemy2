@@ -1,4 +1,3 @@
-import os
 import re
 
 import pytest
@@ -11,13 +10,13 @@ from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import create_engine
 from sqlalchemy import text
-from sqlalchemy.event import listen
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.sql import func
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import load_spatialite
+from geoalchemy2.admin.dialects.geopackage import populate_spatial_ref_sys
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
@@ -119,6 +118,13 @@ class TestAdmin:
         # Create the table
         t.create(bind=conn)
 
+        # Check that the table was properly created
+        res = conn.execute(text("PRAGMA main.table_info(a_table)")).fetchall()
+        assert res == [
+            (0, "id", "INTEGER", 1, None, 1),
+            (1, "geom", "GEOMETRY", 0, None, 0),
+        ]
+
         # Drop the table
         t.drop(bind=conn)
 
@@ -176,45 +182,10 @@ class TestIndex:
     def test_index(self, conn, Lake, setup_tables):
         assert self.check_spatial_idx(conn, "idx_lake_geom")
 
-    @test_only_with_dialects("sqlite-geopackage")
-    def test_index_gpkg(self, conn, Lake, setup_tables):
-        assert (
-            conn.execute(
-                text(
-                    """SELECT COUNT(*) FROM gpkg_extensions
-                WHERE table_name = 'lake'
-                    AND column_name = 'geom'
-                    AND extension_name = 'gpkg_rtree_index';"""
-                )
-            ).scalar()
-            == 1
-        )
-
     @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
     def test_type_decorator_index(self, conn, LocalPoint, setup_tables):
         assert self.check_spatial_idx(conn, "idx_local_point_geom")
         assert self.check_spatial_idx(conn, "idx_local_point_managed_geom")
-
-    @test_only_with_dialects("sqlite-geopackage")
-    def test_type_decorator_index_gpkg(self, conn, base, metadata):
-        class LocalPoint(base):
-            __tablename__ = "local_point"
-            id = Column(Integer, primary_key=True)
-            geom = Column(TransformedGeometry(db_srid=2154, app_srid=4326, geometry_type="POINT"))
-
-        metadata.drop_all(conn, checkfirst=True)
-        metadata.create_all(conn)
-        assert (
-            conn.execute(
-                text(
-                    """SELECT COUNT(*) FROM gpkg_extensions
-                WHERE table_name = 'local_point'
-                    AND column_name = 'geom'
-                    AND extension_name = 'gpkg_rtree_index';"""
-                )
-            ).scalar()
-            == 1
-        )
 
     @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
     def test_all_indexes(self, conn, TableWithIndexes, setup_tables):
@@ -238,6 +209,48 @@ class TestIndex:
         assert [table for table in tables_after_drop if "table_with_indexes" in table.name] == []
 
 
+class TestMiscellaneous:
+    @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
+    @pytest.mark.parametrize("init_mode", [None, "WGS84", "EMPTY"])
+    def test_load_spatialite(self, tmpdir, _engine_echo, init_mode):
+        # Create empty DB
+        tmp_db = tmpdir / "test_spatial_db.sqlite"
+        db_url = f"sqlite:///{tmp_db}"
+        engine = create_engine(
+            db_url, echo=_engine_echo, execution_options={"schema_translate_map": {"gis": None}}
+        )
+        conn = engine.connect()
+
+        assert not conn.execute(text("PRAGMA main.table_info('geometry_columns')")).fetchall()
+        assert not conn.execute(text("PRAGMA main.table_info('spatial_ref_sys')")).fetchall()
+
+        load_spatialite(conn.connection.dbapi_connection, None, init_mode)
+
+        assert conn.execute(text("SELECT CheckSpatialMetaData();")).scalar() == 3
+        assert conn.execute(text("PRAGMA main.table_info('geometry_columns')")).fetchall()
+        assert conn.execute(text("PRAGMA main.table_info('spatial_ref_sys')")).fetchall()
+
+        # Check that spatial_ref_sys table was properly populated
+        nb_srid = conn.execute(text("""SELECT COUNT(*) FROM spatial_ref_sys;""")).scalar()
+        if init_mode is None:
+            assert nb_srid > 1000
+        elif init_mode == "WGS84":
+            assert nb_srid == 129
+        elif init_mode == "EMPTY":
+            assert nb_srid == 0
+
+    @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
+    def test_load_spatialite_unknown_init_type(self, monkeypatch, conn):
+        with pytest.raises(ValueError):
+            load_spatialite(conn.connection.dbapi_connection, None, "UNKNOWN TYPE")
+
+    @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
+    def test_load_spatialite_no_env_variable(self, monkeypatch, conn):
+        monkeypatch.delenv("SPATIALITE_LIBRARY_PATH")
+        with pytest.raises(RuntimeError):
+            load_spatialite(conn.connection.dbapi_connection, None)
+
+
 class TestInsertionORM:
     @pytest.fixture
     def LocalPoint(self, base):
@@ -253,36 +266,13 @@ class TestInsertionORM:
         return LocalPoint
 
     def test_transform(self, session, conn, LocalPoint, setup_tables, dialect_name):
-        if dialect_name == "sqlite-gpkg":
-            # For GeoPackage we have to create the 'spatial_sys_ref' table to be able to use
-            # the ST_Transform. It can be created using InitSpatialMetaData() but it also creates
-            # the 'geometry_columns' table, which is useless. So here we create the table manually
-            # with only the required SRS IDs.
-            # TODO: Should we move this to a public function so people can use it easily?
-            conn.execute(
-                text(
-                    """CREATE TABLE IF NOT EXISTS spatial_ref_sys (
-                      srid       INTEGER NOT NULL PRIMARY KEY,
-                      auth_name  VARCHAR(256),
-                      auth_srid  INTEGER,
-                      srtext     VARCHAR(2048),
-                      proj4text  VARCHAR(2048)
-                    );"""
-                )
-            )
-            conn.execute(
-                text(
-                    """INSERT INTO spatial_ref_sys
-                    SELECT
-                      srs_id AS srid,
-                      organization AS auth_name,
-                      organization_coordsys_id AS auth_srid,
-                      definition AS srtext,
-                      NULL
-                    FROM gpkg_spatial_ref_sys AS A
-                    WHERE NOT EXISTS (SELECT srid FROM spatial_ref_sys WHERE srs_id = A.srs_id);"""
-                )
-            )
+        if dialect_name == "geopackage":
+            # For GeoPackage we have to create the 'spatial_ref_sys' table to be able to use
+            # the ST_Transform function. It can be created using InitSpatialMetaData() but it also
+            # creates the 'geometry_columns' table, which is useless. So here we create the table
+            # manually with only the required SRS IDs.
+            populate_spatial_ref_sys(conn)
+
         # Create new point instance
         p = LocalPoint()
         p.geom = "SRID=4326;POINT(5 45)"  # Insert geometry with wrong SRID
@@ -754,7 +744,7 @@ class TestReflection:
         metadata.drop_all(conn, checkfirst=True)
         metadata.create_all(conn)
 
-    @test_only_with_dialects("sqlite-spatialite3", "sqlite-geopackage")
+    @test_only_with_dialects("sqlite-spatialite3", "geopackage")
     def test_reflection_mutliple_tables(self, conn, setup_reflection_multiple_tables, dialect_name):
         reflected_metadata = MetaData()
         t_lake = Table("lake", reflected_metadata, autoload_with=conn)
@@ -808,7 +798,7 @@ class TestReflection:
             ORDER BY tbl_name;"""
         )
 
-        if dialect_name == "sqlite-gpkg":
+        if dialect_name == "geopackage":
             # Query to check the indices
             query_indexes = text(
                 """SELECT
@@ -851,9 +841,7 @@ class TestReflection:
         # Check the actual properties
         geom_cols = conn.execute(query_indexes).fetchall()
 
-        # import pdb
-        # pdb.set_trace()
-        if dialect_name == "sqlite-gpkg":
+        if dialect_name == "geopackage":
             assert geom_cols == [
                 ("lake", "geom", "LINESTRING", 0, 0, 4326, 1),
                 ("lake_m", "geom", "LINESTRINGM", 0, 1, 4326, 1),
@@ -878,61 +866,3 @@ class TestReflection:
             "lake_z",
             "lake_zm",
         ]
-
-
-@test_only_with_dialects("sqlite-geopackage")
-class TestGeoPkg:
-    def test_create_gpkg(self, tmpdir, db_url_geopackage, _engine_echo):
-        """Test GeoPackage creation."""
-        # Create empty GeoPackage
-        tmp_db = tmpdir / "test_spatial_db.gpkg"
-        db_url = f"sqlite:///{tmp_db}"
-        engine = create_engine(
-            db_url, echo=_engine_echo, execution_options={"schema_translate_map": {"gis": None}}
-        )
-
-        # Check that the DB is empty
-        raw_conn = engine.connect()
-        assert not raw_conn.execute(
-            text("PRAGMA main.table_info('gpkg_geometry_columns');")
-        ).fetchall()
-        raw_conn.connection.dbapi_connection.enable_load_extension(True)
-        raw_conn.connection.dbapi_connection.load_extension(os.environ["SPATIALITE_LIBRARY_PATH"])
-        raw_conn.connection.dbapi_connection.enable_load_extension(False)
-        assert not raw_conn.execute(
-            text("PRAGMA main.table_info('gpkg_geometry_columns');")
-        ).fetchall()
-        assert raw_conn.execute(text("SELECT HasGeoPackage();")).scalar()
-        assert not raw_conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar()
-
-        # Check that the DB is properly ionitialized using load_spatialite
-        listen(engine, "connect", load_spatialite)
-        conn = engine.connect()
-        assert conn.execute(text("SELECT HasGeoPackage();")).scalar()
-        assert conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar()
-
-    def test_multi_geom_cols_fail(self, conn):
-        t = Table(
-            "a_table",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("geom", Geometry()),
-            Column("geom_2", Geometry()),
-        )
-        with pytest.raises(
-            ValueError,
-            match=r"Only one geometry column is allowed for a table stored in a GeoPackage\.",
-        ):
-            t.create(conn)
-
-    def test_add_srid(self, conn):
-        t = Table(
-            "a_table",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("geom", Geometry(srid=3857)),
-        )
-        check_srid_query = text("""SELECT srs_id FROM gpkg_spatial_ref_sys WHERE srs_id = 3857;""")
-        assert not conn.execute(check_srid_query).fetchall()
-        t.create(conn)
-        assert conn.execute(check_srid_query).fetchall()

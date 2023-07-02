@@ -31,12 +31,14 @@ from sqlalchemy.exc import SAWarning
 from sqlalchemy.sql import func
 from sqlalchemy.testing.assertions import ComparesTables
 
-import geoalchemy2
 import geoalchemy2.admin.dialects
 from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
-from geoalchemy2.admin.dialects.sqlite import _get_spatialite_attrs
+from geoalchemy2.admin.dialects.geopackage import (
+    _get_spatialite_attrs as _get_spatialite_attrs_gpkg,
+)
+from geoalchemy2.admin.dialects.sqlite import _get_spatialite_attrs as _get_spatialite_attrs_sqlite
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
@@ -226,16 +228,6 @@ class TestAdmin:
         metadata.drop_all(conn, checkfirst=True)
 
         assert marks == ["before_create", "after_create", "before_drop", "after_drop"]
-
-
-class TestMiscellaneous:
-    @test_only_with_dialects("sqlite")
-    def test_load_spatialite(self, monkeypatch, conn):
-        geoalchemy2.load_spatialite(conn.connection.dbapi_connection, None)
-
-        monkeypatch.delenv("SPATIALITE_LIBRARY_PATH")
-        with pytest.raises(RuntimeError):
-            geoalchemy2.load_spatialite(conn.connection.dbapi_connection, None)
 
 
 class TestInsertionCore:
@@ -590,7 +582,7 @@ class TestUpdateORM:
                 # so the lake instance is detected as different and is thus updated but with
                 # an invalid geometry.
                 session.flush()
-        elif dialect_name.startswith("sqlite"):
+        elif dialect_name in ["sqlite", "geopackage"]:
             # SQLite silently set the geom attribute to NULL
             session.flush()
             session.refresh(lake)
@@ -759,7 +751,7 @@ class TestCallFunction:
 
 class TestShapely:
     def test_to_shape(self, session, Lake, setup_tables, dialect_name):
-        if dialect_name.startswith("sqlite"):
+        if dialect_name in ["sqlite", "geopackage"]:
             data_type = str
         elif dialect_name == "mysql":
             data_type = bytes
@@ -870,7 +862,7 @@ class TestReflection:
             assert type_.srid == 4326
             assert type_.dimension == 2
 
-            if "gpkg" not in dialect_name:
+            if dialect_name != "geopackage":
                 type_ = t.c.geom_no_idx.type
                 assert isinstance(type_, Geometry)
                 assert type_.geometry_type == "LINESTRING"
@@ -905,7 +897,7 @@ class TestReflection:
             {
                 "postgresql": [],
                 "sqlite": [],
-                "sqlite-gpkg": [],
+                "geopackage": [],
             },
             table_name=t.name,
         )
@@ -914,8 +906,11 @@ class TestReflection:
         t.create(bind=conn)
 
         # Check the indexes
-        if dialect_name.startswith("sqlite"):
-            col_attributes = _get_spatialite_attrs(conn, t.name, "geom")
+        if dialect_name in ["sqlite", "geopackage"]:
+            if dialect_name == "geopackage":
+                col_attributes = _get_spatialite_attrs_gpkg(conn, t.name, "geom")
+            else:
+                col_attributes = _get_spatialite_attrs_sqlite(conn, t.name, "geom")
             if isinstance(col_attributes[0], int):
                 sqlite_indexes = [
                     ("lake", "geom", 2, 2, 4326, 1),
@@ -961,7 +956,7 @@ class TestReflection:
                     ),
                 ],
                 "sqlite": sqlite_indexes,
-                "sqlite-gpkg": [("lake", "geom", "gpkg_rtree_index")],
+                "geopackage": [("lake", "geom", "gpkg_rtree_index")],
             },
             table_name=t.name,
         )
@@ -981,7 +976,7 @@ class TestReflection:
     @test_only_with_dialects("sqlite")
     def test_sqlite_reflection_with_discarded_col(self, conn, Lake, setup_tables, dialect_name):
         """Test that a discarded geometry column is not properly reflected with SQLite."""
-        if dialect_name == "sqlite-gpkg":
+        if dialect_name == "geopackage":
             conn.execute(text("""DELETE FROM "gpkg_geometry_columns" WHERE table_name = 'lake';"""))
         else:
             conn.execute(text("""DELETE FROM "geometry_columns" WHERE f_table_name = 'lake';"""))

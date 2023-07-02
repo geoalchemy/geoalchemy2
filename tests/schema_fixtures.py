@@ -191,7 +191,7 @@ def reflection_tables_metadata(dialect_name):
         __tablename__ = "lake"
         id = Column(Integer, primary_key=True)
         geom = Column(Geometry(geometry_type="LINESTRING", srid=4326))
-        if "gpkg" not in dialect_name:
+        if dialect_name != "geopackage":
             geom_no_idx = Column(
                 Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=False)
             )

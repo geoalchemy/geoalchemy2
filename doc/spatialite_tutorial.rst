@@ -199,11 +199,18 @@ GeoPackage format
 
 Starting from the version ``4.2`` of Spatialite, it is possible to use GeoPackage files as DB
 containers. GeoAlchemy 2 is able to handle most of the GeoPackage features automatically if the
-SpatiaLite extension is loaded. Usually, this extension should be loaded using the
-``load_spatialite`` listener, as described :ref:`above<spatialite_connect>`.
+GeoPackage dialect is used (i.e. the DB URL starts with ``gpkg:///``) and the SpatiaLite extension
+is loaded. Usually, this extension should be loaded using the ``load_spatialite_gpkg`` listener::
 
-When using the ``load_spatialite`` listener, all SQLite databases pointing to a ``*.gpkg`` file
-will be considered as a GoePackage. In this case, specific processes are activated:
+    >>> from geoalchemy2 import load_spatialite_gpkg
+    >>> from sqlalchemy import create_engine
+    >>> from sqlalchemy.event import listen
+    >>>
+    >>> engine = create_engine("gpkg:///gis.gpkg", echo=True)
+    >>> listen(engine, "connect", load_spatialite_gpkg)
+
+When using the ``load_spatialite_gpkg`` listener on a DB recognized as a GeoPackage, specific
+processes are activated:
 
 * the base tables are created if they are missing,
 * the ``Amphibious`` mode is enabled using the ``EnableGpkgAmphibiousMode`` function,

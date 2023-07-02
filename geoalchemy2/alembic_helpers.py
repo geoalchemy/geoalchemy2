@@ -10,6 +10,7 @@ from alembic.autogenerate.render import _drop_table
 from alembic.ddl.base import RenameTable
 from alembic.ddl.base import format_table_name
 from alembic.ddl.base import visit_rename_table
+from alembic.ddl.sqlite import SQLiteImpl
 from alembic.operations import BatchOperations
 from alembic.operations import Operations
 from alembic.operations import ops
@@ -28,12 +29,17 @@ from geoalchemy2 import Raster
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _get_gis_cols
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
-from geoalchemy2.admin.dialects.sqlite import is_gpkg
 
 writer = rewriter.Rewriter()
 """Rewriter object for Alembic."""
 
 _SPATIAL_TABLES = set()
+
+
+class GeoPackageImpl(SQLiteImpl):
+    """Class to copy the Alembic implementation from SQLite to GeoPackage."""
+
+    __dialect__ = "geopackage"
 
 
 def _monkey_patch_get_indexes_for_sqlite():
@@ -43,26 +49,22 @@ def _monkey_patch_get_indexes_for_sqlite():
     def spatial_behavior(self, connection, table_name, schema=None, **kw):
         indexes = self._get_indexes_normal_behavior(connection, table_name, schema=None, **kw)
 
-        try:
-            # Check if the DB is a GeoPackage
-            is_gpkg_conn = is_gpkg(connection)
+        is_gpkg = connection.dialect.name == "geopackage"
 
+        try:
             # Check that SpatiaLite was loaded into the DB
-            if is_gpkg_conn:
-                is_spatial_db = connection.exec_driver_sql(
-                    """PRAGMA main.table_info(gpkg_geometry_columns)"""
-                ).fetchall()
-            else:
-                is_spatial_db = connection.exec_driver_sql(
-                    """PRAGMA main.table_info(geometry_columns)"""
-                ).fetchall()
+            is_spatial_db = connection.exec_driver_sql(
+                """PRAGMA main.table_info({})""".format(
+                    "gpkg_geometry_columns" if is_gpkg else "geometry_columns"
+                )
+            ).fetchall()
             if not is_spatial_db:
                 return indexes
         except AttributeError:
             return indexes
 
         # Get spatial indexes
-        if is_gpkg_conn:
+        if is_gpkg:
             spatial_index_query = text(
                 """SELECT A.table_name, A.column_name, IFNULL(B.has_index, 0) AS has_index
                 FROM "gpkg_geometry_columns"
@@ -70,15 +72,15 @@ def _monkey_patch_get_indexes_for_sqlite():
                 LEFT JOIN (
                     SELECT table_name, column_name, COUNT(*) AS has_index
                     FROM gpkg_extensions
-                    WHERE table_name = '{table_name}' AND extension_name = 'gpkg_rtree_index'
+                    WHERE LOWER(table_name) = LOWER('{table_name}')
+                        AND extension_name = 'gpkg_rtree_index'
                 ) AS B
-                ON A.table_name = B.table_name
-                WHERE A.table_name = '{table_name}';
+                ON LOWER(A.table_name) = LOWER(B.table_name)
+                WHERE LOWER(A.table_name) = LOWER('{table_name}');
             """.format(
                     table_name=table_name
                 )
             )
-            spatial_indexes = connection.execute(spatial_index_query).fetchall()
         else:
             spatial_index_query = text(
                 """SELECT *
@@ -88,7 +90,9 @@ def _monkey_patch_get_indexes_for_sqlite():
                     table_name
                 )
             )
-            spatial_indexes = connection.execute(spatial_index_query).fetchall()
+
+        spatial_indexes = connection.execute(spatial_index_query).fetchall()
+
         if spatial_indexes:
             reflected_names = set([i["name"] for i in indexes])
             for idx in spatial_indexes:
