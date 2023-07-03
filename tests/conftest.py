@@ -177,6 +177,12 @@ def engine(tmpdir, db_url, _engine_echo):
 
 
 @pytest.fixture
+def check_spatialite():
+    if "SPATIALITE_LIBRARY_PATH" not in os.environ:
+        pytest.skip("SPATIALITE_LIBRARY_PATH is not defined, skip SpatiaLite tests")
+
+
+@pytest.fixture
 def dialect_name(engine):
     return engine.dialect.name
 

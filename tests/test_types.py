@@ -64,37 +64,16 @@ class TestGeometry:
         g = Geometry(geometry_type="GEOMETRYM", srid=900913)
         assert g.get_col_spec() == "geometry(GEOMETRYM,900913)"
 
-    def test_check_ctor_args_management_zm(self):
-        with pytest.raises(ArgumentError):
-            Geometry(geometry_type="POINTZM", management=True)
-
-    def test_check_ctor_args_management_z(self):
-        with pytest.raises(ArgumentError):
-            Geometry(geometry_type="POINTZ", dimension=2, management=True)
-
-    def test_check_ctor_args_management_m(self):
-        with pytest.raises(ArgumentError):
-            Geometry(geometry_type="POINTM", dimension=2, management=True)
-
-    def test_check_ctor_args_incompatible_arguments(self):
-        with pytest.raises(ArgumentError):
-            Geometry(geometry_type=None, management=True)
-
     def test_check_ctor_args_srid_not_enforced(self):
         with pytest.warns(UserWarning):
             Geometry(geometry_type=None, srid=4326)
 
-    def test_check_ctor_args_use_typmod_ignored(self):
-        with pytest.warns(UserWarning):
-            Geometry(management=False, use_typmod=True)
-
     def test_check_ctor_args_use_typmod_nullable(self):
-        with pytest.warns(UserWarning, match="use_typmod ignored when management is False"):
-            with pytest.raises(
-                ArgumentError,
-                match='The "nullable" and "use_typmod" arguments can not be used together',
-            ):
-                Geometry(use_typmod=True, nullable=False)
+        with pytest.raises(
+            ArgumentError,
+            match='The "nullable" and "use_typmod" arguments can not be used together',
+        ):
+            Geometry(use_typmod=True, nullable=False)
 
     def test_column_expression(self, geometry_table):
         s = select([geometry_table.c.geom])

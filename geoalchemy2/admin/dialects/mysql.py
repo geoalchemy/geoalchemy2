@@ -6,7 +6,6 @@ from sqlalchemy.sql.sqltypes import NullType
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
-from geoalchemy2.admin.dialects.common import check_management
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
@@ -70,7 +69,6 @@ def reflect_geometry_column(inspector, table, column_info):
 def before_create(table, bind, **kw):
     """Handle spatial indexes during the before_create event."""
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
-    dialect_name = dialect.name
 
     # Remove the spatial indexes from the table metadata because they should not be
     # created during the table.create() step since the associated columns do not exist
@@ -79,10 +77,7 @@ def before_create(table, bind, **kw):
     current_indexes = set(table.indexes)
     for idx in current_indexes:
         for col in table.info["_saved_columns"]:
-            if (
-                _check_spatial_type(col.type, Geometry, dialect)
-                and check_management(col, dialect_name)
-            ) and col in idx.columns.values():
+            if (_check_spatial_type(col.type, Geometry, dialect)) and col in idx.columns.values():
                 table.indexes.remove(idx)
                 if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
                     col.type, "spatial_index", False
@@ -96,7 +91,6 @@ def after_create(table, bind, **kw):
     """Handle spatial indexes during the after_create event."""
     # Restore original column list including managed Geometry columns
     dialect = bind.dialect
-    dialect_name = dialect.name
 
     # table.columns = table.info.pop("_saved_columns")
 
@@ -107,9 +101,7 @@ def after_create(table, bind, **kw):
             and col.type.spatial_index is True
         ):
             # If the index does not exist, define it and create it
-            if not [i for i in table.indexes if col in i.columns.values()] and check_management(
-                col, dialect_name
-            ):
+            if not [i for i in table.indexes if col in i.columns.values()]:
                 sql = "ALTER TABLE {} ADD SPATIAL INDEX({});".format(table.name, col.name)
                 q = text(sql)
                 bind.execute(q)

@@ -14,13 +14,11 @@ from geoalchemy2 import Raster
 
 @pytest.fixture
 def Lake(base, postgis_version, schema):
-    with_management = postgis_version == 1
-
     class Lake(base):
         __tablename__ = "lake"
         __table_args__ = {"schema": schema}
         id = Column(Integer, primary_key=True)
-        geom = Column(Geometry(geometry_type="LINESTRING", srid=4326, management=with_management))
+        geom = Column(Geometry(geometry_type="LINESTRING", srid=4326))
 
         def __init__(self, geom):
             self.geom = geom
@@ -29,7 +27,7 @@ def Lake(base, postgis_version, schema):
 
 
 @pytest.fixture
-def Poi(base, engine, schema):
+def Poi(base, schema, dialect_name):
     class Poi(base):
         __tablename__ = "poi"
         __table_args__ = {"schema": schema}
@@ -37,7 +35,7 @@ def Poi(base, engine, schema):
         geom = Column(Geometry(geometry_type="POINT", srid=4326))
         geog = (
             Column(Geography(geometry_type="POINT", srid=4326))
-            if engine.dialect.name == "postgresql"
+            if dialect_name == "postgresql"
             else None
         )
 
@@ -59,7 +57,6 @@ def Summit(base, postgis_version, schema):
             Geometry(
                 geometry_type="POINT",
                 srid=4326,
-                management=True,
                 use_typmod=with_use_typemod,
             )
         )
@@ -136,13 +133,9 @@ def LocalPoint(base):
     class LocalPoint(base):
         __tablename__ = "local_point"
         id = Column(Integer, primary_key=True)
-        geom = Column(
-            TransformedGeometry(
-                db_srid=2154, app_srid=4326, geometry_type="POINT", management=False
-            )
-        )
+        geom = Column(TransformedGeometry(db_srid=2154, app_srid=4326, geometry_type="POINT"))
         managed_geom = Column(
-            TransformedGeometry(db_srid=2154, app_srid=4326, geometry_type="POINT", management=True)
+            TransformedGeometry(db_srid=2154, app_srid=4326, geometry_type="POINT")
         )
 
     return LocalPoint
@@ -155,7 +148,7 @@ def IndexTestWithSchema(base, schema):
         __table_args__ = {"schema": schema} if schema else {}
         id = Column(Integer, primary_key=True)
         geom1 = Column(Geometry(geometry_type="POINT", srid=4326))
-        geom2 = Column(Geometry(geometry_type="POINT", srid=4326, management=True))
+        geom2 = Column(Geometry(geometry_type="POINT", srid=4326))
 
     return IndexTestWithSchema
 
@@ -177,7 +170,7 @@ def IndexTestWithoutSchema(base):
         __tablename__ = "indextestwithoutschema"
         id = Column(Integer, primary_key=True)
         geom1 = Column(Geometry(geometry_type="POINT", srid=4326))
-        geom2 = Column(Geometry(geometry_type="POINT", srid=4326, management=True))
+        geom2 = Column(Geometry(geometry_type="POINT", srid=4326))
 
     return IndexTestWithoutSchema
 

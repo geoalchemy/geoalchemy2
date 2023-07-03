@@ -22,7 +22,7 @@ def _format_select_args(*args):
 
 
 def check_management(*args):
-    """Default function to check management."""
+    """Default function to check management (always True by default)."""
     return True
 
 
@@ -37,7 +37,7 @@ def _get_gis_cols(table, spatial_types, dialect, check_col_management=None):
         if (
             isinstance(col, Column)
             and _check_spatial_type(col.type, spatial_types, dialect)
-            and func(col, dialect.name)
+            and func(col)
         )
     ]
 
@@ -53,7 +53,7 @@ def _get_dispatch_info(table, bind, check_col_management=None):
     """Get info required for dispatch events."""
     dialect = bind.dialect
 
-    # Filter Geometry columns from the table with management=True
+    # Filter Geometry columns from the table
     # Note: Geography and PostGIS >= 2.0 don't need this
     gis_cols = _get_gis_cols(table, Geometry, dialect, check_col_management=check_col_management)
 

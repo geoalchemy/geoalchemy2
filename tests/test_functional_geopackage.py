@@ -16,7 +16,7 @@ from .schema_fixtures import TransformedGeometry
 
 
 class TestAdmin:
-    def test_create_gpkg(self, tmpdir, _engine_echo):
+    def test_create_gpkg(self, tmpdir, _engine_echo, check_spatialite):
         """Test GeoPackage creation."""
         # Create empty GeoPackage
         tmp_db = tmpdir / "test_spatial_db.gpkg"
@@ -31,7 +31,7 @@ class TestAdmin:
             text("PRAGMA main.table_info('gpkg_geometry_columns');")
         ).fetchall()
         raw_conn.connection.dbapi_connection.enable_load_extension(True)
-        raw_conn.connection.dbapi_connection.load_extension(os.environ["SPATIALITE_LIBRARY_PATH"])
+        raw_conn.connection.dbapi_connection.load_extension(os.getenv("SPATIALITE_LIBRARY_PATH"))
         raw_conn.connection.dbapi_connection.enable_load_extension(False)
         assert not raw_conn.execute(
             text("PRAGMA main.table_info('gpkg_geometry_columns');")
@@ -55,7 +55,7 @@ class TestAdmin:
         t.create(conn)
         t.drop(conn)
 
-    def test_manual_initialization(self, tmpdir, _engine_echo):
+    def test_manual_initialization(self, tmpdir, _engine_echo, check_spatialite):
         """Test GeoPackage creation."""
         # Create empty GeoPackage
         tmp_db = tmpdir / "test_spatial_db.gpkg"
@@ -190,7 +190,7 @@ class TestIndex:
 
 
 class TestMiscellaneous:
-    def test_load_spatialite_gpkg(self, tmpdir, _engine_echo):
+    def test_load_spatialite_gpkg(self, tmpdir, _engine_echo, check_spatialite):
         # Create empty DB
         tmp_db = tmpdir / "test_spatial_db.sqlite"
         db_url = f"sqlite:///{tmp_db}"

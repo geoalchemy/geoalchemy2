@@ -140,28 +140,24 @@ class TestIndex:
                 Geometry(
                     geometry_type="POINT",
                     spatial_index=False,
-                    management=False,
                 )
             )
             geom_not_managed_index = Column(
                 Geometry(
                     geometry_type="POINT",
                     spatial_index=True,
-                    management=False,
                 )
             )
             geom_managed_no_index = Column(
                 Geometry(
                     geometry_type="POINT",
                     spatial_index=False,
-                    management=True,
                 )
             )
             geom_managed_index = Column(
                 Geometry(
                     geometry_type="POINT",
                     spatial_index=True,
-                    management=True,
                 )
             )
 
@@ -212,7 +208,7 @@ class TestIndex:
 class TestMiscellaneous:
     @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
     @pytest.mark.parametrize("init_mode", [None, "WGS84", "EMPTY"])
-    def test_load_spatialite(self, tmpdir, _engine_echo, init_mode):
+    def test_load_spatialite(self, tmpdir, _engine_echo, init_mode, check_spatialite):
         # Create empty DB
         tmp_db = tmpdir / "test_spatial_db.sqlite"
         db_url = f"sqlite:///{tmp_db}"
@@ -257,11 +253,7 @@ class TestInsertionORM:
         class LocalPoint(base):
             __tablename__ = "local_point"
             id = Column(Integer, primary_key=True)
-            geom = Column(
-                TransformedGeometry(
-                    db_srid=2154, app_srid=4326, geometry_type="POINT", management=False
-                )
-            )
+            geom = Column(TransformedGeometry(db_srid=2154, app_srid=4326, geometry_type="POINT"))
 
         return LocalPoint
 
@@ -380,7 +372,6 @@ class TestNullable:
                 Geometry(
                     geometry_type="LINESTRING",
                     srid=4326,
-                    management=True,
                     nullable=False,
                 )
             )
@@ -420,7 +411,7 @@ class TestContraint:
             id = Column(Integer, primary_key=True)
             a_str = Column(String, nullable=True)
             checked_str = Column(String, nullable=True)
-            geom = Column(Geometry(geometry_type="LINESTRING", srid=4326, management=False))
+            geom = Column(Geometry(geometry_type="LINESTRING", srid=4326))
 
             def __init__(self, geom):
                 self.geom = geom

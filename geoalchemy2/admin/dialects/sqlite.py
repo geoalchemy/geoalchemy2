@@ -10,7 +10,6 @@ from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _format_select_args
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
-from geoalchemy2.admin.dialects.common import check_management
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry

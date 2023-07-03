@@ -38,7 +38,6 @@ class TestAutogenerate:
                 Geometry(
                     geometry_type="LINESTRING",
                     srid=4326,
-                    management=Lake.__table__.c.geom.type.management,
                     nullable=dialect_name != "mysql",
                 ),
             ),
@@ -71,7 +70,6 @@ class TestAutogenerate:
                 Geometry(
                     geometry_type="LINESTRING",
                     srid=4326,
-                    management=Lake.__table__.c.geom.type.management,
                 ),
             ),
             Column(
@@ -79,7 +77,6 @@ class TestAutogenerate:
                 Geometry(
                     geometry_type="LINESTRING",
                     srid=4326,
-                    management=Lake.__table__.c.geom.type.management,
                 ),
             ),
             schema=Lake.__table__.schema,
