@@ -792,7 +792,7 @@ class TestContraint:
             id = Column(Integer, primary_key=True)
             a_str = Column(String, nullable=True)
             checked_str = Column(String, nullable=True)
-            geom = Column(Geometry(geometry_type="LINESTRING", srid=4326, management=False))
+            geom = Column(Geometry(geometry_type="LINESTRING", srid=4326))
 
             def __init__(self, geom):
                 self.geom = geom
@@ -990,7 +990,6 @@ class TestReflection:
         assert t.c.geom.type.geometry_type == "GEOMETRY"
         assert t.c.geom.type.dimension == 2
         assert t.c.geom.type.extended
-        assert not t.c.geom.type.management
         assert t.c.geom.type.nullable
         assert t.c.geom.type.spatial_index
         assert t.c.geom.type.srid == -1

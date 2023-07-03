@@ -105,7 +105,6 @@ class TestIndex:
                         dimension=3,
                         spatial_index=False,
                         use_N_D_index=True,
-                        management=False,
                     )
                 )
 
@@ -139,28 +138,24 @@ class TestIndex:
                 Geometry(
                     geometry_type="POINT",
                     spatial_index=False,
-                    management=False,
                 )
             )
             geom_not_managed_index = Column(
                 Geometry(
                     geometry_type="POINT",
                     spatial_index=True,
-                    management=False,
                 )
             )
             geom_managed_no_index = Column(
                 Geometry(
                     geometry_type="POINT",
                     spatial_index=False,
-                    management=True,
                 )
             )
             geom_managed_index = Column(
                 Geometry(
                     geometry_type="POINT",
                     spatial_index=True,
-                    management=True,
                 )
             )
             # Test indexes on Geometry columns with ND index.
@@ -170,7 +165,6 @@ class TestIndex:
                     dimension=3,
                     spatial_index=True,
                     use_N_D_index=True,
-                    management=False,
                 )
             )
             geom_managed_nd_index = Column(
@@ -179,7 +173,6 @@ class TestIndex:
                     dimension=3,
                     spatial_index=True,
                     use_N_D_index=True,
-                    management=True,
                 )
             )
             # Test indexes on Geography columns.
@@ -187,28 +180,24 @@ class TestIndex:
                 Geography(
                     geometry_type="POINT",
                     spatial_index=False,
-                    management=False,
                 )
             )
             geog_not_managed_index = Column(
                 Geography(
                     geometry_type="POINT",
                     spatial_index=True,
-                    management=False,
                 )
             )
             geog_managed_no_index = Column(
                 Geography(
                     geometry_type="POINT",
                     spatial_index=False,
-                    management=True,
                 )
             )
             geog_managed_index = Column(
                 Geography(
                     geometry_type="POINT",
                     spatial_index=True,
-                    management=True,
                 )
             )
             # Test indexes on Raster columns.
