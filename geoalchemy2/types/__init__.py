@@ -437,17 +437,6 @@ _sqlite_ischema_names["CURVE"] = Geometry
 _sqlite_ischema_names["GEOMETRYCOLLECTION"] = Geometry
 _sqlite_ischema_names["RASTER"] = Raster
 
-# _gpkg_ischema_names["GEOMETRY"] = Geometry
-# _gpkg_ischema_names["POINT"] = Geometry
-# _gpkg_ischema_names["LINESTRING"] = Geometry
-# _gpkg_ischema_names["POLYGON"] = Geometry
-# _gpkg_ischema_names["MULTIPOINT"] = Geometry
-# _gpkg_ischema_names["MULTILINESTRING"] = Geometry
-# _gpkg_ischema_names["MULTIPOLYGON"] = Geometry
-# _gpkg_ischema_names["CURVE"] = Geometry
-# _gpkg_ischema_names["GEOMETRYCOLLECTION"] = Geometry
-# _gpkg_ischema_names["RASTER"] = Raster
-
 
 class SummaryStats(CompositeType):
     """Define the composite type returned by the function ST_SummaryStatsAgg."""

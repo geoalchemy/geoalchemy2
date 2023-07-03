@@ -35,7 +35,7 @@ def pytest_addoption(parser):
         help="SQLite DB URL used for tests with SpatiaLite4 (`sqlite:///path_to_db_file`).",
     )
     parser.addoption(
-        "--sqlite_GeoPackage_dburl",
+        "--sqlite_geopackage_dburl",
         action="store",
         help="SQLite DB URL used for tests with GeoPackage (`gpkg:///path_to_db_file.gpkg`).",
     )
@@ -120,7 +120,7 @@ def db_url_sqlite_spatialite4(request, tmpdir_factory):
 @pytest.fixture(scope="session")
 def db_url_geopackage(request, tmpdir_factory):
     return (
-        request.config.getoption("--sqlite_GeoPackage_dburl")
+        request.config.getoption("--sqlite_geopackage_dburl")
         or os.getenv("PYTEST_GEOPACKAGE_DB_URL")
         or f"gpkg:///{Path(__file__).parent / 'data' / 'spatialite_geopackage.gpkg'}"
     )
