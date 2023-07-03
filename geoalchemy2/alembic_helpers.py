@@ -192,6 +192,8 @@ def include_object(obj, name, obj_type, reflected, compare_to):
         or name.startswith("views_geometry_columns")
         or name.startswith("virts_geometry_columns")
         or name.startswith("idx_")
+        or name.startswith("gpkg_")
+        or name.startswith("vgpkg_")
     ):
         return False
     return True
