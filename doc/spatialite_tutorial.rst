@@ -225,6 +225,11 @@ user:
 * reflect spatial tables,
 * use spatial functions on inserted geometries.
 
+.. Note::
+
+    If you want to use the ``ST_Transform`` function you should call the
+    :func:`geoalchemy2.admin.dialects.geopackage.create_spatial_ref_sys_view` first.
+
 Further Reference
 -----------------
 

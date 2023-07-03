@@ -16,7 +16,7 @@ from sqlalchemy.sql import func
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import load_spatialite
-from geoalchemy2.admin.dialects.geopackage import populate_spatial_ref_sys
+from geoalchemy2.admin.dialects.geopackage import create_spatial_ref_sys_view
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
@@ -271,7 +271,7 @@ class TestInsertionORM:
             # the ST_Transform function. It can be created using InitSpatialMetaData() but it also
             # creates the 'geometry_columns' table, which is useless. So here we create the table
             # manually with only the required SRS IDs.
-            populate_spatial_ref_sys(conn)
+            create_spatial_ref_sys_view(conn)
 
         # Create new point instance
         p = LocalPoint()

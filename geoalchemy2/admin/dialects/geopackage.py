@@ -345,34 +345,22 @@ def register_gpkg_mapping(mapping):
 register_gpkg_mapping(_SQLITE_FUNCTIONS)
 
 
-def populate_spatial_ref_sys(bind):
-    """Create the `spatial_ref_sys` table and copy the `gpkg_spatial_ref_sys` table values.
+def create_spatial_ref_sys_view(bind):
+    """Create the `spatial_ref_sys` view from the `gpkg_spatial_ref_sys` table.
 
     .. Note::
 
-        This is usually only needed to use the `ST_Transform` function on GeoPackage data.
+        This is usually only needed to use the `ST_Transform` function on GeoPackage data
+        because this function, when used with SpatiaLite, requires the `spatial_ref_sys` table.
     """
     bind.execute(
         text(
-            """CREATE TABLE IF NOT EXISTS spatial_ref_sys (
-              srid       INTEGER NOT NULL PRIMARY KEY,
-              auth_name  VARCHAR(256),
-              auth_srid  INTEGER,
-              srtext     VARCHAR(2048),
-              proj4text  VARCHAR(2048)
-            );"""
-        )
-    )
-    bind.execute(
-        text(
-            """INSERT INTO spatial_ref_sys
+            """CREATE VIEW spatial_ref_sys AS
             SELECT
-              srs_id AS srid,
-              organization AS auth_name,
-              organization_coordsys_id AS auth_srid,
-              definition AS srtext,
-              NULL
-            FROM gpkg_spatial_ref_sys AS A
-            WHERE NOT EXISTS (SELECT srid FROM spatial_ref_sys WHERE srs_id = A.srs_id);"""
+                srs_id AS srid,
+                organization AS auth_name,
+                organization_coordsys_id AS auth_srid,
+                definition AS srtext
+            FROM gpkg_spatial_ref_sys;"""
         )
     )
