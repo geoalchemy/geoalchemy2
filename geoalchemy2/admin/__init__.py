@@ -26,6 +26,8 @@ def select_dialect(dialect_name):
 
 
 def setup_ddl_event_listeners():
+    """Setup the DDL event listeners to automatically process spatial columns."""
+
     @event.listens_for(Table, "before_create")
     def before_create(table, bind, **kw):
         """Handle spatial indexes."""

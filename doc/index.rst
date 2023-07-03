@@ -108,6 +108,7 @@ Reference Documentation
 .. toctree::
    :maxdepth: 1
 
+   admin
    types
    elements
    spatial_functions

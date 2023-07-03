@@ -26,10 +26,13 @@ from geoalchemy2.types import _DummyGeometry
 
 
 class GeoPackageDialect(SQLiteDialect_pysqlite):
+    """Define a specific dialect for GeoPackage."""
+
     name = "geopackage"
     driver = "gpkg"
 
     supports_statement_cache = True
+    """Enable caching for GeoPackage dialect."""
 
 
 registry.register("gpkg", "geoalchemy2.admin.dialects.geopackage", "GeoPackageDialect")
@@ -143,7 +146,7 @@ def disable_spatial_index(bind, table, col):
 
 
 def reflect_geometry_column(inspector, table, column_info):
-    """Reflect a column of type Geometry with SQLite dialect."""
+    """Reflect a column of type Geometry with GeoPackage dialect."""
     # Get geometry type, SRID and spatial index from the SpatiaLite metadata
     if not isinstance(column_info.get("type"), Geometry):
         return
@@ -164,7 +167,7 @@ def reflect_geometry_column(inspector, table, column_info):
         column_info["type"].srid = srid
         column_info["type"].spatial_index = bool(spatial_index)
 
-        # Spatial indexes are not automatically reflected with SQLite dialect
+        # Spatial indexes are not automatically reflected with GeoPackage dialect
         column_info["type"]._spatial_index_reflected = False
 
 
@@ -333,8 +336,8 @@ def register_gpkg_mapping(mapping):
         mapping: Should have the following form::
 
                 {
-                    "function_name_1": "sqlite_function_name_1",
-                    "function_name_2": "sqlite_function_name_2",
+                    "function_name_1": "gpkg_function_name_1",
+                    "function_name_2": "gpkg_function_name_2",
                     ...
                 }
     """
