@@ -17,40 +17,60 @@ from geoalchemy2.types import Geometry
 from geoalchemy2.types import _DummyGeometry
 
 
-def load_spatialite(dbapi_conn, connection_record):
+def load_spatialite(dbapi_conn, connection_record, init_mode=None):
     """Load SpatiaLite extension in SQLite DB.
 
     The path to the SpatiaLite module should be set in the `SPATIALITE_LIBRARY_PATH` environment
     variable.
+
+    The init_mode argument can be `'NONE'` to load all EPSG SRIDs, `'WGS84'` to load only the ones
+    related to WGS84 or `'EMPTY'` to not load any EPSG SRID.
+
+    .. Note::
+
+        It is possible to load other EPSG SRIDs afterwards using the `InsertEpsgSrid(srid)`.
     """
     if "SPATIALITE_LIBRARY_PATH" not in os.environ:
         raise RuntimeError("The SPATIALITE_LIBRARY_PATH environment variable is not set.")
     dbapi_conn.enable_load_extension(True)
     dbapi_conn.load_extension(os.environ["SPATIALITE_LIBRARY_PATH"])
     dbapi_conn.enable_load_extension(False)
-    dbapi_conn.execute("SELECT InitSpatialMetaData();")
+
+    init_mode_values = [None, "WGS84", "EMPTY"]
+    if isinstance(init_mode, str):
+        init_mode = init_mode.upper()
+    if init_mode not in init_mode_values:
+        raise ValueError("The 'init_mode' must be in {}".format(init_mode_values))
+
+    if dbapi_conn.execute("SELECT CheckSpatialMetaData();").fetchone()[0] < 1:
+        if init_mode is not None:
+            dbapi_conn.execute("SELECT InitSpatialMetaData('{}');".format(init_mode))
+        else:
+            dbapi_conn.execute("SELECT InitSpatialMetaData();")
 
 
 def _get_spatialite_attrs(bind, table_name, col_name):
-    col_attributes = bind.execute(
+    attrs = bind.execute(
         text(
             """SELECT * FROM "geometry_columns"
-           WHERE f_table_name = '{}' and f_geometry_column = '{}'
-        """.format(
-                table_name, col_name
-            )
-        )
+            WHERE LOWER(f_table_name) = LOWER(:table_name)
+                AND LOWER(f_geometry_column) = LOWER(:column_name)
+        """
+        ).bindparams(table_name=table_name, column_name=col_name)
     ).fetchone()
-    return col_attributes
+    if attrs is None:
+        # If the column is not registered as a spatial column we ignore it
+        return None
+    return attrs[2:]
 
 
 def get_spatialite_version(bind):
     """Get the version of the currently loaded Spatialite extension."""
-    return bind.execute(text("""SELECT spatialite_version();""")).fetchone()[0]
+    return bind.execute(text("SELECT spatialite_version();")).fetchone()[0]
 
 
 def _setup_dummy_type(table, gis_cols):
-    """Setup dummy type for new Geometry columns so they can be updated later into."""
+    """Setup dummy type for new Geometry columns so they can be updated later."""
     for col in gis_cols:
         # Add dummy columns with GEOMETRY type
         col._actual_type = col.type
@@ -88,7 +108,7 @@ def disable_spatial_index(bind, table, col):
         bind.execute(stmt)
         bind.execute(
             text(
-                """DROP TABLE IF EXISTS {};""".format(
+                "DROP TABLE IF EXISTS {};".format(
                     _spatial_idx_name(
                         table.name,
                         col.name,
@@ -105,7 +125,7 @@ def reflect_geometry_column(inspector, table, column_info):
         return
     col_attributes = _get_spatialite_attrs(inspector.bind, table.name, column_info["name"])
     if col_attributes is not None:
-        _, _, geometry_type, coord_dimension, srid, spatial_index = col_attributes
+        geometry_type, coord_dimension, srid, spatial_index = col_attributes
 
         if isinstance(geometry_type, int):
             geometry_type_str = str(geometry_type)
@@ -130,9 +150,9 @@ def reflect_geometry_column(inspector, table, column_info):
             if has_m:
                 geometry_type += "M"
         else:
-            if "Z" in coord_dimension:
+            if "Z" in coord_dimension and "Z" not in geometry_type[-2:]:
                 geometry_type += "Z"
-            if "M" in coord_dimension:
+            if "M" in coord_dimension and "M" not in geometry_type[-2:]:
                 geometry_type += "M"
             coord_dimension = {
                 "XY": 2,
@@ -172,6 +192,7 @@ def before_create(table, bind, **kw):
                     col.type, "spatial_index", False
                 ):
                     table.info["_after_create_indexes"].append(idx)
+
     _setup_dummy_type(table, gis_cols)
 
 
@@ -181,9 +202,8 @@ def after_create(table, bind, **kw):
     dialect_name = dialect.name
 
     table.columns = table.info.pop("_saved_columns")
-
     for col in table.columns:
-        # Add the managed Geometry columns with AddGeometryColumn()
+        # Add the managed Geometry columns with RecoverGeometryColumn()
         if _check_spatial_type(col.type, Geometry, dialect) and check_management(col, dialect_name):
             col.type = col._actual_type
             del col._actual_type
@@ -194,7 +214,9 @@ def after_create(table, bind, **kw):
             stmt = stmt.execution_options(autocommit=True)
             bind.execute(stmt)
 
-        # Add spatial indices for the Geometry and Geography columns
+    for col in table.columns:
+        # Add spatial indexes for the Geometry and Geography columns
+        # TODO: Check that the Geography type makes sense here
         if (
             _check_spatial_type(col.type, (Geometry, Geography), dialect)
             and col.type.spatial_index is True
@@ -209,6 +231,7 @@ def after_create(table, bind, **kw):
 def before_drop(table, bind, **kw):
     """Handle spatial indexes during the before_drop event."""
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
+
     for col in gis_cols:
         # Disable spatial indexes if present
         disable_spatial_index(bind, table, col)

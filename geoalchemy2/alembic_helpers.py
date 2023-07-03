@@ -10,6 +10,7 @@ from alembic.autogenerate.render import _drop_table
 from alembic.ddl.base import RenameTable
 from alembic.ddl.base import format_table_name
 from alembic.ddl.base import visit_rename_table
+from alembic.ddl.sqlite import SQLiteImpl
 from alembic.operations import BatchOperations
 from alembic.operations import Operations
 from alembic.operations import ops
@@ -35,6 +36,12 @@ writer = rewriter.Rewriter()
 _SPATIAL_TABLES = set()
 
 
+class GeoPackageImpl(SQLiteImpl):
+    """Class to copy the Alembic implementation from SQLite to GeoPackage."""
+
+    __dialect__ = "geopackage"
+
+
 def _monkey_patch_get_indexes_for_sqlite():
     """Monkey patch SQLAlchemy to fix spatial index reflection."""
     normal_behavior = SQLiteDialect.get_indexes
@@ -42,10 +49,14 @@ def _monkey_patch_get_indexes_for_sqlite():
     def spatial_behavior(self, connection, table_name, schema=None, **kw):
         indexes = self._get_indexes_normal_behavior(connection, table_name, schema=None, **kw)
 
+        is_gpkg = connection.dialect.name == "geopackage"
+
         try:
             # Check that SpatiaLite was loaded into the DB
             is_spatial_db = connection.exec_driver_sql(
-                """PRAGMA main.table_info(geometry_columns)"""
+                """PRAGMA main.table_info({})""".format(
+                    "gpkg_geometry_columns" if is_gpkg else "geometry_columns"
+                )
             ).fetchall()
             if not is_spatial_db:
                 return indexes
@@ -53,15 +64,35 @@ def _monkey_patch_get_indexes_for_sqlite():
             return indexes
 
         # Get spatial indexes
-        spatial_index_query = text(
-            """SELECT *
-            FROM geometry_columns
-            WHERE f_table_name = '{}'
-            ORDER BY f_table_name, f_geometry_column;""".format(
-                table_name
+        if is_gpkg:
+            spatial_index_query = text(
+                """SELECT A.table_name, A.column_name, IFNULL(B.has_index, 0) AS has_index
+                FROM "gpkg_geometry_columns"
+                AS A
+                LEFT JOIN (
+                    SELECT table_name, column_name, COUNT(*) AS has_index
+                    FROM gpkg_extensions
+                    WHERE LOWER(table_name) = LOWER('{table_name}')
+                        AND extension_name = 'gpkg_rtree_index'
+                ) AS B
+                ON LOWER(A.table_name) = LOWER(B.table_name)
+                WHERE LOWER(A.table_name) = LOWER('{table_name}');
+            """.format(
+                    table_name=table_name
+                )
             )
-        )
+        else:
+            spatial_index_query = text(
+                """SELECT *
+                FROM geometry_columns
+                WHERE f_table_name = '{}'
+                ORDER BY f_table_name, f_geometry_column;""".format(
+                    table_name
+                )
+            )
+
         spatial_indexes = connection.execute(spatial_index_query).fetchall()
+
         if spatial_indexes:
             reflected_names = set([i["name"] for i in indexes])
             for idx in spatial_indexes:
@@ -161,6 +192,8 @@ def include_object(obj, name, obj_type, reflected, compare_to):
         or name.startswith("views_geometry_columns")
         or name.startswith("virts_geometry_columns")
         or name.startswith("idx_")
+        or name.startswith("gpkg_")
+        or name.startswith("vgpkg_")
     ):
         return False
     return True

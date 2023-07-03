@@ -15,6 +15,9 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.sql import func
 
 from geoalchemy2 import load_spatialite
+from geoalchemy2 import load_spatialite_gpkg
+
+# from geoalchemy2 import load_spatialite_gpkg
 
 
 class test_only_with_dialects:
@@ -84,17 +87,34 @@ def format_wkt(wkt):
     return wkt.replace(", ", ",")
 
 
-def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo):
+def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo, dialect):
     if "SPATIALITE_LIBRARY_PATH" not in os.environ:
         pytest.skip("SPATIALITE_LIBRARY_PATH is not defined, skip SpatiaLite tests")
 
     shutil.copyfile(input_db, tmp_db)
 
-    db_url = f"sqlite:///{tmp_db}"
+    print("INPUT DB:", input_db)
+    print("TEST DB:", tmp_db)
+
+    db_url = f"{dialect}:///{tmp_db}"
     engine = create_engine(
         db_url, echo=engine_echo, execution_options={"schema_translate_map": {"gis": None}}
     )
-    listen(engine, "connect", load_spatialite)
+
+    if input_db.lower().endswith("spatialite_lt_4.sqlite"):
+        engine._spatialite_version = 3
+    elif input_db.lower().endswith("spatialite_ge_4.sqlite"):
+        engine._spatialite_version = 4
+    elif input_db.lower().endswith(".gpkg"):
+        engine._spatialite_version = -1
+    else:
+        engine._spatialite_version = None
+
+    if dialect == "gpkg":
+        listen(engine, "connect", load_spatialite_gpkg)
+    else:
+        listen(engine, "connect", load_spatialite)
+
     with engine.begin() as connection:
         print(
             "SPATIALITE VERSION:",
@@ -114,17 +134,10 @@ def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo):
                 connection.execute(text("SELECT PROJ_GetDatabasePath();")).fetchone()[0],
             )
 
-    if input_db.endswith("spatialite_lt_4.sqlite"):
-        engine._spatialite_version = 3
-    elif input_db.endswith("spatialite_ge_4.sqlite"):
-        engine._spatialite_version = 4
-    else:
-        engine._spatialite_version = None
-
     return engine
 
 
-def check_indexes(conn, expected, table_name):
+def check_indexes(conn, dialect_name, expected, table_name):
     """Check that actual indexes are equal to the expected ones."""
     index_query = {
         "postgresql": text(
@@ -144,13 +157,21 @@ def check_indexes(conn, expected, table_name):
                 table_name
             )
         ),
+        "geopackage": text(
+            """SELECT table_name, column_name, extension_name
+            FROM gpkg_extensions
+            WHERE table_name = '{}' and extension_name = 'gpkg_rtree_index'
+            """.format(
+                table_name
+            )
+        ),
     }
 
     # Query to check the indexes
-    actual_indexes = conn.execute(index_query[conn.dialect.name]).fetchall()
+    actual_indexes = conn.execute(index_query[dialect_name]).fetchall()
 
-    expected_indexes = expected[conn.dialect.name]
-    if conn.dialect.name == "postgresql":
+    expected_indexes = expected[dialect_name]
+    if dialect_name == "postgresql":
         expected_indexes = [(i[0], re.sub("\n *", " ", i[1])) for i in expected_indexes]
 
     try:

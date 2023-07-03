@@ -145,8 +145,8 @@ def register_mysql_mapping(mapping):
         mapping: Should have the following form::
 
                 {
-                    "function_name_1": "sqlite_function_name_1",
-                    "function_name_2": "sqlite_function_name_2",
+                    "function_name_1": "mysql_function_name_1",
+                    "function_name_2": "mysql_function_name_2",
                     ...
                 }
     """

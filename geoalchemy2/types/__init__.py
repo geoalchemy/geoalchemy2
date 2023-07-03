@@ -27,6 +27,7 @@ from geoalchemy2.types import dialects
 def select_dialect(dialect_name):
     """Select the dialect from its name."""
     known_dialects = {
+        "geopackage": dialects.geopackage,
         "mysql": dialects.mysql,
         "postgresql": dialects.postgresql,
         "sqlite": dialects.sqlite,
@@ -379,7 +380,7 @@ class _DummyGeometry(Geometry):
     """A dummy type only used with SQLite."""
 
     def get_col_spec(self):
-        return "GEOMETRY"
+        return self.geometry_type or "GEOMETRY"
 
 
 class CompositeType(UserDefinedType):

@@ -254,7 +254,13 @@ datefmt = %%H:%%M:%%S
 
 @test_only_with_dialects("postgresql", "sqlite-spatialite4")
 def test_migration_revision(
-    conn, metadata, alembic_config, alembic_env_path, test_script_path, use_alembic_monkeypatch
+    conn,
+    metadata,
+    alembic_config,
+    alembic_env_path,
+    test_script_path,
+    use_alembic_monkeypatch,
+    dialect_name,
 ):
     initial_rev = command.revision(
         alembic_config,
@@ -331,6 +337,7 @@ new_table = Table(
 
     check_indexes(
         conn,
+        dialect_name,
         {
             "postgresql": [
                 (
@@ -452,6 +459,7 @@ new_table = Table(
 
     check_indexes(
         conn,
+        dialect_name,
         {
             "postgresql": [
                 (
@@ -485,6 +493,7 @@ new_table = Table(
 
     check_indexes(
         conn,
+        dialect_name,
         {
             "postgresql": [
                 (
@@ -514,6 +523,7 @@ new_table = Table(
 
     check_indexes(
         conn,
+        dialect_name,
         {
             "postgresql": [],
             "sqlite": [],

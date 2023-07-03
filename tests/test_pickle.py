@@ -43,7 +43,7 @@ class TestPickle:
 
         lake_id = setup_one_lake
 
-        lake = session.query(PickledLake).get(lake_id)
+        lake = session.get(PickledLake, lake_id)
         assert isinstance(lake.geom, WKBElement)
         data_desc = str(lake.geom)
 

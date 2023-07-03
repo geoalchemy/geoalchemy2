@@ -191,10 +191,13 @@ def reflection_tables_metadata(dialect_name):
         __tablename__ = "lake"
         id = Column(Integer, primary_key=True)
         geom = Column(Geometry(geometry_type="LINESTRING", srid=4326))
-        geom_no_idx = Column(Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=False))
-        if dialect_name != "mysql":
-            geom_z = Column(Geometry(geometry_type="LINESTRINGZ", srid=4326, dimension=3))
-            geom_m = Column(Geometry(geometry_type="LINESTRINGM", srid=4326, dimension=3))
-            geom_zm = Column(Geometry(geometry_type="LINESTRINGZM", srid=4326, dimension=4))
+        if dialect_name != "geopackage":
+            geom_no_idx = Column(
+                Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=False)
+            )
+            if dialect_name != "mysql":
+                geom_z = Column(Geometry(geometry_type="LINESTRINGZ", srid=4326, dimension=3))
+                geom_m = Column(Geometry(geometry_type="LINESTRINGM", srid=4326, dimension=3))
+                geom_zm = Column(Geometry(geometry_type="LINESTRINGZM", srid=4326, dimension=4))
 
     return metadata

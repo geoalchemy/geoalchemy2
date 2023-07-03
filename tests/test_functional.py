@@ -31,12 +31,14 @@ from sqlalchemy.exc import SAWarning
 from sqlalchemy.sql import func
 from sqlalchemy.testing.assertions import ComparesTables
 
-import geoalchemy2
 import geoalchemy2.admin.dialects
 from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
-from geoalchemy2.admin.dialects.sqlite import _get_spatialite_attrs
+from geoalchemy2.admin.dialects.geopackage import (
+    _get_spatialite_attrs as _get_spatialite_attrs_gpkg,
+)
+from geoalchemy2.admin.dialects.sqlite import _get_spatialite_attrs as _get_spatialite_attrs_sqlite
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
@@ -55,7 +57,7 @@ SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("1.999")
 
 
 class TestAdmin:
-    @test_only_with_dialects("postgresql", "sqlite")
+    @test_only_with_dialects("postgresql", "sqlite-spatialite3", "sqlite-spatialite4")
     def test_create_drop_tables(
         self,
         conn,
@@ -74,6 +76,7 @@ class TestAdmin:
         metadata.create_all(conn)
         metadata.drop_all(conn, checkfirst=True)
 
+    @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4")
     def test_nullable(self, conn, metadata, setup_tables, dialect_name):
         # Define the table
         t = Table(
@@ -157,6 +160,7 @@ class TestAdmin:
         # Drop the table
         t.drop(bind=conn)
 
+    @test_only_with_dialects("postgresql", "mysql")
     def test_no_geom_type(self, conn):
         with pytest.warns(UserWarning, match="srid not enforced when geometry_type is None"):
             # Define the table
@@ -224,16 +228,6 @@ class TestAdmin:
         metadata.drop_all(conn, checkfirst=True)
 
         assert marks == ["before_create", "after_create", "before_drop", "after_drop"]
-
-
-class TestMiscellaneous:
-    @test_only_with_dialects("sqlite")
-    def test_load_spatialite(self, monkeypatch, conn):
-        geoalchemy2.load_spatialite(conn.connection.dbapi_connection, None)
-
-        monkeypatch.delenv("SPATIALITE_LIBRARY_PATH")
-        with pytest.raises(RuntimeError):
-            geoalchemy2.load_spatialite(conn.connection.dbapi_connection, None)
 
 
 class TestInsertionCore:
@@ -437,8 +431,10 @@ class TestInsertionORM:
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
+    @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4")
     def test_transform(self, session, LocalPoint, setup_tables):
         if session.bind.dialect.name == "mysql":
+            # Explicitly skip MySQL dialect to show that there is an issue
             pytest.skip(
                 reason=(
                     "The SRID is not properly retrieved so an exception is raised. TODO: This "
@@ -586,7 +582,7 @@ class TestUpdateORM:
                 # so the lake instance is detected as different and is thus updated but with
                 # an invalid geometry.
                 session.flush()
-        elif dialect_name == "sqlite":
+        elif dialect_name in ["sqlite", "geopackage"]:
             # SQLite silently set the geom attribute to NULL
             session.flush()
             session.refresh(lake)
@@ -697,6 +693,7 @@ class TestCallFunction:
         assert loads(r1_func) == {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}
 
     @skip_case_insensitivity()
+    @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4")
     def test_comparator_case_insensitivity(self, session, Lake, setup_one_lake):
         lake_id = setup_one_lake
 
@@ -754,7 +751,7 @@ class TestCallFunction:
 
 class TestShapely:
     def test_to_shape(self, session, Lake, setup_tables, dialect_name):
-        if dialect_name == "sqlite":
+        if dialect_name in ["sqlite", "geopackage"]:
             data_type = str
         elif dialect_name == "mysql":
             data_type = bytes
@@ -802,7 +799,7 @@ class TestContraint:
 
         return ConstrainedLake
 
-    @test_only_with_dialects("postgresql", "sqlite")
+    @test_only_with_dialects("postgresql", "sqlite-spatialite3", "sqlite-spatialite4")
     def test_insert(self, conn, ConstrainedLake, setup_tables):
         # Insert geometries
         conn.execute(
@@ -865,29 +862,30 @@ class TestReflection:
             assert type_.srid == 4326
             assert type_.dimension == 2
 
-            type_ = t.c.geom_no_idx.type
-            assert isinstance(type_, Geometry)
-            assert type_.geometry_type == "LINESTRING"
-            assert type_.srid == 4326
-            assert type_.dimension == 2
+            if dialect_name != "geopackage":
+                type_ = t.c.geom_no_idx.type
+                assert isinstance(type_, Geometry)
+                assert type_.geometry_type == "LINESTRING"
+                assert type_.srid == 4326
+                assert type_.dimension == 2
 
-            type_ = t.c.geom_z.type
-            assert isinstance(type_, Geometry)
-            assert type_.geometry_type == "LINESTRINGZ"
-            assert type_.srid == 4326
-            assert type_.dimension == 3
+                type_ = t.c.geom_z.type
+                assert isinstance(type_, Geometry)
+                assert type_.geometry_type == "LINESTRINGZ"
+                assert type_.srid == 4326
+                assert type_.dimension == 3
 
-            type_ = t.c.geom_m.type
-            assert isinstance(type_, Geometry)
-            assert type_.geometry_type == "LINESTRINGM"
-            assert type_.srid == 4326
-            assert type_.dimension == 3
+                type_ = t.c.geom_m.type
+                assert isinstance(type_, Geometry)
+                assert type_.geometry_type == "LINESTRINGM"
+                assert type_.srid == 4326
+                assert type_.dimension == 3
 
-            type_ = t.c.geom_zm.type
-            assert isinstance(type_, Geometry)
-            assert type_.geometry_type == "LINESTRINGZM"
-            assert type_.srid == 4326
-            assert type_.dimension == 4
+                type_ = t.c.geom_zm.type
+                assert isinstance(type_, Geometry)
+                assert type_.geometry_type == "LINESTRINGZM"
+                assert type_.srid == 4326
+                assert type_.dimension == 4
 
         # Drop the table
         t.drop(bind=conn)
@@ -895,9 +893,11 @@ class TestReflection:
         # Check the indexes
         check_indexes(
             conn,
+            dialect_name,
             {
                 "postgresql": [],
                 "sqlite": [],
+                "geopackage": [],
             },
             table_name=t.name,
         )
@@ -906,25 +906,32 @@ class TestReflection:
         t.create(bind=conn)
 
         # Check the indexes
-        col_attributes = _get_spatialite_attrs(conn, t.name, "geom")
-        if isinstance(col_attributes[2], int):
-            sqlite_indexes = [
-                ("lake", "geom", 2, 2, 4326, 1),
-                ("lake", "geom_m", 2002, 3, 4326, 1),
-                ("lake", "geom_no_idx", 2, 2, 4326, 0),
-                ("lake", "geom_z", 1002, 3, 4326, 1),
-                ("lake", "geom_zm", 3002, 4, 4326, 1),
-            ]
+        if dialect_name in ["sqlite", "geopackage"]:
+            if dialect_name == "geopackage":
+                col_attributes = _get_spatialite_attrs_gpkg(conn, t.name, "geom")
+            else:
+                col_attributes = _get_spatialite_attrs_sqlite(conn, t.name, "geom")
+            if isinstance(col_attributes[0], int):
+                sqlite_indexes = [
+                    ("lake", "geom", 2, 2, 4326, 1),
+                    ("lake", "geom_m", 2002, 3, 4326, 1),
+                    ("lake", "geom_no_idx", 2, 2, 4326, 0),
+                    ("lake", "geom_z", 1002, 3, 4326, 1),
+                    ("lake", "geom_zm", 3002, 4, 4326, 1),
+                ]
+            else:
+                sqlite_indexes = [
+                    ("lake", "geom", "LINESTRING", "XY", 4326, 1),
+                    ("lake", "geom_m", "LINESTRING", "XYM", 4326, 1),
+                    ("lake", "geom_no_idx", "LINESTRING", "XY", 4326, 0),
+                    ("lake", "geom_z", "LINESTRING", "XYZ", 4326, 1),
+                    ("lake", "geom_zm", "LINESTRING", "XYZM", 4326, 1),
+                ]
         else:
-            sqlite_indexes = [
-                ("lake", "geom", "LINESTRING", "XY", 4326, 1),
-                ("lake", "geom_m", "LINESTRING", "XYM", 4326, 1),
-                ("lake", "geom_no_idx", "LINESTRING", "XY", 4326, 0),
-                ("lake", "geom_z", "LINESTRING", "XYZ", 4326, 1),
-                ("lake", "geom_zm", "LINESTRING", "XYZM", 4326, 1),
-            ]
+            sqlite_indexes = []
         check_indexes(
             conn,
+            dialect_name,
             {
                 "postgresql": [
                     (
@@ -949,6 +956,7 @@ class TestReflection:
                     ),
                 ],
                 "sqlite": sqlite_indexes,
+                "geopackage": [("lake", "geom", "gpkg_rtree_index")],
             },
             table_name=t.name,
         )
@@ -966,9 +974,12 @@ class TestReflection:
         assert isinstance(type_, Raster)
 
     @test_only_with_dialects("sqlite")
-    def test_sqlite_reflection_with_discarded_col(self, conn, Lake, setup_tables):
+    def test_sqlite_reflection_with_discarded_col(self, conn, Lake, setup_tables, dialect_name):
         """Test that a discarded geometry column is not properly reflected with SQLite."""
-        conn.execute(text("""DELETE FROM "geometry_columns" WHERE f_table_name = 'lake';"""))
+        if dialect_name == "geopackage":
+            conn.execute(text("""DELETE FROM "gpkg_geometry_columns" WHERE table_name = 'lake';"""))
+        else:
+            conn.execute(text("""DELETE FROM "geometry_columns" WHERE f_table_name = 'lake';"""))
         t = Table(
             "lake",
             MetaData(),

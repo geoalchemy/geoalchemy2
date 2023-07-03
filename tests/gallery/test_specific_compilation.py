@@ -86,6 +86,7 @@ def _compile_buffer_sqlite(element, compiler, **kw):
 # Register the specific compilation rules
 compiles(functions.ST_Buffer)(_compile_buffer_default)
 compiles(functions.ST_Buffer, "sqlite")(_compile_buffer_sqlite)
+compiles(functions.ST_Buffer, "geopackage")(_compile_buffer_sqlite)
 
 
 @test_only_with_dialects("postgresql", "sqlite")
@@ -101,7 +102,7 @@ def test_specific_compilation(conn):
 
     # Check the compiled query: the sided buffer should appear only in the SQLite query
     compiled_query = str(query.compile(dialect=conn.dialect))
-    if conn.dialect.name == "sqlite":
+    if conn.dialect.name in ["sqlite", "geopackage"]:
         assert "SingleSidedBuffer" in compiled_query
         assert "ST_Buffer" not in compiled_query
     else:
@@ -120,7 +121,7 @@ def test_specific_compilation(conn):
     # Check the compiled query: the sided buffer should never appear in the query
     compiled_query = str(query.compile(dialect=conn.dialect))
     assert "SingleSidedBuffer" not in compiled_query
-    if conn.dialect.name == "sqlite":
+    if conn.dialect.name in ["sqlite", "geopackage"]:
         assert "ST_Buffer" not in compiled_query
         assert "Buffer" in compiled_query
     else:

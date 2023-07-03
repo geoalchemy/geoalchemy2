@@ -1,5 +1,5 @@
 # Additional requirements for running the testsuite and development
-alembic<1.11
+alembic
 flake8
 mysql
 pytest
