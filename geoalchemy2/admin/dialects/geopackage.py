@@ -38,7 +38,7 @@ registry.register("gpkg", "geoalchemy2.admin.dialects.geopackage", "GeoPackageDi
 
 
 def load_geopackage_driver(dbapi_conn, *args):
-    """Load SpatiaLite extension in GeoPackage connection.
+    """Load SpatiaLite extension in GeoPackage connection and set VirtualGpkg and Amphibious modes.
 
     .. Warning::
         The path to the SpatiaLite module should be set in the `SPATIALITE_LIBRARY_PATH`
@@ -49,15 +49,17 @@ def load_geopackage_driver(dbapi_conn, *args):
     """
     load_spatialite_driver(dbapi_conn, *args)
 
+    dbapi_conn.execute("SELECT AutoGpkgStart();")
+    dbapi_conn.execute("SELECT EnableGpkgAmphibiousMode();")
+
 
 def init_geopackage(dbapi_conn, *args):
-    """Initialize GeoPackage tables and call ``AutoGpkgStart`` and ``EnableGpkgAmphibiousMode``.
+    """Initialize GeoPackage tables.
 
     Args:
         dbapi_conn: The DBAPI connection.
 
     .. Warning::
-
         No EPSG SRID is loaded in the `gpkg_spatial_ref_sys` table after initialization but
         it is possible to load other EPSG SRIDs afterwards using the
         `gpkgInsertEpsgSRID(srid)`.
@@ -66,9 +68,6 @@ def init_geopackage(dbapi_conn, *args):
     if not dbapi_conn.execute("SELECT CheckGeoPackageMetaData();").fetchone()[0]:
         # This only works on the main database
         dbapi_conn.execute("SELECT gpkgCreateBaseTables();")
-
-    dbapi_conn.execute("SELECT AutoGpkgStart();")
-    dbapi_conn.execute("SELECT EnableGpkgAmphibiousMode();")
 
 
 def load_spatialite_gpkg(*args, **kwargs):

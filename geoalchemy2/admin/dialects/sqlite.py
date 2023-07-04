@@ -34,7 +34,13 @@ def load_spatialite_driver(dbapi_conn, *args):
     dbapi_conn.enable_load_extension(False)
 
 
-def init_spatialite(dbapi_conn, *args, init_mode: Optional[str] = None):
+def init_spatialite(
+    dbapi_conn,
+    *args,
+    transaction: bool = False,
+    init_mode: Optional[str] = None,
+    journal_mode: Optional[str] = None,
+):
     """Initialize internal SpatiaLite tables.
 
     Args:
@@ -45,18 +51,74 @@ def init_spatialite(dbapi_conn, *args, init_mode: Optional[str] = None):
             .. Note::
 
                 It is possible to load other EPSG SRIDs afterwards using `InsertEpsgSrid(srid)`.
+
+        transaction: If set to `True` the whole operation will be handled as a single Transaction
+            (faster). The default value is `False` (slower, but safer).
+        journal_mode: Change the journal mode to the given value. This can make the table creation
+            much faster. The possible values are the following: 'DELETE', 'TRUNCATE', 'PERSIST',
+            'MEMORY', 'WAL' and 'OFF'. See https://www.sqlite.org/pragma.html#pragma_journal_mode
+            for more details.
+
+            .. Warning::
+                Some values, like 'MEMORY' or 'OFF', can lead to corrupted databases if the process
+                is interrupted during initialization.
+
+            .. Note::
+                The original value is restored after the initialization.
+
+    .. Note::
+        When using this function as a listener it is not possible to pass the `transaction`,
+        `init_mode` or `journal_mode` arguments directly. To do this you can either create another
+        function that calls `load_spatialite` with an hard-coded `init_mode` or just use a lambda::
+
+            >>> sqlalchemy.event.listen(
+            ...     engine,
+            ...     "connect",
+            ...     lambda x, y: load_spatialite(
+            ...         x,
+            ...         y,
+            ...         transaction=True,
+            ...         init_mode="EMPTY",
+            ...         journal_mode="OFF",
+            ...     )
+            ... )
     """
-    init_mode_values = [None, "WGS84", "EMPTY"]
+    func_args = []
+
+    # Check the value of the 'transaction' parameter
+    if not isinstance(transaction, (bool, int)):
+        raise ValueError("The 'transaction' argument must be True or False.")
+    else:
+        func_args.append(str(transaction))
+
+    # Check the value of the 'init_mode' parameter
+    init_mode_values = ["WGS84", "EMPTY"]
     if isinstance(init_mode, str):
         init_mode = init_mode.upper()
-    if init_mode not in init_mode_values:
-        raise ValueError("The 'init_mode' must be in {}".format(init_mode_values))
+    if init_mode is not None:
+        if init_mode not in init_mode_values:
+            raise ValueError("The 'init_mode' argument must be one of {}.".format(init_mode_values))
+        func_args.append(f"'{init_mode}'")
+
+    # Check the value of the 'journal_mode' parameter
+    journal_mode_values = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
+    if isinstance(journal_mode, str):
+        journal_mode = journal_mode.upper()
+    if journal_mode is not None:
+        if journal_mode not in journal_mode_values:
+            raise ValueError(
+                "The 'journal_mode' argument must be one of {}.".format(journal_mode_values)
+            )
 
     if dbapi_conn.execute("SELECT CheckSpatialMetaData();").fetchone()[0] < 1:
-        if init_mode is not None:
-            dbapi_conn.execute("SELECT InitSpatialMetaData('{}');".format(init_mode))
-        else:
-            dbapi_conn.execute("SELECT InitSpatialMetaData();")
+        if journal_mode is not None:
+            current_journal_mode = dbapi_conn.execute("PRAGMA journal_mode").fetchone()[0]
+            dbapi_conn.execute("PRAGMA journal_mode = {}".format(journal_mode))
+
+        dbapi_conn.execute("SELECT InitSpatialMetaData({});".format(", ".join(func_args)))
+
+        if journal_mode is not None:
+            dbapi_conn.execute("PRAGMA journal_mode = {}".format(current_journal_mode))
 
 
 def load_spatialite(*args, **kwargs):
