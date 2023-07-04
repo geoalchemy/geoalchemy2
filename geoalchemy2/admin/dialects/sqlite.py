@@ -1,5 +1,6 @@
 """This module defines specific functions for SQLite dialect."""
 import os
+from typing import Optional
 
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
@@ -16,18 +17,15 @@ from geoalchemy2.types import Geometry
 from geoalchemy2.types import _DummyGeometry
 
 
-def load_spatialite(dbapi_conn, connection_record, init_mode=None):
-    """Load SpatiaLite extension in SQLite DB.
+def load_spatialite_driver(dbapi_conn, *args):
+    """Load SpatiaLite extension in SQLite connection.
 
-    The path to the SpatiaLite module should be set in the `SPATIALITE_LIBRARY_PATH` environment
-    variable.
+    .. Warning::
+        The path to the SpatiaLite module should be set in the `SPATIALITE_LIBRARY_PATH`
+        environment variable.
 
-    The init_mode argument can be `'NONE'` to load all EPSG SRIDs, `'WGS84'` to load only the ones
-    related to WGS84 or `'EMPTY'` to not load any EPSG SRID.
-
-    .. Note::
-
-        It is possible to load other EPSG SRIDs afterwards using the `InsertEpsgSrid(srid)`.
+    Args:
+        dbapi_conn: The DBAPI connection.
     """
     if "SPATIALITE_LIBRARY_PATH" not in os.environ:
         raise RuntimeError("The SPATIALITE_LIBRARY_PATH environment variable is not set.")
@@ -35,6 +33,19 @@ def load_spatialite(dbapi_conn, connection_record, init_mode=None):
     dbapi_conn.load_extension(os.environ["SPATIALITE_LIBRARY_PATH"])
     dbapi_conn.enable_load_extension(False)
 
+
+def init_spatialite(dbapi_conn, *args, init_mode: Optional[str] = None):
+    """Initialize internal SpatiaLite tables.
+
+    Args:
+        dbapi_conn: The DBAPI connection.
+        init_mode: Can be `'NONE'` to load all EPSG SRIDs, `'WGS84'` to load only the ones related
+            to WGS84 or `'EMPTY'` to not load any EPSG SRID.
+
+            .. Note::
+
+                It is possible to load other EPSG SRIDs afterwards using `InsertEpsgSrid(srid)`.
+    """
     init_mode_values = [None, "WGS84", "EMPTY"]
     if isinstance(init_mode, str):
         init_mode = init_mode.upper()
@@ -46,6 +57,17 @@ def load_spatialite(dbapi_conn, connection_record, init_mode=None):
             dbapi_conn.execute("SELECT InitSpatialMetaData('{}');".format(init_mode))
         else:
             dbapi_conn.execute("SELECT InitSpatialMetaData();")
+
+
+def load_spatialite(*args, **kwargs):
+    """Load SpatiaLite extension in SQLite DB and initialize internal tables.
+
+    See :func:`geoalchemy2.admin.dialects.sqlite.load_spatialite_driver` and
+    :func:`geoalchemy2.admin.dialects.sqlite.init_spatialite` functions for details about
+    arguments.
+    """
+    load_spatialite_driver(*args)
+    init_spatialite(*args, **kwargs)
 
 
 def _get_spatialite_attrs(bind, table_name, col_name):

@@ -220,7 +220,7 @@ class TestMiscellaneous:
         assert not conn.execute(text("PRAGMA main.table_info('geometry_columns')")).fetchall()
         assert not conn.execute(text("PRAGMA main.table_info('spatial_ref_sys')")).fetchall()
 
-        load_spatialite(conn.connection.dbapi_connection, None, init_mode)
+        load_spatialite(conn.connection.dbapi_connection, None, init_mode=init_mode)
 
         assert conn.execute(text("SELECT CheckSpatialMetaData();")).scalar() == 3
         assert conn.execute(text("PRAGMA main.table_info('geometry_columns')")).fetchall()
@@ -236,9 +236,9 @@ class TestMiscellaneous:
             assert nb_srid == 0
 
     @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
-    def test_load_spatialite_unknown_init_type(self, monkeypatch, conn):
+    def test_load_spatialite_unknown_init_type(self, conn):
         with pytest.raises(ValueError):
-            load_spatialite(conn.connection.dbapi_connection, None, "UNKNOWN TYPE")
+            load_spatialite(conn.connection.dbapi_connection, None, init_mode="UNKNOWN TYPE")
 
     @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
     def test_load_spatialite_no_env_variable(self, monkeypatch, conn):
