@@ -4,6 +4,7 @@ GeoAlchemy 2 Changelog
 0.14.0
 ------
 
+* Split load_spatialite into load_spatialite_driver and init_spatialite @adrien-berchet (#459)
 * Remove the management parameter @adrien-berchet (#415)
 * Add GeoPackage support @adrien-berchet (#456)
 * CI: Use new action to setup Mamba @adrien-berchet (#455)
