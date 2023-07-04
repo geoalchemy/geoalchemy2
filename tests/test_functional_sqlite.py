@@ -215,15 +215,15 @@ class TestMiscellaneous:
         ],
         [
             pytest.param(False, "WGS84", None),
-            pytest.param(False, "WGS84", "OFF"),
+            pytest.param(False, "WGS84", "MEMORY"),
             pytest.param(False, "EMPTY", None),
-            pytest.param(False, "EMPTY", "OFF"),
+            pytest.param(False, "EMPTY", "MEMORY"),
             pytest.param(True, None, None),
-            pytest.param(True, None, "OFF"),
+            pytest.param(True, None, "MEMORY"),
             pytest.param(True, "WGS84", None),
-            pytest.param(True, "WGS84", "OFF"),
+            pytest.param(True, "WGS84", "MEMORY"),
             pytest.param(True, "EMPTY", None),
-            pytest.param(True, "EMPTY", "OFF"),
+            pytest.param(True, "EMPTY", "MEMORY"),
         ],
     )
     def test_load_spatialite(
