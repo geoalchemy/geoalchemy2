@@ -69,12 +69,14 @@ def init_spatialite(
     .. Note::
         When using this function as a listener it is not possible to pass the `transaction`,
         `init_mode` or `journal_mode` arguments directly. To do this you can either create another
-        function that calls `load_spatialite` with an hard-coded `init_mode` or just use a lambda::
+        function that calls `init_spatialite` (or
+        :func:`geoalchemy2.admin.dialects.sqlite.load_spatialite` if you also want to load the
+        SpatiaLite drivers) with an hard-coded `init_mode` or just use a lambda::
 
             >>> sqlalchemy.event.listen(
             ...     engine,
             ...     "connect",
-            ...     lambda x, y: load_spatialite(
+            ...     lambda x, y: init_spatialite(
             ...         x,
             ...         y,
             ...         transaction=True,

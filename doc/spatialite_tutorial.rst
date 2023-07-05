@@ -34,7 +34,8 @@ At this point you can test that you are able to connect to the database::
 
 Note that this call will internally call the ``load_spatialite`` function, which can take some time
 to execute on a new database because it actually calls the ``InitSpatialMetaData`` function from
-SpatiaLite.
+SpatiaLite (it is possible to reduce this time by loading only the required SRIDs, see
+:func:`geoalchemy2.admin.dialects.sqlite.load_spatialite`).
 Then you can also check that the ``gis.db`` SQLite database file was created on the file system.
 
 Note that when ``InitSpatialMetaData`` is executed again it will report an error::

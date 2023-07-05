@@ -1,6 +1,42 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.14.0
+------
+
+* Split load_spatialite into load_spatialite_driver and init_spatialite @adrien-berchet (#459)
+* Remove the management parameter @adrien-berchet (#415)
+* Add GeoPackage support @adrien-berchet (#456)
+* CI: Use new action to setup Mamba @adrien-berchet (#455)
+* Fix codespell config and typo 'prodived' -> 'provided' @djm93dev (#454)
+* Fix ReadTheDocs generation @adrien-berchet (#452)
+* Fix compatibility with Alembic>1.11 @adrien-berchet (#447)
+* Add Py311 support @adrien-berchet (#446)
+* Add an example to insert raster entries in gallery @adrien-berchet (#438)
+* fix: handle mysql schemas in column reflection @EtienneDG (#443)
+* Fix: Shapely remains optional requirement @adrien-berchet (#441)
+* Fix CI @adrien-berchet (#439)
+* Add auto extended feature and methods for WKT/WKB conversion from/to extended elements @adrien-berchet (#435)
+* setup.py needs to know about subpackages @EdwardBetts (#434)
+* Reorganize tests and fix nullable propagation and some other bugs @adrien-berchet (#433)
+* Reorganize dialect-specific code @adrien-berchet (#432)
+* Add partial MySQL support @adrien-berchet (#330)
+
+0.13.3
+------
+
+* Fix compatibility with Alembic>1.11 @adrien-berchet (#449)
+
+0.13.2
+------
+
+* Install Python and Pypy using Micromamba in CI @adrien-berchet (#428)
+* Move SQLite functions to the relevant module @adrien-berchet (#427)
+* Remove schema from the engine used in tests for SQLite dialect @adrien-berchet (#426)
+* Improve monkeypatch robustness and related tests in Alembic helpers @adrien-berchet (#425)
+* Fix compatibility with SQLAlchemy>=2 @adrien-berchet (#424)
+
+
 0.13.1
 ------
 
