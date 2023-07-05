@@ -1,4 +1,5 @@
 import os
+import platform
 import re
 import shutil
 import sys
@@ -16,8 +17,6 @@ from sqlalchemy.sql import func
 
 from geoalchemy2 import load_spatialite
 from geoalchemy2 import load_spatialite_gpkg
-
-# from geoalchemy2 import load_spatialite_gpkg
 
 
 class test_only_with_dialects:
@@ -76,6 +75,11 @@ def skip_pg12_sa1217(bind):
         pytest.skip("Reflection for PostgreSQL-12 is only supported by sqlalchemy>=1.2.17")
 
 
+def skip_pypy(msg=None):
+    if platform.python_implementation() == "PyPy":
+        pytest.skip(msg if msg is not None else "Incompatible with PyPy")
+
+
 def select(args):
     if version.parse(SA_VERSION) < version.parse("1.4"):
         return raw_select(args)
@@ -100,15 +104,6 @@ def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo, dialect):
     engine = create_engine(
         db_url, echo=engine_echo, execution_options={"schema_translate_map": {"gis": None}}
     )
-
-    if input_db.lower().endswith("spatialite_lt_4.sqlite"):
-        engine._spatialite_version = 3
-    elif input_db.lower().endswith("spatialite_ge_4.sqlite"):
-        engine._spatialite_version = 4
-    elif input_db.lower().endswith(".gpkg"):
-        engine._spatialite_version = -1
-    else:
-        engine._spatialite_version = None
 
     if dialect == "gpkg":
         listen(engine, "connect", load_spatialite_gpkg)

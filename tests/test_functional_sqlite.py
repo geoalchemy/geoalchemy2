@@ -24,6 +24,7 @@ from geoalchemy2.shape import to_shape
 
 from . import select
 from . import skip_case_insensitivity
+from . import skip_pypy
 from . import test_only_with_dialects
 from .schema_fixtures import TransformedGeometry
 
@@ -215,20 +216,23 @@ class TestMiscellaneous:
         ],
         [
             pytest.param(False, "WGS84", None),
-            pytest.param(False, "WGS84", "MEMORY"),
+            pytest.param(False, "WGS84", "OFF"),
             pytest.param(False, "EMPTY", None),
-            pytest.param(False, "EMPTY", "MEMORY"),
+            pytest.param(False, "EMPTY", "OFF"),
             pytest.param(True, None, None),
-            pytest.param(True, None, "MEMORY"),
+            pytest.param(True, None, "OFF"),
             pytest.param(True, "WGS84", None),
-            pytest.param(True, "WGS84", "MEMORY"),
+            pytest.param(True, "WGS84", "OFF"),
             pytest.param(True, "EMPTY", None),
-            pytest.param(True, "EMPTY", "MEMORY"),
+            pytest.param(True, "EMPTY", "OFF"),
         ],
     )
     def test_load_spatialite(
         self, tmpdir, _engine_echo, check_spatialite, transaction, init_mode, journal_mode
     ):
+        if journal_mode == "OFF":
+            skip_pypy("The journal mode can not be OFF with PyPy.")
+
         # Create empty DB
         tmp_db = tmpdir / "test_spatial_db.sqlite"
         db_url = f"sqlite:///{tmp_db}"
