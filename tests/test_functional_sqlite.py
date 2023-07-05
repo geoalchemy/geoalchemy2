@@ -24,6 +24,7 @@ from geoalchemy2.shape import to_shape
 
 from . import select
 from . import skip_case_insensitivity
+from . import skip_pypy
 from . import test_only_with_dialects
 from .schema_fixtures import TransformedGeometry
 
@@ -207,8 +208,31 @@ class TestIndex:
 
 class TestMiscellaneous:
     @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
-    @pytest.mark.parametrize("init_mode", [None, "WGS84", "EMPTY"])
-    def test_load_spatialite(self, tmpdir, _engine_echo, init_mode, check_spatialite):
+    @pytest.mark.parametrize(
+        [
+            "transaction",
+            "init_mode",
+            "journal_mode",
+        ],
+        [
+            pytest.param(False, "WGS84", None),
+            pytest.param(False, "WGS84", "OFF"),
+            pytest.param(False, "EMPTY", None),
+            pytest.param(False, "EMPTY", "OFF"),
+            pytest.param(True, None, None),
+            pytest.param(True, None, "OFF"),
+            pytest.param(True, "WGS84", None),
+            pytest.param(True, "WGS84", "OFF"),
+            pytest.param(True, "EMPTY", None),
+            pytest.param(True, "EMPTY", "OFF"),
+        ],
+    )
+    def test_load_spatialite(
+        self, tmpdir, _engine_echo, check_spatialite, transaction, init_mode, journal_mode
+    ):
+        if journal_mode == "OFF":
+            skip_pypy("The journal mode can not be OFF with PyPy.")
+
         # Create empty DB
         tmp_db = tmpdir / "test_spatial_db.sqlite"
         db_url = f"sqlite:///{tmp_db}"
@@ -219,12 +243,20 @@ class TestMiscellaneous:
 
         assert not conn.execute(text("PRAGMA main.table_info('geometry_columns')")).fetchall()
         assert not conn.execute(text("PRAGMA main.table_info('spatial_ref_sys')")).fetchall()
+        assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
 
-        load_spatialite(conn.connection.dbapi_connection, None, init_mode)
+        load_spatialite(
+            conn.connection.dbapi_connection,
+            transaction=transaction,
+            init_mode=init_mode,
+            journal_mode=journal_mode,
+        )
 
         assert conn.execute(text("SELECT CheckSpatialMetaData();")).scalar() == 3
         assert conn.execute(text("PRAGMA main.table_info('geometry_columns')")).fetchall()
         assert conn.execute(text("PRAGMA main.table_info('spatial_ref_sys')")).fetchall()
+
+        assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
 
         # Check that spatial_ref_sys table was properly populated
         nb_srid = conn.execute(text("""SELECT COUNT(*) FROM spatial_ref_sys;""")).scalar()
@@ -235,16 +267,47 @@ class TestMiscellaneous:
         elif init_mode == "EMPTY":
             assert nb_srid == 0
 
+        # Check that the journal mode is properly reset even when an error is returned by the
+        # InitSpatialMetaData() function
+        assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
+
+        load_spatialite(
+            conn.connection.dbapi_connection,
+            transaction=transaction,
+            init_mode=init_mode,
+            journal_mode=journal_mode,
+        )
+
+        assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
+
     @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
-    def test_load_spatialite_unknown_init_type(self, monkeypatch, conn):
-        with pytest.raises(ValueError):
-            load_spatialite(conn.connection.dbapi_connection, None, "UNKNOWN TYPE")
+    def test_load_spatialite_unknown_transaction(self, conn):
+        with pytest.raises(ValueError, match=r"The 'transaction' argument must be True or False\."):
+            load_spatialite(conn.connection.dbapi_connection, transaction="UNKNOWN MODE")
+
+    @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
+    def test_load_spatialite_unknown_init_type(self, conn):
+        with pytest.raises(
+            ValueError, match=r"The 'init_mode' argument must be one of \['WGS84', 'EMPTY'\]\."
+        ):
+            load_spatialite(conn.connection.dbapi_connection, init_mode="UNKNOWN TYPE")
+
+    @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
+    def test_load_spatialite_unknown_journal_mode(self, conn):
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"The 'journal_mode' argument must be one of "
+                r"\['DELETE', 'TRUNCATE', 'PERSIST', 'MEMORY', 'WAL', 'OFF'\]\."
+            ),
+        ):
+            load_spatialite(conn.connection.dbapi_connection, journal_mode="UNKNOWN MODE")
 
     @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
     def test_load_spatialite_no_env_variable(self, monkeypatch, conn):
         monkeypatch.delenv("SPATIALITE_LIBRARY_PATH")
         with pytest.raises(RuntimeError):
-            load_spatialite(conn.connection.dbapi_connection, None)
+            load_spatialite(conn.connection.dbapi_connection)
 
 
 class TestInsertionORM:

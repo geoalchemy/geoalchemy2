@@ -2,7 +2,6 @@
 
 See GeoPackage specifications here: http://www.geopackage.org/spec/
 """
-import os
 import re
 
 from sqlalchemy import text
@@ -19,6 +18,7 @@ from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.admin.dialects.sqlite import _SQLITE_FUNCTIONS
 from geoalchemy2.admin.dialects.sqlite import get_col_dim
+from geoalchemy2.admin.dialects.sqlite import load_spatialite_driver
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import _DummyGeometry
@@ -37,31 +37,48 @@ class GeoPackageDialect(SQLiteDialect_pysqlite):
 registry.register("gpkg", "geoalchemy2.admin.dialects.geopackage", "GeoPackageDialect")
 
 
-def load_spatialite_gpkg(dbapi_conn, connection_record):
-    """Load SpatiaLite extension in GeoPackage.
+def load_geopackage_driver(dbapi_conn, *args):
+    """Load SpatiaLite extension in GeoPackage connection and set VirtualGpkg and Amphibious modes.
 
-    The path to the SpatiaLite module should be set in the `SPATIALITE_LIBRARY_PATH` environment
-    variable.
+    .. Warning::
+        The path to the SpatiaLite module should be set in the `SPATIALITE_LIBRARY_PATH`
+        environment variable.
 
-    .. Note::
+    Args:
+        dbapi_conn: The DBAPI connection.
+    """
+    load_spatialite_driver(dbapi_conn, *args)
 
+    dbapi_conn.execute("SELECT AutoGpkgStart();")
+    dbapi_conn.execute("SELECT EnableGpkgAmphibiousMode();")
+
+
+def init_geopackage(dbapi_conn, *args):
+    """Initialize GeoPackage tables.
+
+    Args:
+        dbapi_conn: The DBAPI connection.
+
+    .. Warning::
         No EPSG SRID is loaded in the `gpkg_spatial_ref_sys` table after initialization but
         it is possible to load other EPSG SRIDs afterwards using the
         `gpkgInsertEpsgSRID(srid)`.
         Nevertheless, SRIDs of newly created tables are automatically added.
     """
-    if "SPATIALITE_LIBRARY_PATH" not in os.environ:
-        raise RuntimeError("The SPATIALITE_LIBRARY_PATH environment variable is not set.")
-    dbapi_conn.enable_load_extension(True)
-    dbapi_conn.load_extension(os.environ["SPATIALITE_LIBRARY_PATH"])
-    dbapi_conn.enable_load_extension(False)
-
     if not dbapi_conn.execute("SELECT CheckGeoPackageMetaData();").fetchone()[0]:
         # This only works on the main database
         dbapi_conn.execute("SELECT gpkgCreateBaseTables();")
 
-    dbapi_conn.execute("SELECT AutoGpkgStart();")
-    dbapi_conn.execute("SELECT EnableGpkgAmphibiousMode();")
+
+def load_spatialite_gpkg(*args, **kwargs):
+    """Load SpatiaLite extension in GeoPackage and initialize internal tables.
+
+    See :func:`geoalchemy2.admin.dialects.geopackage.load_geopackage_driver` and
+    :func:`geoalchemy2.admin.dialects.geopackage.init_geopackage` functions for details about
+    arguments.
+    """
+    load_geopackage_driver(*args)
+    init_geopackage(*args, **kwargs)
 
 
 def _get_spatialite_attrs(bind, table_name, col_name):
