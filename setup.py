@@ -23,7 +23,7 @@ setup(
     keywords="geo,gis,sqlalchemy,orm",
     author="Eric Lemoine",
     author_email="eric.lemoine@gmail.com",
-    url="https://geoalchemy-2.readthedocs.io/en/latest/",
+    url="https://geoalchemy-2.readthedocs.io/en/stable/",
     project_urls={
         "Tracker": "https://github.com/geoalchemy/geoalchemy2/issues",
         "Source": "https://github.com/geoalchemy/geoalchemy2",
