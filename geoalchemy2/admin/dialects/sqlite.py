@@ -15,6 +15,7 @@ from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import _DummyGeometry
+from geoalchemy2.utils import authorized_values_in_docstring
 
 
 def load_spatialite_driver(dbapi_conn, *args):
@@ -34,6 +35,10 @@ def load_spatialite_driver(dbapi_conn, *args):
     dbapi_conn.enable_load_extension(False)
 
 
+_JOURNAL_MODE_VALUES = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
+
+
+@authorized_values_in_docstring(JOURNAL_MODE_VALUES=_JOURNAL_MODE_VALUES)
 def init_spatialite(
     dbapi_conn,
     *args,
@@ -45,7 +50,7 @@ def init_spatialite(
 
     Args:
         dbapi_conn: The DBAPI connection.
-        init_mode: Can be `'NONE'` to load all EPSG SRIDs, `'WGS84'` to load only the ones related
+        init_mode: Can be `None` to load all EPSG SRIDs, `'WGS84'` to load only the ones related
             to WGS84 or `'EMPTY'` to not load any EPSG SRID.
 
             .. Note::
@@ -55,9 +60,8 @@ def init_spatialite(
         transaction: If set to `True` the whole operation will be handled as a single Transaction
             (faster). The default value is `False` (slower, but safer).
         journal_mode: Change the journal mode to the given value. This can make the table creation
-            much faster. The possible values are the following: 'DELETE', 'TRUNCATE', 'PERSIST',
-            'MEMORY', 'WAL' and 'OFF'. See https://www.sqlite.org/pragma.html#pragma_journal_mode
-            for more details.
+            much faster. The possible values are the following: <JOURNAL_MODE_VALUES>. See
+            https://www.sqlite.org/pragma.html#pragma_journal_mode for more details.
 
             .. Warning::
                 Some values, like 'MEMORY' or 'OFF', can lead to corrupted databases if the process
@@ -103,13 +107,12 @@ def init_spatialite(
         func_args.append(f"'{init_mode}'")
 
     # Check the value of the 'journal_mode' parameter
-    journal_mode_values = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
     if isinstance(journal_mode, str):
         journal_mode = journal_mode.upper()
     if journal_mode is not None:
-        if journal_mode not in journal_mode_values:
+        if journal_mode not in _JOURNAL_MODE_VALUES:
             raise ValueError(
-                "The 'journal_mode' argument must be one of {}.".format(journal_mode_values)
+                "The 'journal_mode' argument must be one of {}.".format(_JOURNAL_MODE_VALUES)
             )
 
     if dbapi_conn.execute("SELECT CheckSpatialMetaData();").fetchone()[0] < 1:
