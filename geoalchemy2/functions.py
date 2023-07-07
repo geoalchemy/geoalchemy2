@@ -125,7 +125,7 @@ except ImportError:
 
 
 class TableRowElement(ColumnElement):
-    inherit_cache = False
+    inherit_cache: bool = False
     """The cache is disabled for this class."""
 
     def __init__(self, selectable) -> None:
@@ -142,8 +142,8 @@ class ST_AsGeoJSON(_GeoFunctionBase):
     This is to be able to work with its feature version introduced in PostGIS 3.
     """
 
-    name = "ST_AsGeoJSON"
-    inherit_cache = True
+    name: str = "ST_AsGeoJSON"
+    inherit_cache: bool = True
     """The cache is enabled for this class."""
 
     def __init__(self, *args, **kwargs) -> None:

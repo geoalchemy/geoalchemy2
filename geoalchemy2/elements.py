@@ -117,8 +117,8 @@ class WKTElement(_SpatialElement):
 
     _REMOVE_SRID = re.compile("(SRID=([0-9]+); ?)?(.*)")
 
-    geom_from = "ST_GeomFromText"
-    geom_from_extended_version = "ST_GeomFromEWKT"
+    geom_from: str = "ST_GeomFromText"
+    geom_from_extended_version: str = "ST_GeomFromEWKT"
 
     def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
         if extended is None:
@@ -171,8 +171,8 @@ class WKBElement(_SpatialElement):
     using the :func:`geoalchemy2.shape.from_shape` function.
     """
 
-    geom_from = "ST_GeomFromWKB"
-    geom_from_extended_version = "ST_GeomFromEWKB"
+    geom_from: str = "ST_GeomFromWKB"
+    geom_from_extended_version: str = "ST_GeomFromEWKB"
 
     def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
         if srid == -1 or extended is None or extended:
@@ -300,7 +300,7 @@ class RasterElement(_SpatialElement):
     most cases you won't need to create ``RasterElement`` instances yourself.
     """
 
-    geom_from_extended_version = "raster"
+    geom_from_extended_version: str = "raster"
 
     def __init__(self, data) -> None:
         # read srid from the WKB (binary or hexadecimal format)
@@ -329,7 +329,7 @@ class RasterElement(_SpatialElement):
 class CompositeElement(FunctionElement):
     """Instances of this class wrap a Postgres composite type."""
 
-    inherit_cache = False
+    inherit_cache: bool = False
     """The cache is disabled for this class."""
 
     def __init__(self, base, field, type_) -> None:
