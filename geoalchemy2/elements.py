@@ -3,7 +3,7 @@ from __future__ import annotations
 import binascii
 import re
 import struct
-from typing import Any, Dict, List, Optional, NoReturn
+from typing import Any, Dict, List, Optional, NoReturn, Union
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
@@ -174,7 +174,7 @@ class WKBElement(_SpatialElement):
     geom_from: str = "ST_GeomFromWKB"
     geom_from_extended_version: str = "ST_GeomFromEWKB"
 
-    def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
+    def __init__(self, data: Union[str, bytes, memoryview], srid: int = -1, extended: Optional[bool] = None) -> None:
         if srid == -1 or extended is None or extended:
             # read srid from the EWKB
             #
