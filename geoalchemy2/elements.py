@@ -212,7 +212,7 @@ class WKBElement(_SpatialElement):
         _SpatialElement.__init__(self, data, srid, extended)
 
     @property
-    def desc(self):
+    def desc(self) -> str:
         """This element's description string."""
         if isinstance(self.data, str):
             # SpatiaLite case
@@ -221,7 +221,7 @@ class WKBElement(_SpatialElement):
         return desc
 
     @staticmethod
-    def _data_from_desc(desc):
+    def _data_from_desc(desc) -> bytes:
         desc = desc.encode(encoding="utf-8")
         return binascii.unhexlify(desc)
 
