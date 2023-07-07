@@ -3,7 +3,7 @@ from __future__ import annotations
 import binascii
 import re
 import struct
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
@@ -34,7 +34,7 @@ class _SpatialElement(HasFunction):
 
     """
 
-    def __init__(self, data, srid=-1, extended=None) -> None:
+    def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
         self.srid = srid
         self.data = data
         self.extended = extended
@@ -120,7 +120,7 @@ class WKTElement(_SpatialElement):
     geom_from = "ST_GeomFromText"
     geom_from_extended_version = "ST_GeomFromEWKT"
 
-    def __init__(self, data, srid=-1, extended=None) -> None:
+    def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
         if extended is None:
             extended = data.startswith("SRID=")
         if extended and srid == -1:
@@ -150,7 +150,7 @@ class WKTElement(_SpatialElement):
             return WKTElement(srid_match.group(3), self.srid, extended=False)
         return WKTElement(self.data, self.srid, self.extended)
 
-    def as_ewkt(self)-> WKTElement:
+    def as_ewkt(self) -> WKTElement:
         if not self.extended and self.srid != -1:
             data = f"SRID={self.srid};" + self.data
             return WKTElement(data, extended=True)
@@ -174,7 +174,7 @@ class WKBElement(_SpatialElement):
     geom_from = "ST_GeomFromWKB"
     geom_from_extended_version = "ST_GeomFromEWKB"
 
-    def __init__(self, data, srid=-1, extended=None) -> None:
+    def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
         if srid == -1 or extended is None or extended:
             # read srid from the EWKB
             #
