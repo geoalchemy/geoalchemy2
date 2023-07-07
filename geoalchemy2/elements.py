@@ -120,7 +120,7 @@ class WKTElement(_SpatialElement):
     geom_from: str = "ST_GeomFromText"
     geom_from_extended_version: str = "ST_GeomFromEWKT"
 
-    def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
+    def __init__(self, data: str, srid: int = -1, extended: Optional[bool] = None) -> None:
         if extended is None:
             extended = data.startswith("SRID=")
         if extended and srid == -1:
