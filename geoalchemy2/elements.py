@@ -95,7 +95,7 @@ class _SpatialElement(HasFunction):
         }
         return state
 
-    def __setstate__(self, state) -> None:
+    def __setstate__(self, state: Dict[str, Any]) -> None:
         self.srid = state["srid"]
         self.extended = state["extended"]
         self.data = self._data_from_desc(state["data"])
@@ -340,7 +340,7 @@ class CompositeElement(FunctionElement):
 
 
 @compiles(CompositeElement)
-def _compile_pgelem(expr, compiler, **kw):
+def _compile_pgelem(expr, compiler, **kw) -> str:
     return "(%s).%s" % (compiler.process(expr.clauses, **kw), expr.name)
 
 
