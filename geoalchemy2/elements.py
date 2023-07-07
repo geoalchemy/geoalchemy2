@@ -3,7 +3,7 @@ from __future__ import annotations
 import binascii
 import re
 import struct
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, NoReturn
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
@@ -101,7 +101,7 @@ class _SpatialElement(HasFunction):
         self.data = self._data_from_desc(state["data"])
 
     @staticmethod
-    def _data_from_desc(desc):
+    def _data_from_desc(desc) -> NoReturn:
         raise NotImplementedError()  # pragma: no cover
 
 
