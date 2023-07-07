@@ -113,7 +113,7 @@ class _GISType(UserDefinedType):
         name=None,
         nullable=True,
         _spatial_index_reflected=None,
-    ):
+    ) -> None:
         geometry_type, srid = self.check_ctor_args(
             geometry_type, srid, dimension, use_typmod, nullable
         )
@@ -304,7 +304,7 @@ class Raster(_GISType):
     cache_ok = False
     """ Disable cache for this type. """
 
-    def __init__(self, spatial_index=True, from_text=None, name=None, nullable=True):
+    def __init__(self, spatial_index=True, from_text=None, name=None, nullable=True) -> None:
         # Enforce default values
         super(Raster, self).__init__(
             geometry_type=None,

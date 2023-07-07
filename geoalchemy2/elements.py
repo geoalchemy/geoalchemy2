@@ -3,6 +3,7 @@ from __future__ import annotations
 import binascii
 import re
 import struct
+from typing import Any, Dict
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
@@ -33,22 +34,22 @@ class _SpatialElement(HasFunction):
 
     """
 
-    def __init__(self, data, srid=-1, extended=None):
+    def __init__(self, data, srid=-1, extended=None) -> None:
         self.srid = srid
         self.data = data
         self.extended = extended
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.desc
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at 0x%x; %s>" % (
             self.__class__.__name__,
             id(self),
             self,
         )  # pragma: no cover
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         try:
             return (
                 self.extended == other.extended
@@ -58,7 +59,7 @@ class _SpatialElement(HasFunction):
         except AttributeError:
             return False
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         return not self.__eq__(other)
 
     def __hash__(self):
@@ -86,7 +87,7 @@ class _SpatialElement(HasFunction):
         func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         state = {
             "srid": self.srid,
             "data": str(self),
@@ -94,7 +95,7 @@ class _SpatialElement(HasFunction):
         }
         return state
 
-    def __setstate__(self, state):
+    def __setstate__(self, state) -> None:
         self.srid = state["srid"]
         self.extended = state["extended"]
         self.data = self._data_from_desc(state["data"])
@@ -119,7 +120,7 @@ class WKTElement(_SpatialElement):
     geom_from = "ST_GeomFromText"
     geom_from_extended_version = "ST_GeomFromEWKT"
 
-    def __init__(self, data, srid=-1, extended=None):
+    def __init__(self, data, srid=-1, extended=None) -> None:
         if extended is None:
             extended = data.startswith("SRID=")
         if extended and srid == -1:
@@ -173,7 +174,7 @@ class WKBElement(_SpatialElement):
     geom_from = "ST_GeomFromWKB"
     geom_from_extended_version = "ST_GeomFromEWKB"
 
-    def __init__(self, data, srid=-1, extended=None):
+    def __init__(self, data, srid=-1, extended=None) -> None:
         if srid == -1 or extended is None or extended:
             # read srid from the EWKB
             #
@@ -301,7 +302,7 @@ class RasterElement(_SpatialElement):
 
     geom_from_extended_version = "raster"
 
-    def __init__(self, data):
+    def __init__(self, data) -> None:
         # read srid from the WKB (binary or hexadecimal format)
         # The WKB structure is documented in the file
         # raster/doc/RFC2-WellKnownBinaryFormat of the PostGIS sources.
@@ -331,7 +332,7 @@ class CompositeElement(FunctionElement):
     inherit_cache = False
     """The cache is disabled for this class."""
 
-    def __init__(self, base, field, type_):
+    def __init__(self, base, field, type_) -> None:
         self.name = field
         self.type = to_instance(type_)
 

@@ -91,7 +91,7 @@ try:
 
         _register = False
 
-        def __init__(cls, clsname, bases, clsdict):
+        def __init__(cls, clsname, bases, clsdict) -> None:
             # Register the function
             elements.function_registry.add(clsname.lower())
 
@@ -128,7 +128,7 @@ class TableRowElement(ColumnElement):
     inherit_cache = False
     """The cache is disabled for this class."""
 
-    def __init__(self, selectable):
+    def __init__(self, selectable) -> None:
         self.selectable = selectable
 
     @property
@@ -146,7 +146,7 @@ class ST_AsGeoJSON(_GeoFunctionBase):
     inherit_cache = True
     """The cache is enabled for this class."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         expr = kwargs.pop("expr", None)
         args = list(args)
         if expr is not None:
@@ -235,7 +235,7 @@ class GenericFunction(_GeoFunctionBase):
     # sqlalchemy.sql.functions._registry. Only its children will be registered.
     _register = False
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         expr = kwargs.pop("expr", None)
         args = list(args)
         if expr is not None:
