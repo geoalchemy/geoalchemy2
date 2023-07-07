@@ -6,6 +6,7 @@
     functions of this module have to ensure that `Shapely` is available.
 """
 from contextlib import contextmanager
+from typing import List, Optional, Union
 
 try:
     import shapely.wkb
@@ -33,7 +34,7 @@ def check_shapely():
 
 
 @check_shapely()
-def to_shape(element):
+def to_shape(element: Union[WKBElement, WKTElement]):
     """Function to convert a :class:`geoalchemy2.types.SpatialElement` to a Shapely geometry.
 
     Args:
@@ -60,7 +61,7 @@ def to_shape(element):
 
 
 @check_shapely()
-def from_shape(shape, srid=-1, extended=False):
+def from_shape(shape, srid: int = -1, extended: Optional[bool] = False) -> WKBElement:
     """Function to convert a Shapely geometry to a :class:`geoalchemy2.types.WKBElement`.
 
     Args:
@@ -83,11 +84,11 @@ def from_shape(shape, srid=-1, extended=False):
     )
 
 
-__all__ = [
+__all__: List[str] = [
     "from_shape",
     "to_shape",
 ]
 
 
-def __dir__():
+def __dir__() -> List[str]:
     return __all__
