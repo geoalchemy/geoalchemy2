@@ -109,7 +109,7 @@ except ImportError:
             super().__init_subclass__()
 
         @classmethod
-        def _register_geo_function(cls, clsname, clsdict):
+        def _register_geo_function(cls, clsname, clsdict) -> None:
             # Check _register attribute status
             cls._register = getattr(cls, "_register", True)
 
