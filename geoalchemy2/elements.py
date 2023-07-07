@@ -3,7 +3,7 @@ from __future__ import annotations
 import binascii
 import re
 import struct
-from typing import Any, Dict, Optional, NoReturn
+from typing import Any, Dict, List, Optional, NoReturn
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
@@ -344,7 +344,7 @@ def _compile_pgelem(expr, compiler, **kw):
     return "(%s).%s" % (compiler.process(expr.clauses, **kw), expr.name)
 
 
-__all__ = [
+__all__: List[str] = [
     "_SpatialElement",
     "CompositeElement",
     "RasterElement",
@@ -353,5 +353,5 @@ __all__ = [
 ]
 
 
-def __dir__():
+def __dir__() -> List[str]:
     return __all__
