@@ -6,7 +6,11 @@
     functions of this module have to ensure that `Shapely` is available.
 """
 from contextlib import contextmanager
-from typing import List, Optional, Union
+from typing import (
+    List,
+    Optional,
+    Union,
+)
 
 try:
     import shapely.wkb

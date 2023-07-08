@@ -3,7 +3,14 @@ from __future__ import annotations
 import binascii
 import re
 import struct
-from typing import Any, Dict, List, Optional, NoReturn, Union
+from typing import (
+    Any,
+    Dict,
+    List,
+    NoReturn,
+    Optional,
+    Union,
+)
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
