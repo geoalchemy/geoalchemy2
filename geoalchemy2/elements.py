@@ -309,7 +309,7 @@ class RasterElement(_SpatialElement):
 
     geom_from_extended_version: str = "raster"
 
-    def __init__(self, data) -> None:
+    def __init__(self, data: Union[str, bytes, memoryview]) -> None:
         # read srid from the WKB (binary or hexadecimal format)
         # The WKB structure is documented in the file
         # raster/doc/RFC2-WellKnownBinaryFormat of the PostGIS sources.
