@@ -141,7 +141,7 @@ class WKTElement(_SpatialElement):
         _SpatialElement.__init__(self, data, srid, extended)
 
     @property
-    def desc(self):
+    def desc(self) -> str:
         """This element's description string."""
         return self.data
 
@@ -324,7 +324,7 @@ class RasterElement(_SpatialElement):
         _SpatialElement.__init__(self, data, srid, True)
 
     @property
-    def desc(self):
+    def desc(self) -> str:
         """This element's description string."""
         return self.data
 
