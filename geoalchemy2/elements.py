@@ -3,14 +3,12 @@ from __future__ import annotations
 import binascii
 import re
 import struct
-
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import NoReturn
 from typing import Optional
 from typing import Union
-
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
