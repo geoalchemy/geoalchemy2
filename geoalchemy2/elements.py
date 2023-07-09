@@ -3,7 +3,12 @@ from __future__ import annotations
 import binascii
 import re
 import struct
-from typing import Any, Dict, List, Optional, NoReturn
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import NoReturn
+from typing import Optional
+from typing import Union
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
@@ -95,7 +100,7 @@ class _SpatialElement(HasFunction):
         }
         return state
 
-    def __setstate__(self, state) -> None:
+    def __setstate__(self, state: Dict[str, Any]) -> None:
         self.srid = state["srid"]
         self.extended = state["extended"]
         self.data = self._data_from_desc(state["data"])
@@ -120,7 +125,7 @@ class WKTElement(_SpatialElement):
     geom_from: str = "ST_GeomFromText"
     geom_from_extended_version: str = "ST_GeomFromEWKT"
 
-    def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
+    def __init__(self, data: str, srid: int = -1, extended: Optional[bool] = None) -> None:
         if extended is None:
             extended = data.startswith("SRID=")
         if extended and srid == -1:
@@ -174,7 +179,9 @@ class WKBElement(_SpatialElement):
     geom_from: str = "ST_GeomFromWKB"
     geom_from_extended_version: str = "ST_GeomFromEWKB"
 
-    def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
+    def __init__(
+        self, data: Union[str, bytes, memoryview], srid: int = -1, extended: Optional[bool] = None
+    ) -> None:
         if srid == -1 or extended is None or extended:
             # read srid from the EWKB
             #
@@ -340,7 +347,7 @@ class CompositeElement(FunctionElement):
 
 
 @compiles(CompositeElement)
-def _compile_pgelem(expr, compiler, **kw):
+def _compile_pgelem(expr, compiler, **kw) -> str:
     return "(%s).%s" % (compiler.process(expr.clauses, **kw), expr.name)
 
 
