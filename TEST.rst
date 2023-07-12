@@ -19,7 +19,7 @@ Install SpatiaLite::
 
 Install MySQL::
 
-    $ sudo apt-get install mysql-client mysql-server
+    $ sudo apt-get install mysql-client mysql-server default-libmysqlclient-dev
 
 Install the Python dependencies::
 
