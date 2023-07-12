@@ -509,6 +509,33 @@ class TestCallFunction:
             "properties": {"dummy_attr": 10, "id": 1},
         }
 
+    def test_comparator(self, session, Lake, setup_one_lake):
+        # Test with raw string
+        query = Lake.__table__.select().where(
+            Lake.__table__.c.geom.intersects("LINESTRING(0 1, 1 0)")
+        )
+        res = session.execute(query).fetchall()
+        assert res
+
+        query = Lake.__table__.select().where(
+            Lake.__table__.c.geom.intersects("LINESTRING(99 99, 999 999)")
+        )
+        res = session.execute(query).fetchall()
+        assert not res
+
+        # Test with WKTElement
+        query = Lake.__table__.select().where(
+            Lake.__table__.c.geom.intersects(WKTElement("LINESTRING(0 1, 1 0)"))
+        )
+        res = session.execute(query).fetchall()
+        assert res
+
+        query = Lake.__table__.select().where(
+            Lake.__table__.c.geom.intersects(WKTElement("LINESTRING(99 99, 999 999)"))
+        )
+        res = session.execute(query).fetchall()
+        assert not res
+
 
 class TestShapely:
     pass
