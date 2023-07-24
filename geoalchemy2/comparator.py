@@ -39,7 +39,9 @@ Using the ORM::
 from sqlalchemy import types as sqltypes
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from sqlalchemy.sql import operators
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.types import UserDefinedType
+
 
 try:
     from sqlalchemy.sql.functions import _FunctionGenerator
@@ -112,21 +114,21 @@ class Comparator(BaseComparator):
     This is where spatial operators like ``<<`` and ``<->`` are defined.
     """
 
-    def overlaps_or_below(self, other):
+    def overlaps_or_below(self, other) -> ColumnElement:
         """The ``&<|`` operator.
 
         A's BBOX overlaps or is below B's.
         """
         return self.operate(OVERLAPS_OR_BELOW, other, result_type=sqltypes.Boolean)
 
-    def to_left(self, other):
+    def to_left(self, other) -> ColumnElement:
         """The ``<<`` operator.
 
         A's BBOX is strictly to the left of B's.
         """
         return self.operate(TO_LEFT, other, result_type=sqltypes.Boolean)
 
-    def __lshift__(self, other):
+    def __lshift__(self, other) -> ColumnElement:
         """The ``<<`` operator.
 
         A's BBOX is strictly to the left of B's.
@@ -141,21 +143,21 @@ class Comparator(BaseComparator):
         """
         return self.to_left(other)
 
-    def below(self, other):
+    def below(self, other) -> ColumnElement:
         """The ``<<|`` operator.
 
         A's BBOX is strictly below B's.
         """
         return self.operate(BELOW, other, result_type=sqltypes.Boolean)
 
-    def to_right(self, other):
+    def to_right(self, other) -> ColumnElement:
         """The ``>>`` operator.
 
         A's BBOX is strictly to the right of B's.
         """
         return self.operate(TO_RIGHT, other, result_type=sqltypes.Boolean)
 
-    def __rshift__(self, other):
+    def __rshift__(self, other) -> ColumnElement:
         """The ``>>`` operator.
 
         A's BBOX is strictly to the left of B's.
@@ -170,56 +172,56 @@ class Comparator(BaseComparator):
         """
         return self.to_right(other)
 
-    def contained(self, other):
+    def contained(self, other) -> ColumnElement:
         """The ``@`` operator.
 
         A's BBOX is contained by B's.
         """
         return self.operate(CONTAINED, other, result_type=sqltypes.Boolean)
 
-    def overlaps_or_above(self, other):
+    def overlaps_or_above(self, other) -> ColumnElement:
         """The ``|&>`` operator.
 
         A's BBOX overlaps or is above B's.
         """
         return self.operate(OVERLAPS_OR_ABOVE, other, result_type=sqltypes.Boolean)
 
-    def above(self, other):
+    def above(self, other) -> ColumnElement:
         """The ``|>>`` operator.
 
         A's BBOX is strictly above B's.
         """
         return self.operate(ABOVE, other, result_type=sqltypes.Boolean)
 
-    def contains(self, other, **kw):
+    def contains(self, other, **kw) -> ColumnElement:
         """The ``~`` operator.
 
         A's BBOX contains B's.
         """
         return self.operate(CONTAINS, other, result_type=sqltypes.Boolean)
 
-    def same(self, other):
+    def same(self, other) -> ColumnElement:
         """The ``~=`` operator.
 
         A's BBOX is the same as B's.
         """
         return self.operate(SAME, other, result_type=sqltypes.Boolean)
 
-    def distance_centroid(self, other):
+    def distance_centroid(self, other) -> ColumnElement:
         """The ``<->`` operator.
 
         The distance between two points.
         """
         return self.operate(DISTANCE_CENTROID, other, result_type=DOUBLE_PRECISION)
 
-    def distance_box(self, other):
+    def distance_box(self, other) -> ColumnElement:
         """The ``<#>`` operator.
 
         The distance between bounding box of two geometries.
         """
         return self.operate(DISTANCE_BOX, other, result_type=DOUBLE_PRECISION)
 
-    def intersects_nd(self, other):
+    def intersects_nd(self, other) -> ColumnElement:
         """The ``&&&`` operator.
 
         This operator returns TRUE if the n-D bounding box of geometry A
