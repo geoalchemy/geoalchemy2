@@ -174,21 +174,21 @@ def _compile_GeomFromWKB_MySql(element, compiler, **kw):
         return "{}({})".format(element.identifier, compiled)
 
 
-@compiles(functions.ST_GeomFromText, "mysql")
+@compiles(functions.ST_GeomFromText, "mysql")  # type: ignore
 def _MySQL_ST_GeomFromText(element, compiler, **kw):
     return _compile_GeomFromText_MySql(element, compiler, **kw)
 
 
-@compiles(functions.ST_GeomFromEWKT, "mysql")
+@compiles(functions.ST_GeomFromEWKT, "mysql")  # type: ignore
 def _MySQL_ST_GeomFromEWKT(element, compiler, **kw):
     return _compile_GeomFromText_MySql(element, compiler, **kw)
 
 
-@compiles(functions.ST_GeomFromWKB, "mysql")
+@compiles(functions.ST_GeomFromWKB, "mysql")  # type: ignore
 def _MySQL_ST_GeomFromWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_MySql(element, compiler, **kw)
 
 
-@compiles(functions.ST_GeomFromEWKB, "mysql")
+@compiles(functions.ST_GeomFromEWKB, "mysql")  # type: ignore
 def _MySQL_ST_GeomFromEWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_MySql(element, compiler, **kw)

@@ -3,11 +3,6 @@
 Elements
 ========
 
-.. autoclass:: geoalchemy2.elements.HasFunction
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 .. autoclass:: geoalchemy2.elements._SpatialElement
    :members:
    :undoc-members:

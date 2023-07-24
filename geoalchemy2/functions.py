@@ -67,6 +67,7 @@ Reference
 
 """
 import re
+from typing import Type
 
 from sqlalchemy import inspect
 from sqlalchemy.ext.compiler import compiles
@@ -77,11 +78,13 @@ from sqlalchemy.sql.elements import ColumnElement
 from geoalchemy2 import elements
 from geoalchemy2._functions import _FUNCTIONS
 
+_GeoFunctionBase: Type[functions.GenericFunction]
+_GeoFunctionParent: Type[functions.GenericFunction]
 try:
     # SQLAlchemy < 2
 
-    from sqlalchemy.sql.functions import _GenericMeta
-    from sqlalchemy.util import with_metaclass
+    from sqlalchemy.sql.functions import _GenericMeta  # type: ignore
+    from sqlalchemy.util import with_metaclass  # type: ignore
 
     class _GeoGenericMeta(_GenericMeta):
         """Extend the registering mechanism of sqlalchemy.
@@ -136,7 +139,7 @@ class TableRowElement(ColumnElement):
         return [self.selectable]
 
 
-class ST_AsGeoJSON(_GeoFunctionBase):
+class ST_AsGeoJSON(_GeoFunctionBase):  # type: ignore
     """Special process for the ST_AsGeoJSON() function.
 
     This is to be able to work with its feature version introduced in PostGIS 3.
@@ -148,29 +151,29 @@ class ST_AsGeoJSON(_GeoFunctionBase):
 
     def __init__(self, *args, **kwargs) -> None:
         expr = kwargs.pop("expr", None)
-        args = list(args)
+        args_list = list(args)
         if expr is not None:
-            args = [expr] + args
-        for idx, element in enumerate(args):
+            args_list = [expr] + args_list
+        for idx, element in enumerate(args_list):
             if isinstance(element, functions.Function):
                 continue
-            elif isinstance(element, elements.HasFunction):
+            elif isinstance(element, elements._SpatialElement):
                 if element.extended:
                     func_name = element.geom_from_extended_version
                     func_args = [element.data]
                 else:
                     func_name = element.geom_from
                     func_args = [element.data, element.srid]
-                args[idx] = getattr(functions.func, func_name)(*func_args)
+                args_list[idx] = getattr(functions.func, func_name)(*func_args)
             else:
                 try:
                     insp = inspect(element)
                     if hasattr(insp, "selectable"):
-                        args[idx] = TableRowElement(insp.selectable)
+                        args_list[idx] = TableRowElement(insp.selectable)
                 except Exception:
                     continue
 
-        _GeoFunctionParent.__init__(self, *args, **kwargs)
+        _GeoFunctionParent.__init__(self, *args_list, **kwargs)
 
     __doc__ = (
         'Return the geometry as a GeoJSON "geometry" object, or the row as a '
@@ -204,7 +207,7 @@ def _compile_table_row_thing(element, compiler, **kw):
     return compiled.split(".")[0]
 
 
-class GenericFunction(_GeoFunctionBase):
+class GenericFunction(_GeoFunctionBase):  # type: ignore
     """The base class for GeoAlchemy functions.
 
     This class inherits from ``sqlalchemy.sql.functions.GenericFunction``, so
@@ -237,19 +240,19 @@ class GenericFunction(_GeoFunctionBase):
 
     def __init__(self, *args, **kwargs) -> None:
         expr = kwargs.pop("expr", None)
-        args = list(args)
+        args_list = list(args)
         if expr is not None:
-            args = [expr] + args
-        for idx, elem in enumerate(args):
-            if isinstance(elem, elements.HasFunction):
+            args_list = [expr] + args_list
+        for idx, elem in enumerate(args_list):
+            if isinstance(elem, elements._SpatialElement):
                 if elem.extended:
                     func_name = elem.geom_from_extended_version
                     func_args = [elem.data]
                 else:
                     func_name = elem.geom_from
                     func_args = [elem.data, elem.srid]
-                args[idx] = getattr(functions.func, func_name)(*func_args)
-        _GeoFunctionParent.__init__(self, *args, **kwargs)
+                args_list[idx] = getattr(functions.func, func_name)(*func_args)
+        _GeoFunctionParent.__init__(self, *args_list, **kwargs)
 
 
 __all__ = [

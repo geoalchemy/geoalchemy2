@@ -46,7 +46,7 @@ if SQLA_LT_2:
 
     get_inspector = Inspector.from_engine
 else:
-    from sqlalchemy import inspect as get_inspector
+    from sqlalchemy import inspect as get_inspector  # type: ignore
 
 
 class TestIndex:
@@ -509,32 +509,64 @@ class TestCallFunction:
             "properties": {"dummy_attr": 10, "id": 1},
         }
 
-    def test_comparator(self, session, Lake, setup_one_lake):
-        # Test with raw string
-        query = Lake.__table__.select().where(
-            Lake.__table__.c.geom.intersects("LINESTRING(0 1, 1 0)")
-        )
+    @pytest.mark.parametrize(
+        "compared_element,expected_assert",
+        [
+            pytest.param("LINESTRING(0 1, 1 0)", True, id="intersecting raw string WKT"),
+            pytest.param("LINESTRING(99 99, 999 999)", False, id="not intersecting raw string WKT"),
+            pytest.param(WKTElement("LINESTRING(0 1, 1 0)"), True, id="intersecting WKTElement"),
+            pytest.param(
+                WKTElement("LINESTRING(99 99, 999 999)"), False, id="not intersecting WKTElement"
+            ),
+            pytest.param(
+                WKTElement("SRID=2154;LINESTRING(0 1, 1 0)"),
+                True,
+                id="intersecting extended WKTElement",
+            ),
+            pytest.param(
+                WKTElement("SRID=2154;LINESTRING(99 99, 999 999)"),
+                False,
+                id="not intersecting extended WKTElement",
+            ),
+            pytest.param(
+                WKBElement(
+                    "0102000000020000000000000000000000000000000000F03F000000000000F03F00000000000"
+                    "00000"
+                ),
+                True,
+                id="intersecting WKBElement",
+            ),
+            pytest.param(
+                WKBElement(
+                    "0102000000020000000000000000C058400000000000C058400000000000388F4000000000003"
+                    "88F40"
+                ),
+                False,
+                id="not intersecting WKBElement",
+            ),
+            pytest.param(
+                WKBElement(
+                    "01020000206A080000020000000000000000000000000000000000F03F000000000000F03F000"
+                    "0000000000000"
+                ),
+                True,
+                id="intersecting extended WKBElement",
+            ),
+            pytest.param(
+                WKBElement(
+                    "01020000206A080000020000000000000000C058400000000000C058400000000000388F40000"
+                    "0000000388F40"
+                ),
+                False,
+                id="not intersecting extended WKBElement",
+            ),
+        ],
+    )
+    def test_comparator(self, session, Lake, setup_one_lake, compared_element, expected_assert):
+        query = Lake.__table__.select().where(Lake.__table__.c.geom.intersects(compared_element))
         res = session.execute(query).fetchall()
-        assert res
 
-        query = Lake.__table__.select().where(
-            Lake.__table__.c.geom.intersects("LINESTRING(99 99, 999 999)")
-        )
-        res = session.execute(query).fetchall()
-        assert not res
-
-        # Test with WKTElement
-        query = Lake.__table__.select().where(
-            Lake.__table__.c.geom.intersects(WKTElement("LINESTRING(0 1, 1 0)"))
-        )
-        res = session.execute(query).fetchall()
-        assert res
-
-        query = Lake.__table__.select().where(
-            Lake.__table__.c.geom.intersects(WKTElement("LINESTRING(99 99, 999 999)"))
-        )
-        res = session.execute(query).fetchall()
-        assert not res
+        assert bool(res) == expected_assert
 
 
 class TestShapely:
@@ -544,7 +576,7 @@ class TestShapely:
 class TestSTAsGeoJson:
     InternalBase = declarative_base()
 
-    class TblWSpacesAndDots(InternalBase):
+    class TblWSpacesAndDots(InternalBase):  # type: ignore
         """
         Dummy class to test names with dots and spaces.
         No metadata is attached so the dialect is default SQL, not postgresql.

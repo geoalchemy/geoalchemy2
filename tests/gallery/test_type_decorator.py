@@ -9,6 +9,7 @@ are projected in the DB. To avoid having to always tweak the query with a
 <https://docs.sqlalchemy.org/en/13/core/custom_types.html#sqlalchemy.types.TypeDecorator>`_
 """
 import re
+from typing import Any
 
 from sqlalchemy import Column
 from sqlalchemy import Integer
@@ -85,12 +86,14 @@ class ThreeDGeometry(TypeDecorator):
         )
 
 
-class Point(Base):
+class Point(Base):  # type: ignore
     __tablename__ = "point"
     id = Column(Integer, primary_key=True)
     raw_geom = Column(Geometry(srid=4326, geometry_type="POINT"))
-    geom = Column(TransformedGeometry(db_srid=2154, app_srid=4326, geometry_type="POINT"))
-    three_d_geom = Column(ThreeDGeometry(srid=4326, geometry_type="POINTZ", dimension=3))
+    geom: Column[Any] = Column(
+        TransformedGeometry(db_srid=2154, app_srid=4326, geometry_type="POINT")
+    )
+    three_d_geom: Column = Column(ThreeDGeometry(srid=4326, geometry_type="POINTZ", dimension=3))
 
 
 def check_wkb(wkb, x, y):

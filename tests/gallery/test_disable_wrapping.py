@@ -27,7 +27,7 @@ class RawGeometry(Geometry):
         return col
 
 
-class Point(Base):
+class Point(Base):  # type: ignore
     __tablename__ = "point"
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry(srid=4326, geometry_type="POINT"))

@@ -6,8 +6,8 @@ import struct
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import NoReturn
 from typing import Optional
+from typing import Set
 from typing import Union
 
 from sqlalchemy.ext.compiler import compiles
@@ -19,14 +19,10 @@ from geoalchemy2.exc import ArgumentError
 
 BinasciiError = binascii.Error
 
-function_registry = set()
+function_registry: Set[str] = set()
 
 
-class HasFunction(object):
-    """Base class used as a marker to know if a given element has a 'geom_from' function."""
-
-
-class _SpatialElement(HasFunction):
+class _SpatialElement:
     """The base class for public spatial elements.
 
     Args:
@@ -106,7 +102,7 @@ class _SpatialElement(HasFunction):
         self.data = self._data_from_desc(state["data"])
 
     @staticmethod
-    def _data_from_desc(desc) -> NoReturn:
+    def _data_from_desc(desc):
         raise NotImplementedError()  # pragma: no cover
 
 
@@ -152,6 +148,7 @@ class WKTElement(_SpatialElement):
     def as_wkt(self) -> WKTElement:
         if self.extended:
             srid_match = self._REMOVE_SRID.match(self.data)
+            assert srid_match is not None
             return WKTElement(srid_match.group(3), self.srid, extended=False)
         return WKTElement(self.data, self.srid, self.extended)
 
@@ -205,14 +202,14 @@ class WKBElement(_SpatialElement):
                 header = data[:9]
             byte_order, wkb_type, wkb_srid = header[0], header[1:5], header[5:]
             byte_order_marker = "<I" if byte_order else ">I"
-            wkb_type = (
-                struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else False
+            wkb_type_int = (
+                int(struct.unpack(byte_order_marker, wkb_type)[0]) if len(wkb_type) == 4 else 0
             )
             if extended is None:
-                if not wkb_type:
+                if not wkb_type_int:
                     extended = False
                 else:
-                    extended = extended or bool(wkb_type & 536870912)  # Check SRID bit
+                    extended = extended or bool(wkb_type_int & 536870912)  # Check SRID bit
             if extended and srid == -1:
                 wkb_srid = struct.unpack(byte_order_marker, wkb_srid)[0]
                 srid = int(wkb_srid)
@@ -245,18 +242,20 @@ class WKBElement(_SpatialElement):
                 byte_order, wkb_type = self.data[0], self.data[1:5]
 
             byte_order_marker = "<I" if byte_order else ">I"
-            wkb_type = struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else 0
-            wkb_type &= 3758096383  # Set SRID bit to 0 and keep all other bits
+            wkb_type_int = (
+                int(struct.unpack(byte_order_marker, wkb_type)[0]) if len(wkb_type) == 4 else 0
+            )
+            wkb_type_int &= 3758096383  # Set SRID bit to 0 and keep all other bits
 
             if is_hex:
                 wkb_type_hex = binascii.hexlify(
-                    wkb_type.to_bytes(4, "little" if byte_order else "big")
+                    wkb_type_int.to_bytes(4, "little" if byte_order else "big")
                 )
                 data = self.data[:2] + wkb_type_hex.decode("ascii") + self.data[18:]
             else:
                 buffer = bytearray()
                 buffer.extend(self.data[:1])
-                buffer.extend(struct.pack(byte_order_marker, wkb_type))
+                buffer.extend(struct.pack(byte_order_marker, wkb_type_int))
                 buffer.extend(self.data[9:])
                 data = memoryview(buffer)
             return WKBElement(data, self.srid, extended=False)
@@ -272,12 +271,15 @@ class WKBElement(_SpatialElement):
             else:
                 byte_order, wkb_type = self.data[0], self.data[1:5]
             byte_order_marker = "<I" if byte_order else ">I"
-            wkb_type = struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else 0
-            wkb_type |= 536870912  # Set SRID bit to 1 and keep all other bits
+            wkb_type_int = int(
+                struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else 0
+            )
+            wkb_type_int |= 536870912  # Set SRID bit to 1 and keep all other bits
 
+            data: Union[str, memoryview]
             if isinstance(self.data, str):
                 wkb_type_hex = binascii.hexlify(
-                    wkb_type.to_bytes(4, "little" if byte_order else "big")
+                    wkb_type_int.to_bytes(4, "little" if byte_order else "big")
                 )
                 wkb_srid_hex = binascii.hexlify(
                     self.srid.to_bytes(4, "little" if byte_order else "big")
@@ -291,7 +293,7 @@ class WKBElement(_SpatialElement):
             else:
                 buffer = bytearray()
                 buffer.extend(self.data[:1])
-                buffer.extend(struct.pack(byte_order_marker, wkb_type))
+                buffer.extend(struct.pack(byte_order_marker, wkb_type_int))
                 buffer.extend(struct.pack(byte_order_marker, self.srid))
                 buffer.extend(self.data[5:])
                 data = memoryview(buffer)
@@ -313,15 +315,16 @@ class RasterElement(_SpatialElement):
         # read srid from the WKB (binary or hexadecimal format)
         # The WKB structure is documented in the file
         # raster/doc/RFC2-WellKnownBinaryFormat of the PostGIS sources.
+        bin_data: Union[str, bytes, memoryview]
         try:
             bin_data = binascii.unhexlify(data[:114])
         except BinasciiError:
             bin_data = data
-            data = str(binascii.hexlify(data).decode(encoding="utf-8"))
+            data = str(binascii.hexlify(data).decode(encoding="utf-8"))  # type: ignore
         byte_order = bin_data[0]
         srid = bin_data[53:57]
-        srid = struct.unpack("<I" if byte_order else ">I", srid)[0]
-        _SpatialElement.__init__(self, data, srid, True)
+        srid = struct.unpack("<I" if byte_order else ">I", srid)[0]  # type: ignore
+        _SpatialElement.__init__(self, data, int(srid), True)
 
     @property
     def desc(self) -> str:

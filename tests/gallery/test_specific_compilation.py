@@ -84,9 +84,9 @@ def _compile_buffer_sqlite(element, compiler, **kw):
 
 
 # Register the specific compilation rules
-compiles(functions.ST_Buffer)(_compile_buffer_default)
-compiles(functions.ST_Buffer, "sqlite")(_compile_buffer_sqlite)
-compiles(functions.ST_Buffer, "geopackage")(_compile_buffer_sqlite)
+compiles(functions.ST_Buffer)(_compile_buffer_default)  # type: ignore
+compiles(functions.ST_Buffer, "sqlite")(_compile_buffer_sqlite)  # type: ignore
+compiles(functions.ST_Buffer, "geopackage")(_compile_buffer_sqlite)  # type: ignore
 
 
 @test_only_with_dialects("postgresql", "sqlite")

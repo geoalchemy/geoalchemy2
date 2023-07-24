@@ -35,7 +35,7 @@ table = Table(
 )
 
 
-class RasterTable(Base):
+class RasterTable(Base):  # type: ignore
     __tablename__ = "raster_table_orm"
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry("POLYGON", 4326))

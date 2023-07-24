@@ -5,6 +5,7 @@ from sqlalchemy import Column
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 
+from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.types import Geometry
 
@@ -22,12 +23,16 @@ def geometry_table():
     return table
 
 
-@pytest.fixture(params=[False, True])
+@pytest.fixture(params=["raw_str", "WKTElement", "WKBElement"])
 def point_reference(request):
     wkt = "POINT(1 2)"
-    if request.param:
+    if request.param == "WKTElement":
         return WKTElement(wkt)
-    else:
+    elif request.param == "WKBElement":
+        return WKBElement(
+            b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@"
+        )
+    elif request.param == "raw_str":
         return wkt
 
 

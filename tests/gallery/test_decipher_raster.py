@@ -26,7 +26,7 @@ metadata = MetaData()
 Base = declarative_base(metadata=metadata)
 
 
-class Ocean(Base):
+class Ocean(Base):  # type: ignore
     __tablename__ = "ocean"
     id = Column(Integer, primary_key=True)
     rast = Column(Raster)
