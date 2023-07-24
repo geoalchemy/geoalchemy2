@@ -42,7 +42,6 @@ from sqlalchemy.sql import operators
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.types import UserDefinedType
 
-
 try:
     from sqlalchemy.sql.functions import _FunctionGenerator
 except ImportError:  # SQLA < 0.9  # pragma: no cover
