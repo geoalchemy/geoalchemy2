@@ -5,4 +5,5 @@ mysql
 pytest
 pytest-cov
 pytest-html
+pytest-mypy
 rasterio
