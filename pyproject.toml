@@ -43,3 +43,7 @@ force_single_line = true
 testpaths = [
     "tests",
 ]
+
+# MYPY
+[tool.mypy]
+ignore_missing_imports = true

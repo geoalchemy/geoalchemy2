@@ -12,7 +12,7 @@ metadata = MetaData()
 Base = declarative_base(metadata=metadata)
 
 
-class PickledLake(Base):
+class PickledLake(Base):  # type: ignore
     __tablename__ = "pickled_lake"
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry(geometry_type="LINESTRING", srid=4326))

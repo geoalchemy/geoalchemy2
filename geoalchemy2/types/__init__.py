@@ -5,6 +5,9 @@ The :class:`geoalchemy2.types.Geometry`, :class:`geoalchemy2.types.Geography`, a
 columns/properties in models.
 """
 import warnings
+from typing import Any
+from typing import Dict
+from typing import Optional
 
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names as _postgresql_ischema_names
@@ -14,6 +17,13 @@ from sqlalchemy.sql import func
 from sqlalchemy.types import Float
 from sqlalchemy.types import Integer
 from sqlalchemy.types import UserDefinedType
+
+try:
+    # SQLAlchemy >= 2
+    from sqlalchemy.sql._typing import _TypeEngineArgument
+except ImportError:
+    # SQLAlchemy < 2
+    _TypeEngineArgument = Any  # type: ignore
 
 from geoalchemy2.comparator import BaseComparator
 from geoalchemy2.comparator import Comparator
@@ -82,19 +92,19 @@ class _GISType(UserDefinedType):
             ``AddGeometryColumn``. Note that this option is only available for PostGIS 2.x.
     """
 
-    name = None
+    name: Optional[str] = None
     """ Name used for defining the main geo type (geometry or geography)
         in CREATE TABLE statements. Set in subclasses. """
 
-    from_text = None
+    from_text: Optional[str] = None
     """ The name of "from text" function for this type.
         Set in subclasses. """
 
-    as_binary = None
+    as_binary: Optional[str] = None
     """ The name of the "as binary" function for this type.
         Set in subclasses. """
 
-    comparator_factory = Comparator
+    comparator_factory: Any = Comparator
     """ This is the way by which spatial operators are defined for
         geometry/geography columns. """
 
@@ -113,7 +123,7 @@ class _GISType(UserDefinedType):
         name=None,
         nullable=True,
         _spatial_index_reflected=None,
-    ):
+    ) -> None:
         geometry_type, srid = self.check_ctor_args(
             geometry_type, srid, dimension, use_typmod, nullable
         )
@@ -127,7 +137,7 @@ class _GISType(UserDefinedType):
         self.spatial_index = spatial_index
         self.use_N_D_index = use_N_D_index
         self.use_typmod = use_typmod
-        self.extended = self.as_binary == "ST_AsEWKB"
+        self.extended: Optional[bool] = self.as_binary == "ST_AsEWKB"
         self.nullable = nullable
         self._spatial_index_reflected = _spatial_index_reflected
 
@@ -304,7 +314,7 @@ class Raster(_GISType):
     cache_ok = False
     """ Disable cache for this type. """
 
-    def __init__(self, spatial_index=True, from_text=None, name=None, nullable=True):
+    def __init__(self, spatial_index=True, from_text=None, name=None, nullable=True) -> None:
         # Enforce default values
         super(Raster, self).__init__(
             geometry_type=None,
@@ -341,7 +351,7 @@ class CompositeType(UserDefinedType):
     This is used as the base class of :class:`geoalchemy2.types.GeometryDump`.
     """
 
-    typemap = {}
+    typemap: Dict[str, _TypeEngineArgument] = {}
     """ Dictionary used for defining the content types and their
         corresponding keys. Set in subclasses. """
 

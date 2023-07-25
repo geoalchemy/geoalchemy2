@@ -1,6 +1,14 @@
+from __future__ import annotations
+
 import binascii
 import re
 import struct
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import Union
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
@@ -11,14 +19,10 @@ from geoalchemy2.exc import ArgumentError
 
 BinasciiError = binascii.Error
 
-function_registry = set()
+function_registry: Set[str] = set()
 
 
-class HasFunction(object):
-    """Base class used as a marker to know if a given element has a 'geom_from' function."""
-
-
-class _SpatialElement(HasFunction):
+class _SpatialElement:
     """The base class for public spatial elements.
 
     Args:
@@ -31,22 +35,22 @@ class _SpatialElement(HasFunction):
 
     """
 
-    def __init__(self, data, srid=-1, extended=None):
+    def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
         self.srid = srid
         self.data = data
         self.extended = extended
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.desc
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at 0x%x; %s>" % (
             self.__class__.__name__,
             id(self),
             self,
         )  # pragma: no cover
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         try:
             return (
                 self.extended == other.extended
@@ -56,7 +60,7 @@ class _SpatialElement(HasFunction):
         except AttributeError:
             return False
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         return not self.__eq__(other)
 
     def __hash__(self):
@@ -84,7 +88,7 @@ class _SpatialElement(HasFunction):
         func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         state = {
             "srid": self.srid,
             "data": str(self),
@@ -92,7 +96,7 @@ class _SpatialElement(HasFunction):
         }
         return state
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: Dict[str, Any]) -> None:
         self.srid = state["srid"]
         self.extended = state["extended"]
         self.data = self._data_from_desc(state["data"])
@@ -114,10 +118,10 @@ class WKTElement(_SpatialElement):
 
     _REMOVE_SRID = re.compile("(SRID=([0-9]+); ?)?(.*)")
 
-    geom_from = "ST_GeomFromText"
-    geom_from_extended_version = "ST_GeomFromEWKT"
+    geom_from: str = "ST_GeomFromText"
+    geom_from_extended_version: str = "ST_GeomFromEWKT"
 
-    def __init__(self, data, srid=-1, extended=None):
+    def __init__(self, data: str, srid: int = -1, extended: Optional[bool] = None) -> None:
         if extended is None:
             extended = data.startswith("SRID=")
         if extended and srid == -1:
@@ -133,7 +137,7 @@ class WKTElement(_SpatialElement):
         _SpatialElement.__init__(self, data, srid, extended)
 
     @property
-    def desc(self):
+    def desc(self) -> str:
         """This element's description string."""
         return self.data
 
@@ -141,13 +145,14 @@ class WKTElement(_SpatialElement):
     def _data_from_desc(desc):
         return desc
 
-    def as_wkt(self):
+    def as_wkt(self) -> WKTElement:
         if self.extended:
             srid_match = self._REMOVE_SRID.match(self.data)
+            assert srid_match is not None
             return WKTElement(srid_match.group(3), self.srid, extended=False)
         return WKTElement(self.data, self.srid, self.extended)
 
-    def as_ewkt(self):
+    def as_ewkt(self) -> WKTElement:
         if not self.extended and self.srid != -1:
             data = f"SRID={self.srid};" + self.data
             return WKTElement(data, extended=True)
@@ -168,10 +173,12 @@ class WKBElement(_SpatialElement):
     using the :func:`geoalchemy2.shape.from_shape` function.
     """
 
-    geom_from = "ST_GeomFromWKB"
-    geom_from_extended_version = "ST_GeomFromEWKB"
+    geom_from: str = "ST_GeomFromWKB"
+    geom_from_extended_version: str = "ST_GeomFromEWKB"
 
-    def __init__(self, data, srid=-1, extended=None):
+    def __init__(
+        self, data: Union[str, bytes, memoryview], srid: int = -1, extended: Optional[bool] = None
+    ) -> None:
         if srid == -1 or extended is None or extended:
             # read srid from the EWKB
             #
@@ -195,21 +202,21 @@ class WKBElement(_SpatialElement):
                 header = data[:9]
             byte_order, wkb_type, wkb_srid = header[0], header[1:5], header[5:]
             byte_order_marker = "<I" if byte_order else ">I"
-            wkb_type = (
-                struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else False
+            wkb_type_int = (
+                int(struct.unpack(byte_order_marker, wkb_type)[0]) if len(wkb_type) == 4 else 0
             )
             if extended is None:
-                if not wkb_type:
+                if not wkb_type_int:
                     extended = False
                 else:
-                    extended = extended or bool(wkb_type & 536870912)  # Check SRID bit
+                    extended = extended or bool(wkb_type_int & 536870912)  # Check SRID bit
             if extended and srid == -1:
                 wkb_srid = struct.unpack(byte_order_marker, wkb_srid)[0]
                 srid = int(wkb_srid)
         _SpatialElement.__init__(self, data, srid, extended)
 
     @property
-    def desc(self):
+    def desc(self) -> str:
         """This element's description string."""
         if isinstance(self.data, str):
             # SpatiaLite case
@@ -218,11 +225,11 @@ class WKBElement(_SpatialElement):
         return desc
 
     @staticmethod
-    def _data_from_desc(desc):
+    def _data_from_desc(desc) -> bytes:
         desc = desc.encode(encoding="utf-8")
         return binascii.unhexlify(desc)
 
-    def as_wkb(self):
+    def as_wkb(self) -> WKBElement:
         if self.extended:
             if isinstance(self.data, str):
                 # SpatiaLite case
@@ -235,24 +242,26 @@ class WKBElement(_SpatialElement):
                 byte_order, wkb_type = self.data[0], self.data[1:5]
 
             byte_order_marker = "<I" if byte_order else ">I"
-            wkb_type = struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else 0
-            wkb_type &= 3758096383  # Set SRID bit to 0 and keep all other bits
+            wkb_type_int = (
+                int(struct.unpack(byte_order_marker, wkb_type)[0]) if len(wkb_type) == 4 else 0
+            )
+            wkb_type_int &= 3758096383  # Set SRID bit to 0 and keep all other bits
 
             if is_hex:
                 wkb_type_hex = binascii.hexlify(
-                    wkb_type.to_bytes(4, "little" if byte_order else "big")
+                    wkb_type_int.to_bytes(4, "little" if byte_order else "big")
                 )
                 data = self.data[:2] + wkb_type_hex.decode("ascii") + self.data[18:]
             else:
                 buffer = bytearray()
                 buffer.extend(self.data[:1])
-                buffer.extend(struct.pack(byte_order_marker, wkb_type))
+                buffer.extend(struct.pack(byte_order_marker, wkb_type_int))
                 buffer.extend(self.data[9:])
                 data = memoryview(buffer)
             return WKBElement(data, self.srid, extended=False)
         return WKBElement(self.data, self.srid)
 
-    def as_ewkb(self):
+    def as_ewkb(self) -> WKBElement:
         if not self.extended and self.srid != -1:
             if isinstance(self.data, str):
                 # SpatiaLite case
@@ -262,12 +271,15 @@ class WKBElement(_SpatialElement):
             else:
                 byte_order, wkb_type = self.data[0], self.data[1:5]
             byte_order_marker = "<I" if byte_order else ">I"
-            wkb_type = struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else 0
-            wkb_type |= 536870912  # Set SRID bit to 1 and keep all other bits
+            wkb_type_int = int(
+                struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else 0
+            )
+            wkb_type_int |= 536870912  # Set SRID bit to 1 and keep all other bits
 
+            data: Union[str, memoryview]
             if isinstance(self.data, str):
                 wkb_type_hex = binascii.hexlify(
-                    wkb_type.to_bytes(4, "little" if byte_order else "big")
+                    wkb_type_int.to_bytes(4, "little" if byte_order else "big")
                 )
                 wkb_srid_hex = binascii.hexlify(
                     self.srid.to_bytes(4, "little" if byte_order else "big")
@@ -281,7 +293,7 @@ class WKBElement(_SpatialElement):
             else:
                 buffer = bytearray()
                 buffer.extend(self.data[:1])
-                buffer.extend(struct.pack(byte_order_marker, wkb_type))
+                buffer.extend(struct.pack(byte_order_marker, wkb_type_int))
                 buffer.extend(struct.pack(byte_order_marker, self.srid))
                 buffer.extend(self.data[5:])
                 data = memoryview(buffer)
@@ -297,24 +309,25 @@ class RasterElement(_SpatialElement):
     most cases you won't need to create ``RasterElement`` instances yourself.
     """
 
-    geom_from_extended_version = "raster"
+    geom_from_extended_version: str = "raster"
 
-    def __init__(self, data):
+    def __init__(self, data: Union[str, bytes, memoryview]) -> None:
         # read srid from the WKB (binary or hexadecimal format)
         # The WKB structure is documented in the file
         # raster/doc/RFC2-WellKnownBinaryFormat of the PostGIS sources.
+        bin_data: Union[str, bytes, memoryview]
         try:
             bin_data = binascii.unhexlify(data[:114])
         except BinasciiError:
             bin_data = data
-            data = str(binascii.hexlify(data).decode(encoding="utf-8"))
+            data = str(binascii.hexlify(data).decode(encoding="utf-8"))  # type: ignore
         byte_order = bin_data[0]
         srid = bin_data[53:57]
-        srid = struct.unpack("<I" if byte_order else ">I", srid)[0]
-        _SpatialElement.__init__(self, data, srid, True)
+        srid = struct.unpack("<I" if byte_order else ">I", srid)[0]  # type: ignore
+        _SpatialElement.__init__(self, data, int(srid), True)
 
     @property
-    def desc(self):
+    def desc(self) -> str:
         """This element's description string."""
         return self.data
 
@@ -326,10 +339,10 @@ class RasterElement(_SpatialElement):
 class CompositeElement(FunctionElement):
     """Instances of this class wrap a Postgres composite type."""
 
-    inherit_cache = False
+    inherit_cache: bool = False
     """The cache is disabled for this class."""
 
-    def __init__(self, base, field, type_):
+    def __init__(self, base, field, type_) -> None:
         self.name = field
         self.type = to_instance(type_)
 
@@ -337,11 +350,11 @@ class CompositeElement(FunctionElement):
 
 
 @compiles(CompositeElement)
-def _compile_pgelem(expr, compiler, **kw):
+def _compile_pgelem(expr, compiler, **kw) -> str:
     return "(%s).%s" % (compiler.process(expr.clauses, **kw), expr.name)
 
 
-__all__ = [
+__all__: List[str] = [
     "_SpatialElement",
     "CompositeElement",
     "RasterElement",
@@ -350,5 +363,5 @@ __all__ = [
 ]
 
 
-def __dir__():
+def __dir__() -> List[str]:
     return __all__
