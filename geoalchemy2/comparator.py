@@ -98,11 +98,11 @@ class BaseComparator(UserDefinedType.Comparator):
         """The ``&&`` operator. A's BBOX intersects B's."""
         return self.operate(INTERSECTS, other, result_type=sqltypes.Boolean)
 
-    def overlaps_or_to_left(self, other: _COMPARATOR_INPUT_TYPE):
+    def overlaps_or_to_left(self, other: _COMPARATOR_INPUT_TYPE) -> ColumnElement:
         """The ``&<`` operator. A's BBOX overlaps or is to the left of B's."""
         return self.operate(OVERLAPS_OR_TO_LEFT, other, result_type=sqltypes.Boolean)
 
-    def overlaps_or_to_right(self, other: _COMPARATOR_INPUT_TYPE):
+    def overlaps_or_to_right(self, other: _COMPARATOR_INPUT_TYPE) -> ColumnElement:
         """The ``&>`` operator. A's BBOX overlaps or is to the right of B's."""
         return self.operate(OVERLAPS_OR_TO_RIGHT, other, result_type=sqltypes.Boolean)
 
