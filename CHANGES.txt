@@ -1,6 +1,14 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.14.1
+------
+
+* Add type annotations @shuttle1987 (#464)
+* Tests: Minor improvements @adrien-berchet (#465)
+* Docs: Add util to replace keywords in docstrings @adrien-berchet (#461)
+* Docs: Fix badges and link to docs @adrien-berchet (#460)
+
 0.14.0
 ------
 
