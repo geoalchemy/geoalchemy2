@@ -10,9 +10,13 @@ import pytest
 from pkg_resources import parse_version
 from sqlalchemy import Integer
 from sqlalchemy import __version__ as SA_VERSION
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
+
+try:
+    from sqlalchemy.orm import DeclarativeBase
+    from sqlalchemy.orm import Mapped
+    from sqlalchemy.orm import mapped_column
+except ImportError:
+    pass
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import WKBElement
