@@ -8,7 +8,6 @@ This example shows how to use GeoAlchemy2 types in this context.
 """
 import pytest
 from pkg_resources import parse_version
-from sqlalchemy import Integer
 from sqlalchemy import __version__ as SA_VERSION
 
 try:
@@ -40,7 +39,7 @@ def test_ORM_mapping(session, conn, schema):
     class Lake(Base):
         __tablename__ = "lake"
         __table_args__ = {"schema": schema}
-        id = mapped_column(Integer, primary_key=True)
+        id: Mapped[int] = mapped_column(primary_key=True)
         mapped_geom: Mapped[WKBElement] = mapped_column(Geometry(geometry_type="POINT", srid=4326))
 
     Lake.__table__.drop(conn, checkfirst=True)
