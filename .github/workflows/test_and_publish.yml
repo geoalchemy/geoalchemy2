@@ -68,7 +68,7 @@ jobs:
         create-args: >-
           ${{ matrix.python-version.pkg_name }}
           libgdal
-          libspatialite
+          libspatialite==5.0.1
           pyproj
         condarc: |
           channels:
