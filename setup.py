@@ -19,6 +19,7 @@ setup(
         "Intended Audience :: Information Technology",
         "License :: OSI Approved :: MIT License",
         "Topic :: Scientific/Engineering :: GIS",
+        "Typing :: Typed",
     ],
     keywords="geo,gis,sqlalchemy,orm",
     author="Eric Lemoine",
@@ -31,6 +32,9 @@ setup(
     license="MIT",
     python_requires=">=3.7",
     packages=find_namespace_packages(include=["geoalchemy2*"]),
+    package_data={
+        "geoalchemy2": ["py.typed"],
+    },
     include_package_data=True,
     zip_safe=False,
     setup_requires=["setuptools_scm"],
