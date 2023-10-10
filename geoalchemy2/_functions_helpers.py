@@ -1,13 +1,6 @@
-from typing import Callable
-from typing import Generic
 from typing import Optional
 from typing import Tuple
-from typing import TypeVar
 from typing import Union
-from typing import cast
-
-from sqlalchemy.sql import functions
-from typing_extensions import ParamSpec
 
 
 def _get_docstring(name: str, doc: Union[None, str, Tuple[str, str]], type_: Optional[type]) -> str:
@@ -51,7 +44,6 @@ from sqlalchemy.sql import functions
 from sqlalchemy.sql.elements import ColumnElement
 
 import geoalchemy2.types
-from geoalchemy2._functions_helpers import _generic_function
 
 class GenericFunction(functions.GenericFunction): ...
 
@@ -79,28 +71,13 @@ class TableRowElement(ColumnElement):
             type_str = f"{type_.__module__}.{type_.__name__}"
 
         signature = f'''\
-@_generic_function
-def {name}(*args: Any, **kwargs: Any) -> {type_str}:
+class _{name}(functions.GenericFunction):
     """{doc}"""
-    ...
+
+    def __call__(self, *args: Any, **kwargs: Any) -> {type_str}: ...
+
+{name}: _{name}
 '''
         stub_file_parts.append(signature)
 
     return "\n".join(stub_file_parts)
-
-
-_P = ParamSpec("_P")
-_R = TypeVar("_R", covariant=True)
-
-
-class _GenericFunction(functions.GenericFunction, Generic[_P, _R]):
-    def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _R:  # type: ignore[empty-body]
-        ...
-
-
-def _generic_function(func: Callable[_P, _R]) -> _GenericFunction[_P, _R]:
-    """Take a regular function and extend it with attributes from sqlalchemy GenericFunction.
-
-    based on https://github.com/python/mypy/issues/2087#issuecomment-1194111648
-    """
-    return cast(_GenericFunction[_P, _R], func)
