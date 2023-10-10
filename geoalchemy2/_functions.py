@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
+
 from geoalchemy2 import types
 
 # fmt: off
-_FUNCTIONS = [
+_FUNCTIONS: List[Tuple[str, Optional[type], Union[None, str, Tuple[str, str]]]] = [
     ('AddGeometryColumn', None,
      '''Adds a geometry column to an existing table.'''),
     ('DropGeometryColumn', None,

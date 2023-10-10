@@ -67,6 +67,7 @@ Reference
 
 """
 import re
+from typing import List
 from typing import Type
 
 from sqlalchemy import inspect
@@ -77,6 +78,7 @@ from sqlalchemy.sql.elements import ColumnElement
 
 from geoalchemy2 import elements
 from geoalchemy2._functions import _FUNCTIONS
+from geoalchemy2._functions_helpers import _get_docstring
 
 _GeoFunctionBase: Type[functions.GenericFunction]
 _GeoFunctionParent: Type[functions.GenericFunction]
@@ -131,11 +133,11 @@ class TableRowElement(ColumnElement):
     inherit_cache: bool = False
     """The cache is disabled for this class."""
 
-    def __init__(self, selectable) -> None:
+    def __init__(self, selectable: bool) -> None:
         self.selectable = selectable
 
     @property
-    def _from_objects(self):
+    def _from_objects(self) -> List[bool]:
         return [self.selectable]
 
 
@@ -262,33 +264,24 @@ __all__ = [
 ]
 
 
-# Iterate through _FUNCTIONS and create GenericFunction classes dynamically
-for name, type_, doc in _FUNCTIONS:
-    attributes = {
-        "name": name,
-        "inherit_cache": True,
-    }
-    docs = []
+def _create_dynamic_functions() -> None:
+    # Iterate through _FUNCTIONS and create GenericFunction classes dynamically
+    for name, type_, doc in _FUNCTIONS:
+        attributes = {
+            "name": name,
+            "inherit_cache": True,
+            "__doc__": _get_docstring(name, doc, type_),
+        }
 
-    if isinstance(doc, tuple):
-        docs.append(doc[0])
-        docs.append("see http://postgis.net/docs/{0}.html".format(doc[1]))
-    elif doc is not None:
-        docs.append(doc)
-        docs.append("see http://postgis.net/docs/{0}.html".format(name))
+        if type_ is not None:
+            attributes["type"] = type_
 
-    if type_ is not None:
-        attributes["type"] = type_
-
-        type_str = "{0}.{1}".format(type_.__module__, type_.__name__)
-        docs.append("Return type: :class:`{0}`.".format(type_str))
-
-    if len(docs) != 0:
-        attributes["__doc__"] = "\n\n".join(docs)
-
-    globals()[name] = type(name, (GenericFunction,), attributes)
-    __all__.append(name)
+        globals()[name] = type(name, (GenericFunction,), attributes)
+        __all__.append(name)
 
 
-def __dir__():
+_create_dynamic_functions()
+
+
+def __dir__() -> list[str]:
     return __all__
