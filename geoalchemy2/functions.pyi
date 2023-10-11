@@ -33,7 +33,7 @@ class _AddGeometryColumn(functions.GenericFunction):
 
     see http://postgis.net/docs/AddGeometryColumn.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 AddGeometryColumn: _AddGeometryColumn
 
@@ -42,7 +42,7 @@ class _DropGeometryColumn(functions.GenericFunction):
 
     see http://postgis.net/docs/DropGeometryColumn.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 DropGeometryColumn: _DropGeometryColumn
 
@@ -51,7 +51,7 @@ class _DropGeometryTable(functions.GenericFunction):
 
     see http://postgis.net/docs/DropGeometryTable.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 DropGeometryTable: _DropGeometryTable
 
@@ -60,7 +60,7 @@ class _Find_SRID(functions.GenericFunction):
 
     see http://postgis.net/docs/Find_SRID.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 Find_SRID: _Find_SRID
 
@@ -69,7 +69,7 @@ class _Populate_Geometry_Columns(functions.GenericFunction):
 
     see http://postgis.net/docs/Populate_Geometry_Columns.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 Populate_Geometry_Columns: _Populate_Geometry_Columns
 
@@ -78,7 +78,7 @@ class _UpdateGeometrySRID(functions.GenericFunction):
 
     see http://postgis.net/docs/UpdateGeometrySRID.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 UpdateGeometrySRID: _UpdateGeometrySRID
 
@@ -199,7 +199,7 @@ class _GeometryType(functions.GenericFunction):
 
     see http://postgis.net/docs/GeometryType.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 GeometryType: _GeometryType
 
@@ -219,7 +219,7 @@ class _ST_CoordDim(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_CoordDim.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_CoordDim: _ST_CoordDim
 
@@ -228,7 +228,7 @@ class _ST_Dimension(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Dimension.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Dimension: _ST_Dimension
 
@@ -327,7 +327,7 @@ class _ST_GeometryType(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_GeometryType.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_GeometryType: _ST_GeometryType
 
@@ -336,7 +336,7 @@ class _ST_HasArc(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_HasArc.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_HasArc: _ST_HasArc
 
@@ -356,7 +356,7 @@ class _ST_IsPolygonCCW(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsPolygonCCW.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsPolygonCCW: _ST_IsPolygonCCW
 
@@ -365,7 +365,7 @@ class _ST_IsPolygonCW(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsPolygonCW.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsPolygonCW: _ST_IsPolygonCW
 
@@ -374,7 +374,7 @@ class _ST_IsClosed(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsClosed.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsClosed: _ST_IsClosed
 
@@ -383,7 +383,7 @@ class _ST_IsCollection(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsCollection.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsCollection: _ST_IsCollection
 
@@ -394,7 +394,7 @@ class _ST_IsEmpty(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsEmpty.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsEmpty: _ST_IsEmpty
 
@@ -403,7 +403,7 @@ class _ST_IsRing(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsRing.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsRing: _ST_IsRing
 
@@ -412,7 +412,7 @@ class _ST_IsSimple(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsSimple.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsSimple: _ST_IsSimple
 
@@ -421,7 +421,7 @@ class _ST_M(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_M.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_M: _ST_M
 
@@ -432,7 +432,7 @@ class _ST_MemSize(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_MemSize.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MemSize: _ST_MemSize
 
@@ -441,7 +441,7 @@ class _ST_NDims(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_NDims.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NDims: _ST_NDims
 
@@ -450,7 +450,7 @@ class _ST_NPoints(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_NPoints.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NPoints: _ST_NPoints
 
@@ -459,7 +459,7 @@ class _ST_NRings(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_NRings.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NRings: _ST_NRings
 
@@ -468,7 +468,7 @@ class _ST_NumGeometries(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_NumGeometries.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumGeometries: _ST_NumGeometries
 
@@ -477,7 +477,7 @@ class _ST_NumInteriorRings(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_NumInteriorRings.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumInteriorRings: _ST_NumInteriorRings
 
@@ -486,7 +486,7 @@ class _ST_NumInteriorRing(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_NumInteriorRing.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumInteriorRing: _ST_NumInteriorRing
 
@@ -495,7 +495,7 @@ class _ST_NumPatches(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_NumPatches.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumPatches: _ST_NumPatches
 
@@ -504,7 +504,7 @@ class _ST_NumPoints(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_NumPoints.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumPoints: _ST_NumPoints
 
@@ -559,7 +559,7 @@ class _ST_Summary(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Summary.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Summary: _ST_Summary
 
@@ -568,7 +568,7 @@ class _ST_X(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_X.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_X: _ST_X
 
@@ -577,7 +577,7 @@ class _ST_Y(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Y.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Y: _ST_Y
 
@@ -586,7 +586,7 @@ class _ST_Z(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Z.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Z: _ST_Z
 
@@ -595,7 +595,7 @@ class _ST_Zmflag(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Zmflag.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Zmflag: _ST_Zmflag
 
@@ -881,7 +881,7 @@ class _ST_IsValid(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsValid.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsValid: _ST_IsValid
 
@@ -890,7 +890,7 @@ class _ST_IsValidDetail(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsValidDetail.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsValidDetail: _ST_IsValidDetail
 
@@ -899,7 +899,7 @@ class _ST_IsValidReason(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsValidReason.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsValidReason: _ST_IsValidReason
 
@@ -923,7 +923,7 @@ class _ST_SRID(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_SRID.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_SRID: _ST_SRID
 
@@ -1187,7 +1187,7 @@ class _ST_Box2dFromGeoHash(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Box2dFromGeoHash.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Box2dFromGeoHash: _ST_Box2dFromGeoHash
 
@@ -1284,7 +1284,7 @@ class _ST_AsEWKT(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsEWKT.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsEWKT: _ST_AsEWKT
 
@@ -1293,7 +1293,7 @@ class _ST_AsText(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsText.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsText: _ST_AsText
 
@@ -1304,7 +1304,7 @@ class _ST_AsBinary(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsBinary.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsBinary: _ST_AsBinary
 
@@ -1313,7 +1313,7 @@ class _ST_AsEWKB(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsEWKB.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsEWKB: _ST_AsEWKB
 
@@ -1322,7 +1322,7 @@ class _ST_AsHEXEWKB(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsHEXEWKB.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsHEXEWKB: _ST_AsHEXEWKB
 
@@ -1331,7 +1331,7 @@ class _ST_AsEncodedPolyline(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsEncodedPolyline.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsEncodedPolyline: _ST_AsEncodedPolyline
 
@@ -1340,7 +1340,7 @@ class _ST_AsGeobuf(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsGeobuf.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsGeobuf: _ST_AsGeobuf
 
@@ -1349,7 +1349,7 @@ class _ST_AsGML(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsGML.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsGML: _ST_AsGML
 
@@ -1358,7 +1358,7 @@ class _ST_AsKML(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsKML.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsKML: _ST_AsKML
 
@@ -1367,7 +1367,7 @@ class _ST_AsLatLonText(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsLatLonText.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsLatLonText: _ST_AsLatLonText
 
@@ -1387,7 +1387,7 @@ class _ST_AsMVT(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsMVT.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsMVT: _ST_AsMVT
 
@@ -1396,7 +1396,7 @@ class _ST_AsSVG(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsSVG.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsSVG: _ST_AsSVG
 
@@ -1405,7 +1405,7 @@ class _ST_AsTWKB(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsTWKB.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsTWKB: _ST_AsTWKB
 
@@ -1414,7 +1414,7 @@ class _ST_AsX3D(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_AsX3D.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsX3D: _ST_AsX3D
 
@@ -1423,7 +1423,7 @@ class _ST_GeoHash(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_GeoHash.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_GeoHash: _ST_GeoHash
 
@@ -1432,7 +1432,7 @@ class _ST_3DIntersects(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_3DIntersects.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DIntersects: _ST_3DIntersects
 
@@ -1443,7 +1443,7 @@ class _ST_Contains(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Contains.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Contains: _ST_Contains
 
@@ -1454,7 +1454,7 @@ class _ST_ContainsProperly(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_ContainsProperly.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ContainsProperly: _ST_ContainsProperly
 
@@ -1465,7 +1465,7 @@ class _ST_Covers(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Covers.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Covers: _ST_Covers
 
@@ -1476,7 +1476,7 @@ class _ST_CoveredBy(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_CoveredBy.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_CoveredBy: _ST_CoveredBy
 
@@ -1485,7 +1485,7 @@ class _ST_Crosses(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Crosses.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Crosses: _ST_Crosses
 
@@ -1494,7 +1494,7 @@ class _ST_LineCrossingDirection(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_LineCrossingDirection.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_LineCrossingDirection: _ST_LineCrossingDirection
 
@@ -1505,7 +1505,7 @@ class _ST_Disjoint(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Disjoint.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Disjoint: _ST_Disjoint
 
@@ -1514,7 +1514,7 @@ class _ST_Equals(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Equals.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Equals: _ST_Equals
 
@@ -1525,7 +1525,7 @@ class _ST_Intersects(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Intersects.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Intersects: _ST_Intersects
 
@@ -1534,7 +1534,7 @@ class _ST_OrderingEquals(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_OrderingEquals.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_OrderingEquals: _ST_OrderingEquals
 
@@ -1545,7 +1545,7 @@ class _ST_Overlaps(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Overlaps.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Overlaps: _ST_Overlaps
 
@@ -1554,7 +1554,7 @@ class _ST_PointInsideCircle(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_PointInsideCircle.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PointInsideCircle: _ST_PointInsideCircle
 
@@ -1563,7 +1563,7 @@ class _ST_Relate(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Relate.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Relate: _ST_Relate
 
@@ -1572,7 +1572,7 @@ class _ST_RelateMatch(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_RelateMatch.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_RelateMatch: _ST_RelateMatch
 
@@ -1583,7 +1583,7 @@ class _ST_Touches(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Touches.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Touches: _ST_Touches
 
@@ -1594,7 +1594,7 @@ class _ST_Within(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Within.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Within: _ST_Within
 
@@ -1603,7 +1603,7 @@ class _ST_3DDWithin(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_3DDWithin.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DDWithin: _ST_3DDWithin
 
@@ -1612,7 +1612,7 @@ class _ST_3DDFullyWithin(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_3DDFullyWithin.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DDFullyWithin: _ST_3DDFullyWithin
 
@@ -1623,7 +1623,7 @@ class _ST_DFullyWithin(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_DFullyWithin.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DFullyWithin: _ST_DFullyWithin
 
@@ -1634,7 +1634,7 @@ class _ST_DWithin(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_DWithin.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DWithin: _ST_DWithin
 
@@ -1643,7 +1643,7 @@ class _ST_Area(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Area.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Area: _ST_Area
 
@@ -1652,7 +1652,7 @@ class _ST_Azimuth(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Azimuth.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Azimuth: _ST_Azimuth
 
@@ -1661,7 +1661,7 @@ class _ST_Angle(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Angle.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Angle: _ST_Angle
 
@@ -1692,7 +1692,7 @@ class _ST_Distance(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Distance.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Distance: _ST_Distance
 
@@ -1701,7 +1701,7 @@ class _ST_3DDistance(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_3DDistance.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DDistance: _ST_3DDistance
 
@@ -1710,7 +1710,7 @@ class _ST_DistanceSphere(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_DistanceSphere.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DistanceSphere: _ST_DistanceSphere
 
@@ -1719,7 +1719,7 @@ class _ST_DistanceSpheroid(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_DistanceSpheroid.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DistanceSpheroid: _ST_DistanceSpheroid
 
@@ -1728,7 +1728,7 @@ class _ST_FrechetDistance(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_FrechetDistance.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_FrechetDistance: _ST_FrechetDistance
 
@@ -1737,7 +1737,7 @@ class _ST_HausdorffDistance(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_HausdorffDistance.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_HausdorffDistance: _ST_HausdorffDistance
 
@@ -1746,7 +1746,7 @@ class _ST_Length(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Length.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Length: _ST_Length
 
@@ -1755,7 +1755,7 @@ class _ST_Length2D(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Length2D.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Length2D: _ST_Length2D
 
@@ -1764,7 +1764,7 @@ class _ST_3DLength(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_3DLength.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DLength: _ST_3DLength
 
@@ -1773,7 +1773,7 @@ class _ST_LengthSpheroid(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_LengthSpheroid.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_LengthSpheroid: _ST_LengthSpheroid
 
@@ -1804,7 +1804,7 @@ class _ST_MaxDistance(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_MaxDistance.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MaxDistance: _ST_MaxDistance
 
@@ -1813,7 +1813,7 @@ class _ST_3DMaxDistance(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_3DMaxDistance.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DMaxDistance: _ST_3DMaxDistance
 
@@ -1822,7 +1822,7 @@ class _ST_MinimumClearance(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_MinimumClearance.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MinimumClearance: _ST_MinimumClearance
 
@@ -1842,7 +1842,7 @@ class _ST_Perimeter(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Perimeter.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Perimeter: _ST_Perimeter
 
@@ -1851,7 +1851,7 @@ class _ST_Perimeter2D(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Perimeter2D.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Perimeter2D: _ST_Perimeter2D
 
@@ -1860,7 +1860,7 @@ class _ST_3DPerimeter(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_3DPerimeter.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DPerimeter: _ST_3DPerimeter
 
@@ -2093,7 +2093,7 @@ class _ST_MinimumBoundingRadius(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_MinimumBoundingRadius.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MinimumBoundingRadius: _ST_MinimumBoundingRadius
 
@@ -2434,7 +2434,7 @@ class _ST_ClusterDBSCAN(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_ClusterDBSCAN.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ClusterDBSCAN: _ST_ClusterDBSCAN
 
@@ -2454,7 +2454,7 @@ class _ST_ClusterKMeans(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_ClusterKMeans.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ClusterKMeans: _ST_ClusterKMeans
 
@@ -2474,7 +2474,7 @@ class _Box2D(functions.GenericFunction):
 
     see http://postgis.net/docs/Box2D_type.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 Box2D: _Box2D
 
@@ -2485,7 +2485,7 @@ class _Box3D(functions.GenericFunction):
 
     see http://postgis.net/docs/Box3D_type.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 Box3D: _Box3D
 
@@ -2494,7 +2494,7 @@ class _ST_EstimatedExtent(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_EstimatedExtent.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_EstimatedExtent: _ST_EstimatedExtent
 
@@ -2514,7 +2514,7 @@ class _ST_Extent(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Extent.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Extent: _ST_Extent
 
@@ -2523,7 +2523,7 @@ class _ST_3DExtent(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_3DExtent.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DExtent: _ST_3DExtent
 
@@ -2532,7 +2532,7 @@ class _ST_MakeBox2D(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_MakeBox2D.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MakeBox2D: _ST_MakeBox2D
 
@@ -2541,7 +2541,7 @@ class _ST_3DMakeBox(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_3DMakeBox.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DMakeBox: _ST_3DMakeBox
 
@@ -2550,7 +2550,7 @@ class _ST_XMax(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_XMax.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_XMax: _ST_XMax
 
@@ -2559,7 +2559,7 @@ class _ST_XMin(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_XMin.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_XMin: _ST_XMin
 
@@ -2568,7 +2568,7 @@ class _ST_YMax(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_YMax.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_YMax: _ST_YMax
 
@@ -2577,7 +2577,7 @@ class _ST_YMin(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_YMin.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_YMin: _ST_YMin
 
@@ -2586,7 +2586,7 @@ class _ST_ZMax(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_ZMax.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ZMax: _ST_ZMax
 
@@ -2595,7 +2595,7 @@ class _ST_ZMin(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_ZMin.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ZMin: _ST_ZMin
 
@@ -2637,7 +2637,7 @@ class _ST_LineLocatePoint(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_LineLocatePoint.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_LineLocatePoint: _ST_LineLocatePoint
 
@@ -2690,7 +2690,7 @@ class _ST_InterpolatePoint(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_InterpolatePoint.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_InterpolatePoint: _ST_InterpolatePoint
 
@@ -2710,7 +2710,7 @@ class _ST_IsValidTrajectory(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsValidTrajectory.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsValidTrajectory: _ST_IsValidTrajectory
 
@@ -2719,7 +2719,7 @@ class _ST_ClosestPointOfApproach(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_ClosestPointOfApproach.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ClosestPointOfApproach: _ST_ClosestPointOfApproach
 
@@ -2728,7 +2728,7 @@ class _ST_DistanceCPA(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_DistanceCPA.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DistanceCPA: _ST_DistanceCPA
 
@@ -2737,7 +2737,7 @@ class _ST_CPAWithin(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_CPAWithin.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_CPAWithin: _ST_CPAWithin
 
@@ -2746,7 +2746,7 @@ class _postgis_sfcgal_version(functions.GenericFunction):
 
     see http://postgis.net/docs/postgis_sfcgal_version.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 postgis_sfcgal_version: _postgis_sfcgal_version
 
@@ -2788,7 +2788,7 @@ class _ST_IsPlanar(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsPlanar.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsPlanar: _ST_IsPlanar
 
@@ -2797,7 +2797,7 @@ class _ST_Orientation(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Orientation.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Orientation: _ST_Orientation
 
@@ -2872,7 +2872,7 @@ class _ST_3DArea(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_3DArea.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DArea: _ST_3DArea
 
@@ -2892,7 +2892,7 @@ class _ST_Volume(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Volume.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Volume: _ST_Volume
 
@@ -2912,7 +2912,7 @@ class _ST_IsSolid(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_IsSolid.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsSolid: _ST_IsSolid
 
@@ -2921,7 +2921,7 @@ class _AddAuth(functions.GenericFunction):
 
     see http://postgis.net/docs/AddAuth.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 AddAuth: _AddAuth
 
@@ -2930,7 +2930,7 @@ class _CheckAuth(functions.GenericFunction):
 
     see http://postgis.net/docs/CheckAuth.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 CheckAuth: _CheckAuth
 
@@ -2939,7 +2939,7 @@ class _DisableLongTransactions(functions.GenericFunction):
 
     see http://postgis.net/docs/DisableLongTransactions.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 DisableLongTransactions: _DisableLongTransactions
 
@@ -2948,7 +2948,7 @@ class _EnableLongTransactions(functions.GenericFunction):
 
     see http://postgis.net/docs/EnableLongTransactions.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 EnableLongTransactions: _EnableLongTransactions
 
@@ -2957,7 +2957,7 @@ class _LockRow(functions.GenericFunction):
 
     see http://postgis.net/docs/LockRow.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 LockRow: _LockRow
 
@@ -2966,7 +2966,7 @@ class _UnlockRows(functions.GenericFunction):
 
     see http://postgis.net/docs/UnlockRows.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 UnlockRows: _UnlockRows
 
@@ -2975,7 +2975,7 @@ class _PostGIS_Extensions_Upgrade(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_Extensions_Upgrade.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Extensions_Upgrade: _PostGIS_Extensions_Upgrade
 
@@ -2984,7 +2984,7 @@ class _PostGIS_Full_Version(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_Full_Version.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Full_Version: _PostGIS_Full_Version
 
@@ -2993,7 +2993,7 @@ class _PostGIS_GEOS_Version(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_GEOS_Version.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_GEOS_Version: _PostGIS_GEOS_Version
 
@@ -3002,7 +3002,7 @@ class _PostGIS_Liblwgeom_Version(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_Liblwgeom_Version.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Liblwgeom_Version: _PostGIS_Liblwgeom_Version
 
@@ -3011,7 +3011,7 @@ class _PostGIS_LibXML_Version(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_LibXML_Version.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_LibXML_Version: _PostGIS_LibXML_Version
 
@@ -3020,7 +3020,7 @@ class _PostGIS_Lib_Build_Date(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_Lib_Build_Date.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Lib_Build_Date: _PostGIS_Lib_Build_Date
 
@@ -3029,7 +3029,7 @@ class _PostGIS_Lib_Version(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_Lib_Version.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Lib_Version: _PostGIS_Lib_Version
 
@@ -3038,7 +3038,7 @@ class _PostGIS_PROJ_Version(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_PROJ_Version.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_PROJ_Version: _PostGIS_PROJ_Version
 
@@ -3047,7 +3047,7 @@ class _PostGIS_Wagyu_Version(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_Wagyu_Version.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Wagyu_Version: _PostGIS_Wagyu_Version
 
@@ -3056,7 +3056,7 @@ class _PostGIS_Scripts_Build_Date(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_Scripts_Build_Date.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Scripts_Build_Date: _PostGIS_Scripts_Build_Date
 
@@ -3065,7 +3065,7 @@ class _PostGIS_Scripts_Installed(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_Scripts_Installed.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Scripts_Installed: _PostGIS_Scripts_Installed
 
@@ -3074,7 +3074,7 @@ class _PostGIS_Scripts_Released(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_Scripts_Released.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Scripts_Released: _PostGIS_Scripts_Released
 
@@ -3083,7 +3083,7 @@ class _PostGIS_Version(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_Version.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Version: _PostGIS_Version
 
@@ -3114,7 +3114,7 @@ class _PostGIS_HasBBox(functions.GenericFunction):
 
     see http://postgis.net/docs/PostGIS_HasBBox.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_HasBBox: _PostGIS_HasBBox
 
@@ -3211,7 +3211,7 @@ class _ST_GeoReference(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_GeoReference.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_GeoReference: _ST_GeoReference
 
@@ -3220,7 +3220,7 @@ class _ST_Height(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Height.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Height: _ST_Height
 
@@ -3229,7 +3229,7 @@ class _ST_MetaData(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_MetaData.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MetaData: _ST_MetaData
 
@@ -3238,7 +3238,7 @@ class _ST_NumBands(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_NumBands.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumBands: _ST_NumBands
 
@@ -3247,7 +3247,7 @@ class _ST_PixelHeight(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_PixelHeight.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelHeight: _ST_PixelHeight
 
@@ -3256,7 +3256,7 @@ class _ST_PixelWidth(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_PixelWidth.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelWidth: _ST_PixelWidth
 
@@ -3265,7 +3265,7 @@ class _ST_ScaleX(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_ScaleX.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ScaleX: _ST_ScaleX
 
@@ -3274,7 +3274,7 @@ class _ST_ScaleY(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_ScaleY.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ScaleY: _ST_ScaleY
 
@@ -3283,7 +3283,7 @@ class _ST_RasterToWorldCoord(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_RasterToWorldCoord.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_RasterToWorldCoord: _ST_RasterToWorldCoord
 
@@ -3292,7 +3292,7 @@ class _ST_RasterToWorldCoordX(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_RasterToWorldCoordX.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_RasterToWorldCoordX: _ST_RasterToWorldCoordX
 
@@ -3301,7 +3301,7 @@ class _ST_RasterToWorldCoordY(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_RasterToWorldCoordY.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_RasterToWorldCoordY: _ST_RasterToWorldCoordY
 
@@ -3310,7 +3310,7 @@ class _ST_Rotation(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Rotation.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Rotation: _ST_Rotation
 
@@ -3319,7 +3319,7 @@ class _ST_SkewX(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_SkewX.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_SkewX: _ST_SkewX
 
@@ -3328,7 +3328,7 @@ class _ST_SkewY(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_SkewY.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_SkewY: _ST_SkewY
 
@@ -3337,7 +3337,7 @@ class _ST_UpperLeftX(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_UpperLeftX.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_UpperLeftX: _ST_UpperLeftX
 
@@ -3346,7 +3346,7 @@ class _ST_UpperLeftY(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_UpperLeftY.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_UpperLeftY: _ST_UpperLeftY
 
@@ -3355,7 +3355,7 @@ class _ST_Width(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Width.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Width: _ST_Width
 
@@ -3364,7 +3364,7 @@ class _ST_WorldToRasterCoord(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_WorldToRasterCoord.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_WorldToRasterCoord: _ST_WorldToRasterCoord
 
@@ -3373,7 +3373,7 @@ class _ST_WorldToRasterCoordX(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_WorldToRasterCoordX.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_WorldToRasterCoordX: _ST_WorldToRasterCoordX
 
@@ -3382,7 +3382,7 @@ class _ST_WorldToRasterCoordY(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_WorldToRasterCoordY.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_WorldToRasterCoordY: _ST_WorldToRasterCoordY
 
@@ -3391,7 +3391,7 @@ class _ST_BandMetaData(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_BandMetaData.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandMetaData: _ST_BandMetaData
 
@@ -3400,7 +3400,7 @@ class _ST_BandNoDataValue(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_BandNoDataValue.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandNoDataValue: _ST_BandNoDataValue
 
@@ -3409,7 +3409,7 @@ class _ST_BandIsNoData(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_BandIsNoData.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandIsNoData: _ST_BandIsNoData
 
@@ -3418,7 +3418,7 @@ class _ST_BandPath(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_BandPath.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandPath: _ST_BandPath
 
@@ -3427,7 +3427,7 @@ class _ST_BandFileSize(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_BandFileSize.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandFileSize: _ST_BandFileSize
 
@@ -3436,7 +3436,7 @@ class _ST_BandFileTimestamp(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_BandFileTimestamp.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandFileTimestamp: _ST_BandFileTimestamp
 
@@ -3445,7 +3445,7 @@ class _ST_BandPixelType(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_BandPixelType.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandPixelType: _ST_BandPixelType
 
@@ -3454,7 +3454,7 @@ class _ST_MinPossibleValue(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_MinPossibleValue.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MinPossibleValue: _ST_MinPossibleValue
 
@@ -3463,7 +3463,7 @@ class _ST_HasNoBand(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_HasNoBand.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_HasNoBand: _ST_HasNoBand
 
@@ -3483,7 +3483,7 @@ class _ST_PixelAsPolygons(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_PixelAsPolygons.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelAsPolygons: _ST_PixelAsPolygons
 
@@ -3503,7 +3503,7 @@ class _ST_PixelAsPoints(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_PixelAsPoints.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelAsPoints: _ST_PixelAsPoints
 
@@ -3523,7 +3523,7 @@ class _ST_PixelAsCentroids(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_PixelAsCentroids.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelAsCentroids: _ST_PixelAsCentroids
 
@@ -3532,7 +3532,7 @@ class _ST_Value(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Value.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Value: _ST_Value
 
@@ -3541,7 +3541,7 @@ class _ST_NearestValue(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_NearestValue.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NearestValue: _ST_NearestValue
 
@@ -3550,7 +3550,7 @@ class _ST_Neighborhood(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Neighborhood.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Neighborhood: _ST_Neighborhood
 
@@ -3581,7 +3581,7 @@ class _ST_DumpValues(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_DumpValues.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DumpValues: _ST_DumpValues
 
@@ -3590,7 +3590,7 @@ class _ST_PixelOfValue(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_PixelOfValue.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelOfValue: _ST_PixelOfValue
 
@@ -3742,7 +3742,7 @@ class _ST_Count(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Count.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Count: _ST_Count
 
@@ -3751,7 +3751,7 @@ class _ST_CountAgg(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_CountAgg.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_CountAgg: _ST_CountAgg
 
@@ -3760,7 +3760,7 @@ class _ST_Histogram(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Histogram.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Histogram: _ST_Histogram
 
@@ -3769,7 +3769,7 @@ class _ST_Quantile(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Quantile.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Quantile: _ST_Quantile
 
@@ -3778,7 +3778,7 @@ class _ST_SummaryStats(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_SummaryStats.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_SummaryStats: _ST_SummaryStats
 
@@ -3798,7 +3798,7 @@ class _ST_ValueCount(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_ValueCount.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ValueCount: _ST_ValueCount
 
@@ -3829,7 +3829,7 @@ class _ST_AsWKB(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_AsBinary.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsWKB: _ST_AsWKB
 
@@ -3838,7 +3838,7 @@ class _ST_AsHexWKB(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_AsHexWKB.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsHexWKB: _ST_AsHexWKB
 
@@ -3847,7 +3847,7 @@ class _ST_AsGDALRaster(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_AsGDALRaster.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsGDALRaster: _ST_AsGDALRaster
 
@@ -3856,7 +3856,7 @@ class _ST_AsJPEG(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_AsJPEG.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsJPEG: _ST_AsJPEG
 
@@ -3865,7 +3865,7 @@ class _ST_AsPNG(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_AsPNG.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsPNG: _ST_AsPNG
 
@@ -3874,7 +3874,7 @@ class _ST_AsTIFF(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_AsTIFF.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsTIFF: _ST_AsTIFF
 
@@ -3918,7 +3918,7 @@ class _ST_MapAlgebra(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_MapAlgebra.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MapAlgebra: _ST_MapAlgebra
 
@@ -3975,7 +3975,7 @@ class _ST_Distinct4ma(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Distinct4ma.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Distinct4ma: _ST_Distinct4ma
 
@@ -3984,7 +3984,7 @@ class _ST_InvDistWeight4ma(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_InvDistWeight4ma.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_InvDistWeight4ma: _ST_InvDistWeight4ma
 
@@ -3993,7 +3993,7 @@ class _ST_Max4ma(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Max4ma.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Max4ma: _ST_Max4ma
 
@@ -4002,7 +4002,7 @@ class _ST_Mean4ma(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Mean4ma.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Mean4ma: _ST_Mean4ma
 
@@ -4011,7 +4011,7 @@ class _ST_Min4ma(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Min4ma.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Min4ma: _ST_Min4ma
 
@@ -4020,7 +4020,7 @@ class _ST_MinDist4ma(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_MinDist4ma.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MinDist4ma: _ST_MinDist4ma
 
@@ -4029,7 +4029,7 @@ class _ST_Range4ma(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Range4ma.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Range4ma: _ST_Range4ma
 
@@ -4038,7 +4038,7 @@ class _ST_StdDev4ma(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_StdDev4ma.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_StdDev4ma: _ST_StdDev4ma
 
@@ -4047,7 +4047,7 @@ class _ST_Sum4ma(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_Sum4ma.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Sum4ma: _ST_Sum4ma
 
@@ -4122,7 +4122,7 @@ class _ST_DumpAsPolygons(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_DumpAsPolygons.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DumpAsPolygons: _ST_DumpAsPolygons
 
@@ -4142,7 +4142,7 @@ class _ST_SameAlignment(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_SameAlignment.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_SameAlignment: _ST_SameAlignment
 
@@ -4151,7 +4151,7 @@ class _ST_NotSameAlignmentReason(functions.GenericFunction):
 
     see http://postgis.net/docs/RT_ST_NotSameAlignmentReason.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NotSameAlignmentReason: _ST_NotSameAlignmentReason
 
@@ -4160,6 +4160,6 @@ class _ST_Distance_Sphere(functions.GenericFunction):
 
     see http://postgis.net/docs/ST_Distance_Sphere.html"""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Distance_Sphere: _ST_Distance_Sphere

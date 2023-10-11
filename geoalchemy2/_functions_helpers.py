@@ -64,7 +64,7 @@ class TableRowElement(ColumnElement):
         doc = _replace_indent(_get_docstring(name, doc, type_), "    ")
 
         if type_ is None:
-            type_str = "None"
+            type_str = "Any"
         elif type_.__module__ == "builtins":
             type_str = type_.__name__
         else:
