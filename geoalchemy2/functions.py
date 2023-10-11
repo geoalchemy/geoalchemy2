@@ -283,5 +283,5 @@ def _create_dynamic_functions() -> None:
 _create_dynamic_functions()
 
 
-def __dir__() -> list[str]:
+def __dir__() -> List[str]:
     return __all__
