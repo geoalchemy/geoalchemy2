@@ -2,10 +2,33 @@
 Tests
 =====
 
-(instructions for Ubuntu 22.04)
+Test Container
+==============
+
+Instead of installing the necessary requirements onto your host machine, the `test_container/` directory contains
+instructions for building a docker image with all the necessary requirements for running the tests across all
+supported python versions. When you are finished the container and associated data can be removed.
+
+Install and run the container::
+
+    $ ./test_container/build.sh
+    $ ./test_container/run.sh
+
+Run the tests inside the container::
+
+    # tox --workdir /output -vv
+
+Remove the container and associated data::
+
+    $ sudo rm -rf test_container/output
+    $ docker image rm geoalchemy2
+    $ docker system prune
+
 
 Install system dependencies
 ===========================
+
+(instructions for Ubuntu 22.04)
 
 Install PostgreSQL and PostGIS::
 
