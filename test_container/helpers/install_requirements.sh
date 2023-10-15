@@ -3,15 +3,32 @@ set -e
 
 # based on geoalchemy2/TEST.rst
 packages=(
-    # for creating a virtual environment
-    python3-dev
-    python3-venv
+    # for managing virtual environments
+    tox
+    git
+    pypy3
+    pypy3-dev
+    pypy3-venv
+    python3.7
+    python3.7-dev
+    python3.7-venv
+    python3.8
+    python3.8-dev
+    python3.8-venv
+    python3.9
+    python3.9-dev
+    python3.9-venv
+    python3.10
+    python3.10-dev
+    python3.10-venv
+    python3.11
+    python3.11-dev
+    python3.11-venv
 
     # PostgreSQL and PostGIS
     postgresql
     postgresql-14-postgis-3
     postgresql-14-postgis-3-scripts
-    python3-dev
     libpq-dev
     libgeos-dev
 
@@ -25,13 +42,19 @@ packages=(
 
     # mysqlclient requirements
     # https://github.com/PyMySQL/mysqlclient#linux
-    python3-dev
     default-libmysqlclient-dev
     build-essential
     pkg-config
+
+    # rasterio requirements with pypy
+    libgdal-dev
 )
 
 export DEBIAN_FRONTEND=noninteractive
+
+apt-get update -y
+apt-get install --no-install-recommends -y software-properties-common gnupg2
+add-apt-repository ppa:deadsnakes/ppa
 apt-get update -y
 
 apt-get install --no-install-recommends -y "${packages[@]}"

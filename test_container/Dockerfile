@@ -3,10 +3,6 @@ FROM ubuntu:22.04
 COPY ./helpers/install_requirements.sh /
 RUN /install_requirements.sh
 
-COPY ./helpers/requirements.txt /
-RUN python3 -m venv /venv && \
-    /venv/bin/pip install --no-cache -r /requirements.txt
-
 COPY ./helpers/init_postgres.sh /
 env PGDATA="/var/lib/postgresql/data"
 env POSTGRES_PATH="/usr/lib/postgresql/14"
