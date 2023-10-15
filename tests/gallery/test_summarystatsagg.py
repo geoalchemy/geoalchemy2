@@ -40,7 +40,7 @@ class SummaryStatsCustomType(CompositeType):
 
 
 class ST_SummaryStatsAgg(GenericFunction):
-    type = SummaryStatsCustomType
+    type = SummaryStatsCustomType  # type: ignore[assignment]
     # Set a specific identifier to not override the actual ST_SummaryStatsAgg function
     identifier = "ST_SummaryStatsAgg_custom"
 
