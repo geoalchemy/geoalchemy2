@@ -21,6 +21,8 @@ echo ""
 echo 'run tests with `tox --workdir /output -vv`'
 echo "###############################"
 
+###############################
+# workarounds to get the tests working while mounting the code in as read-only
 mkdir /geoalchemy2
 find /geoalchemy2_read_only -mindepth 1 -maxdepth 1 | while read -r item; do
     ln -s "${item}" "/geoalchemy2/$(basename "${item}")"
@@ -48,5 +50,7 @@ git config --global user.name "user"
 git init > /dev/null
 git add --all
 git commit -m "dummy commit" > /dev/null
+
+###############################
 
 exec bash
