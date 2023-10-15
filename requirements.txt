@@ -7,3 +7,5 @@ pytest-cov
 pytest-html
 pytest-mypy
 rasterio
+shapely
+psycopg2

@@ -2,12 +2,14 @@
 Tests
 =====
 
+(instructions for Ubuntu 22.04)
+
 Install system dependencies
 ===========================
 
 Install PostgreSQL and PostGIS::
 
-    $ sudo apt-get install postgresql postgis
+    $ sudo apt-get install postgresql postgresql-14-postgis-3 postgresql-14-postgis-3-scripts
 
 Install the Python and PostgreSQL development packages::
 
@@ -24,7 +26,6 @@ Install MySQL::
 Install the Python dependencies::
 
     $ pip install -r requirements.txt
-    $ pip install psycopg2
 
 Or you can use the Conda environment provided in the `GeoAlchemy2_dev.yml` file.
 
@@ -71,7 +72,7 @@ Create the ``gis`` role::
 
 Create the ``gis`` database::
 
-    $ mysql -u gis -p -e "CREATE DATABASE gis;"
+    $ mysql -u gis --password=gis -e "CREATE DATABASE gis;"
 
 Run Tests
 =========
