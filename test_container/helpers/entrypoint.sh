@@ -29,27 +29,27 @@ find /geoalchemy2_read_only -mindepth 1 -maxdepth 1 | while read -r item; do
 done
 
 cd /geoalchemy2
-rm -f .mypy_cache
-rm .git
-rm .gitignore
 
-rm /geoalchemy2/doc
+# remove links that would cause issues if they stay read-only
+rm -f .mypy_cache .eggs .git .gitignore doc reports
+
+# copy these items instead of symlinking
 cp -r /geoalchemy2_read_only/doc /geoalchemy2/doc
+cp /geoalchemy2_read_only/.gitignore ./
 
-export MYPY_CACHE_DIR=/output/.mypy_cache
-
+# store reports in the output directory
 mkdir -p /output/reports
-rm -f /geoalchemy2/reports
 ln -s /output/reports /geoalchemy2/reports
 
 # to allow pre-commit to run
-cp /geoalchemy2_read_only/.gitignore ./
 git config --global init.defaultBranch master
 git config --global user.email "user@example.com"
 git config --global user.name "user"
 git init > /dev/null
 git add --all
 git commit -m "dummy commit" > /dev/null
+
+export MYPY_CACHE_DIR=/output/.mypy_cache
 
 ###############################
 
