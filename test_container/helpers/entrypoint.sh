@@ -30,8 +30,8 @@ done
 
 cd /geoalchemy2
 
-# remove links that would cause issues if they stay read-only
-rm -f .mypy_cache .eggs .git .gitignore doc reports
+# remove links that would cause issues if they are present and read-only
+rm -f .mypy_cache .eggs *.egg-info .git .gitignore doc reports
 
 # copy these items instead of symlinking
 cp -r /geoalchemy2_read_only/doc /geoalchemy2/doc
