@@ -18,4147 +18,5087 @@ class TableRowElement(ColumnElement):
     def _from_objects(self) -> List[bool]: ...  # type: ignore[override]
 
 class _ST_AsGeoJSON(functions.GenericFunction):
-    """Return the geometry as a GeoJSON "geometry" object, or the row as a GeoJSON feature" object (PostGIS 3 only). (Cf GeoJSON specifications RFC 7946). 2D and 3D Geometries are both supported. GeoJSON only support SFS 1.1 geometry types (no curve support for example). See https://postgis.net/docs/ST_AsGeoJSON.html
+    """
+    Return the geometry as a GeoJSON "geometry" object, or the row as a GeoJSON feature" object (PostGIS
+    3 only). (Cf GeoJSON specifications RFC 7946). 2D and 3D Geometries are both supported. GeoJSON only
+    support SFS 1.1 geometry types (no curve support for example). See
+    https://postgis.net/docs/ST_AsGeoJSON.html
 
-    see http://postgis.net/docs/ST_AsGeoJSON.html
+    see https://postgis.net/docs/ST_AsGeoJSON.html
 
-    Return type: :class:`builtins.str`."""
+    Return type: :class:`builtins.str`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> str: ...
 
 ST_AsGeoJSON: _ST_AsGeoJSON
 
 class _AddGeometryColumn(functions.GenericFunction):
-    """Adds a geometry column to an existing table.
+    """
+    Adds a geometry column to an existing table.
 
-    see http://postgis.net/docs/AddGeometryColumn.html"""
+    see https://postgis.net/docs/AddGeometryColumn.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 AddGeometryColumn: _AddGeometryColumn
 
 class _DropGeometryColumn(functions.GenericFunction):
-    """Removes a geometry column from a spatial table.
+    """
+    Removes a geometry column from a spatial table.
 
-    see http://postgis.net/docs/DropGeometryColumn.html"""
+    see https://postgis.net/docs/DropGeometryColumn.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 DropGeometryColumn: _DropGeometryColumn
 
 class _DropGeometryTable(functions.GenericFunction):
-    """Drops a table and all its references in geometry_columns.
+    """
+    Drops a table and all its references in geometry_columns.
 
-    see http://postgis.net/docs/DropGeometryTable.html"""
+    see https://postgis.net/docs/DropGeometryTable.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 DropGeometryTable: _DropGeometryTable
 
 class _Find_SRID(functions.GenericFunction):
-    """Returns the SRID defined for a geometry column.
+    """
+    Returns the SRID defined for a geometry column.
 
-    see http://postgis.net/docs/Find_SRID.html"""
+    see https://postgis.net/docs/Find_SRID.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 Find_SRID: _Find_SRID
 
 class _Populate_Geometry_Columns(functions.GenericFunction):
-    """Ensures geometry columns are defined with type modifiers or have appropriate spatial constraints.
+    """
+    Ensures geometry columns are defined with type modifiers or have appropriate spatial constraints.
 
-    see http://postgis.net/docs/Populate_Geometry_Columns.html"""
+    see https://postgis.net/docs/Populate_Geometry_Columns.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 Populate_Geometry_Columns: _Populate_Geometry_Columns
 
 class _UpdateGeometrySRID(functions.GenericFunction):
-    """Updates the SRID of all features in a geometry column, and the table metadata.
+    """
+    Updates the SRID of all features in a geometry column, and the table metadata.
 
-    see http://postgis.net/docs/UpdateGeometrySRID.html"""
+    see https://postgis.net/docs/UpdateGeometrySRID.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 UpdateGeometrySRID: _UpdateGeometrySRID
 
 class _ST_Collect(functions.GenericFunction):
-    """Creates a GeometryCollection or Multi* geometry from a set of geometries.
+    """
+    Creates a GeometryCollection or Multi* geometry from a set of geometries.
 
-    see http://postgis.net/docs/ST_Collect.html
+    see https://postgis.net/docs/ST_Collect.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Collect: _ST_Collect
 
 class _ST_LineFromMultiPoint(functions.GenericFunction):
-    """Creates a LineString from a MultiPoint geometry.
+    """
+    Creates a LineString from a MultiPoint geometry.
 
-    see http://postgis.net/docs/ST_LineFromMultiPoint.html
+    see https://postgis.net/docs/ST_LineFromMultiPoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LineFromMultiPoint: _ST_LineFromMultiPoint
 
 class _ST_MakeEnvelope(functions.GenericFunction):
-    """Creates a rectangular Polygon from minimum and maximum coordinates.
+    """
+    Creates a rectangular Polygon from minimum and maximum coordinates.
 
-    see http://postgis.net/docs/ST_MakeEnvelope.html
+    see https://postgis.net/docs/ST_MakeEnvelope.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MakeEnvelope: _ST_MakeEnvelope
 
 class _ST_MakeLine(functions.GenericFunction):
-    """Creates a Linestring from Point, MultiPoint, or LineString geometries.
+    """
+    Creates a Linestring from Point, MultiPoint, or LineString geometries.
 
-    see http://postgis.net/docs/ST_MakeLine.html
+    see https://postgis.net/docs/ST_MakeLine.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MakeLine: _ST_MakeLine
 
 class _ST_MakePoint(functions.GenericFunction):
-    """Creates a 2D, 3DZ or 4D Point.
+    """
+    Creates a 2D, 3DZ or 4D Point.
 
-    see http://postgis.net/docs/ST_MakePoint.html
+    see https://postgis.net/docs/ST_MakePoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MakePoint: _ST_MakePoint
 
 class _ST_MakePointM(functions.GenericFunction):
-    """Creates a Point from X, Y and M values.
+    """
+    Creates a Point from X, Y and M values.
 
-    see http://postgis.net/docs/ST_MakePointM.html
+    see https://postgis.net/docs/ST_MakePointM.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MakePointM: _ST_MakePointM
 
 class _ST_MakePolygon(functions.GenericFunction):
-    """Creates a Polygon from a shell and optional list of holes.
+    """
+    Creates a Polygon from a shell and optional list of holes.
 
-    see http://postgis.net/docs/ST_MakePolygon.html
+    see https://postgis.net/docs/ST_MakePolygon.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MakePolygon: _ST_MakePolygon
 
 class _ST_Point(functions.GenericFunction):
-    """Creates a Point with the given coordinate values. Alias for ST_MakePoint.
+    """
+    Creates a Point with the given coordinate values. Alias for ST_MakePoint.
 
-    see http://postgis.net/docs/ST_Point.html
+    see https://postgis.net/docs/ST_Point.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Point: _ST_Point
 
 class _ST_Polygon(functions.GenericFunction):
-    """[geometry] Creates a Polygon from a LineString with a specified SRID.
-    OR
-    [raster] Returns a multipolygon geometry formed by the union of pixels that have a pixel value that is not no data value. If no band number is specified, band num defaults to 1.
+    """
+    [geometry] Creates a Polygon from a LineString with a specified SRID. OR [raster] Returns a
+    multipolygon geometry formed by the union of pixels that have a pixel value that is not no data
+    value. If no band number is specified, band num defaults to 1.
 
-    see http://postgis.net/docs/ST_Polygon.html
+    see https://postgis.net/docs/ST_Polygon.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Polygon: _ST_Polygon
 
 class _ST_TileEnvelope(functions.GenericFunction):
-    """Creates a rectangular Polygon in Web Mercator (SRID:3857) using the XYZ tile system.
+    """
+    Creates a rectangular Polygon in Web Mercator (SRID:3857) using the XYZ tile system.
 
-    see http://postgis.net/docs/ST_TileEnvelope.html
+    see https://postgis.net/docs/ST_TileEnvelope.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_TileEnvelope: _ST_TileEnvelope
 
 class _GeometryType(functions.GenericFunction):
-    """Returns the type of a geometry as text.
+    """
+    Returns the type of a geometry as text.
 
-    see http://postgis.net/docs/GeometryType.html"""
+    see https://postgis.net/docs/GeometryType.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 GeometryType: _GeometryType
 
 class _ST_Boundary(functions.GenericFunction):
-    """Returns the boundary of a geometry.
+    """
+    Returns the boundary of a geometry.
 
-    see http://postgis.net/docs/ST_Boundary.html
+    see https://postgis.net/docs/ST_Boundary.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Boundary: _ST_Boundary
 
 class _ST_CoordDim(functions.GenericFunction):
-    """Return the coordinate dimension of a geometry.
+    """
+    Return the coordinate dimension of a geometry.
 
-    see http://postgis.net/docs/ST_CoordDim.html"""
+    see https://postgis.net/docs/ST_CoordDim.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_CoordDim: _ST_CoordDim
 
 class _ST_Dimension(functions.GenericFunction):
-    """Returns the topological dimension of a geometry.
+    """
+    Returns the topological dimension of a geometry.
 
-    see http://postgis.net/docs/ST_Dimension.html"""
+    see https://postgis.net/docs/ST_Dimension.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Dimension: _ST_Dimension
 
 class _ST_Dump(functions.GenericFunction):
-    """Returns a set of geometry_dump rows for the components of a geometry.
+    """
+    Returns a set of geometry_dump rows for the components of a geometry.
 
-    see http://postgis.net/docs/ST_Dump.html
+    see https://postgis.net/docs/ST_Dump.html
 
-    Return type: :class:`geoalchemy2.types.GeometryDump`."""
+    Return type: :class:`geoalchemy2.types.GeometryDump`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.GeometryDump: ...
 
 ST_Dump: _ST_Dump
 
 class _ST_DumpPoints(functions.GenericFunction):
-    """Returns a set of geometry_dump rows for the points in a geometry.
+    """
+    Returns a set of geometry_dump rows for the points in a geometry.
 
-    see http://postgis.net/docs/ST_DumpPoints.html
+    see https://postgis.net/docs/ST_DumpPoints.html
 
-    Return type: :class:`geoalchemy2.types.GeometryDump`."""
+    Return type: :class:`geoalchemy2.types.GeometryDump`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.GeometryDump: ...
 
 ST_DumpPoints: _ST_DumpPoints
 
 class _ST_DumpRings(functions.GenericFunction):
-    """Returns a set of geometry_dump rows for the exterior and interior rings of a Polygon.
+    """
+    Returns a set of geometry_dump rows for the exterior and interior rings of a Polygon.
 
-    see http://postgis.net/docs/ST_DumpRings.html
+    see https://postgis.net/docs/ST_DumpRings.html
 
-    Return type: :class:`geoalchemy2.types.GeometryDump`."""
+    Return type: :class:`geoalchemy2.types.GeometryDump`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.GeometryDump: ...
 
 ST_DumpRings: _ST_DumpRings
 
 class _ST_EndPoint(functions.GenericFunction):
-    """Returns the last point of a LineString or CircularLineString.
+    """
+    Returns the last point of a LineString or CircularLineString.
 
-    see http://postgis.net/docs/ST_EndPoint.html
+    see https://postgis.net/docs/ST_EndPoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_EndPoint: _ST_EndPoint
 
 class _ST_Envelope(functions.GenericFunction):
-    """[geometry] Returns a geometry representing the bounding box of a geometry.
-    OR
-    [raster] Returns the polygon representation of the extent of the raster.
+    """
+    [geometry] Returns a geometry representing the bounding box of a geometry. OR [raster] Returns the
+    polygon representation of the extent of the raster.
 
-    see http://postgis.net/docs/ST_Envelope.html
+    see https://postgis.net/docs/ST_Envelope.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Envelope: _ST_Envelope
 
 class _ST_BoundingDiagonal(functions.GenericFunction):
-    """Returns the diagonal of a geometry's bounding box.
+    """
+    Returns the diagonal of a geometry's bounding box.
 
-    see http://postgis.net/docs/ST_BoundingDiagonal.html
+    see https://postgis.net/docs/ST_BoundingDiagonal.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_BoundingDiagonal: _ST_BoundingDiagonal
 
 class _ST_ExteriorRing(functions.GenericFunction):
-    """Returns a LineString representing the exterior ring of a Polygon.
+    """
+    Returns a LineString representing the exterior ring of a Polygon.
 
-    see http://postgis.net/docs/ST_ExteriorRing.html
+    see https://postgis.net/docs/ST_ExteriorRing.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ExteriorRing: _ST_ExteriorRing
 
 class _ST_GeometryN(functions.GenericFunction):
-    """Return the Nth geometry element of a geometry collection.
+    """
+    Return the Nth geometry element of a geometry collection.
 
-    see http://postgis.net/docs/ST_GeometryN.html
+    see https://postgis.net/docs/ST_GeometryN.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeometryN: _ST_GeometryN
 
 class _ST_GeometryType(functions.GenericFunction):
-    """Returns the SQL-MM type of a geometry as text.
+    """
+    Returns the SQL-MM type of a geometry as text.
 
-    see http://postgis.net/docs/ST_GeometryType.html"""
+    see https://postgis.net/docs/ST_GeometryType.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_GeometryType: _ST_GeometryType
 
 class _ST_HasArc(functions.GenericFunction):
-    """Tests if a geometry contains a circular arc
+    """
+    Tests if a geometry contains a circular arc
 
-    see http://postgis.net/docs/ST_HasArc.html"""
+    see https://postgis.net/docs/ST_HasArc.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_HasArc: _ST_HasArc
 
 class _ST_InteriorRingN(functions.GenericFunction):
-    """Returns the Nth interior ring (hole) of a Polygon.
+    """
+    Returns the Nth interior ring (hole) of a Polygon.
 
-    see http://postgis.net/docs/ST_InteriorRingN.html
+    see https://postgis.net/docs/ST_InteriorRingN.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_InteriorRingN: _ST_InteriorRingN
 
 class _ST_IsPolygonCCW(functions.GenericFunction):
-    """Tests if Polygons have exterior rings oriented counter-clockwise and interior rings oriented clockwise.
+    """
+    Tests if Polygons have exterior rings oriented counter-clockwise and interior rings oriented
+    clockwise.
 
-    see http://postgis.net/docs/ST_IsPolygonCCW.html"""
+    see https://postgis.net/docs/ST_IsPolygonCCW.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsPolygonCCW: _ST_IsPolygonCCW
 
 class _ST_IsPolygonCW(functions.GenericFunction):
-    """Tests if Polygons have exterior rings oriented clockwise and interior rings oriented counter-clockwise.
+    """
+    Tests if Polygons have exterior rings oriented clockwise and interior rings oriented counter-
+    clockwise.
 
-    see http://postgis.net/docs/ST_IsPolygonCW.html"""
+    see https://postgis.net/docs/ST_IsPolygonCW.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsPolygonCW: _ST_IsPolygonCW
 
 class _ST_IsClosed(functions.GenericFunction):
-    """Tests if a LineStrings's start and end points are coincident. For a PolyhedralSurface tests if it is closed (volumetric).
+    """
+    Tests if a LineStrings's start and end points are coincident. For a PolyhedralSurface tests if it is
+    closed (volumetric).
 
-    see http://postgis.net/docs/ST_IsClosed.html"""
+    see https://postgis.net/docs/ST_IsClosed.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsClosed: _ST_IsClosed
 
 class _ST_IsCollection(functions.GenericFunction):
-    """Tests if a geometry is a geometry collection type.
+    """
+    Tests if a geometry is a geometry collection type.
 
-    see http://postgis.net/docs/ST_IsCollection.html"""
+    see https://postgis.net/docs/ST_IsCollection.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsCollection: _ST_IsCollection
 
 class _ST_IsEmpty(functions.GenericFunction):
-    """[geometry] Tests if a geometry is empty.
-    OR
-    [raster] Returns true if the raster is empty (width = 0 and height = 0). Otherwise, returns false.
+    """
+    [geometry] Tests if a geometry is empty. OR [raster] Returns true if the raster is empty (width = 0
+    and height = 0). Otherwise, returns false.
 
-    see http://postgis.net/docs/ST_IsEmpty.html"""
+    see https://postgis.net/docs/ST_IsEmpty.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsEmpty: _ST_IsEmpty
 
 class _ST_IsRing(functions.GenericFunction):
-    """Tests if a LineString is closed and simple.
+    """
+    Tests if a LineString is closed and simple.
 
-    see http://postgis.net/docs/ST_IsRing.html"""
+    see https://postgis.net/docs/ST_IsRing.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsRing: _ST_IsRing
 
 class _ST_IsSimple(functions.GenericFunction):
-    """Tests if a geometry has no points of self-intersection or self-tangency.
+    """
+    Tests if a geometry has no points of self-intersection or self-tangency.
 
-    see http://postgis.net/docs/ST_IsSimple.html"""
+    see https://postgis.net/docs/ST_IsSimple.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsSimple: _ST_IsSimple
 
 class _ST_M(functions.GenericFunction):
-    """Returns the M coordinate of a Point.
+    """
+    Returns the M coordinate of a Point.
 
-    see http://postgis.net/docs/ST_M.html"""
+    see https://postgis.net/docs/ST_M.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_M: _ST_M
 
 class _ST_MemSize(functions.GenericFunction):
-    """[geometry] Returns the amount of memory space a geometry takes.
-    OR
-    [raster] Returns the amount of space (in bytes) the raster takes.
+    """
+    [geometry] Returns the amount of memory space a geometry takes. OR [raster] Returns the amount of
+    space (in bytes) the raster takes.
 
-    see http://postgis.net/docs/ST_MemSize.html"""
+    see https://postgis.net/docs/ST_MemSize.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MemSize: _ST_MemSize
 
 class _ST_NDims(functions.GenericFunction):
-    """Returns the coordinate dimension of a geometry.
+    """
+    Returns the coordinate dimension of a geometry.
 
-    see http://postgis.net/docs/ST_NDims.html"""
+    see https://postgis.net/docs/ST_NDims.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NDims: _ST_NDims
 
 class _ST_NPoints(functions.GenericFunction):
-    """Returns the number of points (vertices) in a geometry.
+    """
+    Returns the number of points (vertices) in a geometry.
 
-    see http://postgis.net/docs/ST_NPoints.html"""
+    see https://postgis.net/docs/ST_NPoints.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NPoints: _ST_NPoints
 
 class _ST_NRings(functions.GenericFunction):
-    """Returns the number of rings in a polygonal geometry.
+    """
+    Returns the number of rings in a polygonal geometry.
 
-    see http://postgis.net/docs/ST_NRings.html"""
+    see https://postgis.net/docs/ST_NRings.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NRings: _ST_NRings
 
 class _ST_NumGeometries(functions.GenericFunction):
-    """Returns the number of elements in a geometry collection.
+    """
+    Returns the number of elements in a geometry collection.
 
-    see http://postgis.net/docs/ST_NumGeometries.html"""
+    see https://postgis.net/docs/ST_NumGeometries.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumGeometries: _ST_NumGeometries
 
 class _ST_NumInteriorRings(functions.GenericFunction):
-    """Returns the number of interior rings (holes) of a Polygon.
+    """
+    Returns the number of interior rings (holes) of a Polygon.
 
-    see http://postgis.net/docs/ST_NumInteriorRings.html"""
+    see https://postgis.net/docs/ST_NumInteriorRings.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumInteriorRings: _ST_NumInteriorRings
 
 class _ST_NumInteriorRing(functions.GenericFunction):
-    """Returns the number of interior rings (holes) of a Polygon. Aias for ST_NumInteriorRings
+    """
+    Returns the number of interior rings (holes) of a Polygon. Aias for ST_NumInteriorRings
 
-    see http://postgis.net/docs/ST_NumInteriorRing.html"""
+    see https://postgis.net/docs/ST_NumInteriorRing.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumInteriorRing: _ST_NumInteriorRing
 
 class _ST_NumPatches(functions.GenericFunction):
-    """Return the number of faces on a Polyhedral Surface. Will return null for non-polyhedral geometries.
+    """
+    Return the number of faces on a Polyhedral Surface. Will return null for non-polyhedral geometries.
 
-    see http://postgis.net/docs/ST_NumPatches.html"""
+    see https://postgis.net/docs/ST_NumPatches.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumPatches: _ST_NumPatches
 
 class _ST_NumPoints(functions.GenericFunction):
-    """Returns the number of points in a LineString or CircularString.
+    """
+    Returns the number of points in a LineString or CircularString.
 
-    see http://postgis.net/docs/ST_NumPoints.html"""
+    see https://postgis.net/docs/ST_NumPoints.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumPoints: _ST_NumPoints
 
 class _ST_PatchN(functions.GenericFunction):
-    """Returns the Nth geometry (face) of a PolyhedralSurface.
+    """
+    Returns the Nth geometry (face) of a PolyhedralSurface.
 
-    see http://postgis.net/docs/ST_PatchN.html
+    see https://postgis.net/docs/ST_PatchN.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_PatchN: _ST_PatchN
 
 class _ST_PointN(functions.GenericFunction):
-    """Returns the Nth point in the first LineString or circular LineString in a geometry.
+    """
+    Returns the Nth point in the first LineString or circular LineString in a geometry.
 
-    see http://postgis.net/docs/ST_PointN.html
+    see https://postgis.net/docs/ST_PointN.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_PointN: _ST_PointN
 
 class _ST_Points(functions.GenericFunction):
-    """Returns a MultiPoint containing all the coordinates of a geometry.
+    """
+    Returns a MultiPoint containing all the coordinates of a geometry.
 
-    see http://postgis.net/docs/ST_Points.html
+    see https://postgis.net/docs/ST_Points.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Points: _ST_Points
 
 class _ST_StartPoint(functions.GenericFunction):
-    """Returns the first point of a LineString.
+    """
+    Returns the first point of a LineString.
 
-    see http://postgis.net/docs/ST_StartPoint.html
+    see https://postgis.net/docs/ST_StartPoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_StartPoint: _ST_StartPoint
 
 class _ST_Summary(functions.GenericFunction):
-    """[geometry] Returns a text summary of the contents of a geometry.
-    OR
-    [raster] Returns a text summary of the contents of the raster.
+    """
+    [geometry] Returns a text summary of the contents of a geometry. OR [raster] Returns a text summary
+    of the contents of the raster.
 
-    see http://postgis.net/docs/ST_Summary.html"""
+    see https://postgis.net/docs/ST_Summary.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Summary: _ST_Summary
 
 class _ST_X(functions.GenericFunction):
-    """Returns the X coordinate of a Point.
+    """
+    Returns the X coordinate of a Point.
 
-    see http://postgis.net/docs/ST_X.html"""
+    see https://postgis.net/docs/ST_X.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_X: _ST_X
 
 class _ST_Y(functions.GenericFunction):
-    """Returns the Y coordinate of a Point.
+    """
+    Returns the Y coordinate of a Point.
 
-    see http://postgis.net/docs/ST_Y.html"""
+    see https://postgis.net/docs/ST_Y.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Y: _ST_Y
 
 class _ST_Z(functions.GenericFunction):
-    """Returns the Z coordinate of a Point.
+    """
+    Returns the Z coordinate of a Point.
 
-    see http://postgis.net/docs/ST_Z.html"""
+    see https://postgis.net/docs/ST_Z.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Z: _ST_Z
 
 class _ST_Zmflag(functions.GenericFunction):
-    """Returns a code indicating the ZM coordinate dimension of a geometry.
+    """
+    Returns a code indicating the ZM coordinate dimension of a geometry.
 
-    see http://postgis.net/docs/ST_Zmflag.html"""
+    see https://postgis.net/docs/ST_Zmflag.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Zmflag: _ST_Zmflag
 
 class _ST_AddPoint(functions.GenericFunction):
-    """Add a point to a LineString.
+    """
+    Add a point to a LineString.
 
-    see http://postgis.net/docs/ST_AddPoint.html
+    see https://postgis.net/docs/ST_AddPoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_AddPoint: _ST_AddPoint
 
 class _ST_CollectionExtract(functions.GenericFunction):
-    """Given a (multi)geometry, return a (multi)geometry consisting only of elements of the specified type.
+    """
+    Given a (multi)geometry, return a (multi)geometry consisting only of elements of the specified type.
 
-    see http://postgis.net/docs/ST_CollectionExtract.html
+    see https://postgis.net/docs/ST_CollectionExtract.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_CollectionExtract: _ST_CollectionExtract
 
 class _ST_CollectionHomogenize(functions.GenericFunction):
-    """Given a geometry collection, return the "simplest" representation of the contents.
+    """
+    Given a geometry collection, return the "simplest" representation of the contents.
 
-    see http://postgis.net/docs/ST_CollectionHomogenize.html
+    see https://postgis.net/docs/ST_CollectionHomogenize.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_CollectionHomogenize: _ST_CollectionHomogenize
 
 class _ST_Force2D(functions.GenericFunction):
-    """Force the geometries into a "2-dimensional mode".
+    """
+    Force the geometries into a "2-dimensional mode".
 
-    see http://postgis.net/docs/ST_Force2D.html
+    see https://postgis.net/docs/ST_Force2D.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Force2D: _ST_Force2D
 
 class _ST_Force3D(functions.GenericFunction):
-    """Force the geometries into XYZ mode. This is an alias for ST_Force3DZ.
+    """
+    Force the geometries into XYZ mode. This is an alias for ST_Force3DZ.
 
-    see http://postgis.net/docs/ST_Force_3D.html
+    see https://postgis.net/docs/ST_Force_3D.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Force3D: _ST_Force3D
 
 class _ST_Force3DZ(functions.GenericFunction):
-    """Force the geometries into XYZ mode.
+    """
+    Force the geometries into XYZ mode.
 
-    see http://postgis.net/docs/ST_Force_3DZ.html
+    see https://postgis.net/docs/ST_Force_3DZ.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Force3DZ: _ST_Force3DZ
 
 class _ST_Force3DM(functions.GenericFunction):
-    """Force the geometries into XYM mode.
+    """
+    Force the geometries into XYM mode.
 
-    see http://postgis.net/docs/ST_Force_3DZ.html
+    see https://postgis.net/docs/ST_Force_3DZ.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Force3DM: _ST_Force3DM
 
 class _ST_Force4D(functions.GenericFunction):
-    """Force the geometries into XYZM mode.
+    """
+    Force the geometries into XYZM mode.
 
-    see http://postgis.net/docs/ST_Force_4D.html
+    see https://postgis.net/docs/ST_Force_4D.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Force4D: _ST_Force4D
 
 class _ST_ForcePolygonCCW(functions.GenericFunction):
-    """Orients all exterior rings counter-clockwise and all interior rings clockwise.
+    """
+    Orients all exterior rings counter-clockwise and all interior rings clockwise.
 
-    see http://postgis.net/docs/ST_ForcePolygonCCW.html
+    see https://postgis.net/docs/ST_ForcePolygonCCW.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ForcePolygonCCW: _ST_ForcePolygonCCW
 
 class _ST_ForceCollection(functions.GenericFunction):
-    """Convert the geometry into a GEOMETRYCOLLECTION.
+    """
+    Convert the geometry into a GEOMETRYCOLLECTION.
 
-    see http://postgis.net/docs/ST_Force_Collection.html
+    see https://postgis.net/docs/ST_Force_Collection.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ForceCollection: _ST_ForceCollection
 
 class _ST_ForcePolygonCW(functions.GenericFunction):
-    """Orients all exterior rings clockwise and all interior rings counter-clockwise.
+    """
+    Orients all exterior rings clockwise and all interior rings counter-clockwise.
 
-    see http://postgis.net/docs/ST_ForcePolygonCW.html
+    see https://postgis.net/docs/ST_ForcePolygonCW.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ForcePolygonCW: _ST_ForcePolygonCW
 
 class _ST_ForceSFS(functions.GenericFunction):
-    """Force the geometries to use SFS 1.1 geometry types only.
+    """
+    Force the geometries to use SFS 1.1 geometry types only.
 
-    see http://postgis.net/docs/ST_ForceSFS.html
+    see https://postgis.net/docs/ST_ForceSFS.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ForceSFS: _ST_ForceSFS
 
 class _ST_ForceRHR(functions.GenericFunction):
-    """Force the orientation of the vertices in a polygon to follow the Right-Hand-Rule.
+    """
+    Force the orientation of the vertices in a polygon to follow the Right-Hand-Rule.
 
-    see http://postgis.net/docs/ST_ForceRHR.html
+    see https://postgis.net/docs/ST_ForceRHR.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ForceRHR: _ST_ForceRHR
 
 class _ST_ForceCurve(functions.GenericFunction):
-    """Upcast a geometry into its curved type, if applicable.
+    """
+    Upcast a geometry into its curved type, if applicable.
 
-    see http://postgis.net/docs/ST_ForceCurve.html
+    see https://postgis.net/docs/ST_ForceCurve.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ForceCurve: _ST_ForceCurve
 
 class _ST_LineMerge(functions.GenericFunction):
-    """Return a (set of) LineString(s) formed by sewing together a MULTILINESTRING.
+    """
+    Return a (set of) LineString(s) formed by sewing together a MULTILINESTRING.
 
-    see http://postgis.net/docs/ST_LineMerge.html
+    see https://postgis.net/docs/ST_LineMerge.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LineMerge: _ST_LineMerge
 
 class _ST_Multi(functions.GenericFunction):
-    """Return the geometry as a MULTI* geometry.
+    """
+    Return the geometry as a MULTI* geometry.
 
-    see http://postgis.net/docs/ST_Multi.html
+    see https://postgis.net/docs/ST_Multi.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Multi: _ST_Multi
 
 class _ST_Normalize(functions.GenericFunction):
-    """Return the geometry in its canonical form.
+    """
+    Return the geometry in its canonical form.
 
-    see http://postgis.net/docs/ST_Normalize.html
+    see https://postgis.net/docs/ST_Normalize.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Normalize: _ST_Normalize
 
 class _ST_QuantizeCoordinates(functions.GenericFunction):
-    """Sets least significant bits of coordinates to zero
+    """
+    Sets least significant bits of coordinates to zero
 
-    see http://postgis.net/docs/ST_QuantizeCoordinates.html
+    see https://postgis.net/docs/ST_QuantizeCoordinates.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_QuantizeCoordinates: _ST_QuantizeCoordinates
 
 class _ST_RemovePoint(functions.GenericFunction):
-    """Remove point from a linestring.
+    """
+    Remove point from a linestring.
 
-    see http://postgis.net/docs/ST_RemovePoint.html
+    see https://postgis.net/docs/ST_RemovePoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_RemovePoint: _ST_RemovePoint
 
 class _ST_Reverse(functions.GenericFunction):
-    """Return the geometry with vertex order reversed.
+    """
+    Return the geometry with vertex order reversed.
 
-    see http://postgis.net/docs/ST_Reverse.html
+    see https://postgis.net/docs/ST_Reverse.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Reverse: _ST_Reverse
 
 class _ST_Segmentize(functions.GenericFunction):
-    """Return a modified geometry/geography having no segment longer than the given distance.
+    """
+    Return a modified geometry/geography having no segment longer than the given distance.
 
-    see http://postgis.net/docs/ST_Segmentize.html
+    see https://postgis.net/docs/ST_Segmentize.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Segmentize: _ST_Segmentize
 
 class _ST_SetPoint(functions.GenericFunction):
-    """Replace point of a linestring with a given point.
+    """
+    Replace point of a linestring with a given point.
 
-    see http://postgis.net/docs/ST_SetPoint.html
+    see https://postgis.net/docs/ST_SetPoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_SetPoint: _ST_SetPoint
 
 class _ST_SnapToGrid(functions.GenericFunction):
-    """[geometry] Snap all points of the input geometry to a regular grid.
-    OR
-    [raster] Resample a raster by snapping it to a grid. New pixel values are computed using the NearestNeighbor (english or american spelling), Bilinear, Cubic, CubicSpline or Lanczos resampling algorithm. Default is NearestNeighbor.
+    """
+    [geometry] Snap all points of the input geometry to a regular grid. OR [raster] Resample a raster by
+    snapping it to a grid. New pixel values are computed using the NearestNeighbor (english or american
+    spelling), Bilinear, Cubic, CubicSpline or Lanczos resampling algorithm. Default is NearestNeighbor.
 
-    see http://postgis.net/docs/ST_SnapToGrid.html
+    see https://postgis.net/docs/ST_SnapToGrid.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_SnapToGrid: _ST_SnapToGrid
 
 class _ST_Snap(functions.GenericFunction):
-    """Snap segments and vertices of input geometry to vertices of a reference geometry.
+    """
+    Snap segments and vertices of input geometry to vertices of a reference geometry.
 
-    see http://postgis.net/docs/ST_Snap.html
+    see https://postgis.net/docs/ST_Snap.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Snap: _ST_Snap
 
 class _ST_SwapOrdinates(functions.GenericFunction):
-    """Returns a version of the given geometry with given ordinate values swapped.
+    """
+    Returns a version of the given geometry with given ordinate values swapped.
 
-    see http://postgis.net/docs/ST_SwapOrdinates.html
+    see https://postgis.net/docs/ST_SwapOrdinates.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_SwapOrdinates: _ST_SwapOrdinates
 
 class _ST_IsValid(functions.GenericFunction):
-    """Tests if a geometry is well-formed in 2D.
+    """
+    Tests if a geometry is well-formed in 2D.
 
-    see http://postgis.net/docs/ST_IsValid.html"""
+    see https://postgis.net/docs/ST_IsValid.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsValid: _ST_IsValid
 
 class _ST_IsValidDetail(functions.GenericFunction):
-    """Returns a valid_detail row stating if a geometry is valid, and if not a reason why and a location.
+    """
+    Returns a valid_detail row stating if a geometry is valid, and if not a reason why and a location.
 
-    see http://postgis.net/docs/ST_IsValidDetail.html"""
+    see https://postgis.net/docs/ST_IsValidDetail.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsValidDetail: _ST_IsValidDetail
 
 class _ST_IsValidReason(functions.GenericFunction):
-    """Returns text stating if a geometry is valid, or a reason for invalidity.
+    """
+    Returns text stating if a geometry is valid, or a reason for invalidity.
 
-    see http://postgis.net/docs/ST_IsValidReason.html"""
+    see https://postgis.net/docs/ST_IsValidReason.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsValidReason: _ST_IsValidReason
 
 class _ST_SetSRID(functions.GenericFunction):
-    """[geometry] Set the SRID on a geometry to a particular integer value.
-    OR
-    [raster] Sets the SRID of a raster to a particular integer srid defined in the spatial_ref_sys table.
+    """
+    [geometry] Set the SRID on a geometry to a particular integer value. OR [raster] Sets the SRID of a
+    raster to a particular integer srid defined in the spatial_ref_sys table.
 
-    see http://postgis.net/docs/ST_SetSRID.html
+    see https://postgis.net/docs/ST_SetSRID.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_SetSRID: _ST_SetSRID
 
 class _ST_SRID(functions.GenericFunction):
-    """[geometry] Returns the spatial reference identifier for the ST_Geometry as defined in spatial_ref_sys table.
-    OR
-    [raster] Returns the spatial reference identifier of the raster as defined in spatial_ref_sys table.
+    """
+    [geometry] Returns the spatial reference identifier for the ST_Geometry as defined in
+    spatial_ref_sys table. OR [raster] Returns the spatial reference identifier of the raster as defined
+    in spatial_ref_sys table.
 
-    see http://postgis.net/docs/ST_SRID.html"""
+    see https://postgis.net/docs/ST_SRID.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_SRID: _ST_SRID
 
 class _ST_Transform(functions.GenericFunction):
-    """[geometry] Return a new geometry with its coordinates transformed to a different spatial reference system.
-    OR
-    [raster] Reprojects a raster in a known spatial reference system to another known spatial reference system using specified resampling algorithm. Options are NearestNeighbor, Bilinear, Cubic, CubicSpline, Lanczos defaulting to NearestNeighbor.
+    """
+    [geometry] Return a new geometry with its coordinates transformed to a different spatial reference
+    system. OR [raster] Reprojects a raster in a known spatial reference system to another known spatial
+    reference system using specified resampling algorithm. Options are NearestNeighbor, Bilinear, Cubic,
+    CubicSpline, Lanczos defaulting to NearestNeighbor.
 
-    see http://postgis.net/docs/ST_Transform.html
+    see https://postgis.net/docs/ST_Transform.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Transform: _ST_Transform
 
 class _ST_BdPolyFromText(functions.GenericFunction):
-    """Construct a Polygon given an arbitrary collection of closed linestrings as a MultiLineString Well-Known text representation.
+    """
+    Construct a Polygon given an arbitrary collection of closed linestrings as a MultiLineString Well-
+    Known text representation.
 
-    see http://postgis.net/docs/ST_BdPolyFromText.html
+    see https://postgis.net/docs/ST_BdPolyFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_BdPolyFromText: _ST_BdPolyFromText
 
 class _ST_BdMPolyFromText(functions.GenericFunction):
-    """Construct a MultiPolygon given an arbitrary collection of closed linestrings as a MultiLineString text representation Well-Known text representation.
+    """
+    Construct a MultiPolygon given an arbitrary collection of closed linestrings as a MultiLineString
+    text representation Well-Known text representation.
 
-    see http://postgis.net/docs/ST_BdMPolyFromText.html
+    see https://postgis.net/docs/ST_BdMPolyFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_BdMPolyFromText: _ST_BdMPolyFromText
 
 class _ST_GeogFromText(functions.GenericFunction):
-    """Return a specified geography value from Well-Known Text representation or extended (WKT).
+    """
+    Return a specified geography value from Well-Known Text representation or extended (WKT).
 
-    see http://postgis.net/docs/ST_GeogFromText.html
+    see https://postgis.net/docs/ST_GeogFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geography`."""
+    Return type: :class:`geoalchemy2.types.Geography`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geography: ...
 
 ST_GeogFromText: _ST_GeogFromText
 
 class _ST_GeographyFromText(functions.GenericFunction):
-    """Return a specified geography value from Well-Known Text representation or extended (WKT).
+    """
+    Return a specified geography value from Well-Known Text representation or extended (WKT).
 
-    see http://postgis.net/docs/ST_GeographyFromText.html
+    see https://postgis.net/docs/ST_GeographyFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geography`."""
+    Return type: :class:`geoalchemy2.types.Geography`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geography: ...
 
 ST_GeographyFromText: _ST_GeographyFromText
 
 class _ST_GeomCollFromText(functions.GenericFunction):
-    """Makes a collection Geometry from collection WKT with the given SRID. If SRID is not given, it defaults to 0.
+    """
+    Makes a collection Geometry from collection WKT with the given SRID. If SRID is not given, it
+    defaults to 0.
 
-    see http://postgis.net/docs/ST_GeomCollFromText.html
+    see https://postgis.net/docs/ST_GeomCollFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeomCollFromText: _ST_GeomCollFromText
 
 class _ST_GeomFromEWKT(functions.GenericFunction):
-    """Return a specified ST_Geometry value from Extended Well-Known Text representation (EWKT).
+    """
+    Return a specified ST_Geometry value from Extended Well-Known Text representation (EWKT).
 
-    see http://postgis.net/docs/ST_GeomFromEWKT.html
+    see https://postgis.net/docs/ST_GeomFromEWKT.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeomFromEWKT: _ST_GeomFromEWKT
 
 class _ST_GeometryFromText(functions.GenericFunction):
-    """Return a specified ST_Geometry value from Well-Known Text representation (WKT). This is an alias name for ST_GeomFromText
+    """
+    Return a specified ST_Geometry value from Well-Known Text representation (WKT). This is an alias
+    name for ST_GeomFromText
 
-    see http://postgis.net/docs/ST_GeometryFromText.html
+    see https://postgis.net/docs/ST_GeometryFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeometryFromText: _ST_GeometryFromText
 
 class _ST_GeomFromText(functions.GenericFunction):
-    """Return a specified ST_Geometry value from Well-Known Text representation (WKT).
+    """
+    Return a specified ST_Geometry value from Well-Known Text representation (WKT).
 
-    see http://postgis.net/docs/ST_GeomFromText.html
+    see https://postgis.net/docs/ST_GeomFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeomFromText: _ST_GeomFromText
 
 class _ST_LineFromText(functions.GenericFunction):
-    """Makes a Geometry from WKT representation with the given SRID. If SRID is not given, it defaults to 0.
+    """
+    Makes a Geometry from WKT representation with the given SRID. If SRID is not given, it defaults to
+    0.
 
-    see http://postgis.net/docs/ST_LineFromText.html
+    see https://postgis.net/docs/ST_LineFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LineFromText: _ST_LineFromText
 
 class _ST_MLineFromText(functions.GenericFunction):
-    """Return a specified ST_MultiLineString value from WKT representation.
+    """
+    Return a specified ST_MultiLineString value from WKT representation.
 
-    see http://postgis.net/docs/ST_MLineFromText.html
+    see https://postgis.net/docs/ST_MLineFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MLineFromText: _ST_MLineFromText
 
 class _ST_MPointFromText(functions.GenericFunction):
-    """Makes a Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
+    """
+    Makes a Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
 
-    see http://postgis.net/docs/ST_MPointFromText.html
+    see https://postgis.net/docs/ST_MPointFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MPointFromText: _ST_MPointFromText
 
 class _ST_MPolyFromText(functions.GenericFunction):
-    """Makes a MultiPolygon Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
+    """
+    Makes a MultiPolygon Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
 
-    see http://postgis.net/docs/ST_MPolyFromText.html
+    see https://postgis.net/docs/ST_MPolyFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MPolyFromText: _ST_MPolyFromText
 
 class _ST_PointFromText(functions.GenericFunction):
-    """Makes a point Geometry from WKT with the given SRID. If SRID is not given, it defaults to unknown.
+    """
+    Makes a point Geometry from WKT with the given SRID. If SRID is not given, it defaults to unknown.
 
-    see http://postgis.net/docs/ST_PointFromText.html
+    see https://postgis.net/docs/ST_PointFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_PointFromText: _ST_PointFromText
 
 class _ST_PolygonFromText(functions.GenericFunction):
-    """Makes a Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
+    """
+    Makes a Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
 
-    see http://postgis.net/docs/ST_PolygonFromText.html
+    see https://postgis.net/docs/ST_PolygonFromText.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_PolygonFromText: _ST_PolygonFromText
 
 class _ST_WKTToSQL(functions.GenericFunction):
-    """Return a specified ST_Geometry value from Well-Known Text representation (WKT). This is an alias name for ST_GeomFromText
+    """
+    Return a specified ST_Geometry value from Well-Known Text representation (WKT). This is an alias
+    name for ST_GeomFromText
 
-    see http://postgis.net/docs/ST_WKTToSQL.html
+    see https://postgis.net/docs/ST_WKTToSQL.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_WKTToSQL: _ST_WKTToSQL
 
 class _ST_GeogFromWKB(functions.GenericFunction):
-    """Creates a geography instance from a Well-Known Binary geometry representation (WKB) or extended Well Known Binary (EWKB).
+    """
+    Creates a geography instance from a Well-Known Binary geometry representation (WKB) or extended Well
+    Known Binary (EWKB).
 
-    see http://postgis.net/docs/ST_GeogFromWKB.html
+    see https://postgis.net/docs/ST_GeogFromWKB.html
 
-    Return type: :class:`geoalchemy2.types.Geography`."""
+    Return type: :class:`geoalchemy2.types.Geography`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geography: ...
 
 ST_GeogFromWKB: _ST_GeogFromWKB
 
 class _ST_GeomFromEWKB(functions.GenericFunction):
-    """Return a specified ST_Geometry value from Extended Well-Known Binary representation (EWKB).
+    """
+    Return a specified ST_Geometry value from Extended Well-Known Binary representation (EWKB).
 
-    see http://postgis.net/docs/ST_GeomFromEWKB.html
+    see https://postgis.net/docs/ST_GeomFromEWKB.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeomFromEWKB: _ST_GeomFromEWKB
 
 class _ST_GeomFromWKB(functions.GenericFunction):
-    """Creates a geometry instance from a Well-Known Binary geometry representation (WKB) and optional SRID.
+    """
+    Creates a geometry instance from a Well-Known Binary geometry representation (WKB) and optional
+    SRID.
 
-    see http://postgis.net/docs/ST_GeomFromWKB.html
+    see https://postgis.net/docs/ST_GeomFromWKB.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeomFromWKB: _ST_GeomFromWKB
 
 class _ST_LineFromWKB(functions.GenericFunction):
-    """Makes a LINESTRING from WKB with the given SRID
+    """
+    Makes a LINESTRING from WKB with the given SRID
 
-    see http://postgis.net/docs/ST_LineFromWKB.html
+    see https://postgis.net/docs/ST_LineFromWKB.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LineFromWKB: _ST_LineFromWKB
 
 class _ST_LinestringFromWKB(functions.GenericFunction):
-    """Makes a geometry from WKB with the given SRID.
+    """
+    Makes a geometry from WKB with the given SRID.
 
-    see http://postgis.net/docs/ST_LinestringFromWKB.html
+    see https://postgis.net/docs/ST_LinestringFromWKB.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LinestringFromWKB: _ST_LinestringFromWKB
 
 class _ST_PointFromWKB(functions.GenericFunction):
-    """Makes a geometry from WKB with the given SRID
+    """
+    Makes a geometry from WKB with the given SRID
 
-    see http://postgis.net/docs/ST_PointFromWKB.html
+    see https://postgis.net/docs/ST_PointFromWKB.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_PointFromWKB: _ST_PointFromWKB
 
 class _ST_WKBToSQL(functions.GenericFunction):
-    """Return a specified ST_Geometry value from Well-Known Binary representation (WKB). This is an alias name for ST_GeomFromWKB that takes no srid
+    """
+    Return a specified ST_Geometry value from Well-Known Binary representation (WKB). This is an alias
+    name for ST_GeomFromWKB that takes no srid
 
-    see http://postgis.net/docs/ST_WKBToSQL.html
+    see https://postgis.net/docs/ST_WKBToSQL.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_WKBToSQL: _ST_WKBToSQL
 
 class _ST_Box2dFromGeoHash(functions.GenericFunction):
-    """Return a BOX2D from a GeoHash string.
+    """
+    Return a BOX2D from a GeoHash string.
 
-    see http://postgis.net/docs/ST_Box2dFromGeoHash.html"""
+    see https://postgis.net/docs/ST_Box2dFromGeoHash.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Box2dFromGeoHash: _ST_Box2dFromGeoHash
 
 class _ST_GeomFromGeoHash(functions.GenericFunction):
-    """Return a geometry from a GeoHash string.
+    """
+    Return a geometry from a GeoHash string.
 
-    see http://postgis.net/docs/ST_GeomFromGeoHash.html
+    see https://postgis.net/docs/ST_GeomFromGeoHash.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeomFromGeoHash: _ST_GeomFromGeoHash
 
 class _ST_GeomFromGML(functions.GenericFunction):
-    """Takes as input GML representation of geometry and outputs a PostGIS geometry object
+    """
+    Takes as input GML representation of geometry and outputs a PostGIS geometry object
 
-    see http://postgis.net/docs/ST_GeomFromGML.html
+    see https://postgis.net/docs/ST_GeomFromGML.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeomFromGML: _ST_GeomFromGML
 
 class _ST_GeomFromGeoJSON(functions.GenericFunction):
-    """Takes as input a geojson representation of a geometry and outputs a PostGIS geometry object
+    """
+    Takes as input a geojson representation of a geometry and outputs a PostGIS geometry object
 
-    see http://postgis.net/docs/ST_GeomFromGeoJSON.html
+    see https://postgis.net/docs/ST_GeomFromGeoJSON.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeomFromGeoJSON: _ST_GeomFromGeoJSON
 
 class _ST_GeomFromKML(functions.GenericFunction):
-    """Takes as input KML representation of geometry and outputs a PostGIS geometry object
+    """
+    Takes as input KML representation of geometry and outputs a PostGIS geometry object
 
-    see http://postgis.net/docs/ST_GeomFromKML.html
+    see https://postgis.net/docs/ST_GeomFromKML.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeomFromKML: _ST_GeomFromKML
 
 class _ST_GeomFromTWKB(functions.GenericFunction):
-    """Creates a geometry instance from a TWKB ("Tiny Well-Known Binary") geometry representation.
+    """
+    Creates a geometry instance from a TWKB ("Tiny Well-Known Binary") geometry representation.
 
-    see http://postgis.net/docs/ST_GeomFromTWKB.html
+    see https://postgis.net/docs/ST_GeomFromTWKB.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeomFromTWKB: _ST_GeomFromTWKB
 
 class _ST_GMLToSQL(functions.GenericFunction):
-    """Return a specified ST_Geometry value from GML representation. This is an alias name for ST_GeomFromGML
+    """
+    Return a specified ST_Geometry value from GML representation. This is an alias name for
+    ST_GeomFromGML
 
-    see http://postgis.net/docs/ST_GMLToSQL.html
+    see https://postgis.net/docs/ST_GMLToSQL.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GMLToSQL: _ST_GMLToSQL
 
 class _ST_LineFromEncodedPolyline(functions.GenericFunction):
-    """Creates a LineString from an Encoded Polyline.
+    """
+    Creates a LineString from an Encoded Polyline.
 
-    see http://postgis.net/docs/ST_LineFromEncodedPolyline.html
+    see https://postgis.net/docs/ST_LineFromEncodedPolyline.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LineFromEncodedPolyline: _ST_LineFromEncodedPolyline
 
 class _ST_PointFromGeoHash(functions.GenericFunction):
-    """Return a point from a GeoHash string.
+    """
+    Return a point from a GeoHash string.
 
-    see http://postgis.net/docs/ST_PointFromGeoHash.html
+    see https://postgis.net/docs/ST_PointFromGeoHash.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_PointFromGeoHash: _ST_PointFromGeoHash
 
 class _ST_AsEWKT(functions.GenericFunction):
-    """Return the Well-Known Text (WKT) representation of the geometry with SRID meta data.
+    """
+    Return the Well-Known Text (WKT) representation of the geometry with SRID meta data.
 
-    see http://postgis.net/docs/ST_AsEWKT.html"""
+    see https://postgis.net/docs/ST_AsEWKT.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsEWKT: _ST_AsEWKT
 
 class _ST_AsText(functions.GenericFunction):
-    """Return the Well-Known Text (WKT) representation of the geometry/geography without SRID metadata.
+    """
+    Return the Well-Known Text (WKT) representation of the geometry/geography without SRID metadata.
 
-    see http://postgis.net/docs/ST_AsText.html"""
+    see https://postgis.net/docs/ST_AsText.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsText: _ST_AsText
 
 class _ST_AsBinary(functions.GenericFunction):
-    """[gometry] Return the Well-Known Binary (WKB) representation of the geometry/geography without SRID meta data.
-    OR
-    [raster] Return the Well-Known Binary (WKB) representation of the raster.
+    """
+    [gometry] Return the Well-Known Binary (WKB) representation of the geometry/geography without SRID
+    meta data. OR [raster] Return the Well-Known Binary (WKB) representation of the raster.
 
-    see http://postgis.net/docs/ST_AsBinary.html"""
+    see https://postgis.net/docs/ST_AsBinary.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsBinary: _ST_AsBinary
 
 class _ST_AsEWKB(functions.GenericFunction):
-    """Return the Well-Known Binary (WKB) representation of the geometry with SRID meta data.
+    """
+    Return the Well-Known Binary (WKB) representation of the geometry with SRID meta data.
 
-    see http://postgis.net/docs/ST_AsEWKB.html"""
+    see https://postgis.net/docs/ST_AsEWKB.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsEWKB: _ST_AsEWKB
 
 class _ST_AsHEXEWKB(functions.GenericFunction):
-    """Returns a Geometry in HEXEWKB format (as text) using either little-endian (NDR) or big-endian (XDR) encoding.
+    """
+    Returns a Geometry in HEXEWKB format (as text) using either little-endian (NDR) or big-endian (XDR)
+    encoding.
 
-    see http://postgis.net/docs/ST_AsHEXEWKB.html"""
+    see https://postgis.net/docs/ST_AsHEXEWKB.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsHEXEWKB: _ST_AsHEXEWKB
 
 class _ST_AsEncodedPolyline(functions.GenericFunction):
-    """Returns an Encoded Polyline from a LineString geometry.
+    """
+    Returns an Encoded Polyline from a LineString geometry.
 
-    see http://postgis.net/docs/ST_AsEncodedPolyline.html"""
+    see https://postgis.net/docs/ST_AsEncodedPolyline.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsEncodedPolyline: _ST_AsEncodedPolyline
 
 class _ST_AsGeobuf(functions.GenericFunction):
-    """Return a Geobuf representation of a set of rows.
+    """
+    Return a Geobuf representation of a set of rows.
 
-    see http://postgis.net/docs/ST_AsGeobuf.html"""
+    see https://postgis.net/docs/ST_AsGeobuf.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsGeobuf: _ST_AsGeobuf
 
 class _ST_AsGML(functions.GenericFunction):
-    """Return the geometry as a GML version 2 or 3 element.
+    """
+    Return the geometry as a GML version 2 or 3 element.
 
-    see http://postgis.net/docs/ST_AsGML.html"""
+    see https://postgis.net/docs/ST_AsGML.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsGML: _ST_AsGML
 
 class _ST_AsKML(functions.GenericFunction):
-    """Return the geometry as a KML element. Several variants. Default version=2, default maxdecimaldigits=15
+    """
+    Return the geometry as a KML element. Several variants. Default version=2, default
+    maxdecimaldigits=15
 
-    see http://postgis.net/docs/ST_AsKML.html"""
+    see https://postgis.net/docs/ST_AsKML.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsKML: _ST_AsKML
 
 class _ST_AsLatLonText(functions.GenericFunction):
-    """Return the Degrees, Minutes, Seconds representation of the given point.
+    """
+    Return the Degrees, Minutes, Seconds representation of the given point.
 
-    see http://postgis.net/docs/ST_AsLatLonText.html"""
+    see https://postgis.net/docs/ST_AsLatLonText.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsLatLonText: _ST_AsLatLonText
 
 class _ST_AsMVTGeom(functions.GenericFunction):
-    """Transform a geometry into the coordinate space of a Mapbox Vector Tile.
+    """
+    Transform a geometry into the coordinate space of a Mapbox Vector Tile.
 
-    see http://postgis.net/docs/ST_AsMVTGeom.html
+    see https://postgis.net/docs/ST_AsMVTGeom.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_AsMVTGeom: _ST_AsMVTGeom
 
 class _ST_AsMVT(functions.GenericFunction):
-    """Aggregate function returning a Mapbox Vector Tile representation of a set of rows.
+    """
+    Aggregate function returning a Mapbox Vector Tile representation of a set of rows.
 
-    see http://postgis.net/docs/ST_AsMVT.html"""
+    see https://postgis.net/docs/ST_AsMVT.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsMVT: _ST_AsMVT
 
 class _ST_AsSVG(functions.GenericFunction):
-    """Returns SVG path data for a geometry.
+    """
+    Returns SVG path data for a geometry.
 
-    see http://postgis.net/docs/ST_AsSVG.html"""
+    see https://postgis.net/docs/ST_AsSVG.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsSVG: _ST_AsSVG
 
 class _ST_AsTWKB(functions.GenericFunction):
-    """Returns the geometry as TWKB, aka "Tiny Well-Known Binary"
+    """
+    Returns the geometry as TWKB, aka "Tiny Well-Known Binary"
 
-    see http://postgis.net/docs/ST_AsTWKB.html"""
+    see https://postgis.net/docs/ST_AsTWKB.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsTWKB: _ST_AsTWKB
 
 class _ST_AsX3D(functions.GenericFunction):
-    """Returns a Geometry in X3D xml node element format: ISO-IEC-19776-1.2-X3DEncodings-XML
+    """
+    Returns a Geometry in X3D xml node element format: ISO-IEC-19776-1.2-X3DEncodings-XML
 
-    see http://postgis.net/docs/ST_AsX3D.html"""
+    see https://postgis.net/docs/ST_AsX3D.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsX3D: _ST_AsX3D
 
 class _ST_GeoHash(functions.GenericFunction):
-    """Return a GeoHash representation of the geometry.
+    """
+    Return a GeoHash representation of the geometry.
 
-    see http://postgis.net/docs/ST_GeoHash.html"""
+    see https://postgis.net/docs/ST_GeoHash.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_GeoHash: _ST_GeoHash
 
 class _ST_3DIntersects(functions.GenericFunction):
-    """Returns TRUE if the Geometries "spatially intersect" in 3D - only for points, linestrings, polygons, polyhedral surface (area).
+    """
+    Returns TRUE if the Geometries "spatially intersect" in 3D - only for points, linestrings, polygons,
+    polyhedral surface (area).
 
-    see http://postgis.net/docs/ST_3DIntersects.html"""
+    see https://postgis.net/docs/ST_3DIntersects.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DIntersects: _ST_3DIntersects
 
 class _ST_Contains(functions.GenericFunction):
-    """[geometry] Returns true if and only if no points of B lie in the exterior of A, and at least one point of the interior of B lies in the interior of A.
-    OR
-    [raster] Return true if no points of raster rastB lie in the exterior of raster rastA and at least one point of the interior of rastB lies in the interior of rastA.
+    """
+    [geometry] Returns true if and only if no points of B lie in the exterior of A, and at least one
+    point of the interior of B lies in the interior of A. OR [raster] Return true if no points of raster
+    rastB lie in the exterior of raster rastA and at least one point of the interior of rastB lies in
+    the interior of rastA.
 
-    see http://postgis.net/docs/ST_Contains.html"""
+    see https://postgis.net/docs/ST_Contains.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Contains: _ST_Contains
 
 class _ST_ContainsProperly(functions.GenericFunction):
-    """[geometry] Returns true if B intersects the interior of A but not the boundary (or exterior). A does not contain properly itself, but does contain itself.
-    OR
-    [raster] Return true if rastB intersects the interior of rastA but not the boundary or exterior of rastA.
+    """
+    [geometry] Returns true if B intersects the interior of A but not the boundary (or exterior). A does
+    not contain properly itself, but does contain itself. OR [raster] Return true if rastB intersects
+    the interior of rastA but not the boundary or exterior of rastA.
 
-    see http://postgis.net/docs/ST_ContainsProperly.html"""
+    see https://postgis.net/docs/ST_ContainsProperly.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ContainsProperly: _ST_ContainsProperly
 
 class _ST_Covers(functions.GenericFunction):
-    """[geometry] Returns 1 (TRUE) if no point in Geometry B is outside Geometry A
-    OR
-    [raster] Return true if no points of raster rastB lie outside raster rastA.
+    """
+    [geometry] Returns 1 (TRUE) if no point in Geometry B is outside Geometry A OR [raster] Return true
+    if no points of raster rastB lie outside raster rastA.
 
-    see http://postgis.net/docs/ST_Covers.html"""
+    see https://postgis.net/docs/ST_Covers.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Covers: _ST_Covers
 
 class _ST_CoveredBy(functions.GenericFunction):
-    """[geometry] Returns 1 (TRUE) if no point in Geometry/Geography A is outside Geometry/Geography B
-    OR
+    """
+    [geometry] Returns 1 (TRUE) if no point in Geometry/Geography A is outside Geometry/Geography B OR
     [raster] Return true if no points of raster rastA lie outside raster rastB.
 
-    see http://postgis.net/docs/ST_CoveredBy.html"""
+    see https://postgis.net/docs/ST_CoveredBy.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_CoveredBy: _ST_CoveredBy
 
 class _ST_Crosses(functions.GenericFunction):
-    """Returns TRUE if the supplied geometries have some, but not all, interior points in common.
+    """
+    Returns TRUE if the supplied geometries have some, but not all, interior points in common.
 
-    see http://postgis.net/docs/ST_Crosses.html"""
+    see https://postgis.net/docs/ST_Crosses.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Crosses: _ST_Crosses
 
 class _ST_LineCrossingDirection(functions.GenericFunction):
-    """Given 2 linestrings, returns a number between -3 and 3 denoting what kind of crossing behavior. 0 is no crossing.
+    """
+    Given 2 linestrings, returns a number between -3 and 3 denoting what kind of crossing behavior. 0 is
+    no crossing.
 
-    see http://postgis.net/docs/ST_LineCrossingDirection.html"""
+    see https://postgis.net/docs/ST_LineCrossingDirection.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_LineCrossingDirection: _ST_LineCrossingDirection
 
 class _ST_Disjoint(functions.GenericFunction):
-    """[geometry] Returns TRUE if the Geometries do not "spatially intersect" - if they do not share any space together.
-    OR
-    [raster] Return true if raster rastA does not spatially intersect rastB.
+    """
+    [geometry] Returns TRUE if the Geometries do not "spatially intersect" - if they do not share any
+    space together. OR [raster] Return true if raster rastA does not spatially intersect rastB.
 
-    see http://postgis.net/docs/ST_Disjoint.html"""
+    see https://postgis.net/docs/ST_Disjoint.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Disjoint: _ST_Disjoint
 
 class _ST_Equals(functions.GenericFunction):
-    """Returns true if the given geometries represent the same geometry. Directionality is ignored.
+    """
+    Returns true if the given geometries represent the same geometry. Directionality is ignored.
 
-    see http://postgis.net/docs/ST_Equals.html"""
+    see https://postgis.net/docs/ST_Equals.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Equals: _ST_Equals
 
 class _ST_Intersects(functions.GenericFunction):
-    """[geometry] Returns TRUE if the Geometries/Geography "spatially intersect in 2D" - (share any portion of space) and FALSE if they don't (they are Disjoint). For geography tolerance is 0.00001 meters (so any points that close are considered to intersect)
-    OR
-    [raster] Return true if raster rastA spatially intersects raster rastB.
+    """
+    [geometry] Returns TRUE if the Geometries/Geography "spatially intersect in 2D" - (share any portion
+    of space) and FALSE if they don't (they are Disjoint). For geography tolerance is 0.00001 meters (so
+    any points that close are considered to intersect) OR [raster] Return true if raster rastA spatially
+    intersects raster rastB.
 
-    see http://postgis.net/docs/ST_Intersects.html"""
+    see https://postgis.net/docs/ST_Intersects.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Intersects: _ST_Intersects
 
 class _ST_OrderingEquals(functions.GenericFunction):
-    """Returns true if the given geometries represent the same geometry and points are in the same directional order.
+    """
+    Returns true if the given geometries represent the same geometry and points are in the same
+    directional order.
 
-    see http://postgis.net/docs/ST_OrderingEquals.html"""
+    see https://postgis.net/docs/ST_OrderingEquals.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_OrderingEquals: _ST_OrderingEquals
 
 class _ST_Overlaps(functions.GenericFunction):
-    """[geometry] Returns TRUE if the Geometries share space, are of the same dimension, but are not completely contained by each other.
-    OR
-    [raster] Return true if raster rastA and rastB intersect but one does not completely contain the other.
+    """
+    [geometry] Returns TRUE if the Geometries share space, are of the same dimension, but are not
+    completely contained by each other. OR [raster] Return true if raster rastA and rastB intersect but
+    one does not completely contain the other.
 
-    see http://postgis.net/docs/ST_Overlaps.html"""
+    see https://postgis.net/docs/ST_Overlaps.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Overlaps: _ST_Overlaps
 
 class _ST_PointInsideCircle(functions.GenericFunction):
-    """Is the point geometry inside the circle defined by center_x, center_y, radius
+    """
+    Is the point geometry inside the circle defined by center_x, center_y, radius
 
-    see http://postgis.net/docs/ST_PointInsideCircle.html"""
+    see https://postgis.net/docs/ST_PointInsideCircle.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PointInsideCircle: _ST_PointInsideCircle
 
 class _ST_Relate(functions.GenericFunction):
-    """Returns true if this Geometry is spatially related to anotherGeometry, by testing for intersections between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionMatrixPattern. If no intersectionMatrixPattern is passed in, then returns the maximum intersectionMatrixPattern that relates the 2 geometries.
+    """
+    Returns true if this Geometry is spatially related to anotherGeometry, by testing for intersections
+    between the Interior, Boundary and Exterior of the two geometries as specified by the values in the
+    intersectionMatrixPattern. If no intersectionMatrixPattern is passed in, then returns the maximum
+    intersectionMatrixPattern that relates the 2 geometries.
 
-    see http://postgis.net/docs/ST_Relate.html"""
+    see https://postgis.net/docs/ST_Relate.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Relate: _ST_Relate
 
 class _ST_RelateMatch(functions.GenericFunction):
-    """Returns true if intersectionMattrixPattern1 implies intersectionMatrixPattern2
+    """
+    Returns true if intersectionMattrixPattern1 implies intersectionMatrixPattern2
 
-    see http://postgis.net/docs/ST_RelateMatch.html"""
+    see https://postgis.net/docs/ST_RelateMatch.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_RelateMatch: _ST_RelateMatch
 
 class _ST_Touches(functions.GenericFunction):
-    """[geometry] Returns TRUE if the geometries have at least one point in common, but their interiors do not intersect.
-    OR
-    [raster] Return true if raster rastA and rastB have at least one point in common but their interiors do not intersect.
+    """
+    [geometry] Returns TRUE if the geometries have at least one point in common, but their interiors do
+    not intersect. OR [raster] Return true if raster rastA and rastB have at least one point in common
+    but their interiors do not intersect.
 
-    see http://postgis.net/docs/ST_Touches.html"""
+    see https://postgis.net/docs/ST_Touches.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Touches: _ST_Touches
 
 class _ST_Within(functions.GenericFunction):
-    """[geometry] Returns true if the geometry A is completely inside geometry B
-    OR
-    [raster] Return true if no points of raster rastA lie in the exterior of raster rastB and at least one point of the interior of rastA lies in the interior of rastB.
+    """
+    [geometry] Returns true if the geometry A is completely inside geometry B OR [raster] Return true if
+    no points of raster rastA lie in the exterior of raster rastB and at least one point of the interior
+    of rastA lies in the interior of rastB.
 
-    see http://postgis.net/docs/ST_Within.html"""
+    see https://postgis.net/docs/ST_Within.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Within: _ST_Within
 
 class _ST_3DDWithin(functions.GenericFunction):
-    """For 3d (z) geometry type Returns true if two geometries 3d distance is within number of units.
+    """
+    For 3d (z) geometry type Returns true if two geometries 3d distance is within number of units.
 
-    see http://postgis.net/docs/ST_3DDWithin.html"""
+    see https://postgis.net/docs/ST_3DDWithin.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DDWithin: _ST_3DDWithin
 
 class _ST_3DDFullyWithin(functions.GenericFunction):
-    """Returns true if all of the 3D geometries are within the specified distance of one another.
+    """
+    Returns true if all of the 3D geometries are within the specified distance of one another.
 
-    see http://postgis.net/docs/ST_3DDFullyWithin.html"""
+    see https://postgis.net/docs/ST_3DDFullyWithin.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DDFullyWithin: _ST_3DDFullyWithin
 
 class _ST_DFullyWithin(functions.GenericFunction):
-    """[geometry] Returns true if all of the geometries are within the specified distance of one another
-    OR
-    [raster] Return true if rasters rastA and rastB are fully within the specified distance of each other.
+    """
+    [geometry] Returns true if all of the geometries are within the specified distance of one another OR
+    [raster] Return true if rasters rastA and rastB are fully within the specified distance of each
+    other.
 
-    see http://postgis.net/docs/ST_DFullyWithin.html"""
+    see https://postgis.net/docs/ST_DFullyWithin.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DFullyWithin: _ST_DFullyWithin
 
 class _ST_DWithin(functions.GenericFunction):
-    """[geometry] Returns true if the geometries are within the specified distance of one another. For geometry units are in those of spatial reference and for geography units are in meters and measurement is defaulted to use_spheroid=true (measure around spheroid), for faster check, use_spheroid=false to measure along sphere.
-    OR
-    [raster] Return true if rasters rastA and rastB are within the specified distance of each other.
+    """
+    [geometry] Returns true if the geometries are within the specified distance of one another. For
+    geometry units are in those of spatial reference and for geography units are in meters and
+    measurement is defaulted to use_spheroid=true (measure around spheroid), for faster check,
+    use_spheroid=false to measure along sphere. OR [raster] Return true if rasters rastA and rastB are
+    within the specified distance of each other.
 
-    see http://postgis.net/docs/ST_DWithin.html"""
+    see https://postgis.net/docs/ST_DWithin.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DWithin: _ST_DWithin
 
 class _ST_Area(functions.GenericFunction):
-    """Returns the area of a polygonal geometry.
+    """
+    Returns the area of a polygonal geometry.
 
-    see http://postgis.net/docs/ST_Area.html"""
+    see https://postgis.net/docs/ST_Area.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Area: _ST_Area
 
 class _ST_Azimuth(functions.GenericFunction):
-    """Returns the north-based azimuth as the angle in radians measured clockwise from the vertical on pointA to pointB.
+    """
+    Returns the north-based azimuth as the angle in radians measured clockwise from the vertical on
+    pointA to pointB.
 
-    see http://postgis.net/docs/ST_Azimuth.html"""
+    see https://postgis.net/docs/ST_Azimuth.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Azimuth: _ST_Azimuth
 
 class _ST_Angle(functions.GenericFunction):
-    """Returns the angle between 3 points, or between 2 vectors (4 points or 2 lines).
+    """
+    Returns the angle between 3 points, or between 2 vectors (4 points or 2 lines).
 
-    see http://postgis.net/docs/ST_Angle.html"""
+    see https://postgis.net/docs/ST_Angle.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Angle: _ST_Angle
 
 class _ST_ClosestPoint(functions.GenericFunction):
-    """Returns the 2D point on g1 that is closest to g2. This is the first point of the shortest line.
+    """
+    Returns the 2D point on g1 that is closest to g2. This is the first point of the shortest line.
 
-    see http://postgis.net/docs/ST_ClosestPoint.html
+    see https://postgis.net/docs/ST_ClosestPoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ClosestPoint: _ST_ClosestPoint
 
 class _ST_3DClosestPoint(functions.GenericFunction):
-    """Returns the 3D point on g1 that is closest to g2. This is the first point of the 3D shortest line.
+    """
+    Returns the 3D point on g1 that is closest to g2. This is the first point of the 3D shortest line.
 
-    see http://postgis.net/docs/ST_3DClosestPoint.html
+    see https://postgis.net/docs/ST_3DClosestPoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_3DClosestPoint: _ST_3DClosestPoint
 
 class _ST_Distance(functions.GenericFunction):
-    """Returns the distance between two geometry or geography values.
+    """
+    Returns the distance between two geometry or geography values.
 
-    see http://postgis.net/docs/ST_Distance.html"""
+    see https://postgis.net/docs/ST_Distance.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Distance: _ST_Distance
 
 class _ST_3DDistance(functions.GenericFunction):
-    """Returns the 3D cartesian minimum distance (based on spatial ref) between two geometries in projected units.
+    """
+    Returns the 3D cartesian minimum distance (based on spatial ref) between two geometries in projected
+    units.
 
-    see http://postgis.net/docs/ST_3DDistance.html"""
+    see https://postgis.net/docs/ST_3DDistance.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DDistance: _ST_3DDistance
 
 class _ST_DistanceSphere(functions.GenericFunction):
-    """Returns minimum distance in meters between two lon/lat geometries using a spherical earth model.
+    """
+    Returns minimum distance in meters between two lon/lat geometries using a spherical earth model.
 
-    see http://postgis.net/docs/ST_DistanceSphere.html"""
+    see https://postgis.net/docs/ST_DistanceSphere.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DistanceSphere: _ST_DistanceSphere
 
 class _ST_DistanceSpheroid(functions.GenericFunction):
-    """Returns the minimum distance between two lon/lat geometries using a spheroidal earth model.
+    """
+    Returns the minimum distance between two lon/lat geometries using a spheroidal earth model.
 
-    see http://postgis.net/docs/ST_DistanceSpheroid.html"""
+    see https://postgis.net/docs/ST_DistanceSpheroid.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DistanceSpheroid: _ST_DistanceSpheroid
 
 class _ST_FrechetDistance(functions.GenericFunction):
-    """Returns the Fréchet distance between two geometries.
+    """
+    Returns the Fréchet distance between two geometries.
 
-    see http://postgis.net/docs/ST_FrechetDistance.html"""
+    see https://postgis.net/docs/ST_FrechetDistance.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_FrechetDistance: _ST_FrechetDistance
 
 class _ST_HausdorffDistance(functions.GenericFunction):
-    """Returns the Hausdorff distance between two geometries.
+    """
+    Returns the Hausdorff distance between two geometries.
 
-    see http://postgis.net/docs/ST_HausdorffDistance.html"""
+    see https://postgis.net/docs/ST_HausdorffDistance.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_HausdorffDistance: _ST_HausdorffDistance
 
 class _ST_Length(functions.GenericFunction):
-    """Returns the 2D length of a linear geometry.
+    """
+    Returns the 2D length of a linear geometry.
 
-    see http://postgis.net/docs/ST_Length.html"""
+    see https://postgis.net/docs/ST_Length.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Length: _ST_Length
 
 class _ST_Length2D(functions.GenericFunction):
-    """Returns the 2D length of a linear geometry. Alias for ST_Length
+    """
+    Returns the 2D length of a linear geometry. Alias for ST_Length
 
-    see http://postgis.net/docs/ST_Length2D.html"""
+    see https://postgis.net/docs/ST_Length2D.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Length2D: _ST_Length2D
 
 class _ST_3DLength(functions.GenericFunction):
-    """Returns the 3D length of a linear geometry.
+    """
+    Returns the 3D length of a linear geometry.
 
-    see http://postgis.net/docs/ST_3DLength.html"""
+    see https://postgis.net/docs/ST_3DLength.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DLength: _ST_3DLength
 
 class _ST_LengthSpheroid(functions.GenericFunction):
-    """Returns the 2D or 3D length/perimeter of a lon/lat geometry on a spheroid.
+    """
+    Returns the 2D or 3D length/perimeter of a lon/lat geometry on a spheroid.
 
-    see http://postgis.net/docs/ST_LengthSpheroid.html"""
+    see https://postgis.net/docs/ST_LengthSpheroid.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_LengthSpheroid: _ST_LengthSpheroid
 
 class _ST_LongestLine(functions.GenericFunction):
-    """Returns the 2D longest line between two geometries.
+    """
+    Returns the 2D longest line between two geometries.
 
-    see http://postgis.net/docs/ST_LongestLine.html
+    see https://postgis.net/docs/ST_LongestLine.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LongestLine: _ST_LongestLine
 
 class _ST_3DLongestLine(functions.GenericFunction):
-    """Returns the 3D longest line between two geometries
+    """
+    Returns the 3D longest line between two geometries
 
-    see http://postgis.net/docs/ST_3DLongestLine.html
+    see https://postgis.net/docs/ST_3DLongestLine.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_3DLongestLine: _ST_3DLongestLine
 
 class _ST_MaxDistance(functions.GenericFunction):
-    """Returns the 2D largest distance between two geometries in projected units.
+    """
+    Returns the 2D largest distance between two geometries in projected units.
 
-    see http://postgis.net/docs/ST_MaxDistance.html"""
+    see https://postgis.net/docs/ST_MaxDistance.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MaxDistance: _ST_MaxDistance
 
 class _ST_3DMaxDistance(functions.GenericFunction):
-    """Returns the 3D cartesian maximum distance (based on spatial ref) between two geometries in projected units.
+    """
+    Returns the 3D cartesian maximum distance (based on spatial ref) between two geometries in projected
+    units.
 
-    see http://postgis.net/docs/ST_3DMaxDistance.html"""
+    see https://postgis.net/docs/ST_3DMaxDistance.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DMaxDistance: _ST_3DMaxDistance
 
 class _ST_MinimumClearance(functions.GenericFunction):
-    """Returns the minimum clearance of a geometry, a measure of a geometry's robustness.
+    """
+    Returns the minimum clearance of a geometry, a measure of a geometry's robustness.
 
-    see http://postgis.net/docs/ST_MinimumClearance.html"""
+    see https://postgis.net/docs/ST_MinimumClearance.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MinimumClearance: _ST_MinimumClearance
 
 class _ST_MinimumClearanceLine(functions.GenericFunction):
-    """Returns the two-point LineString spanning a geometry's minimum clearance.
+    """
+    Returns the two-point LineString spanning a geometry's minimum clearance.
 
-    see http://postgis.net/docs/ST_MinimumClearanceLine.html
+    see https://postgis.net/docs/ST_MinimumClearanceLine.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MinimumClearanceLine: _ST_MinimumClearanceLine
 
 class _ST_Perimeter(functions.GenericFunction):
-    """Returns the length of the boundary of a polygonal geometry or geography.
+    """
+    Returns the length of the boundary of a polygonal geometry or geography.
 
-    see http://postgis.net/docs/ST_Perimeter.html"""
+    see https://postgis.net/docs/ST_Perimeter.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Perimeter: _ST_Perimeter
 
 class _ST_Perimeter2D(functions.GenericFunction):
-    """Returns the 2D perimeter of a polygonal geometry. Alias for ST_Perimeter.
+    """
+    Returns the 2D perimeter of a polygonal geometry. Alias for ST_Perimeter.
 
-    see http://postgis.net/docs/ST_Perimeter2D.html"""
+    see https://postgis.net/docs/ST_Perimeter2D.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Perimeter2D: _ST_Perimeter2D
 
 class _ST_3DPerimeter(functions.GenericFunction):
-    """Returns the 3D perimeter of a polygonal geometry.
+    """
+    Returns the 3D perimeter of a polygonal geometry.
 
-    see http://postgis.net/docs/ST_3DPerimeter.html"""
+    see https://postgis.net/docs/ST_3DPerimeter.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DPerimeter: _ST_3DPerimeter
 
 class _ST_Project(functions.GenericFunction):
-    """Returns a point projected from a start point by a distance and bearing (azimuth).
+    """
+    Returns a point projected from a start point by a distance and bearing (azimuth).
 
-    see http://postgis.net/docs/ST_Project.html
+    see https://postgis.net/docs/ST_Project.html
 
-    Return type: :class:`geoalchemy2.types.Geography`."""
+    Return type: :class:`geoalchemy2.types.Geography`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geography: ...
 
 ST_Project: _ST_Project
 
 class _ST_ShortestLine(functions.GenericFunction):
-    """Returns the 2D shortest line between two geometries
+    """
+    Returns the 2D shortest line between two geometries
 
-    see http://postgis.net/docs/ST_ShortestLine.html
+    see https://postgis.net/docs/ST_ShortestLine.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ShortestLine: _ST_ShortestLine
 
 class _ST_3DShortestLine(functions.GenericFunction):
-    """Returns the 3D shortest line between two geometries
+    """
+    Returns the 3D shortest line between two geometries
 
-    see http://postgis.net/docs/ST_3DShortestLine.html
+    see https://postgis.net/docs/ST_3DShortestLine.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_3DShortestLine: _ST_3DShortestLine
 
 class _ST_Buffer(functions.GenericFunction):
-    """(T) Returns a geometry covering all points within a given distance from the input geometry.
+    """
+    (T) Returns a geometry covering all points within a given distance from the input geometry.
 
-    see http://postgis.net/docs/ST_Buffer.html
+    see https://postgis.net/docs/ST_Buffer.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Buffer: _ST_Buffer
 
 class _ST_BuildArea(functions.GenericFunction):
-    """Creates an areal geometry formed by the constituent linework of given geometry
+    """
+    Creates an areal geometry formed by the constituent linework of given geometry
 
-    see http://postgis.net/docs/ST_BuildArea.html
+    see https://postgis.net/docs/ST_BuildArea.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_BuildArea: _ST_BuildArea
 
 class _ST_Centroid(functions.GenericFunction):
-    """Returns the geometric center of a geometry.
+    """
+    Returns the geometric center of a geometry.
 
-    see http://postgis.net/docs/ST_Centroid.html
+    see https://postgis.net/docs/ST_Centroid.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Centroid: _ST_Centroid
 
 class _ST_ClipByBox2D(functions.GenericFunction):
-    """Returns the portion of a geometry falling within a rectangle.
+    """
+    Returns the portion of a geometry falling within a rectangle.
 
-    see http://postgis.net/docs/ST_ClipByBox2D.html
+    see https://postgis.net/docs/ST_ClipByBox2D.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ClipByBox2D: _ST_ClipByBox2D
 
 class _ST_ConcaveHull(functions.GenericFunction):
-    """The concave hull of a geometry represents a possibly concave geometry that encloses all geometries within the set. You can think of it as shrink wrapping.
+    """
+    The concave hull of a geometry represents a possibly concave geometry that encloses all geometries
+    within the set. You can think of it as shrink wrapping.
 
-    see http://postgis.net/docs/ST_ConcaveHull.html
+    see https://postgis.net/docs/ST_ConcaveHull.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ConcaveHull: _ST_ConcaveHull
 
 class _ST_ConvexHull(functions.GenericFunction):
-    """[geometry] Computes the convex hull of a geometry.
-    OR
-    [raster] Return the convex hull geometry of the raster including pixel values equal to BandNoDataValue. For regular shaped and non-skewed rasters, this gives the same result as ST_Envelope so only useful for irregularly shaped or skewed rasters.
+    """
+    [geometry] Computes the convex hull of a geometry. OR [raster] Return the convex hull geometry of
+    the raster including pixel values equal to BandNoDataValue. For regular shaped and non-skewed
+    rasters, this gives the same result as ST_Envelope so only useful for irregularly shaped or skewed
+    rasters.
 
-    see http://postgis.net/docs/ST_ConvexHull.html
+    see https://postgis.net/docs/ST_ConvexHull.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ConvexHull: _ST_ConvexHull
 
 class _ST_CurveToLine(functions.GenericFunction):
-    """Converts a CIRCULARSTRING/CURVEPOLYGON/MULTISURFACE to a LINESTRING/POLYGON/MULTIPOLYGON
+    """
+    Converts a CIRCULARSTRING/CURVEPOLYGON/MULTISURFACE to a LINESTRING/POLYGON/MULTIPOLYGON
 
-    see http://postgis.net/docs/ST_CurveToLine.html
+    see https://postgis.net/docs/ST_CurveToLine.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_CurveToLine: _ST_CurveToLine
 
 class _ST_DelaunayTriangles(functions.GenericFunction):
-    """Return a Delaunay triangulation around the given input points.
+    """
+    Return a Delaunay triangulation around the given input points.
 
-    see http://postgis.net/docs/ST_DelaunayTriangles.html
+    see https://postgis.net/docs/ST_DelaunayTriangles.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_DelaunayTriangles: _ST_DelaunayTriangles
 
 class _ST_Difference(functions.GenericFunction):
-    """Returns a geometry that represents that part of geometry A that does not intersect with geometry B.
+    """
+    Returns a geometry that represents that part of geometry A that does not intersect with geometry B.
 
-    see http://postgis.net/docs/ST_Difference.html
+    see https://postgis.net/docs/ST_Difference.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Difference: _ST_Difference
 
 class _ST_FlipCoordinates(functions.GenericFunction):
-    """Returns a version of the given geometry with X and Y axis flipped. Useful for people who have built latitude/longitude features and need to fix them.
+    """
+    Returns a version of the given geometry with X and Y axis flipped. Useful for people who have built
+    latitude/longitude features and need to fix them.
 
-    see http://postgis.net/docs/ST_FlipCoordinates.html
+    see https://postgis.net/docs/ST_FlipCoordinates.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_FlipCoordinates: _ST_FlipCoordinates
 
 class _ST_GeneratePoints(functions.GenericFunction):
-    """Converts a polygon or multi-polygon into a multi-point composed of randomly location points within the original areas.
+    """
+    Converts a polygon or multi-polygon into a multi-point composed of randomly location points within
+    the original areas.
 
-    see http://postgis.net/docs/ST_GeneratePoints.html
+    see https://postgis.net/docs/ST_GeneratePoints.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeneratePoints: _ST_GeneratePoints
 
 class _ST_GeometricMedian(functions.GenericFunction):
-    """Returns the geometric median of a MultiPoint.
+    """
+    Returns the geometric median of a MultiPoint.
 
-    see http://postgis.net/docs/ST_GeometricMedian.html
+    see https://postgis.net/docs/ST_GeometricMedian.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_GeometricMedian: _ST_GeometricMedian
 
 class _ST_Intersection(functions.GenericFunction):
-    """[geometry] (T) Returns a geometry that represents the shared portion of geomA and geomB.
-    OR
-    [raster] Returns a raster or a set of geometry-pixelvalue pairs representing the shared portion of two rasters or the geometrical intersection of a vectorization of the raster and a geometry.
+    """
+    [geometry] (T) Returns a geometry that represents the shared portion of geomA and geomB. OR [raster]
+    Returns a raster or a set of geometry-pixelvalue pairs representing the shared portion of two
+    rasters or the geometrical intersection of a vectorization of the raster and a geometry.
 
-    see http://postgis.net/docs/ST_Intersection.html
+    see https://postgis.net/docs/ST_Intersection.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Intersection: _ST_Intersection
 
 class _ST_LineToCurve(functions.GenericFunction):
-    """Converts a LINESTRING/POLYGON to a CIRCULARSTRING, CURVEPOLYGON
+    """
+    Converts a LINESTRING/POLYGON to a CIRCULARSTRING, CURVEPOLYGON
 
-    see http://postgis.net/docs/ST_LineToCurve.html
+    see https://postgis.net/docs/ST_LineToCurve.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LineToCurve: _ST_LineToCurve
 
 class _ST_MakeValid(functions.GenericFunction):
-    """Attempts to make an invalid geometry valid without losing vertices.
+    """
+    Attempts to make an invalid geometry valid without losing vertices.
 
-    see http://postgis.net/docs/ST_MakeValid.html
+    see https://postgis.net/docs/ST_MakeValid.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MakeValid: _ST_MakeValid
 
 class _ST_MemUnion(functions.GenericFunction):
-    """Same as ST_Union, only memory-friendly (uses less memory and more processor time).
+    """
+    Same as ST_Union, only memory-friendly (uses less memory and more processor time).
 
-    see http://postgis.net/docs/ST_MemUnion.html
+    see https://postgis.net/docs/ST_MemUnion.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MemUnion: _ST_MemUnion
 
 class _ST_MinimumBoundingCircle(functions.GenericFunction):
-    """Returns the smallest circle polygon that can fully contain a geometry. Default uses 48 segments per quarter circle.
+    """
+    Returns the smallest circle polygon that can fully contain a geometry. Default uses 48 segments per
+    quarter circle.
 
-    see http://postgis.net/docs/ST_MinimumBoundingCircle.html
+    see https://postgis.net/docs/ST_MinimumBoundingCircle.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MinimumBoundingCircle: _ST_MinimumBoundingCircle
 
 class _ST_MinimumBoundingRadius(functions.GenericFunction):
-    """Returns the center point and radius of the smallest circle that can fully contain a geometry.
+    """
+    Returns the center point and radius of the smallest circle that can fully contain a geometry.
 
-    see http://postgis.net/docs/ST_MinimumBoundingRadius.html"""
+    see https://postgis.net/docs/ST_MinimumBoundingRadius.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MinimumBoundingRadius: _ST_MinimumBoundingRadius
 
 class _ST_OrientedEnvelope(functions.GenericFunction):
-    """Returns a minimum rotated rectangle enclosing a geometry.
+    """
+    Returns a minimum rotated rectangle enclosing a geometry.
 
-    see http://postgis.net/docs/ST_OrientedEnvelope.html
+    see https://postgis.net/docs/ST_OrientedEnvelope.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_OrientedEnvelope: _ST_OrientedEnvelope
 
 class _ST_Polygonize(functions.GenericFunction):
-    """Aggregate. Creates a GeometryCollection containing possible polygons formed from the constituent linework of a set of geometries.
+    """
+    Aggregate. Creates a GeometryCollection containing possible polygons formed from the constituent
+    linework of a set of geometries.
 
-    see http://postgis.net/docs/ST_Polygonize.html
+    see https://postgis.net/docs/ST_Polygonize.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Polygonize: _ST_Polygonize
 
 class _ST_Node(functions.GenericFunction):
-    """Node a set of linestrings.
+    """
+    Node a set of linestrings.
 
-    see http://postgis.net/docs/ST_Node.html
+    see https://postgis.net/docs/ST_Node.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Node: _ST_Node
 
 class _ST_OffsetCurve(functions.GenericFunction):
-    """Return an offset line at a given distance and side from an input line. Useful for computing parallel lines about a center line
+    """
+    Return an offset line at a given distance and side from an input line. Useful for computing parallel
+    lines about a center line
 
-    see http://postgis.net/docs/ST_OffsetCurve.html
+    see https://postgis.net/docs/ST_OffsetCurve.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_OffsetCurve: _ST_OffsetCurve
 
 class _ST_PointOnSurface(functions.GenericFunction):
-    """Returns a POINT guaranteed to lie on the surface.
+    """
+    Returns a POINT guaranteed to lie on the surface.
 
-    see http://postgis.net/docs/ST_PointOnSurface.html
+    see https://postgis.net/docs/ST_PointOnSurface.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_PointOnSurface: _ST_PointOnSurface
 
 class _ST_RemoveRepeatedPoints(functions.GenericFunction):
-    """Returns a version of the given geometry with duplicated points removed.
+    """
+    Returns a version of the given geometry with duplicated points removed.
 
-    see http://postgis.net/docs/ST_RemoveRepeatedPoints.html
+    see https://postgis.net/docs/ST_RemoveRepeatedPoints.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_RemoveRepeatedPoints: _ST_RemoveRepeatedPoints
 
 class _ST_SharedPaths(functions.GenericFunction):
-    """Returns a collection containing paths shared by the two input linestrings/multilinestrings.
+    """
+    Returns a collection containing paths shared by the two input linestrings/multilinestrings.
 
-    see http://postgis.net/docs/ST_SharedPaths.html
+    see https://postgis.net/docs/ST_SharedPaths.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_SharedPaths: _ST_SharedPaths
 
 class _ST_ShiftLongitude(functions.GenericFunction):
-    """Toggle geometry coordinates between -180..180 and 0..360 ranges.
+    """
+    Toggle geometry coordinates between -180..180 and 0..360 ranges.
 
-    see http://postgis.net/docs/ST_Shift_Longitude.html
+    see https://postgis.net/docs/ST_Shift_Longitude.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ShiftLongitude: _ST_ShiftLongitude
 
 class _ST_WrapX(functions.GenericFunction):
-    """Wrap a geometry around an X value.
+    """
+    Wrap a geometry around an X value.
 
-    see http://postgis.net/docs/ST_WrapX.html
+    see https://postgis.net/docs/ST_WrapX.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_WrapX: _ST_WrapX
 
 class _ST_Simplify(functions.GenericFunction):
-    """Returns a "simplified" version of the given geometry using the Douglas-Peucker algorithm.
+    """
+    Returns a "simplified" version of the given geometry using the Douglas-Peucker algorithm.
 
-    see http://postgis.net/docs/ST_Simplify.html
+    see https://postgis.net/docs/ST_Simplify.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Simplify: _ST_Simplify
 
 class _ST_SimplifyPreserveTopology(functions.GenericFunction):
-    """Returns a "simplified" version of the given geometry using the Douglas-Peucker algorithm. Will avoid creating derived geometries (polygons in particular) that are invalid.
+    """
+    Returns a "simplified" version of the given geometry using the Douglas-Peucker algorithm. Will avoid
+    creating derived geometries (polygons in particular) that are invalid.
 
-    see http://postgis.net/docs/ST_SimplifyPreserveTopology.html
+    see https://postgis.net/docs/ST_SimplifyPreserveTopology.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_SimplifyPreserveTopology: _ST_SimplifyPreserveTopology
 
 class _ST_SimplifyVW(functions.GenericFunction):
-    """Returns a "simplified" version of the given geometry using the Visvalingam-Whyatt algorithm
+    """
+    Returns a "simplified" version of the given geometry using the Visvalingam-Whyatt algorithm
 
-    see http://postgis.net/docs/ST_SimplifyVW.html
+    see https://postgis.net/docs/ST_SimplifyVW.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_SimplifyVW: _ST_SimplifyVW
 
 class _ST_ChaikinSmoothing(functions.GenericFunction):
-    """Returns a "smoothed" version of the given geometry using the Chaikin algorithm
+    """
+    Returns a "smoothed" version of the given geometry using the Chaikin algorithm
 
-    see http://postgis.net/docs/ST_ChaikinSmoothing.html
+    see https://postgis.net/docs/ST_ChaikinSmoothing.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ChaikinSmoothing: _ST_ChaikinSmoothing
 
 class _ST_FilterByM(functions.GenericFunction):
-    """Filters vertex points based on their m-value
+    """
+    Filters vertex points based on their m-value
 
-    see http://postgis.net/docs/ST_FilterByM.html
+    see https://postgis.net/docs/ST_FilterByM.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_FilterByM: _ST_FilterByM
 
 class _ST_SetEffectiveArea(functions.GenericFunction):
-    """Sets the effective area for each vertex, storing the value in the M ordinate. A simplified geometry can then be generated by filtering on the M ordinate.
+    """
+    Sets the effective area for each vertex, storing the value in the M ordinate. A simplified geometry
+    can then be generated by filtering on the M ordinate.
 
-    see http://postgis.net/docs/ST_SetEffectiveArea.html
+    see https://postgis.net/docs/ST_SetEffectiveArea.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_SetEffectiveArea: _ST_SetEffectiveArea
 
 class _ST_Split(functions.GenericFunction):
-    """Returns a collection of geometries resulting by splitting a geometry.
+    """
+    Returns a collection of geometries resulting by splitting a geometry.
 
-    see http://postgis.net/docs/ST_Split.html
+    see https://postgis.net/docs/ST_Split.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Split: _ST_Split
 
 class _ST_SymDifference(functions.GenericFunction):
-    """Returns a geometry that represents the portions of A and B that do not intersect. It is called a symmetric difference because ST_SymDifference(A,B) = ST_SymDifference(B,A).
+    """
+    Returns a geometry that represents the portions of A and B that do not intersect. It is called a
+    symmetric difference because ST_SymDifference(A,B) = ST_SymDifference(B,A).
 
-    see http://postgis.net/docs/ST_SymDifference.html
+    see https://postgis.net/docs/ST_SymDifference.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_SymDifference: _ST_SymDifference
 
 class _ST_Subdivide(functions.GenericFunction):
-    """Returns a set of geometry where no geometry in the set has more than the specified number of vertices.
+    """
+    Returns a set of geometry where no geometry in the set has more than the specified number of
+    vertices.
 
-    see http://postgis.net/docs/ST_Subdivide.html
+    see https://postgis.net/docs/ST_Subdivide.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Subdivide: _ST_Subdivide
 
 class _ST_Union(functions.GenericFunction):
-    """[geometry] Returns a geometry that represents the point set union of the Geometries.
-    OR
-    [raster] Returns the union of a set of raster tiles into a single raster composed of 1 or more bands.
+    """
+    [geometry] Returns a geometry that represents the point set union of the Geometries. OR [raster]
+    Returns the union of a set of raster tiles into a single raster composed of 1 or more bands.
 
-    see http://postgis.net/docs/ST_Union.html
+    see https://postgis.net/docs/ST_Union.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Union: _ST_Union
 
 class _ST_UnaryUnion(functions.GenericFunction):
-    """Like ST_Union, but working at the geometry component level.
+    """
+    Like ST_Union, but working at the geometry component level.
 
-    see http://postgis.net/docs/ST_UnaryUnion.html
+    see https://postgis.net/docs/ST_UnaryUnion.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_UnaryUnion: _ST_UnaryUnion
 
 class _ST_VoronoiLines(functions.GenericFunction):
-    """Returns the boundaries between the cells of the Voronoi diagram constructed from the vertices of a geometry.
+    """
+    Returns the boundaries between the cells of the Voronoi diagram constructed from the vertices of a
+    geometry.
 
-    see http://postgis.net/docs/ST_VoronoiLines.html
+    see https://postgis.net/docs/ST_VoronoiLines.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_VoronoiLines: _ST_VoronoiLines
 
 class _ST_VoronoiPolygons(functions.GenericFunction):
-    """Returns the cells of the Voronoi diagram constructed from the vertices of a geometry.
+    """
+    Returns the cells of the Voronoi diagram constructed from the vertices of a geometry.
 
-    see http://postgis.net/docs/ST_VoronoiPolygons.html
+    see https://postgis.net/docs/ST_VoronoiPolygons.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_VoronoiPolygons: _ST_VoronoiPolygons
 
 class _ST_Affine(functions.GenericFunction):
-    """Apply a 3D affine transformation to a geometry.
+    """
+    Apply a 3D affine transformation to a geometry.
 
-    see http://postgis.net/docs/ST_Affine.html
+    see https://postgis.net/docs/ST_Affine.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Affine: _ST_Affine
 
 class _ST_Rotate(functions.GenericFunction):
-    """Rotates a geometry about an origin point.
+    """
+    Rotates a geometry about an origin point.
 
-    see http://postgis.net/docs/ST_Rotate.html
+    see https://postgis.net/docs/ST_Rotate.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Rotate: _ST_Rotate
 
 class _ST_RotateX(functions.GenericFunction):
-    """Rotates a geometry about the X axis.
+    """
+    Rotates a geometry about the X axis.
 
-    see http://postgis.net/docs/ST_RotateX.html
+    see https://postgis.net/docs/ST_RotateX.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_RotateX: _ST_RotateX
 
 class _ST_RotateY(functions.GenericFunction):
-    """Rotates a geometry about the Y axis.
+    """
+    Rotates a geometry about the Y axis.
 
-    see http://postgis.net/docs/ST_RotateY.html
+    see https://postgis.net/docs/ST_RotateY.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_RotateY: _ST_RotateY
 
 class _ST_RotateZ(functions.GenericFunction):
-    """Rotates a geometry about the Z axis.
+    """
+    Rotates a geometry about the Z axis.
 
-    see http://postgis.net/docs/ST_RotateZ.html
+    see https://postgis.net/docs/ST_RotateZ.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_RotateZ: _ST_RotateZ
 
 class _ST_Scale(functions.GenericFunction):
-    """Scales a geometry by given factors.
+    """
+    Scales a geometry by given factors.
 
-    see http://postgis.net/docs/ST_Scale.html
+    see https://postgis.net/docs/ST_Scale.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Scale: _ST_Scale
 
 class _ST_Translate(functions.GenericFunction):
-    """Translates a geometry by given offsets.
+    """
+    Translates a geometry by given offsets.
 
-    see http://postgis.net/docs/ST_Translate.html
+    see https://postgis.net/docs/ST_Translate.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Translate: _ST_Translate
 
 class _ST_TransScale(functions.GenericFunction):
-    """Translates and scales a geometry by given offsets and factors.
+    """
+    Translates and scales a geometry by given offsets and factors.
 
-    see http://postgis.net/docs/ST_TransScale.html
+    see https://postgis.net/docs/ST_TransScale.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_TransScale: _ST_TransScale
 
 class _ST_ClusterDBSCAN(functions.GenericFunction):
-    """Window function that returns a cluster id for each input geometry using the DBSCAN algorithm.
+    """
+    Window function that returns a cluster id for each input geometry using the DBSCAN algorithm.
 
-    see http://postgis.net/docs/ST_ClusterDBSCAN.html"""
+    see https://postgis.net/docs/ST_ClusterDBSCAN.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ClusterDBSCAN: _ST_ClusterDBSCAN
 
 class _ST_ClusterIntersecting(functions.GenericFunction):
-    """Aggregate function that clusters the input geometries into connected sets.
+    """
+    Aggregate function that clusters the input geometries into connected sets.
 
-    see http://postgis.net/docs/ST_ClusterIntersecting.html
+    see https://postgis.net/docs/ST_ClusterIntersecting.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ClusterIntersecting: _ST_ClusterIntersecting
 
 class _ST_ClusterKMeans(functions.GenericFunction):
-    """Window function that returns a cluster id for each input geometry using the K-means algorithm.
+    """
+    Window function that returns a cluster id for each input geometry using the K-means algorithm.
 
-    see http://postgis.net/docs/ST_ClusterKMeans.html"""
+    see https://postgis.net/docs/ST_ClusterKMeans.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ClusterKMeans: _ST_ClusterKMeans
 
 class _ST_ClusterWithin(functions.GenericFunction):
-    """Aggregate function that clusters the input geometries by separation distance.
+    """
+    Aggregate function that clusters the input geometries by separation distance.
 
-    see http://postgis.net/docs/ST_ClusterWithin.html
+    see https://postgis.net/docs/ST_ClusterWithin.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ClusterWithin: _ST_ClusterWithin
 
 class _Box2D(functions.GenericFunction):
-    """Returns a BOX2D representing the 2D extent of the geometry.
+    """
+    Returns a BOX2D representing the 2D extent of the geometry.
 
-    see http://postgis.net/docs/Box2D_type.html"""
+    see https://postgis.net/docs/Box2D_type.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 Box2D: _Box2D
 
 class _Box3D(functions.GenericFunction):
-    """[geometry] Returns a BOX3D representing the 3D extent of the geometry.
-    OR
-    [raster] Returns the box 3d representation of the enclosing box of the raster.
+    """
+    [geometry] Returns a BOX3D representing the 3D extent of the geometry. OR [raster] Returns the box
+    3d representation of the enclosing box of the raster.
 
-    see http://postgis.net/docs/Box3D_type.html"""
+    see https://postgis.net/docs/Box3D_type.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 Box3D: _Box3D
 
 class _ST_EstimatedExtent(functions.GenericFunction):
-    """Return the 'estimated' extent of a spatial table.
+    """
+    Return the 'estimated' extent of a spatial table.
 
-    see http://postgis.net/docs/ST_EstimatedExtent.html"""
+    see https://postgis.net/docs/ST_EstimatedExtent.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_EstimatedExtent: _ST_EstimatedExtent
 
 class _ST_Expand(functions.GenericFunction):
-    """Returns a bounding box expanded from another bounding box or a geometry.
+    """
+    Returns a bounding box expanded from another bounding box or a geometry.
 
-    see http://postgis.net/docs/ST_Expand.html
+    see https://postgis.net/docs/ST_Expand.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Expand: _ST_Expand
 
 class _ST_Extent(functions.GenericFunction):
-    """an aggregate function that returns the bounding box that bounds rows of geometries.
+    """
+    an aggregate function that returns the bounding box that bounds rows of geometries.
 
-    see http://postgis.net/docs/ST_Extent.html"""
+    see https://postgis.net/docs/ST_Extent.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Extent: _ST_Extent
 
 class _ST_3DExtent(functions.GenericFunction):
-    """an aggregate function that returns the 3D bounding box that bounds rows of geometries.
+    """
+    an aggregate function that returns the 3D bounding box that bounds rows of geometries.
 
-    see http://postgis.net/docs/ST_3DExtent.html"""
+    see https://postgis.net/docs/ST_3DExtent.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DExtent: _ST_3DExtent
 
 class _ST_MakeBox2D(functions.GenericFunction):
-    """Creates a BOX2D defined by two 2D point geometries.
+    """
+    Creates a BOX2D defined by two 2D point geometries.
 
-    see http://postgis.net/docs/ST_MakeBox2D.html"""
+    see https://postgis.net/docs/ST_MakeBox2D.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MakeBox2D: _ST_MakeBox2D
 
 class _ST_3DMakeBox(functions.GenericFunction):
-    """Creates a BOX3D defined by two 3D point geometries.
+    """
+    Creates a BOX3D defined by two 3D point geometries.
 
-    see http://postgis.net/docs/ST_3DMakeBox.html"""
+    see https://postgis.net/docs/ST_3DMakeBox.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DMakeBox: _ST_3DMakeBox
 
 class _ST_XMax(functions.GenericFunction):
-    """Returns the X maxima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the X maxima of a 2D or 3D bounding box or a geometry.
 
-    see http://postgis.net/docs/ST_XMax.html"""
+    see https://postgis.net/docs/ST_XMax.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_XMax: _ST_XMax
 
 class _ST_XMin(functions.GenericFunction):
-    """Returns the X minima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the X minima of a 2D or 3D bounding box or a geometry.
 
-    see http://postgis.net/docs/ST_XMin.html"""
+    see https://postgis.net/docs/ST_XMin.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_XMin: _ST_XMin
 
 class _ST_YMax(functions.GenericFunction):
-    """Returns the Y maxima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the Y maxima of a 2D or 3D bounding box or a geometry.
 
-    see http://postgis.net/docs/ST_YMax.html"""
+    see https://postgis.net/docs/ST_YMax.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_YMax: _ST_YMax
 
 class _ST_YMin(functions.GenericFunction):
-    """Returns the Y minima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the Y minima of a 2D or 3D bounding box or a geometry.
 
-    see http://postgis.net/docs/ST_YMin.html"""
+    see https://postgis.net/docs/ST_YMin.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_YMin: _ST_YMin
 
 class _ST_ZMax(functions.GenericFunction):
-    """Returns the Z maxima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the Z maxima of a 2D or 3D bounding box or a geometry.
 
-    see http://postgis.net/docs/ST_ZMax.html"""
+    see https://postgis.net/docs/ST_ZMax.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ZMax: _ST_ZMax
 
 class _ST_ZMin(functions.GenericFunction):
-    """Returns the Z minima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the Z minima of a 2D or 3D bounding box or a geometry.
 
-    see http://postgis.net/docs/ST_ZMin.html"""
+    see https://postgis.net/docs/ST_ZMin.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ZMin: _ST_ZMin
 
 class _ST_LineInterpolatePoint(functions.GenericFunction):
-    """Returns a point interpolated along a line. Second argument is a float8 between 0 and 1 representing fraction of total length of linestring the point has to be located.
+    """
+    Returns a point interpolated along a line. Second argument is a float8 between 0 and 1 representing
+    fraction of total length of linestring the point has to be located.
 
-    see http://postgis.net/docs/ST_LineInterpolatePoint.html
+    see https://postgis.net/docs/ST_LineInterpolatePoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LineInterpolatePoint: _ST_LineInterpolatePoint
 
 class _ST_3DLineInterpolatePoint(functions.GenericFunction):
-    """Returns a point interpolated along a line in 3D. Second argument is a float8 between 0 and 1 representing fraction of total length of linestring the point has to be located.
+    """
+    Returns a point interpolated along a line in 3D. Second argument is a float8 between 0 and 1
+    representing fraction of total length of linestring the point has to be located.
 
-    see http://postgis.net/docs/ST_3DLineInterpolatePoint.html
+    see https://postgis.net/docs/ST_3DLineInterpolatePoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_3DLineInterpolatePoint: _ST_3DLineInterpolatePoint
 
 class _ST_LineInterpolatePoints(functions.GenericFunction):
-    """Returns one or more points interpolated along a line.
+    """
+    Returns one or more points interpolated along a line.
 
-    see http://postgis.net/docs/ST_LineInterpolatePoints.html
+    see https://postgis.net/docs/ST_LineInterpolatePoints.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LineInterpolatePoints: _ST_LineInterpolatePoints
 
 class _ST_LineLocatePoint(functions.GenericFunction):
-    """Returns a float between 0 and 1 representing the location of the closest point on LineString to the given Point, as a fraction of total 2d line length.
+    """
+    Returns a float between 0 and 1 representing the location of the closest point on LineString to the
+    given Point, as a fraction of total 2d line length.
 
-    see http://postgis.net/docs/ST_LineLocatePoint.html"""
+    see https://postgis.net/docs/ST_LineLocatePoint.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_LineLocatePoint: _ST_LineLocatePoint
 
 class _ST_LineSubstring(functions.GenericFunction):
-    """Return a linestring being a substring of the input one starting and ending at the given fractions of total 2d length. Second and third arguments are float8 values between 0 and 1.
+    """
+    Return a linestring being a substring of the input one starting and ending at the given fractions of
+    total 2d length. Second and third arguments are float8 values between 0 and 1.
 
-    see http://postgis.net/docs/ST_LineSubstring.html
+    see https://postgis.net/docs/ST_LineSubstring.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LineSubstring: _ST_LineSubstring
 
 class _ST_LocateAlong(functions.GenericFunction):
-    """Return a derived geometry collection value with elements that match the specified measure. Polygonal elements are not supported.
+    """
+    Return a derived geometry collection value with elements that match the specified measure. Polygonal
+    elements are not supported.
 
-    see http://postgis.net/docs/ST_LocateAlong.html
+    see https://postgis.net/docs/ST_LocateAlong.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LocateAlong: _ST_LocateAlong
 
 class _ST_LocateBetween(functions.GenericFunction):
-    """Return a derived geometry collection value with elements that match the specified range of measures inclusively.
+    """
+    Return a derived geometry collection value with elements that match the specified range of measures
+    inclusively.
 
-    see http://postgis.net/docs/ST_LocateBetween.html
+    see https://postgis.net/docs/ST_LocateBetween.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LocateBetween: _ST_LocateBetween
 
 class _ST_LocateBetweenElevations(functions.GenericFunction):
-    """Return a derived geometry (collection) value with elements that intersect the specified range of elevations inclusively.
+    """
+    Return a derived geometry (collection) value with elements that intersect the specified range of
+    elevations inclusively.
 
-    see http://postgis.net/docs/ST_LocateBetweenElevations.html
+    see https://postgis.net/docs/ST_LocateBetweenElevations.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_LocateBetweenElevations: _ST_LocateBetweenElevations
 
 class _ST_InterpolatePoint(functions.GenericFunction):
-    """Return the value of the measure dimension of a geometry at the point closed to the provided point.
+    """
+    Return the value of the measure dimension of a geometry at the point closed to the provided point.
 
-    see http://postgis.net/docs/ST_InterpolatePoint.html"""
+    see https://postgis.net/docs/ST_InterpolatePoint.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_InterpolatePoint: _ST_InterpolatePoint
 
 class _ST_AddMeasure(functions.GenericFunction):
-    """Return a derived geometry with measure elements linearly interpolated between the start and end points.
+    """
+    Return a derived geometry with measure elements linearly interpolated between the start and end
+    points.
 
-    see http://postgis.net/docs/ST_AddMeasure.html
+    see https://postgis.net/docs/ST_AddMeasure.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_AddMeasure: _ST_AddMeasure
 
 class _ST_IsValidTrajectory(functions.GenericFunction):
-    """Returns true if the geometry is a valid trajectory.
+    """
+    Returns true if the geometry is a valid trajectory.
 
-    see http://postgis.net/docs/ST_IsValidTrajectory.html"""
+    see https://postgis.net/docs/ST_IsValidTrajectory.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsValidTrajectory: _ST_IsValidTrajectory
 
 class _ST_ClosestPointOfApproach(functions.GenericFunction):
-    """Returns the measure at which points interpolated along two trajectories are closest.
+    """
+    Returns the measure at which points interpolated along two trajectories are closest.
 
-    see http://postgis.net/docs/ST_ClosestPointOfApproach.html"""
+    see https://postgis.net/docs/ST_ClosestPointOfApproach.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ClosestPointOfApproach: _ST_ClosestPointOfApproach
 
 class _ST_DistanceCPA(functions.GenericFunction):
-    """Returns the distance between the closest point of approach of two trajectories.
+    """
+    Returns the distance between the closest point of approach of two trajectories.
 
-    see http://postgis.net/docs/ST_DistanceCPA.html"""
+    see https://postgis.net/docs/ST_DistanceCPA.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DistanceCPA: _ST_DistanceCPA
 
 class _ST_CPAWithin(functions.GenericFunction):
-    """Returns true if the closest point of approach of two trajectories is within the specified distance.
+    """
+    Returns true if the closest point of approach of two trajectories is within the specified distance.
 
-    see http://postgis.net/docs/ST_CPAWithin.html"""
+    see https://postgis.net/docs/ST_CPAWithin.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_CPAWithin: _ST_CPAWithin
 
 class _postgis_sfcgal_version(functions.GenericFunction):
-    """Returns the version of SFCGAL in use
+    """
+    Returns the version of SFCGAL in use
 
-    see http://postgis.net/docs/postgis_sfcgal_version.html"""
+    see https://postgis.net/docs/postgis_sfcgal_version.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 postgis_sfcgal_version: _postgis_sfcgal_version
 
 class _ST_Extrude(functions.GenericFunction):
-    """Extrude a surface to a related volume
+    """
+    Extrude a surface to a related volume
 
-    see http://postgis.net/docs/ST_Extrude.html
+    see https://postgis.net/docs/ST_Extrude.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Extrude: _ST_Extrude
 
 class _ST_StraightSkeleton(functions.GenericFunction):
-    """Compute a straight skeleton from a geometry
+    """
+    Compute a straight skeleton from a geometry
 
-    see http://postgis.net/docs/ST_StraightSkeleton.html
+    see https://postgis.net/docs/ST_StraightSkeleton.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_StraightSkeleton: _ST_StraightSkeleton
 
 class _ST_ApproximateMedialAxis(functions.GenericFunction):
-    """Compute the approximate medial axis of an areal geometry.
+    """
+    Compute the approximate medial axis of an areal geometry.
 
-    see http://postgis.net/docs/ST_ApproximateMedialAxis.html
+    see https://postgis.net/docs/ST_ApproximateMedialAxis.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ApproximateMedialAxis: _ST_ApproximateMedialAxis
 
 class _ST_IsPlanar(functions.GenericFunction):
-    """Check if a surface is or not planar
+    """
+    Check if a surface is or not planar
 
-    see http://postgis.net/docs/ST_IsPlanar.html"""
+    see https://postgis.net/docs/ST_IsPlanar.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsPlanar: _ST_IsPlanar
 
 class _ST_Orientation(functions.GenericFunction):
-    """Determine surface orientation
+    """
+    Determine surface orientation
 
-    see http://postgis.net/docs/ST_Orientation.html"""
+    see https://postgis.net/docs/ST_Orientation.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Orientation: _ST_Orientation
 
 class _ST_ForceLHR(functions.GenericFunction):
-    """Force LHR orientation
+    """
+    Force LHR orientation
 
-    see http://postgis.net/docs/ST_ForceLHR.html
+    see https://postgis.net/docs/ST_ForceLHR.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ForceLHR: _ST_ForceLHR
 
 class _ST_MinkowskiSum(functions.GenericFunction):
-    """Performs Minkowski sum
+    """
+    Performs Minkowski sum
 
-    see http://postgis.net/docs/ST_MinkowskiSum.html
+    see https://postgis.net/docs/ST_MinkowskiSum.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MinkowskiSum: _ST_MinkowskiSum
 
 class _ST_ConstrainedDelaunayTriangles(functions.GenericFunction):
-    """Return a constrained Delaunay triangulation around the given input geometry.
+    """
+    Return a constrained Delaunay triangulation around the given input geometry.
 
-    see http://postgis.net/docs/ST_ConstrainedDelaunayTriangles.html
+    see https://postgis.net/docs/ST_ConstrainedDelaunayTriangles.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_ConstrainedDelaunayTriangles: _ST_ConstrainedDelaunayTriangles
 
 class _ST_3DIntersection(functions.GenericFunction):
-    """Perform 3D intersection
+    """
+    Perform 3D intersection
 
-    see http://postgis.net/docs/ST_3DIntersection.html
+    see https://postgis.net/docs/ST_3DIntersection.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_3DIntersection: _ST_3DIntersection
 
 class _ST_3DDifference(functions.GenericFunction):
-    """Perform 3D difference
+    """
+    Perform 3D difference
 
-    see http://postgis.net/docs/ST_3DDifference.html
+    see https://postgis.net/docs/ST_3DDifference.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_3DDifference: _ST_3DDifference
 
 class _ST_3DUnion(functions.GenericFunction):
-    """Perform 3D union
+    """
+    Perform 3D union
 
-    see http://postgis.net/docs/ST_3DUnion.html
+    see https://postgis.net/docs/ST_3DUnion.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_3DUnion: _ST_3DUnion
 
 class _ST_3DArea(functions.GenericFunction):
-    """Computes area of 3D surface geometries. Will return 0 for solids.
+    """
+    Computes area of 3D surface geometries. Will return 0 for solids.
 
-    see http://postgis.net/docs/ST_3DArea.html"""
+    see https://postgis.net/docs/ST_3DArea.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_3DArea: _ST_3DArea
 
 class _ST_Tesselate(functions.GenericFunction):
-    """Perform surface Tessellation of a polygon or polyhedralsurface and returns as a TIN or collection of TINS
+    """
+    Perform surface Tessellation of a polygon or polyhedralsurface and returns as a TIN or collection of
+    TINS
 
-    see http://postgis.net/docs/ST_Tesselate.html
+    see https://postgis.net/docs/ST_Tesselate.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_Tesselate: _ST_Tesselate
 
 class _ST_Volume(functions.GenericFunction):
-    """Computes the volume of a 3D solid. If applied to surface (even closed) geometries will return 0.
+    """
+    Computes the volume of a 3D solid. If applied to surface (even closed) geometries will return 0.
 
-    see http://postgis.net/docs/ST_Volume.html"""
+    see https://postgis.net/docs/ST_Volume.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Volume: _ST_Volume
 
 class _ST_MakeSolid(functions.GenericFunction):
-    """Cast the geometry into a solid. No check is performed. To obtain a valid solid, the input geometry must be a closed Polyhedral Surface or a closed TIN.
+    """
+    Cast the geometry into a solid. No check is performed. To obtain a valid solid, the input geometry
+    must be a closed Polyhedral Surface or a closed TIN.
 
-    see http://postgis.net/docs/ST_MakeSolid.html
+    see https://postgis.net/docs/ST_MakeSolid.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MakeSolid: _ST_MakeSolid
 
 class _ST_IsSolid(functions.GenericFunction):
-    """Test if the geometry is a solid. No validity check is performed.
+    """
+    Test if the geometry is a solid. No validity check is performed.
 
-    see http://postgis.net/docs/ST_IsSolid.html"""
+    see https://postgis.net/docs/ST_IsSolid.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_IsSolid: _ST_IsSolid
 
 class _AddAuth(functions.GenericFunction):
-    """Adds an authorization token to be used in the current transaction.
+    """
+    Adds an authorization token to be used in the current transaction.
 
-    see http://postgis.net/docs/AddAuth.html"""
+    see https://postgis.net/docs/AddAuth.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 AddAuth: _AddAuth
 
 class _CheckAuth(functions.GenericFunction):
-    """Creates a trigger on a table to prevent/allow updates and deletes of rows based on authorization token.
+    """
+    Creates a trigger on a table to prevent/allow updates and deletes of rows based on authorization
+    token.
 
-    see http://postgis.net/docs/CheckAuth.html"""
+    see https://postgis.net/docs/CheckAuth.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 CheckAuth: _CheckAuth
 
 class _DisableLongTransactions(functions.GenericFunction):
-    """Disables long transaction support.
+    """
+    Disables long transaction support.
 
-    see http://postgis.net/docs/DisableLongTransactions.html"""
+    see https://postgis.net/docs/DisableLongTransactions.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 DisableLongTransactions: _DisableLongTransactions
 
 class _EnableLongTransactions(functions.GenericFunction):
-    """Enables long transaction support.
+    """
+    Enables long transaction support.
 
-    see http://postgis.net/docs/EnableLongTransactions.html"""
+    see https://postgis.net/docs/EnableLongTransactions.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 EnableLongTransactions: _EnableLongTransactions
 
 class _LockRow(functions.GenericFunction):
-    """Sets lock/authorization for a row in a table.
+    """
+    Sets lock/authorization for a row in a table.
 
-    see http://postgis.net/docs/LockRow.html"""
+    see https://postgis.net/docs/LockRow.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 LockRow: _LockRow
 
 class _UnlockRows(functions.GenericFunction):
-    """Removes all locks held by an authorization token.
+    """
+    Removes all locks held by an authorization token.
 
-    see http://postgis.net/docs/UnlockRows.html"""
+    see https://postgis.net/docs/UnlockRows.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 UnlockRows: _UnlockRows
 
 class _PostGIS_Extensions_Upgrade(functions.GenericFunction):
-    """Packages and upgrades postgis extensions (e.g. postgis_raster, postgis_topology, postgis_sfcgal) to latest available version.
+    """
+    Packages and upgrades postgis extensions (e.g. postgis_raster, postgis_topology, postgis_sfcgal) to
+    latest available version.
 
-    see http://postgis.net/docs/PostGIS_Extensions_Upgrade.html"""
+    see https://postgis.net/docs/PostGIS_Extensions_Upgrade.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Extensions_Upgrade: _PostGIS_Extensions_Upgrade
 
 class _PostGIS_Full_Version(functions.GenericFunction):
-    """Reports full postgis version and build configuration infos.
+    """
+    Reports full postgis version and build configuration infos.
 
-    see http://postgis.net/docs/PostGIS_Full_Version.html"""
+    see https://postgis.net/docs/PostGIS_Full_Version.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Full_Version: _PostGIS_Full_Version
 
 class _PostGIS_GEOS_Version(functions.GenericFunction):
-    """Returns the version number of the GEOS library.
+    """
+    Returns the version number of the GEOS library.
 
-    see http://postgis.net/docs/PostGIS_GEOS_Version.html"""
+    see https://postgis.net/docs/PostGIS_GEOS_Version.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_GEOS_Version: _PostGIS_GEOS_Version
 
 class _PostGIS_Liblwgeom_Version(functions.GenericFunction):
-    """Returns the version number of the liblwgeom library. This should match the version of PostGIS.
+    """
+    Returns the version number of the liblwgeom library. This should match the version of PostGIS.
 
-    see http://postgis.net/docs/PostGIS_Liblwgeom_Version.html"""
+    see https://postgis.net/docs/PostGIS_Liblwgeom_Version.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Liblwgeom_Version: _PostGIS_Liblwgeom_Version
 
 class _PostGIS_LibXML_Version(functions.GenericFunction):
-    """Returns the version number of the libxml2 library.
+    """
+    Returns the version number of the libxml2 library.
 
-    see http://postgis.net/docs/PostGIS_LibXML_Version.html"""
+    see https://postgis.net/docs/PostGIS_LibXML_Version.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_LibXML_Version: _PostGIS_LibXML_Version
 
 class _PostGIS_Lib_Build_Date(functions.GenericFunction):
-    """Returns build date of the PostGIS library.
+    """
+    Returns build date of the PostGIS library.
 
-    see http://postgis.net/docs/PostGIS_Lib_Build_Date.html"""
+    see https://postgis.net/docs/PostGIS_Lib_Build_Date.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Lib_Build_Date: _PostGIS_Lib_Build_Date
 
 class _PostGIS_Lib_Version(functions.GenericFunction):
-    """Returns the version number of the PostGIS library.
+    """
+    Returns the version number of the PostGIS library.
 
-    see http://postgis.net/docs/PostGIS_Lib_Version.html"""
+    see https://postgis.net/docs/PostGIS_Lib_Version.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Lib_Version: _PostGIS_Lib_Version
 
 class _PostGIS_PROJ_Version(functions.GenericFunction):
-    """Returns the version number of the PROJ4 library.
+    """
+    Returns the version number of the PROJ4 library.
 
-    see http://postgis.net/docs/PostGIS_PROJ_Version.html"""
+    see https://postgis.net/docs/PostGIS_PROJ_Version.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_PROJ_Version: _PostGIS_PROJ_Version
 
 class _PostGIS_Wagyu_Version(functions.GenericFunction):
-    """Returns the version number of the internal Wagyu library.
+    """
+    Returns the version number of the internal Wagyu library.
 
-    see http://postgis.net/docs/PostGIS_Wagyu_Version.html"""
+    see https://postgis.net/docs/PostGIS_Wagyu_Version.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Wagyu_Version: _PostGIS_Wagyu_Version
 
 class _PostGIS_Scripts_Build_Date(functions.GenericFunction):
-    """Returns build date of the PostGIS scripts.
+    """
+    Returns build date of the PostGIS scripts.
 
-    see http://postgis.net/docs/PostGIS_Scripts_Build_Date.html"""
+    see https://postgis.net/docs/PostGIS_Scripts_Build_Date.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Scripts_Build_Date: _PostGIS_Scripts_Build_Date
 
 class _PostGIS_Scripts_Installed(functions.GenericFunction):
-    """Returns version of the postgis scripts installed in this database.
+    """
+    Returns version of the postgis scripts installed in this database.
 
-    see http://postgis.net/docs/PostGIS_Scripts_Installed.html"""
+    see https://postgis.net/docs/PostGIS_Scripts_Installed.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Scripts_Installed: _PostGIS_Scripts_Installed
 
 class _PostGIS_Scripts_Released(functions.GenericFunction):
-    """Returns the version number of the postgis.sql script released with the installed postgis lib.
+    """
+    Returns the version number of the postgis.sql script released with the installed postgis lib.
 
-    see http://postgis.net/docs/PostGIS_Scripts_Released.html"""
+    see https://postgis.net/docs/PostGIS_Scripts_Released.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Scripts_Released: _PostGIS_Scripts_Released
 
 class _PostGIS_Version(functions.GenericFunction):
-    """Returns PostGIS version number and compile-time options.
+    """
+    Returns PostGIS version number and compile-time options.
 
-    see http://postgis.net/docs/PostGIS_Version.html"""
+    see https://postgis.net/docs/PostGIS_Version.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_Version: _PostGIS_Version
 
 class _PostGIS_AddBBox(functions.GenericFunction):
-    """Add bounding box to the geometry.
+    """
+    Add bounding box to the geometry.
 
-    see http://postgis.net/docs/PostGIS_AddBBox.html
+    see https://postgis.net/docs/PostGIS_AddBBox.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 PostGIS_AddBBox: _PostGIS_AddBBox
 
 class _PostGIS_DropBBox(functions.GenericFunction):
-    """Drop the bounding box cache from the geometry.
+    """
+    Drop the bounding box cache from the geometry.
 
-    see http://postgis.net/docs/PostGIS_DropBBox.html
+    see https://postgis.net/docs/PostGIS_DropBBox.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 PostGIS_DropBBox: _PostGIS_DropBBox
 
 class _PostGIS_HasBBox(functions.GenericFunction):
-    """Returns TRUE if the bbox of this geometry is cached, FALSE otherwise.
+    """
+    Returns TRUE if the bbox of this geometry is cached, FALSE otherwise.
 
-    see http://postgis.net/docs/PostGIS_HasBBox.html"""
+    see https://postgis.net/docs/PostGIS_HasBBox.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 PostGIS_HasBBox: _PostGIS_HasBBox
 
 class _ST_AddBand(functions.GenericFunction):
-    """Returns a raster with the new band(s) of given type added with given initial value in the given index location. If no index is specified, the band is added to the end.
+    """
+    Returns a raster with the new band(s) of given type added with given initial value in the given
+    index location. If no index is specified, the band is added to the end.
 
-    see http://postgis.net/docs/RT_ST_AddBand.html
+    see https://postgis.net/docs/RT_ST_AddBand.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_AddBand: _ST_AddBand
 
 class _ST_AsRaster(functions.GenericFunction):
-    """Converts a PostGIS geometry to a PostGIS raster.
+    """
+    Converts a PostGIS geometry to a PostGIS raster.
 
-    see http://postgis.net/docs/RT_ST_AsRaster.html
+    see https://postgis.net/docs/RT_ST_AsRaster.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_AsRaster: _ST_AsRaster
 
 class _ST_Band(functions.GenericFunction):
-    """Returns one or more bands of an existing raster as a new raster. Useful for building new rasters from existing rasters.
+    """
+    Returns one or more bands of an existing raster as a new raster. Useful for building new rasters
+    from existing rasters.
 
-    see http://postgis.net/docs/RT_ST_Band.html
+    see https://postgis.net/docs/RT_ST_Band.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Band: _ST_Band
 
 class _ST_MakeEmptyCoverage(functions.GenericFunction):
-    """Cover georeferenced area with a grid of empty raster tiles.
+    """
+    Cover georeferenced area with a grid of empty raster tiles.
 
-    see http://postgis.net/docs/RT_ST_MakeEmptyCoverage.html
+    see https://postgis.net/docs/RT_ST_MakeEmptyCoverage.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_MakeEmptyCoverage: _ST_MakeEmptyCoverage
 
 class _ST_MakeEmptyRaster(functions.GenericFunction):
-    """Returns an empty raster (having no bands) of given dimensions (width & height), upperleft X and Y, pixel size and rotation (scalex, scaley, skewx & skewy) and reference system (srid). If a raster is passed in, returns a new raster with the same size, alignment and SRID. If srid is left out, the spatial ref is set to unknown (0).
+    """
+    Returns an empty raster (having no bands) of given dimensions (width & height), upperleft X and Y,
+    pixel size and rotation (scalex, scaley, skewx & skewy) and reference system (srid). If a raster is
+    passed in, returns a new raster with the same size, alignment and SRID. If srid is left out, the
+    spatial ref is set to unknown (0).
 
-    see http://postgis.net/docs/RT_ST_MakeEmptyRaster.html
+    see https://postgis.net/docs/RT_ST_MakeEmptyRaster.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_MakeEmptyRaster: _ST_MakeEmptyRaster
 
 class _ST_Tile(functions.GenericFunction):
-    """Returns a set of rasters resulting from the split of the input raster based upon the desired dimensions of the output rasters.
+    """
+    Returns a set of rasters resulting from the split of the input raster based upon the desired
+    dimensions of the output rasters.
 
-    see http://postgis.net/docs/RT_ST_Tile.html
+    see https://postgis.net/docs/RT_ST_Tile.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Tile: _ST_Tile
 
 class _ST_Retile(functions.GenericFunction):
-    """Return a set of configured tiles from an arbitrarily tiled raster coverage.
+    """
+    Return a set of configured tiles from an arbitrarily tiled raster coverage.
 
-    see http://postgis.net/docs/RT_ST_Retile.html
+    see https://postgis.net/docs/RT_ST_Retile.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Retile: _ST_Retile
 
 class _ST_FromGDALRaster(functions.GenericFunction):
-    """Returns a raster from a supported GDAL raster file.
+    """
+    Returns a raster from a supported GDAL raster file.
 
-    see http://postgis.net/docs/RT_ST_FromGDALRaster.html
+    see https://postgis.net/docs/RT_ST_FromGDALRaster.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_FromGDALRaster: _ST_FromGDALRaster
 
 class _ST_GeoReference(functions.GenericFunction):
-    """Returns the georeference meta data in GDAL or ESRI format as commonly seen in a world file. Default is GDAL.
+    """
+    Returns the georeference meta data in GDAL or ESRI format as commonly seen in a world file. Default
+    is GDAL.
 
-    see http://postgis.net/docs/RT_ST_GeoReference.html"""
+    see https://postgis.net/docs/RT_ST_GeoReference.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_GeoReference: _ST_GeoReference
 
 class _ST_Height(functions.GenericFunction):
-    """Returns the height of the raster in pixels.
+    """
+    Returns the height of the raster in pixels.
 
-    see http://postgis.net/docs/RT_ST_Height.html"""
+    see https://postgis.net/docs/RT_ST_Height.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Height: _ST_Height
 
 class _ST_MetaData(functions.GenericFunction):
-    """Returns basic meta data about a raster object such as pixel size, rotation (skew), upper, lower left, etc.
+    """
+    Returns basic meta data about a raster object such as pixel size, rotation (skew), upper, lower
+    left, etc.
 
-    see http://postgis.net/docs/RT_ST_MetaData.html"""
+    see https://postgis.net/docs/RT_ST_MetaData.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MetaData: _ST_MetaData
 
 class _ST_NumBands(functions.GenericFunction):
-    """Returns the number of bands in the raster object.
+    """
+    Returns the number of bands in the raster object.
 
-    see http://postgis.net/docs/RT_ST_NumBands.html"""
+    see https://postgis.net/docs/RT_ST_NumBands.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NumBands: _ST_NumBands
 
 class _ST_PixelHeight(functions.GenericFunction):
-    """Returns the pixel height in geometric units of the spatial reference system.
+    """
+    Returns the pixel height in geometric units of the spatial reference system.
 
-    see http://postgis.net/docs/RT_ST_PixelHeight.html"""
+    see https://postgis.net/docs/RT_ST_PixelHeight.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelHeight: _ST_PixelHeight
 
 class _ST_PixelWidth(functions.GenericFunction):
-    """Returns the pixel width in geometric units of the spatial reference system.
+    """
+    Returns the pixel width in geometric units of the spatial reference system.
 
-    see http://postgis.net/docs/RT_ST_PixelWidth.html"""
+    see https://postgis.net/docs/RT_ST_PixelWidth.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelWidth: _ST_PixelWidth
 
 class _ST_ScaleX(functions.GenericFunction):
-    """Returns the X component of the pixel width in units of coordinate reference system.
+    """
+    Returns the X component of the pixel width in units of coordinate reference system.
 
-    see http://postgis.net/docs/RT_ST_ScaleX.html"""
+    see https://postgis.net/docs/RT_ST_ScaleX.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ScaleX: _ST_ScaleX
 
 class _ST_ScaleY(functions.GenericFunction):
-    """Returns the Y component of the pixel height in units of coordinate reference system.
+    """
+    Returns the Y component of the pixel height in units of coordinate reference system.
 
-    see http://postgis.net/docs/RT_ST_ScaleY.html"""
+    see https://postgis.net/docs/RT_ST_ScaleY.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ScaleY: _ST_ScaleY
 
 class _ST_RasterToWorldCoord(functions.GenericFunction):
-    """Returns the raster's upper left corner as geometric X and Y (longitude and latitude) given a column and row. Column and row starts at 1.
+    """
+    Returns the raster's upper left corner as geometric X and Y (longitude and latitude) given a column
+    and row. Column and row starts at 1.
 
-    see http://postgis.net/docs/RT_ST_RasterToWorldCoord.html"""
+    see https://postgis.net/docs/RT_ST_RasterToWorldCoord.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_RasterToWorldCoord: _ST_RasterToWorldCoord
 
 class _ST_RasterToWorldCoordX(functions.GenericFunction):
-    """Returns the geometric X coordinate upper left of a raster, column and row. Numbering of columns and rows starts at 1.
+    """
+    Returns the geometric X coordinate upper left of a raster, column and row. Numbering of columns and
+    rows starts at 1.
 
-    see http://postgis.net/docs/RT_ST_RasterToWorldCoordX.html"""
+    see https://postgis.net/docs/RT_ST_RasterToWorldCoordX.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_RasterToWorldCoordX: _ST_RasterToWorldCoordX
 
 class _ST_RasterToWorldCoordY(functions.GenericFunction):
-    """Returns the geometric Y coordinate upper left corner of a raster, column and row. Numbering of columns and rows starts at 1.
+    """
+    Returns the geometric Y coordinate upper left corner of a raster, column and row. Numbering of
+    columns and rows starts at 1.
 
-    see http://postgis.net/docs/RT_ST_RasterToWorldCoordY.html"""
+    see https://postgis.net/docs/RT_ST_RasterToWorldCoordY.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_RasterToWorldCoordY: _ST_RasterToWorldCoordY
 
 class _ST_Rotation(functions.GenericFunction):
-    """Returns the rotation of the raster in radian.
+    """
+    Returns the rotation of the raster in radian.
 
-    see http://postgis.net/docs/RT_ST_Rotation.html"""
+    see https://postgis.net/docs/RT_ST_Rotation.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Rotation: _ST_Rotation
 
 class _ST_SkewX(functions.GenericFunction):
-    """Returns the georeference X skew (or rotation parameter).
+    """
+    Returns the georeference X skew (or rotation parameter).
 
-    see http://postgis.net/docs/RT_ST_SkewX.html"""
+    see https://postgis.net/docs/RT_ST_SkewX.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_SkewX: _ST_SkewX
 
 class _ST_SkewY(functions.GenericFunction):
-    """Returns the georeference Y skew (or rotation parameter).
+    """
+    Returns the georeference Y skew (or rotation parameter).
 
-    see http://postgis.net/docs/RT_ST_SkewY.html"""
+    see https://postgis.net/docs/RT_ST_SkewY.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_SkewY: _ST_SkewY
 
 class _ST_UpperLeftX(functions.GenericFunction):
-    """Returns the upper left X coordinate of raster in projected spatial ref.
+    """
+    Returns the upper left X coordinate of raster in projected spatial ref.
 
-    see http://postgis.net/docs/RT_ST_UpperLeftX.html"""
+    see https://postgis.net/docs/RT_ST_UpperLeftX.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_UpperLeftX: _ST_UpperLeftX
 
 class _ST_UpperLeftY(functions.GenericFunction):
-    """Returns the upper left Y coordinate of raster in projected spatial ref.
+    """
+    Returns the upper left Y coordinate of raster in projected spatial ref.
 
-    see http://postgis.net/docs/RT_ST_UpperLeftY.html"""
+    see https://postgis.net/docs/RT_ST_UpperLeftY.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_UpperLeftY: _ST_UpperLeftY
 
 class _ST_Width(functions.GenericFunction):
-    """Returns the width of the raster in pixels.
+    """
+    Returns the width of the raster in pixels.
 
-    see http://postgis.net/docs/RT_ST_Width.html"""
+    see https://postgis.net/docs/RT_ST_Width.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Width: _ST_Width
 
 class _ST_WorldToRasterCoord(functions.GenericFunction):
-    """Returns the upper left corner as column and row given geometric X and Y (longitude and latitude) or a point geometry expressed in the spatial reference coordinate system of the raster.
+    """
+    Returns the upper left corner as column and row given geometric X and Y (longitude and latitude) or
+    a point geometry expressed in the spatial reference coordinate system of the raster.
 
-    see http://postgis.net/docs/RT_ST_WorldToRasterCoord.html"""
+    see https://postgis.net/docs/RT_ST_WorldToRasterCoord.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_WorldToRasterCoord: _ST_WorldToRasterCoord
 
 class _ST_WorldToRasterCoordX(functions.GenericFunction):
-    """Returns the column in the raster of the point geometry (pt) or a X and Y world coordinate (xw, yw) represented in world spatial reference system of raster.
+    """
+    Returns the column in the raster of the point geometry (pt) or a X and Y world coordinate (xw, yw)
+    represented in world spatial reference system of raster.
 
-    see http://postgis.net/docs/RT_ST_WorldToRasterCoordX.html"""
+    see https://postgis.net/docs/RT_ST_WorldToRasterCoordX.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_WorldToRasterCoordX: _ST_WorldToRasterCoordX
 
 class _ST_WorldToRasterCoordY(functions.GenericFunction):
-    """Returns the row in the raster of the point geometry (pt) or a X and Y world coordinate (xw, yw) represented in world spatial reference system of raster.
+    """
+    Returns the row in the raster of the point geometry (pt) or a X and Y world coordinate (xw, yw)
+    represented in world spatial reference system of raster.
 
-    see http://postgis.net/docs/RT_ST_WorldToRasterCoordY.html"""
+    see https://postgis.net/docs/RT_ST_WorldToRasterCoordY.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_WorldToRasterCoordY: _ST_WorldToRasterCoordY
 
 class _ST_BandMetaData(functions.GenericFunction):
-    """Returns basic meta data for a specific raster band. band num 1 is assumed if none-specified.
+    """
+    Returns basic meta data for a specific raster band. band num 1 is assumed if none-specified.
 
-    see http://postgis.net/docs/RT_ST_BandMetaData.html"""
+    see https://postgis.net/docs/RT_ST_BandMetaData.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandMetaData: _ST_BandMetaData
 
 class _ST_BandNoDataValue(functions.GenericFunction):
-    """Returns the value in a given band that represents no data. If no band num 1 is assumed.
+    """
+    Returns the value in a given band that represents no data. If no band num 1 is assumed.
 
-    see http://postgis.net/docs/RT_ST_BandNoDataValue.html"""
+    see https://postgis.net/docs/RT_ST_BandNoDataValue.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandNoDataValue: _ST_BandNoDataValue
 
 class _ST_BandIsNoData(functions.GenericFunction):
-    """Returns true if the band is filled with only nodata values.
+    """
+    Returns true if the band is filled with only nodata values.
 
-    see http://postgis.net/docs/RT_ST_BandIsNoData.html"""
+    see https://postgis.net/docs/RT_ST_BandIsNoData.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandIsNoData: _ST_BandIsNoData
 
 class _ST_BandPath(functions.GenericFunction):
-    """Returns system file path to a band stored in file system. If no bandnum specified, 1 is assumed.
+    """
+    Returns system file path to a band stored in file system. If no bandnum specified, 1 is assumed.
 
-    see http://postgis.net/docs/RT_ST_BandPath.html"""
+    see https://postgis.net/docs/RT_ST_BandPath.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandPath: _ST_BandPath
 
 class _ST_BandFileSize(functions.GenericFunction):
-    """Returns the file size of a band stored in file system. If no bandnum specified, 1 is assumed.
+    """
+    Returns the file size of a band stored in file system. If no bandnum specified, 1 is assumed.
 
-    see http://postgis.net/docs/RT_ST_BandFileSize.html"""
+    see https://postgis.net/docs/RT_ST_BandFileSize.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandFileSize: _ST_BandFileSize
 
 class _ST_BandFileTimestamp(functions.GenericFunction):
-    """Returns the file timestamp of a band stored in file system. If no bandnum specified, 1 is assumed.
+    """
+    Returns the file timestamp of a band stored in file system. If no bandnum specified, 1 is assumed.
 
-    see http://postgis.net/docs/RT_ST_BandFileTimestamp.html"""
+    see https://postgis.net/docs/RT_ST_BandFileTimestamp.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandFileTimestamp: _ST_BandFileTimestamp
 
 class _ST_BandPixelType(functions.GenericFunction):
-    """Returns the type of pixel for given band. If no bandnum specified, 1 is assumed.
+    """
+    Returns the type of pixel for given band. If no bandnum specified, 1 is assumed.
 
-    see http://postgis.net/docs/RT_ST_BandPixelType.html"""
+    see https://postgis.net/docs/RT_ST_BandPixelType.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_BandPixelType: _ST_BandPixelType
 
 class _ST_MinPossibleValue(functions.GenericFunction):
-    """Returns the minimum value this pixeltype can store.
+    """
+    Returns the minimum value this pixeltype can store.
 
-    see http://postgis.net/docs/ST_MinPossibleValue.html"""
+    see https://postgis.net/docs/ST_MinPossibleValue.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MinPossibleValue: _ST_MinPossibleValue
 
 class _ST_HasNoBand(functions.GenericFunction):
-    """Returns true if there is no band with given band number. If no band number is specified, then band number 1 is assumed.
+    """
+    Returns true if there is no band with given band number. If no band number is specified, then band
+    number 1 is assumed.
 
-    see http://postgis.net/docs/RT_ST_HasNoBand.html"""
+    see https://postgis.net/docs/RT_ST_HasNoBand.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_HasNoBand: _ST_HasNoBand
 
 class _ST_PixelAsPolygon(functions.GenericFunction):
-    """Returns the polygon geometry that bounds the pixel for a particular row and column.
+    """
+    Returns the polygon geometry that bounds the pixel for a particular row and column.
 
-    see http://postgis.net/docs/RT_ST_PixelAsPolygon.html
+    see https://postgis.net/docs/RT_ST_PixelAsPolygon.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_PixelAsPolygon: _ST_PixelAsPolygon
 
 class _ST_PixelAsPolygons(functions.GenericFunction):
-    """Returns the polygon geometry that bounds every pixel of a raster band along with the value, the X and the Y raster coordinates of each pixel.
+    """
+    Returns the polygon geometry that bounds every pixel of a raster band along with the value, the X
+    and the Y raster coordinates of each pixel.
 
-    see http://postgis.net/docs/RT_ST_PixelAsPolygons.html"""
+    see https://postgis.net/docs/RT_ST_PixelAsPolygons.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelAsPolygons: _ST_PixelAsPolygons
 
 class _ST_PixelAsPoint(functions.GenericFunction):
-    """Returns a point geometry of the pixel's upper-left corner.
+    """
+    Returns a point geometry of the pixel's upper-left corner.
 
-    see http://postgis.net/docs/RT_ST_PixelAsPoint.html
+    see https://postgis.net/docs/RT_ST_PixelAsPoint.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_PixelAsPoint: _ST_PixelAsPoint
 
 class _ST_PixelAsPoints(functions.GenericFunction):
-    """Returns a point geometry for each pixel of a raster band along with the value, the X and the Y raster coordinates of each pixel. The coordinates of the point geometry are of the pixel's upper-left corner.
+    """
+    Returns a point geometry for each pixel of a raster band along with the value, the X and the Y
+    raster coordinates of each pixel. The coordinates of the point geometry are of the pixel's upper-
+    left corner.
 
-    see http://postgis.net/docs/RT_ST_PixelAsPoints.html"""
+    see https://postgis.net/docs/RT_ST_PixelAsPoints.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelAsPoints: _ST_PixelAsPoints
 
 class _ST_PixelAsCentroid(functions.GenericFunction):
-    """Returns the centroid (point geometry) of the area represented by a pixel.
+    """
+    Returns the centroid (point geometry) of the area represented by a pixel.
 
-    see http://postgis.net/docs/RT_ST_PixelAsCentroid.html
+    see https://postgis.net/docs/RT_ST_PixelAsCentroid.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_PixelAsCentroid: _ST_PixelAsCentroid
 
 class _ST_PixelAsCentroids(functions.GenericFunction):
-    """Returns the centroid (point geometry) for each pixel of a raster band along with the value, the X and the Y raster coordinates of each pixel. The point geometry is the centroid of the area represented by a pixel.
+    """
+    Returns the centroid (point geometry) for each pixel of a raster band along with the value, the X
+    and the Y raster coordinates of each pixel. The point geometry is the centroid of the area
+    represented by a pixel.
 
-    see http://postgis.net/docs/RT_ST_PixelAsCentroids.html"""
+    see https://postgis.net/docs/RT_ST_PixelAsCentroids.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelAsCentroids: _ST_PixelAsCentroids
 
 class _ST_Value(functions.GenericFunction):
-    """Returns the value of a given band in a given columnx, rowy pixel or at a particular geometric point. Band numbers start at 1 and assumed to be 1 if not specified. If exclude_nodata_value is set to false, then all pixels include nodata pixels are considered to intersect and return value. If exclude_nodata_value is not passed in then reads it from metadata of raster.
+    """
+    Returns the value of a given band in a given columnx, rowy pixel or at a particular geometric point.
+    Band numbers start at 1 and assumed to be 1 if not specified. If exclude_nodata_value is set to
+    false, then all pixels include nodata pixels are considered to intersect and return value. If
+    exclude_nodata_value is not passed in then reads it from metadata of raster.
 
-    see http://postgis.net/docs/RT_ST_Value.html"""
+    see https://postgis.net/docs/RT_ST_Value.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Value: _ST_Value
 
 class _ST_NearestValue(functions.GenericFunction):
-    """Returns the nearest non-NODATA value of a given band's pixel specified by a columnx and rowy or a geometric point expressed in the same spatial reference coordinate system as the raster.
+    """
+    Returns the nearest non-NODATA value of a given band's pixel specified by a columnx and rowy or a
+    geometric point expressed in the same spatial reference coordinate system as the raster.
 
-    see http://postgis.net/docs/RT_ST_NearestValue.html"""
+    see https://postgis.net/docs/RT_ST_NearestValue.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NearestValue: _ST_NearestValue
 
 class _ST_Neighborhood(functions.GenericFunction):
-    """Returns a 2-D double precision array of the non-NODATA values around a given band's pixel specified by either a columnX and rowY or a geometric point expressed in the same spatial reference coordinate system as the raster.
+    """
+    Returns a 2-D double precision array of the non-NODATA values around a given band's pixel specified
+    by either a columnX and rowY or a geometric point expressed in the same spatial reference coordinate
+    system as the raster.
 
-    see http://postgis.net/docs/RT_ST_Neighborhood.html"""
+    see https://postgis.net/docs/RT_ST_Neighborhood.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Neighborhood: _ST_Neighborhood
 
 class _ST_SetValue(functions.GenericFunction):
-    """Returns modified raster resulting from setting the value of a given band in a given columnx, rowy pixel or the pixels that intersect a particular geometry. Band numbers start at 1 and assumed to be 1 if not specified.
+    """
+    Returns modified raster resulting from setting the value of a given band in a given columnx, rowy
+    pixel or the pixels that intersect a particular geometry. Band numbers start at 1 and assumed to be
+    1 if not specified.
 
-    see http://postgis.net/docs/RT_ST_SetValue.html
+    see https://postgis.net/docs/RT_ST_SetValue.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_SetValue: _ST_SetValue
 
 class _ST_SetValues(functions.GenericFunction):
-    """Returns modified raster resulting from setting the values of a given band.
+    """
+    Returns modified raster resulting from setting the values of a given band.
 
-    see http://postgis.net/docs/RT_ST_SetValues.html
+    see https://postgis.net/docs/RT_ST_SetValues.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_SetValues: _ST_SetValues
 
 class _ST_DumpValues(functions.GenericFunction):
-    """Get the values of the specified band as a 2-dimension array.
+    """
+    Get the values of the specified band as a 2-dimension array.
 
-    see http://postgis.net/docs/RT_ST_DumpValues.html"""
+    see https://postgis.net/docs/RT_ST_DumpValues.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DumpValues: _ST_DumpValues
 
 class _ST_PixelOfValue(functions.GenericFunction):
-    """Get the columnx, rowy coordinates of the pixel whose value equals the search value.
+    """
+    Get the columnx, rowy coordinates of the pixel whose value equals the search value.
 
-    see http://postgis.net/docs/RT_ST_PixelOfValue.html"""
+    see https://postgis.net/docs/RT_ST_PixelOfValue.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_PixelOfValue: _ST_PixelOfValue
 
 class _ST_SetGeoReference(functions.GenericFunction):
-    """Set Georeference 6 georeference parameters in a single call. Numbers should be separated by white space. Accepts inputs in GDAL or ESRI format. Default is GDAL.
+    """
+    Set Georeference 6 georeference parameters in a single call. Numbers should be separated by white
+    space. Accepts inputs in GDAL or ESRI format. Default is GDAL.
 
-    see http://postgis.net/docs/RT_ST_SetGeoReference.html
+    see https://postgis.net/docs/RT_ST_SetGeoReference.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_SetGeoReference: _ST_SetGeoReference
 
 class _ST_SetRotation(functions.GenericFunction):
-    """Set the rotation of the raster in radian.
+    """
+    Set the rotation of the raster in radian.
 
-    see http://postgis.net/docs/RT_ST_SetRotation.html
+    see https://postgis.net/docs/RT_ST_SetRotation.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_SetRotation: _ST_SetRotation
 
 class _ST_SetScale(functions.GenericFunction):
-    """Sets the X and Y size of pixels in units of coordinate reference system. Number units/pixel width/height.
+    """
+    Sets the X and Y size of pixels in units of coordinate reference system. Number units/pixel
+    width/height.
 
-    see http://postgis.net/docs/RT_ST_SetScale.html
+    see https://postgis.net/docs/RT_ST_SetScale.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_SetScale: _ST_SetScale
 
 class _ST_SetSkew(functions.GenericFunction):
-    """Sets the georeference X and Y skew (or rotation parameter). If only one is passed in, sets X and Y to the same value.
+    """
+    Sets the georeference X and Y skew (or rotation parameter). If only one is passed in, sets X and Y
+    to the same value.
 
-    see http://postgis.net/docs/RT_ST_SetSkew.html
+    see https://postgis.net/docs/RT_ST_SetSkew.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_SetSkew: _ST_SetSkew
 
 class _ST_SetUpperLeft(functions.GenericFunction):
-    """Sets the value of the upper left corner of the pixel of the raster to projected X and Y coordinates.
+    """
+    Sets the value of the upper left corner of the pixel of the raster to projected X and Y coordinates.
 
-    see http://postgis.net/docs/RT_ST_SetUpperLeft.html
+    see https://postgis.net/docs/RT_ST_SetUpperLeft.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_SetUpperLeft: _ST_SetUpperLeft
 
 class _ST_Resample(functions.GenericFunction):
-    """Resample a raster using a specified resampling algorithm, new dimensions, an arbitrary grid corner and a set of raster georeferencing attributes defined or borrowed from another raster.
+    """
+    Resample a raster using a specified resampling algorithm, new dimensions, an arbitrary grid corner
+    and a set of raster georeferencing attributes defined or borrowed from another raster.
 
-    see http://postgis.net/docs/RT_ST_Resample.html
+    see https://postgis.net/docs/RT_ST_Resample.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Resample: _ST_Resample
 
 class _ST_Rescale(functions.GenericFunction):
-    """Resample a raster by adjusting only its scale (or pixel size). New pixel values are computed using the NearestNeighbor (english or american spelling), Bilinear, Cubic, CubicSpline or Lanczos resampling algorithm. Default is NearestNeighbor.
+    """
+    Resample a raster by adjusting only its scale (or pixel size). New pixel values are computed using
+    the NearestNeighbor (english or american spelling), Bilinear, Cubic, CubicSpline or Lanczos
+    resampling algorithm. Default is NearestNeighbor.
 
-    see http://postgis.net/docs/RT_ST_Rescale.html
+    see https://postgis.net/docs/RT_ST_Rescale.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Rescale: _ST_Rescale
 
 class _ST_Reskew(functions.GenericFunction):
-    """Resample a raster by adjusting only its skew (or rotation parameters). New pixel values are computed using the NearestNeighbor (english or american spelling), Bilinear, Cubic, CubicSpline or Lanczos resampling algorithm. Default is NearestNeighbor.
+    """
+    Resample a raster by adjusting only its skew (or rotation parameters). New pixel values are computed
+    using the NearestNeighbor (english or american spelling), Bilinear, Cubic, CubicSpline or Lanczos
+    resampling algorithm. Default is NearestNeighbor.
 
-    see http://postgis.net/docs/RT_ST_Reskew.html
+    see https://postgis.net/docs/RT_ST_Reskew.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Reskew: _ST_Reskew
 
 class _ST_Resize(functions.GenericFunction):
-    """Resize a raster to a new width/height
+    """
+    Resize a raster to a new width/height
 
-    see http://postgis.net/docs/RT_ST_Resize.html
+    see https://postgis.net/docs/RT_ST_Resize.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Resize: _ST_Resize
 
 class _ST_SetBandNoDataValue(functions.GenericFunction):
-    """Sets the value for the given band that represents no data. Band 1 is assumed if no band is specified. To mark a band as having no nodata value, set the nodata value = NULL.
+    """
+    Sets the value for the given band that represents no data. Band 1 is assumed if no band is
+    specified. To mark a band as having no nodata value, set the nodata value = NULL.
 
-    see http://postgis.net/docs/RT_ST_SetBandNoDataValue.html
+    see https://postgis.net/docs/RT_ST_SetBandNoDataValue.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_SetBandNoDataValue: _ST_SetBandNoDataValue
 
 class _ST_SetBandIsNoData(functions.GenericFunction):
-    """Sets the isnodata flag of the band to TRUE.
+    """
+    Sets the isnodata flag of the band to TRUE.
 
-    see http://postgis.net/docs/RT_ST_SetBandIsNoData.html
+    see https://postgis.net/docs/RT_ST_SetBandIsNoData.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_SetBandIsNoData: _ST_SetBandIsNoData
 
 class _ST_SetBandPath(functions.GenericFunction):
-    """Update the external path and band number of an out-db band
+    """
+    Update the external path and band number of an out-db band
 
-    see http://postgis.net/docs/RT_ST_SetBandPath.html
+    see https://postgis.net/docs/RT_ST_SetBandPath.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_SetBandPath: _ST_SetBandPath
 
 class _ST_SetBandIndex(functions.GenericFunction):
-    """Update the external band number of an out-db band
+    """
+    Update the external band number of an out-db band
 
-    see http://postgis.net/docs/RT_ST_SetBandIndex.html
+    see https://postgis.net/docs/RT_ST_SetBandIndex.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_SetBandIndex: _ST_SetBandIndex
 
 class _ST_Count(functions.GenericFunction):
-    """Returns the number of pixels in a given band of a raster or raster coverage. If no band is specified defaults to band 1. If exclude_nodata_value is set to true, will only count pixels that are not equal to the nodata value.
+    """
+    Returns the number of pixels in a given band of a raster or raster coverage. If no band is specified
+    defaults to band 1. If exclude_nodata_value is set to true, will only count pixels that are not
+    equal to the nodata value.
 
-    see http://postgis.net/docs/RT_ST_Count.html"""
+    see https://postgis.net/docs/RT_ST_Count.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Count: _ST_Count
 
 class _ST_CountAgg(functions.GenericFunction):
-    """Aggregate. Returns the number of pixels in a given band of a set of rasters. If no band is specified defaults to band 1. If exclude_nodata_value is set to true, will only count pixels that are not equal to the NODATA value.
+    """
+    Aggregate. Returns the number of pixels in a given band of a set of rasters. If no band is specified
+    defaults to band 1. If exclude_nodata_value is set to true, will only count pixels that are not
+    equal to the NODATA value.
 
-    see http://postgis.net/docs/RT_ST_CountAgg.html"""
+    see https://postgis.net/docs/RT_ST_CountAgg.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_CountAgg: _ST_CountAgg
 
 class _ST_Histogram(functions.GenericFunction):
-    """Returns a set of record summarizing a raster or raster coverage data distribution separate bin ranges. Number of bins are autocomputed if not specified.
+    """
+    Returns a set of record summarizing a raster or raster coverage data distribution separate bin
+    ranges. Number of bins are autocomputed if not specified.
 
-    see http://postgis.net/docs/RT_ST_Histogram.html"""
+    see https://postgis.net/docs/RT_ST_Histogram.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Histogram: _ST_Histogram
 
 class _ST_Quantile(functions.GenericFunction):
-    """Compute quantiles for a raster or raster table coverage in the context of the sample or population. Thus, a value could be examined to be at the raster's 25%, 50%, 75% percentile.
+    """
+    Compute quantiles for a raster or raster table coverage in the context of the sample or population.
+    Thus, a value could be examined to be at the raster's 25%, 50%, 75% percentile.
 
-    see http://postgis.net/docs/RT_ST_Quantile.html"""
+    see https://postgis.net/docs/RT_ST_Quantile.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Quantile: _ST_Quantile
 
 class _ST_SummaryStats(functions.GenericFunction):
-    """Returns summarystats consisting of count, sum, mean, stddev, min, max for a given raster band of a raster or raster coverage. Band 1 is assumed is no band is specified.
+    """
+    Returns summarystats consisting of count, sum, mean, stddev, min, max for a given raster band of a
+    raster or raster coverage. Band 1 is assumed is no band is specified.
 
-    see http://postgis.net/docs/RT_ST_SummaryStats.html"""
+    see https://postgis.net/docs/RT_ST_SummaryStats.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_SummaryStats: _ST_SummaryStats
 
 class _ST_SummaryStatsAgg(functions.GenericFunction):
-    """Aggregate. Returns summarystats consisting of count, sum, mean, stddev, min, max for a given raster band of a set of raster. Band 1 is assumed is no band is specified.
+    """
+    Aggregate. Returns summarystats consisting of count, sum, mean, stddev, min, max for a given raster
+    band of a set of raster. Band 1 is assumed is no band is specified.
 
-    see http://postgis.net/docs/RT_ST_SummaryStatsAgg.html
+    see https://postgis.net/docs/RT_ST_SummaryStatsAgg.html
 
-    Return type: :class:`geoalchemy2.types.SummaryStats`."""
+    Return type: :class:`geoalchemy2.types.SummaryStats`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.SummaryStats: ...
 
 ST_SummaryStatsAgg: _ST_SummaryStatsAgg
 
 class _ST_ValueCount(functions.GenericFunction):
-    """Returns a set of records containing a pixel band value and count of the number of pixels in a given band of a raster (or a raster coverage) that have a given set of values. If no band is specified defaults to band 1. By default nodata value pixels are not counted. and all other values in the pixel are output and pixel band values are rounded to the nearest integer.
+    """
+    Returns a set of records containing a pixel band value and count of the number of pixels in a given
+    band of a raster (or a raster coverage) that have a given set of values. If no band is specified
+    defaults to band 1. By default nodata value pixels are not counted. and all other values in the
+    pixel are output and pixel band values are rounded to the nearest integer.
 
-    see http://postgis.net/docs/RT_ST_ValueCount.html"""
+    see https://postgis.net/docs/RT_ST_ValueCount.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_ValueCount: _ST_ValueCount
 
 class _ST_RastFromWKB(functions.GenericFunction):
-    """Return a raster value from a Well-Known Binary (WKB) raster.
+    """
+    Return a raster value from a Well-Known Binary (WKB) raster.
 
-    see http://postgis.net/docs/RT_ST_RastFromWKB.html
+    see https://postgis.net/docs/RT_ST_RastFromWKB.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_RastFromWKB: _ST_RastFromWKB
 
 class _ST_RastFromHexWKB(functions.GenericFunction):
-    """Return a raster value from a Hex representation of Well-Known Binary (WKB) raster.
+    """
+    Return a raster value from a Hex representation of Well-Known Binary (WKB) raster.
 
-    see http://postgis.net/docs/RT_ST_RastFromHexWKB.html
+    see https://postgis.net/docs/RT_ST_RastFromHexWKB.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_RastFromHexWKB: _ST_RastFromHexWKB
 
 class _ST_AsWKB(functions.GenericFunction):
-    """Return the Well-Known Binary (WKB) representation of the raster.
+    """
+    Return the Well-Known Binary (WKB) representation of the raster.
 
-    see http://postgis.net/docs/RT_ST_AsBinary.html"""
+    see https://postgis.net/docs/RT_ST_AsBinary.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsWKB: _ST_AsWKB
 
 class _ST_AsHexWKB(functions.GenericFunction):
-    """Return the Well-Known Binary (WKB) in Hex representation of the raster.
+    """
+    Return the Well-Known Binary (WKB) in Hex representation of the raster.
 
-    see http://postgis.net/docs/RT_ST_AsHexWKB.html"""
+    see https://postgis.net/docs/RT_ST_AsHexWKB.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsHexWKB: _ST_AsHexWKB
 
 class _ST_AsGDALRaster(functions.GenericFunction):
-    """Return the raster tile in the designated GDAL Raster format. Raster formats are one of those supported by your compiled library. Use ST_GDALDrivers() to get a list of formats supported by your library.
+    """
+    Return the raster tile in the designated GDAL Raster format. Raster formats are one of those
+    supported by your compiled library. Use ST_GDALDrivers() to get a list of formats supported by your
+    library.
 
-    see http://postgis.net/docs/RT_ST_AsGDALRaster.html"""
+    see https://postgis.net/docs/RT_ST_AsGDALRaster.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsGDALRaster: _ST_AsGDALRaster
 
 class _ST_AsJPEG(functions.GenericFunction):
-    """Return the raster tile selected bands as a single Joint Photographic Exports Group (JPEG) image (byte array). If no band is specified and 1 or more than 3 bands, then only the first band is used. If only 3 bands then all 3 bands are used and mapped to RGB.
+    """
+    Return the raster tile selected bands as a single Joint Photographic Exports Group (JPEG) image
+    (byte array). If no band is specified and 1 or more than 3 bands, then only the first band is used.
+    If only 3 bands then all 3 bands are used and mapped to RGB.
 
-    see http://postgis.net/docs/RT_ST_AsJPEG.html"""
+    see https://postgis.net/docs/RT_ST_AsJPEG.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsJPEG: _ST_AsJPEG
 
 class _ST_AsPNG(functions.GenericFunction):
-    """Return the raster tile selected bands as a single portable network graphics (PNG) image (byte array). If 1, 3, or 4 bands in raster and no bands are specified, then all bands are used. If more 2 or more than 4 bands and no bands specified, then only band 1 is used. Bands are mapped to RGB or RGBA space.
+    """
+    Return the raster tile selected bands as a single portable network graphics (PNG) image (byte
+    array). If 1, 3, or 4 bands in raster and no bands are specified, then all bands are used. If more 2
+    or more than 4 bands and no bands specified, then only band 1 is used. Bands are mapped to RGB or
+    RGBA space.
 
-    see http://postgis.net/docs/RT_ST_AsPNG.html"""
+    see https://postgis.net/docs/RT_ST_AsPNG.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsPNG: _ST_AsPNG
 
 class _ST_AsTIFF(functions.GenericFunction):
-    """Return the raster selected bands as a single TIFF image (byte array). If no band is specified or any of specified bands does not exist in the raster, then will try to use all bands.
+    """
+    Return the raster selected bands as a single TIFF image (byte array). If no band is specified or any
+    of specified bands does not exist in the raster, then will try to use all bands.
 
-    see http://postgis.net/docs/RT_ST_AsTIFF.html"""
+    see https://postgis.net/docs/RT_ST_AsTIFF.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_AsTIFF: _ST_AsTIFF
 
 class _ST_Clip(functions.GenericFunction):
-    """Returns the raster clipped by the input geometry. If band number not is specified, all bands are processed. If crop is not specified or TRUE, the output raster is cropped.
+    """
+    Returns the raster clipped by the input geometry. If band number not is specified, all bands are
+    processed. If crop is not specified or TRUE, the output raster is cropped.
 
-    see http://postgis.net/docs/RT_ST_Clip.html
+    see https://postgis.net/docs/RT_ST_Clip.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Clip: _ST_Clip
 
 class _ST_ColorMap(functions.GenericFunction):
-    """Creates a new raster of up to four 8BUI bands (grayscale, RGB, RGBA) from the source raster and a specified band. Band 1 is assumed if not specified.
+    """
+    Creates a new raster of up to four 8BUI bands (grayscale, RGB, RGBA) from the source raster and a
+    specified band. Band 1 is assumed if not specified.
 
-    see http://postgis.net/docs/RT_ST_ColorMap.html
+    see https://postgis.net/docs/RT_ST_ColorMap.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_ColorMap: _ST_ColorMap
 
 class _ST_Grayscale(functions.GenericFunction):
-    """Creates a new one-8BUI band raster from the source raster and specified bands representing Red, Green and Blue
+    """
+    Creates a new one-8BUI band raster from the source raster and specified bands representing Red,
+    Green and Blue
 
-    see http://postgis.net/docs/RT_ST_Grayscale.html
+    see https://postgis.net/docs/RT_ST_Grayscale.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Grayscale: _ST_Grayscale
 
 class _ST_MapAlgebra(functions.GenericFunction):
-    """[raster] Callback function version - Returns a one-band raster given one or more input rasters, band indexes and one user-specified callback function.
-    OR
-    [raster] Expression version - Returns a one-band raster given one or two input rasters, band indexes and one or more user-specified SQL expressions.
+    """
+    [raster] Callback function version - Returns a one-band raster given one or more input rasters, band
+    indexes and one user-specified callback function. OR [raster] Expression version - Returns a one-
+    band raster given one or two input rasters, band indexes and one or more user-specified SQL
+    expressions.
 
-    see http://postgis.net/docs/RT_ST_MapAlgebra.html"""
+    see https://postgis.net/docs/RT_ST_MapAlgebra.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MapAlgebra: _ST_MapAlgebra
 
 class _ST_MapAlgebraExpr(functions.GenericFunction):
-    """[raster] 1 raster band version: Creates a new one band raster formed by applying a valid PostgreSQL algebraic operation on the input raster band and of pixeltype provided. Band 1 is assumed if no band is specified.
-    OR
-    [raster] 2 raster band version: Creates a new one band raster formed by applying a valid PostgreSQL algebraic operation on the two input raster bands and of pixeltype provided. band 1 of each raster is assumed if no band numbers are specified. The resulting raster will be aligned (scale, skew and pixel corners) on the grid defined by the first raster and have its extent defined by the "extenttype" parameter. Values for "extenttype" can be: INTERSECTION, UNION, FIRST, SECOND.
+    """
+    [raster] 1 raster band version: Creates a new one band raster formed by applying a valid PostgreSQL
+    algebraic operation on the input raster band and of pixeltype provided. Band 1 is assumed if no band
+    is specified. OR [raster] 2 raster band version: Creates a new one band raster formed by applying a
+    valid PostgreSQL algebraic operation on the two input raster bands and of pixeltype provided. band 1
+    of each raster is assumed if no band numbers are specified. The resulting raster will be aligned
+    (scale, skew and pixel corners) on the grid defined by the first raster and have its extent defined
+    by the "extenttype" parameter. Values for "extenttype" can be: INTERSECTION, UNION, FIRST, SECOND.
 
-    see http://postgis.net/docs/RT_ST_MapAlgebraExpr.html
+    see https://postgis.net/docs/RT_ST_MapAlgebraExpr.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_MapAlgebraExpr: _ST_MapAlgebraExpr
 
 class _ST_MapAlgebraFct(functions.GenericFunction):
-    """[raster] 1 band version - Creates a new one band raster formed by applying a valid PostgreSQL function on the input raster band and of pixeltype provided. Band 1 is assumed if no band is specified.
-    OR
-    [raster] 2 band version - Creates a new one band raster formed by applying a valid PostgreSQL function on the 2 input raster bands and of pixeltype provided. Band 1 is assumed if no band is specified. Extent type defaults to INTERSECTION if not specified.
+    """
+    [raster] 1 band version - Creates a new one band raster formed by applying a valid PostgreSQL
+    function on the input raster band and of pixeltype provided. Band 1 is assumed if no band is
+    specified. OR [raster] 2 band version - Creates a new one band raster formed by applying a valid
+    PostgreSQL function on the 2 input raster bands and of pixeltype provided. Band 1 is assumed if no
+    band is specified. Extent type defaults to INTERSECTION if not specified.
 
-    see http://postgis.net/docs/RT_ST_MapAlgebraFct.html
+    see https://postgis.net/docs/RT_ST_MapAlgebraFct.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_MapAlgebraFct: _ST_MapAlgebraFct
 
 class _ST_MapAlgebraFctNgb(functions.GenericFunction):
-    """1-band version: Map Algebra Nearest Neighbor using user-defined PostgreSQL function. Return a raster which values are the result of a PLPGSQL user function involving a neighborhood of values from the input raster band.
+    """
+    1-band version: Map Algebra Nearest Neighbor using user-defined PostgreSQL function. Return a raster
+    which values are the result of a PLPGSQL user function involving a neighborhood of values from the
+    input raster band.
 
-    see http://postgis.net/docs/RT_ST_MapAlgebraFctNgb.html
+    see https://postgis.net/docs/RT_ST_MapAlgebraFctNgb.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_MapAlgebraFctNgb: _ST_MapAlgebraFctNgb
 
 class _ST_Reclass(functions.GenericFunction):
-    """Creates a new raster composed of band types reclassified from original. The nband is the band to be changed. If nband is not specified assumed to be 1. All other bands are returned unchanged. Use case: convert a 16BUI band to a 8BUI and so forth for simpler rendering as viewable formats.
+    """
+    Creates a new raster composed of band types reclassified from original. The nband is the band to be
+    changed. If nband is not specified assumed to be 1. All other bands are returned unchanged. Use
+    case: convert a 16BUI band to a 8BUI and so forth for simpler rendering as viewable formats.
 
-    see http://postgis.net/docs/RT_ST_Reclass.html
+    see https://postgis.net/docs/RT_ST_Reclass.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Reclass: _ST_Reclass
 
 class _ST_Distinct4ma(functions.GenericFunction):
-    """Raster processing function that calculates the number of unique pixel values in a neighborhood.
+    """
+    Raster processing function that calculates the number of unique pixel values in a neighborhood.
 
-    see http://postgis.net/docs/RT_ST_Distinct4ma.html"""
+    see https://postgis.net/docs/RT_ST_Distinct4ma.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Distinct4ma: _ST_Distinct4ma
 
 class _ST_InvDistWeight4ma(functions.GenericFunction):
-    """Raster processing function that interpolates a pixel's value from the pixel's neighborhood.
+    """
+    Raster processing function that interpolates a pixel's value from the pixel's neighborhood.
 
-    see http://postgis.net/docs/RT_ST_InvDistWeight4ma.html"""
+    see https://postgis.net/docs/RT_ST_InvDistWeight4ma.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_InvDistWeight4ma: _ST_InvDistWeight4ma
 
 class _ST_Max4ma(functions.GenericFunction):
-    """Raster processing function that calculates the maximum pixel value in a neighborhood.
+    """
+    Raster processing function that calculates the maximum pixel value in a neighborhood.
 
-    see http://postgis.net/docs/RT_ST_Max4ma.html"""
+    see https://postgis.net/docs/RT_ST_Max4ma.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Max4ma: _ST_Max4ma
 
 class _ST_Mean4ma(functions.GenericFunction):
-    """Raster processing function that calculates the mean pixel value in a neighborhood.
+    """
+    Raster processing function that calculates the mean pixel value in a neighborhood.
 
-    see http://postgis.net/docs/RT_ST_Mean4ma.html"""
+    see https://postgis.net/docs/RT_ST_Mean4ma.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Mean4ma: _ST_Mean4ma
 
 class _ST_Min4ma(functions.GenericFunction):
-    """Raster processing function that calculates the minimum pixel value in a neighborhood.
+    """
+    Raster processing function that calculates the minimum pixel value in a neighborhood.
 
-    see http://postgis.net/docs/RT_ST_Min4ma.html"""
+    see https://postgis.net/docs/RT_ST_Min4ma.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Min4ma: _ST_Min4ma
 
 class _ST_MinDist4ma(functions.GenericFunction):
-    """Raster processing function that returns the minimum distance (in number of pixels) between the pixel of interest and a neighboring pixel with value.
+    """
+    Raster processing function that returns the minimum distance (in number of pixels) between the pixel
+    of interest and a neighboring pixel with value.
 
-    see http://postgis.net/docs/RT_ST_MinDist4ma.html"""
+    see https://postgis.net/docs/RT_ST_MinDist4ma.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_MinDist4ma: _ST_MinDist4ma
 
 class _ST_Range4ma(functions.GenericFunction):
-    """Raster processing function that calculates the range of pixel values in a neighborhood.
+    """
+    Raster processing function that calculates the range of pixel values in a neighborhood.
 
-    see http://postgis.net/docs/RT_ST_Range4ma.html"""
+    see https://postgis.net/docs/RT_ST_Range4ma.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Range4ma: _ST_Range4ma
 
 class _ST_StdDev4ma(functions.GenericFunction):
-    """Raster processing function that calculates the standard deviation of pixel values in a neighborhood.
+    """
+    Raster processing function that calculates the standard deviation of pixel values in a neighborhood.
 
-    see http://postgis.net/docs/RT_ST_StdDev4ma.html"""
+    see https://postgis.net/docs/RT_ST_StdDev4ma.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_StdDev4ma: _ST_StdDev4ma
 
 class _ST_Sum4ma(functions.GenericFunction):
-    """Raster processing function that calculates the sum of all pixel values in a neighborhood.
+    """
+    Raster processing function that calculates the sum of all pixel values in a neighborhood.
 
-    see http://postgis.net/docs/RT_ST_Sum4ma.html"""
+    see https://postgis.net/docs/RT_ST_Sum4ma.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_Sum4ma: _ST_Sum4ma
 
 class _ST_Aspect(functions.GenericFunction):
-    """Returns the aspect (in degrees by default) of an elevation raster band. Useful for analyzing terrain.
+    """
+    Returns the aspect (in degrees by default) of an elevation raster band. Useful for analyzing
+    terrain.
 
-    see http://postgis.net/docs/RT_ST_Aspect.html
+    see https://postgis.net/docs/RT_ST_Aspect.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Aspect: _ST_Aspect
 
 class _ST_HillShade(functions.GenericFunction):
-    """Returns the hypothetical illumination of an elevation raster band using provided azimuth, altitude, brightness and scale inputs.
+    """
+    Returns the hypothetical illumination of an elevation raster band using provided azimuth, altitude,
+    brightness and scale inputs.
 
-    see http://postgis.net/docs/RT_ST_HillShade.html
+    see https://postgis.net/docs/RT_ST_HillShade.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_HillShade: _ST_HillShade
 
 class _ST_Roughness(functions.GenericFunction):
-    """Returns a raster with the calculated "roughness" of a DEM.
+    """
+    Returns a raster with the calculated "roughness" of a DEM.
 
-    see http://postgis.net/docs/RT_ST_Roughness.html
+    see https://postgis.net/docs/RT_ST_Roughness.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Roughness: _ST_Roughness
 
 class _ST_Slope(functions.GenericFunction):
-    """Returns the slope (in degrees by default) of an elevation raster band. Useful for analyzing terrain.
+    """
+    Returns the slope (in degrees by default) of an elevation raster band. Useful for analyzing terrain.
 
-    see http://postgis.net/docs/RT_ST_Slope.html
+    see https://postgis.net/docs/RT_ST_Slope.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_Slope: _ST_Slope
 
 class _ST_TPI(functions.GenericFunction):
-    """Returns a raster with the calculated Topographic Position Index.
+    """
+    Returns a raster with the calculated Topographic Position Index.
 
-    see http://postgis.net/docs/RT_ST_TPI.html
+    see https://postgis.net/docs/RT_ST_TPI.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_TPI: _ST_TPI
 
 class _ST_TRI(functions.GenericFunction):
-    """Returns a raster with the calculated Terrain Ruggedness Index.
+    """
+    Returns a raster with the calculated Terrain Ruggedness Index.
 
-    see http://postgis.net/docs/RT_ST_TRI.html
+    see https://postgis.net/docs/RT_ST_TRI.html
 
-    Return type: :class:`geoalchemy2.types.Raster`."""
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Raster: ...
 
 ST_TRI: _ST_TRI
 
 class _ST_DumpAsPolygons(functions.GenericFunction):
-    """Returns a set of geomval (geom,val) rows, from a given raster band. If no band number is specified, band num defaults to 1.
+    """
+    Returns a set of geomval (geom,val) rows, from a given raster band. If no band number is specified,
+    band num defaults to 1.
 
-    see http://postgis.net/docs/RT_ST_DumpAsPolygons.html"""
+    see https://postgis.net/docs/RT_ST_DumpAsPolygons.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_DumpAsPolygons: _ST_DumpAsPolygons
 
 class _ST_MinConvexHull(functions.GenericFunction):
-    """Return the convex hull geometry of the raster excluding NODATA pixels.
+    """
+    Return the convex hull geometry of the raster excluding NODATA pixels.
 
-    see http://postgis.net/docs/RT_ST_MinConvexHull.html
+    see https://postgis.net/docs/RT_ST_MinConvexHull.html
 
-    Return type: :class:`geoalchemy2.types.Geometry`."""
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> geoalchemy2.types.Geometry: ...
 
 ST_MinConvexHull: _ST_MinConvexHull
 
 class _ST_SameAlignment(functions.GenericFunction):
-    """Returns true if rasters have same skew, scale, spatial ref, and offset (pixels can be put on same grid without cutting into pixels) and false if they don't with notice detailing issue.
+    """
+    Returns true if rasters have same skew, scale, spatial ref, and offset (pixels can be put on same
+    grid without cutting into pixels) and false if they don't with notice detailing issue.
 
-    see http://postgis.net/docs/RT_ST_SameAlignment.html"""
+    see https://postgis.net/docs/RT_ST_SameAlignment.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_SameAlignment: _ST_SameAlignment
 
 class _ST_NotSameAlignmentReason(functions.GenericFunction):
-    """Returns text stating if rasters are aligned and if not aligned, a reason why.
+    """
+    Returns text stating if rasters are aligned and if not aligned, a reason why.
 
-    see http://postgis.net/docs/RT_ST_NotSameAlignmentReason.html"""
+    see https://postgis.net/docs/RT_ST_NotSameAlignmentReason.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 ST_NotSameAlignmentReason: _ST_NotSameAlignmentReason
 
 class _ST_Distance_Sphere(functions.GenericFunction):
-    """Returns minimum distance in meters between two lon/lat geometries. Uses a spherical earth and radius of 6370986 meters. Faster than ``ST_Distance_Spheroid``, but less accurate. PostGIS versions prior to 1.5 only implemented for points.
+    """
+    Returns minimum distance in meters between two lon/lat geometries. Uses a spherical earth and radius
+    of 6370986 meters. Faster than ``ST_Distance_Spheroid``, but less accurate. PostGIS versions prior
+    to 1.5 only implemented for points.
 
-    see http://postgis.net/docs/ST_Distance_Sphere.html"""
+    see https://postgis.net/docs/ST_Distance_Sphere.html
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 

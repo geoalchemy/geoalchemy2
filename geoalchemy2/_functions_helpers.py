@@ -1,3 +1,4 @@
+from textwrap import TextWrapper
 from typing import Optional
 from typing import Tuple
 from typing import Union
@@ -6,12 +7,14 @@ from typing import Union
 def _get_docstring(name: str, doc: Union[None, str, Tuple[str, str]], type_: Optional[type]) -> str:
     doc_string_parts = []
 
+    wrapper = TextWrapper(width=100)
+
     if isinstance(doc, tuple):
-        doc_string_parts.append(doc[0])
-        doc_string_parts.append("see http://postgis.net/docs/{0}.html".format(doc[1]))
+        doc_string_parts.append("\n".join(wrapper.wrap(doc[0])))
+        doc_string_parts.append("see https://postgis.net/docs/{0}.html".format(doc[1]))
     elif doc is not None:
-        doc_string_parts.append(doc)
-        doc_string_parts.append("see http://postgis.net/docs/{0}.html".format(name))
+        doc_string_parts.append("\n".join(wrapper.wrap(doc)))
+        doc_string_parts.append("see https://postgis.net/docs/{0}.html".format(name))
 
     if type_ is not None:
         return_type_str = "{0}.{1}".format(type_.__module__, type_.__name__)
@@ -60,8 +63,8 @@ class TableRowElement(ColumnElement):
     functions = _FUNCTIONS.copy()
     functions.insert(0, ("ST_AsGeoJSON", str, ST_AsGeoJSON.__doc__))
 
-    for name, type_, doc in functions:
-        doc = _replace_indent(_get_docstring(name, doc, type_), "    ")
+    for name, type_, doc_parts in functions:
+        doc = _replace_indent(_get_docstring(name, doc_parts, type_), "    ")
 
         if type_ is None:
             type_str = "Any"
@@ -72,7 +75,9 @@ class TableRowElement(ColumnElement):
 
         signature = f'''\
 class _{name}(functions.GenericFunction):
-    """{doc}"""
+    """
+    {doc}
+    """
 
     def __call__(self, *args: Any, **kwargs: Any) -> {type_str}: ...
 
