@@ -4,16 +4,22 @@ from typing import Tuple
 from typing import Union
 
 
+def _wrap_docstring(docstring: str) -> str:
+    wrapper = TextWrapper(width=100)
+    lines = []
+    for long_line in docstring.splitlines(keepends=False):
+        lines.extend(wrapper.wrap(long_line))
+    return "\n".join(lines)
+
+
 def _get_docstring(name: str, doc: Union[None, str, Tuple[str, str]], type_: Optional[type]) -> str:
     doc_string_parts = []
 
-    wrapper = TextWrapper(width=100)
-
     if isinstance(doc, tuple):
-        doc_string_parts.append("\n".join(wrapper.wrap(doc[0])))
+        doc_string_parts.append(_wrap_docstring(doc[0]))
         doc_string_parts.append("see https://postgis.net/docs/{0}.html".format(doc[1]))
     elif doc is not None:
-        doc_string_parts.append("\n".join(wrapper.wrap(doc)))
+        doc_string_parts.append(_wrap_docstring(doc))
         doc_string_parts.append("see https://postgis.net/docs/{0}.html".format(name))
 
     if type_ is not None:

@@ -205,9 +205,10 @@ ST_Point: _ST_Point
 
 class _ST_Polygon(functions.GenericFunction):
     """
-    [geometry] Creates a Polygon from a LineString with a specified SRID. OR [raster] Returns a
-    multipolygon geometry formed by the union of pixels that have a pixel value that is not no data
-    value. If no band number is specified, band num defaults to 1.
+    [geometry] Creates a Polygon from a LineString with a specified SRID.
+    OR
+    [raster] Returns a multipolygon geometry formed by the union of pixels that have a pixel value that
+    is not no data value. If no band number is specified, band num defaults to 1.
 
     see https://postgis.net/docs/ST_Polygon.html
 
@@ -331,8 +332,9 @@ ST_EndPoint: _ST_EndPoint
 
 class _ST_Envelope(functions.GenericFunction):
     """
-    [geometry] Returns a geometry representing the bounding box of a geometry. OR [raster] Returns the
-    polygon representation of the extent of the raster.
+    [geometry] Returns a geometry representing the bounding box of a geometry.
+    OR
+    [raster] Returns the polygon representation of the extent of the raster.
 
     see https://postgis.net/docs/ST_Envelope.html
 
@@ -466,8 +468,9 @@ ST_IsCollection: _ST_IsCollection
 
 class _ST_IsEmpty(functions.GenericFunction):
     """
-    [geometry] Tests if a geometry is empty. OR [raster] Returns true if the raster is empty (width = 0
-    and height = 0). Otherwise, returns false.
+    [geometry] Tests if a geometry is empty.
+    OR
+    [raster] Returns true if the raster is empty (width = 0 and height = 0). Otherwise, returns false.
 
     see https://postgis.net/docs/ST_IsEmpty.html
     """
@@ -511,8 +514,9 @@ ST_M: _ST_M
 
 class _ST_MemSize(functions.GenericFunction):
     """
-    [geometry] Returns the amount of memory space a geometry takes. OR [raster] Returns the amount of
-    space (in bytes) the raster takes.
+    [geometry] Returns the amount of memory space a geometry takes.
+    OR
+    [raster] Returns the amount of space (in bytes) the raster takes.
 
     see https://postgis.net/docs/ST_MemSize.html
     """
@@ -663,8 +667,9 @@ ST_StartPoint: _ST_StartPoint
 
 class _ST_Summary(functions.GenericFunction):
     """
-    [geometry] Returns a text summary of the contents of a geometry. OR [raster] Returns a text summary
-    of the contents of the raster.
+    [geometry] Returns a text summary of the contents of a geometry.
+    OR
+    [raster] Returns a text summary of the contents of the raster.
 
     see https://postgis.net/docs/ST_Summary.html
     """
@@ -1005,9 +1010,11 @@ ST_SetPoint: _ST_SetPoint
 
 class _ST_SnapToGrid(functions.GenericFunction):
     """
-    [geometry] Snap all points of the input geometry to a regular grid. OR [raster] Resample a raster by
-    snapping it to a grid. New pixel values are computed using the NearestNeighbor (english or american
-    spelling), Bilinear, Cubic, CubicSpline or Lanczos resampling algorithm. Default is NearestNeighbor.
+    [geometry] Snap all points of the input geometry to a regular grid.
+    OR
+    [raster] Resample a raster by snapping it to a grid. New pixel values are computed using the
+    NearestNeighbor (english or american spelling), Bilinear, Cubic, CubicSpline or Lanczos resampling
+    algorithm. Default is NearestNeighbor.
 
     see https://postgis.net/docs/ST_SnapToGrid.html
 
@@ -1079,8 +1086,10 @@ ST_IsValidReason: _ST_IsValidReason
 
 class _ST_SetSRID(functions.GenericFunction):
     """
-    [geometry] Set the SRID on a geometry to a particular integer value. OR [raster] Sets the SRID of a
-    raster to a particular integer srid defined in the spatial_ref_sys table.
+    [geometry] Set the SRID on a geometry to a particular integer value.
+    OR
+    [raster] Sets the SRID of a raster to a particular integer srid defined in the spatial_ref_sys
+    table.
 
     see https://postgis.net/docs/ST_SetSRID.html
 
@@ -1094,8 +1103,9 @@ ST_SetSRID: _ST_SetSRID
 class _ST_SRID(functions.GenericFunction):
     """
     [geometry] Returns the spatial reference identifier for the ST_Geometry as defined in
-    spatial_ref_sys table. OR [raster] Returns the spatial reference identifier of the raster as defined
-    in spatial_ref_sys table.
+    spatial_ref_sys table.
+    OR
+    [raster] Returns the spatial reference identifier of the raster as defined in spatial_ref_sys table.
 
     see https://postgis.net/docs/ST_SRID.html
     """
@@ -1107,8 +1117,10 @@ ST_SRID: _ST_SRID
 class _ST_Transform(functions.GenericFunction):
     """
     [geometry] Return a new geometry with its coordinates transformed to a different spatial reference
-    system. OR [raster] Reprojects a raster in a known spatial reference system to another known spatial
-    reference system using specified resampling algorithm. Options are NearestNeighbor, Bilinear, Cubic,
+    system.
+    OR
+    [raster] Reprojects a raster in a known spatial reference system to another known spatial reference
+    system using specified resampling algorithm. Options are NearestNeighbor, Bilinear, Cubic,
     CubicSpline, Lanczos defaulting to NearestNeighbor.
 
     see https://postgis.net/docs/ST_Transform.html
@@ -1556,7 +1568,9 @@ ST_AsText: _ST_AsText
 class _ST_AsBinary(functions.GenericFunction):
     """
     [gometry] Return the Well-Known Binary (WKB) representation of the geometry/geography without SRID
-    meta data. OR [raster] Return the Well-Known Binary (WKB) representation of the raster.
+    meta data.
+    OR
+    [raster] Return the Well-Known Binary (WKB) representation of the raster.
 
     see https://postgis.net/docs/ST_AsBinary.html
     """
@@ -1727,9 +1741,10 @@ ST_3DIntersects: _ST_3DIntersects
 class _ST_Contains(functions.GenericFunction):
     """
     [geometry] Returns true if and only if no points of B lie in the exterior of A, and at least one
-    point of the interior of B lies in the interior of A. OR [raster] Return true if no points of raster
-    rastB lie in the exterior of raster rastA and at least one point of the interior of rastB lies in
-    the interior of rastA.
+    point of the interior of B lies in the interior of A.
+    OR
+    [raster] Return true if no points of raster rastB lie in the exterior of raster rastA and at least
+    one point of the interior of rastB lies in the interior of rastA.
 
     see https://postgis.net/docs/ST_Contains.html
     """
@@ -1741,8 +1756,10 @@ ST_Contains: _ST_Contains
 class _ST_ContainsProperly(functions.GenericFunction):
     """
     [geometry] Returns true if B intersects the interior of A but not the boundary (or exterior). A does
-    not contain properly itself, but does contain itself. OR [raster] Return true if rastB intersects
-    the interior of rastA but not the boundary or exterior of rastA.
+    not contain properly itself, but does contain itself.
+    OR
+    [raster] Return true if rastB intersects the interior of rastA but not the boundary or exterior of
+    rastA.
 
     see https://postgis.net/docs/ST_ContainsProperly.html
     """
@@ -1753,8 +1770,9 @@ ST_ContainsProperly: _ST_ContainsProperly
 
 class _ST_Covers(functions.GenericFunction):
     """
-    [geometry] Returns 1 (TRUE) if no point in Geometry B is outside Geometry A OR [raster] Return true
-    if no points of raster rastB lie outside raster rastA.
+    [geometry] Returns 1 (TRUE) if no point in Geometry B is outside Geometry A
+    OR
+    [raster] Return true if no points of raster rastB lie outside raster rastA.
 
     see https://postgis.net/docs/ST_Covers.html
     """
@@ -1765,7 +1783,8 @@ ST_Covers: _ST_Covers
 
 class _ST_CoveredBy(functions.GenericFunction):
     """
-    [geometry] Returns 1 (TRUE) if no point in Geometry/Geography A is outside Geometry/Geography B OR
+    [geometry] Returns 1 (TRUE) if no point in Geometry/Geography A is outside Geometry/Geography B
+    OR
     [raster] Return true if no points of raster rastA lie outside raster rastB.
 
     see https://postgis.net/docs/ST_CoveredBy.html
@@ -1801,7 +1820,9 @@ ST_LineCrossingDirection: _ST_LineCrossingDirection
 class _ST_Disjoint(functions.GenericFunction):
     """
     [geometry] Returns TRUE if the Geometries do not "spatially intersect" - if they do not share any
-    space together. OR [raster] Return true if raster rastA does not spatially intersect rastB.
+    space together.
+    OR
+    [raster] Return true if raster rastA does not spatially intersect rastB.
 
     see https://postgis.net/docs/ST_Disjoint.html
     """
@@ -1825,8 +1846,9 @@ class _ST_Intersects(functions.GenericFunction):
     """
     [geometry] Returns TRUE if the Geometries/Geography "spatially intersect in 2D" - (share any portion
     of space) and FALSE if they don't (they are Disjoint). For geography tolerance is 0.00001 meters (so
-    any points that close are considered to intersect) OR [raster] Return true if raster rastA spatially
-    intersects raster rastB.
+    any points that close are considered to intersect)
+    OR
+    [raster] Return true if raster rastA spatially intersects raster rastB.
 
     see https://postgis.net/docs/ST_Intersects.html
     """
@@ -1850,8 +1872,10 @@ ST_OrderingEquals: _ST_OrderingEquals
 class _ST_Overlaps(functions.GenericFunction):
     """
     [geometry] Returns TRUE if the Geometries share space, are of the same dimension, but are not
-    completely contained by each other. OR [raster] Return true if raster rastA and rastB intersect but
-    one does not completely contain the other.
+    completely contained by each other.
+    OR
+    [raster] Return true if raster rastA and rastB intersect but one does not completely contain the
+    other.
 
     see https://postgis.net/docs/ST_Overlaps.html
     """
@@ -1899,8 +1923,10 @@ ST_RelateMatch: _ST_RelateMatch
 class _ST_Touches(functions.GenericFunction):
     """
     [geometry] Returns TRUE if the geometries have at least one point in common, but their interiors do
-    not intersect. OR [raster] Return true if raster rastA and rastB have at least one point in common
-    but their interiors do not intersect.
+    not intersect.
+    OR
+    [raster] Return true if raster rastA and rastB have at least one point in common but their interiors
+    do not intersect.
 
     see https://postgis.net/docs/ST_Touches.html
     """
@@ -1911,9 +1937,10 @@ ST_Touches: _ST_Touches
 
 class _ST_Within(functions.GenericFunction):
     """
-    [geometry] Returns true if the geometry A is completely inside geometry B OR [raster] Return true if
-    no points of raster rastA lie in the exterior of raster rastB and at least one point of the interior
-    of rastA lies in the interior of rastB.
+    [geometry] Returns true if the geometry A is completely inside geometry B
+    OR
+    [raster] Return true if no points of raster rastA lie in the exterior of raster rastB and at least
+    one point of the interior of rastA lies in the interior of rastB.
 
     see https://postgis.net/docs/ST_Within.html
     """
@@ -1946,7 +1973,8 @@ ST_3DDFullyWithin: _ST_3DDFullyWithin
 
 class _ST_DFullyWithin(functions.GenericFunction):
     """
-    [geometry] Returns true if all of the geometries are within the specified distance of one another OR
+    [geometry] Returns true if all of the geometries are within the specified distance of one another
+    OR
     [raster] Return true if rasters rastA and rastB are fully within the specified distance of each
     other.
 
@@ -1962,8 +1990,9 @@ class _ST_DWithin(functions.GenericFunction):
     [geometry] Returns true if the geometries are within the specified distance of one another. For
     geometry units are in those of spatial reference and for geography units are in meters and
     measurement is defaulted to use_spheroid=true (measure around spheroid), for faster check,
-    use_spheroid=false to measure along sphere. OR [raster] Return true if rasters rastA and rastB are
-    within the specified distance of each other.
+    use_spheroid=false to measure along sphere.
+    OR
+    [raster] Return true if rasters rastA and rastB are within the specified distance of each other.
 
     see https://postgis.net/docs/ST_DWithin.html
     """
@@ -2356,10 +2385,11 @@ ST_ConcaveHull: _ST_ConcaveHull
 
 class _ST_ConvexHull(functions.GenericFunction):
     """
-    [geometry] Computes the convex hull of a geometry. OR [raster] Return the convex hull geometry of
-    the raster including pixel values equal to BandNoDataValue. For regular shaped and non-skewed
-    rasters, this gives the same result as ST_Envelope so only useful for irregularly shaped or skewed
-    rasters.
+    [geometry] Computes the convex hull of a geometry.
+    OR
+    [raster] Return the convex hull geometry of the raster including pixel values equal to
+    BandNoDataValue. For regular shaped and non-skewed rasters, this gives the same result as
+    ST_Envelope so only useful for irregularly shaped or skewed rasters.
 
     see https://postgis.net/docs/ST_ConvexHull.html
 
@@ -2452,9 +2482,10 @@ ST_GeometricMedian: _ST_GeometricMedian
 
 class _ST_Intersection(functions.GenericFunction):
     """
-    [geometry] (T) Returns a geometry that represents the shared portion of geomA and geomB. OR [raster]
-    Returns a raster or a set of geometry-pixelvalue pairs representing the shared portion of two
-    rasters or the geometrical intersection of a vectorization of the raster and a geometry.
+    [geometry] (T) Returns a geometry that represents the shared portion of geomA and geomB.
+    OR
+    [raster] Returns a raster or a set of geometry-pixelvalue pairs representing the shared portion of
+    two rasters or the geometrical intersection of a vectorization of the raster and a geometry.
 
     see https://postgis.net/docs/ST_Intersection.html
 
@@ -2771,8 +2802,10 @@ ST_Subdivide: _ST_Subdivide
 
 class _ST_Union(functions.GenericFunction):
     """
-    [geometry] Returns a geometry that represents the point set union of the Geometries. OR [raster]
-    Returns the union of a set of raster tiles into a single raster composed of 1 or more bands.
+    [geometry] Returns a geometry that represents the point set union of the Geometries.
+    OR
+    [raster] Returns the union of a set of raster tiles into a single raster composed of 1 or more
+    bands.
 
     see https://postgis.net/docs/ST_Union.html
 
@@ -2988,8 +3021,9 @@ Box2D: _Box2D
 
 class _Box3D(functions.GenericFunction):
     """
-    [geometry] Returns a BOX3D representing the 3D extent of the geometry. OR [raster] Returns the box
-    3d representation of the enclosing box of the raster.
+    [geometry] Returns a BOX3D representing the 3D extent of the geometry.
+    OR
+    [raster] Returns the box 3d representation of the enclosing box of the raster.
 
     see https://postgis.net/docs/Box3D_type.html
     """
@@ -4786,9 +4820,10 @@ ST_Grayscale: _ST_Grayscale
 class _ST_MapAlgebra(functions.GenericFunction):
     """
     [raster] Callback function version - Returns a one-band raster given one or more input rasters, band
-    indexes and one user-specified callback function. OR [raster] Expression version - Returns a one-
-    band raster given one or two input rasters, band indexes and one or more user-specified SQL
-    expressions.
+    indexes and one user-specified callback function.
+    OR
+    [raster] Expression version - Returns a one-band raster given one or two input rasters, band indexes
+    and one or more user-specified SQL expressions.
 
     see https://postgis.net/docs/RT_ST_MapAlgebra.html
     """
@@ -4801,11 +4836,13 @@ class _ST_MapAlgebraExpr(functions.GenericFunction):
     """
     [raster] 1 raster band version: Creates a new one band raster formed by applying a valid PostgreSQL
     algebraic operation on the input raster band and of pixeltype provided. Band 1 is assumed if no band
-    is specified. OR [raster] 2 raster band version: Creates a new one band raster formed by applying a
-    valid PostgreSQL algebraic operation on the two input raster bands and of pixeltype provided. band 1
-    of each raster is assumed if no band numbers are specified. The resulting raster will be aligned
-    (scale, skew and pixel corners) on the grid defined by the first raster and have its extent defined
-    by the "extenttype" parameter. Values for "extenttype" can be: INTERSECTION, UNION, FIRST, SECOND.
+    is specified.
+    OR
+    [raster] 2 raster band version: Creates a new one band raster formed by applying a valid PostgreSQL
+    algebraic operation on the two input raster bands and of pixeltype provided. band 1 of each raster
+    is assumed if no band numbers are specified. The resulting raster will be aligned (scale, skew and
+    pixel corners) on the grid defined by the first raster and have its extent defined by the
+    "extenttype" parameter. Values for "extenttype" can be: INTERSECTION, UNION, FIRST, SECOND.
 
     see https://postgis.net/docs/RT_ST_MapAlgebraExpr.html
 
@@ -4820,9 +4857,11 @@ class _ST_MapAlgebraFct(functions.GenericFunction):
     """
     [raster] 1 band version - Creates a new one band raster formed by applying a valid PostgreSQL
     function on the input raster band and of pixeltype provided. Band 1 is assumed if no band is
-    specified. OR [raster] 2 band version - Creates a new one band raster formed by applying a valid
-    PostgreSQL function on the 2 input raster bands and of pixeltype provided. Band 1 is assumed if no
-    band is specified. Extent type defaults to INTERSECTION if not specified.
+    specified.
+    OR
+    [raster] 2 band version - Creates a new one band raster formed by applying a valid PostgreSQL
+    function on the 2 input raster bands and of pixeltype provided. Band 1 is assumed if no band is
+    specified. Extent type defaults to INTERSECTION if not specified.
 
     see https://postgis.net/docs/RT_ST_MapAlgebraFct.html
 
