@@ -1238,7 +1238,7 @@ class ST_AsText(GenericFunction):
 
 class ST_AsBinary(GenericFunction):
     """
-    [gometry] Return the Well-Known Binary (WKB) representation of the geometry/geography without SRID
+    [geometry] Return the Well-Known Binary (WKB) representation of the geometry/geography without SRID
     meta data.
     OR
     [raster] Return the Well-Known Binary (WKB) representation of the raster.

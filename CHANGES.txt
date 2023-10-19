@@ -1,11 +1,18 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.14.2
+------
+
+* Test: Add a container to run the tests @mbway (#479)
+* Feat: Added type stub generation for dynamic functions @mbway (#478)
+* Docs: Add new mapping style example in the gallery @adrien-berchet (#473)
+
 0.14.1
 ------
 
 * Add type annotations @shuttle1987 (#464)
-* Tests: Minor improvements @adrien-berchet (#465)
+* Test: Minor improvements @adrien-berchet (#465)
 * Docs: Add util to replace keywords in docstrings @adrien-berchet (#461)
 * Docs: Fix badges and link to docs @adrien-berchet (#460)
 

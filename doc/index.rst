@@ -141,6 +141,7 @@ Contributors:
 * ijl (https://github.com/ijl)
 * Loïc Gasser (https://github.com/loicgasser)
 * Marcel Radischat (https://github.com/quiqua)
+* Matt Broadway (https://github.com/mbway)
 * rapto (https://github.com/rapto)
 * Serge Bouchut (https://github.com/SergeBouchut)
 * Tobias Bieniek (https://github.com/Turbo87)
