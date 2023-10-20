@@ -1,8 +1,10 @@
 import re
+from pathlib import Path
 
 from sqlalchemy.sql import func
 
 import geoalchemy2.functions  # NOQA
+from geoalchemy2._functions_helpers import _generate_stubs
 from geoalchemy2.types import Raster  # NOQA
 
 #
@@ -42,6 +44,13 @@ def _test_raster_returning_func(name, *args, **kwargs):
         getattr(func, name)(1, *args, **kwargs).select(),
         'SELECT raster(%(name)s(:%(name)s_2)) AS "%(name)s_1"' % dict(name=name),
     )
+
+
+def test_stubs_up_to_date():
+    geoalchemy2_path = Path(geoalchemy2.__file__).parent
+    current_stubs = (geoalchemy2_path / "functions.pyi").read_text()
+    generated_stubs = _generate_stubs()
+    assert current_stubs == generated_stubs
 
 
 #

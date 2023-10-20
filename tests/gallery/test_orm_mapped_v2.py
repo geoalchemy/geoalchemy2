@@ -22,7 +22,7 @@ from geoalchemy2 import WKBElement
 from geoalchemy2 import shape
 
 
-def check_wkb(wkb, x, y):
+def check_wkb(wkb, x, y) -> None:
     pt = shape.to_shape(wkb)
     assert round(pt.x, 5) == x
     assert round(pt.y, 5) == y
@@ -32,7 +32,7 @@ def check_wkb(wkb, x, y):
     parse_version(SA_VERSION) < parse_version("2"),
     reason="New ORM mapping is only available for sqlalchemy>=2",
 )
-def test_ORM_mapping(session, conn, schema):
+def test_ORM_mapping(session, conn, schema) -> None:
     class Base(DeclarativeBase):
         pass
 
@@ -42,12 +42,12 @@ def test_ORM_mapping(session, conn, schema):
         id: Mapped[int] = mapped_column(primary_key=True)
         mapped_geom: Mapped[WKBElement] = mapped_column(Geometry(geometry_type="POINT", srid=4326))
 
-    Lake.__table__.drop(conn, checkfirst=True)
-    Lake.__table__.create(bind=conn)
+    Lake.__table__.drop(conn, checkfirst=True)  # type: ignore[attr-defined]
+    Lake.__table__.create(bind=conn)  # type: ignore[attr-defined]
 
     # Create new point instance
     p = Lake()
-    p.mapped_geom = "SRID=4326;POINT(5 45)"
+    p.mapped_geom = "SRID=4326;POINT(5 45)"  # type: ignore[assignment]
 
     # Insert point
     session.add(p)
