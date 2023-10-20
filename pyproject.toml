@@ -47,6 +47,7 @@ testpaths = [
 # MYPY
 [[tool.mypy.overrides]]
 module = [
+    "importlib.*",
     "psycopg2cffi",
     "rasterio",
     "shapely",
