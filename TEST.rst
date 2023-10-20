@@ -25,8 +25,14 @@ Remove the container and associated data::
     $ docker system prune
 
 
+Host System
+===========
+
+If you have a Linux system that you want to run the tests on instead of the test container, follow these steps:
+
+
 Install system dependencies
-===========================
+---------------------------
 
 (instructions for Ubuntu 22.04)
 
@@ -54,7 +60,7 @@ Install the Python dependencies::
 Or you can use the Conda environment provided in the `GeoAlchemy2_dev.yml` file.
 
 Set up the PostGIS database
-===========================
+---------------------------
 
 Create the ``gis`` role::
 
@@ -76,7 +82,7 @@ With PostGIS 3 enable PostGIS Raster as well::
     $ sudo -u postgres psql -d gis -c "CREATE EXTENSION postgis_raster;"
 
 Set the path to the SpatiaLite module
-=====================================
+-------------------------------------
 
 By default the SpatiaLite functional tests are not run. To run them the ``SPATIALITE_LIBRARY_PATH``
 environment variable must be set.
@@ -87,7 +93,7 @@ the SpatiaLite library is ``/usr/lib/x86_64-linux-gnu/mod_spatialite.so``, so yo
     $ export SPATIALITE_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu/mod_spatialite.so"
 
 Set up the MySQL database
-=========================
+-------------------------
 
 Create the ``gis`` role::
 
@@ -99,7 +105,7 @@ Create the ``gis`` database::
     $ mysql -u gis --password=gis -e "CREATE DATABASE gis;"
 
 Run Tests
-=========
+---------
 
 To run the tests::
 
