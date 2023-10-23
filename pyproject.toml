@@ -45,5 +45,12 @@ testpaths = [
 ]
 
 # MYPY
-[tool.mypy]
+[[tool.mypy.overrides]]
+module = [
+    "importlib.*",
+    "psycopg2cffi",
+    "rasterio",
+    "shapely",
+    "shapely.*"
+]
 ignore_missing_imports = true

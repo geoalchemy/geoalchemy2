@@ -1,2 +1,4 @@
 include *.rst
 include *.txt
+include geoalchemy2/functions.pyi
+include geoalchemy2/py.typed

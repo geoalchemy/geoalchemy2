@@ -252,7 +252,7 @@ _FUNCTIONS: List[Tuple[str, Optional[type], Union[None, str, Tuple[str, str]]]] 
     ('ST_AsText', None,
      '''Return the Well-Known Text (WKT) representation of the geometry/geography without SRID metadata.'''),
     ('ST_AsBinary', None,
-     '''[gometry] Return the Well-Known Binary (WKB) representation of the geometry/geography without SRID meta data.\nOR\n[raster] Return the Well-Known Binary (WKB) representation of the raster.'''),
+     '''[geometry] Return the Well-Known Binary (WKB) representation of the geometry/geography without SRID meta data.\nOR\n[raster] Return the Well-Known Binary (WKB) representation of the raster.'''),
     ('ST_AsEWKB', None,
      '''Return the Well-Known Binary (WKB) representation of the geometry with SRID meta data.'''),
     ('ST_AsHEXEWKB', None,

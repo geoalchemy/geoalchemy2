@@ -26,7 +26,7 @@ Your reports must include the following features:
 1. **succinct description** of the problem - typically a line or two at most.
 
 2. **succinct, dependency-free code** which reproduces the problem, otherwise known as a [Minimal, Complete, and Verifiable](https://stackoverflow.com/help/mcve) example.
-  IF YOU DO NOT HAVE A COMPLETE, RUNNABLE TEST CASE WRITTEN DIRECTLY IN THE TEXTAREA BELOW, YOUR ISSUE MAY BE CLOSED.
+  **Please note that if you do not have a complete and runnable test case written directly in the textarea below, then your issue will be very hard for us to process and may be closed.**
 
 3. **complete stack traces for all errors** - please avoid screenshots, use formatted text inside issues.
 
