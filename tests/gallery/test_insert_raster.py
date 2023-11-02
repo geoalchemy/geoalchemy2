@@ -95,6 +95,9 @@ def write_wkb_raster(dataset):
     width = int(dataset.meta.get("width"))
     height = int(dataset.meta.get("height"))
 
+    if width > 65535 or height > 65535:
+        raise ValueError("PostGIS does not support rasters with width or height greater than 65535")
+
     fmt = f"{endian}{format_string}"
 
     header = struct.pack(
