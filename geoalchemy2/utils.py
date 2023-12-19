@@ -9,8 +9,9 @@ def authorized_values_in_docstring(**kwargs):
     """
 
     def inner(func):
-        for k, v in kwargs.items():
-            func.__doc__ = func.__doc__.replace(f"<{k}>", str(v))
+        if func.__doc__ is not None:
+            for k, v in kwargs.items():
+                func.__doc__ = func.__doc__.replace(f"<{k}>", str(v))
         return func
 
     return inner
