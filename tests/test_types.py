@@ -44,6 +44,16 @@ class TestGeometry:
         g = Geometry(srid=900913)
         assert g.get_col_spec() == "geometry(GEOMETRY,900913)"
 
+    def test_get_col_spec_no_srid(self):
+        g = Geometry(srid=None)
+        assert g.get_col_spec() == "geometry(GEOMETRY,-1)"
+
+    def test_get_col_spec_invalid_srid(self):
+        with pytest.raises(ArgumentError) as e:
+            g = Geometry(srid="foo")
+            g.get_col_spec()
+        assert str(e.value) == "srid must be convertible to an integer"
+
     def test_get_col_spec_no_typmod(self):
         g = Geometry(geometry_type=None)
         assert g.get_col_spec() == "geometry"
