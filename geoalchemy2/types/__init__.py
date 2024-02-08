@@ -179,7 +179,7 @@ class _GISType(UserDefinedType):
     @staticmethod
     def check_ctor_args(geometry_type, srid, dimension, use_typmod, nullable):
         try:
-            # passing default SRID is it is NULL from DB
+            # passing default SRID if it is NULL from DB
             srid = int(srid if srid is not None else -1)
         except (ValueError, TypeError):
             raise ArgumentError("srid must be convertible to an integer")
