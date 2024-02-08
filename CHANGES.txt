@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.14.4
+------
+
+* Type: Fix modified check_ctor_args to pass default SRS_ID value in case of null @satyamsoni2211 (#488)
+* Build: Add Py312 support @adrien-berchet (#487)
+
 0.14.3
 ------
 
