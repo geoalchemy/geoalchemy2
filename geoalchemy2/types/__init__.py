@@ -197,6 +197,20 @@ class _GISType(UserDefinedType):
         return geometry_type, srid
 
 
+@compiles(_GISType, "mariadb")
+def get_col_spec(self, *args, **kwargs):
+    if self.geometry_type is not None:
+        spec = "%s" % self.geometry_type
+    else:
+        spec = "GEOMETRY"
+
+    if not self.nullable or self.spatial_index:
+        spec += " NOT NULL"
+    if self.srid > 0:
+        spec += " SRID %d" % self.srid
+    return spec
+
+
 @compiles(_GISType, "mysql")
 def get_col_spec(self, *args, **kwargs):
     if self.geometry_type is not None:

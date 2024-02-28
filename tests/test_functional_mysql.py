@@ -308,7 +308,7 @@ class TestCallFunction:
 
 
 class TestNullable:
-    @test_only_with_dialects("mysql")
+    @test_only_with_dialects("mysql", "mariadb")
     def test_insert(self, conn, Lake, setup_tables):
         # Insert geometries
         conn.execute(
