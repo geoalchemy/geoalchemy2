@@ -693,7 +693,7 @@ class TestCallFunction:
         assert loads(r1_func) == {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}
 
     @skip_case_insensitivity()
-    @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4"):
+    @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4")
     def test_comparator_case_insensitivity(self, session, Lake, setup_one_lake):
         lake_id = setup_one_lake
 
