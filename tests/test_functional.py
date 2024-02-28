@@ -433,7 +433,7 @@ class TestInsertionORM:
 
     @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4", "mariadb")
     def test_transform(self, session, LocalPoint, setup_tables):
-        if session.bind.dialect.name in ["mysql", "mariabd"]:
+        if session.bind.dialect.name in ["mysql", "mariadb"]:
             # Explicitly skip MySQL dialect to show that there is an issue
             pytest.skip(
                 reason=(
