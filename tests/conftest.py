@@ -45,11 +45,6 @@ def pytest_addoption(parser):
         help="MySQL DB URL used for tests with MySQL (`mysql://user:password@host:port/dbname`).",
     )
     parser.addoption(
-        "--maria_dburl",
-        action="store",
-        help="Maria DB URL used for tests with MySQL (`mariadb://user:password@host:port/dbname`).",
-    )
-    parser.addoption(
         "--engine-echo",
         action="store_true",
         default=False,
@@ -68,8 +63,6 @@ def pytest_generate_tests(metafunc):
             dialects = sqlite_dialects
         elif metafunc.module.__name__ == "tests.test_functional_mysql":
             dialects = ["mysql"]
-        elif metafunc.module.__name__ == "tests.test_functional_mariadb":
-            dialects = ["mariadb"]
         elif metafunc.module.__name__ == "tests.test_functional_geopackage":
             dialects = ["geopackage"]
 
@@ -79,7 +72,7 @@ def pytest_generate_tests(metafunc):
             dialects = metafunc.cls.tested_dialects
 
         if dialects is None:
-            dialects = ["mysql", "postgresql", "mariadb"] + sqlite_dialects
+            dialects = ["mysql", "postgresql"] + sqlite_dialects
 
         if "sqlite" in dialects:
             # Order dialects
@@ -104,15 +97,6 @@ def db_url_mysql(request, tmpdir_factory):
         or os.getenv("PYTEST_MYSQL_DB_URL")
         or "mysql://gis:gis@localhost/gis"
     )
-
-@pytest.fixture(scope="session")
-def db_url_mariadb(request, tmpdir_factory):
-    return (
-        request.config.getoption("--mariadb_dburl")
-        or os.getenv("PYTEST_MARIA_DB_URL")
-        or "mariadb://gis:gis@localhost/gis"
-    )
-
 
 @pytest.fixture(scope="session")
 def db_url_sqlite_spatialite3(request, tmpdir_factory):
@@ -148,15 +132,12 @@ def db_url(
     db_url_sqlite_spatialite3,
     db_url_sqlite_spatialite4,
     db_url_geopackage,
-    db_url_mysql,
-    db_url_mariadb,
+    db_url_mysql
 ):
     if request.param == "postgresql":
         return db_url_postgresql
     if request.param == "mysql":
         return db_url_mysql
-    if request.param == "mariadb":
-        return db_url_mariadb
     elif request.param == "sqlite-spatialite3":
         return db_url_sqlite_spatialite3
     elif request.param == "sqlite-spatialite4":

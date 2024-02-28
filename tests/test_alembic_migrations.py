@@ -38,7 +38,7 @@ class TestAutogenerate:
                 Geometry(
                     geometry_type="LINESTRING",
                     srid=4326,
-                    nullable=dialect_name not in ["mysql", "mariadb"],
+                    nullable=dialect_name not in ["mysql"],
                 ),
             ),
             schema=Lake.__table__.schema,
