@@ -128,6 +128,7 @@ def _compiles_mysql(cls, fn):
         return "{}({})".format(fn, compiler.process(element.clauses, **kw))
 
     compiles(getattr(functions, cls), "mysql")(_compile_mysql)
+    compiles(getattr(functions, cls), "mariadb")(_compile_mysql)
 
 
 def register_mysql_mapping(mapping):
