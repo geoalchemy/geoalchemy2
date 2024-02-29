@@ -344,7 +344,7 @@ class TestSelectBindParam:
         rows = results.fetchall()
         geom = rows[0][1]
         assert isinstance(geom, WKBElement)
-        if dialect_name in ["mysql"]:
+        if dialect_name == "mysql":
             assert geom.extended is False
         else:
             assert geom.extended is True
@@ -392,7 +392,7 @@ class TestInsertionORM:
         session.flush()
         session.expire(lake)
         assert isinstance(lake.geom, WKBElement)
-        if dialect_name in ["mysql"]:
+        if dialect_name == "mysql":
             # Not extended case
             assert str(lake.geom) == (
                 "0102000000020000000000000000000000000000000000000000000"
@@ -415,7 +415,7 @@ class TestInsertionORM:
         session.flush()
         session.expire(lake)
         assert isinstance(lake.geom, WKBElement)
-        if dialect_name in ["mysql"]:
+        if dialect_name == "mysql":
             # Not extended case
             assert str(lake.geom) == (
                 "0102000000020000000000000000000000000000000000000000000"
@@ -431,9 +431,9 @@ class TestInsertionORM:
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-    @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4"]:
+    @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4")
     def test_transform(self, session, LocalPoint, setup_tables):
-        if session.bind.dialect.name in ["mysql"]:
+        if session.bind.dialect.name == "mysql":
             # Explicitly skip MySQL dialect to show that there is an issue
             pytest.skip(
                 reason=(
@@ -494,7 +494,7 @@ class TestUpdateORM:
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-        if dialect_name not in ["mysql"]:
+        if dialect_name != "mysql":
             # Set geometry to None
             lake.geom = None
 
@@ -536,7 +536,7 @@ class TestUpdateORM:
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-        if dialect_name not in ["mysql"]:
+        if dialect_name != "mysql":
             # Set geometry to None
             lake.geom = None
 
@@ -587,7 +587,7 @@ class TestUpdateORM:
             session.flush()
             session.refresh(lake)
             assert lake.geom is None
-        elif dialect_name in ["mysql"]:
+        elif dialect_name == "mysql":
             with pytest.raises(OperationalError):
                 session.flush()
         else:
@@ -753,7 +753,7 @@ class TestShapely:
     def test_to_shape(self, session, Lake, setup_tables, dialect_name):
         if dialect_name in ["sqlite", "geopackage"]:
             data_type = str
-        elif dialect_name in ["mysql"]:
+        elif dialect_name == "mysql":
             data_type = bytes
         else:
             data_type = memoryview

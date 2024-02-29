@@ -98,6 +98,7 @@ def db_url_mysql(request, tmpdir_factory):
         or "mysql://gis:gis@localhost/gis"
     )
 
+
 @pytest.fixture(scope="session")
 def db_url_sqlite_spatialite3(request, tmpdir_factory):
     return (
@@ -132,7 +133,7 @@ def db_url(
     db_url_sqlite_spatialite3,
     db_url_sqlite_spatialite4,
     db_url_geopackage,
-    db_url_mysql
+    db_url_mysql,
 ):
     if request.param == "postgresql":
         return db_url_postgresql
