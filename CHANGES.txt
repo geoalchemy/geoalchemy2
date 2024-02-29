@@ -1,6 +1,11 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.14.6
+------
+
+* Fix: Fix specific compilation rules for MariaDB @adrien-berchet (#495)
+
 0.14.5
 ------
 
