@@ -176,19 +176,19 @@ def _compile_GeomFromWKB_MySql(element, compiler, **kw):
 
 
 @compiles(functions.ST_GeomFromText, "mysql")  # type: ignore
-@compiles(functions.ST_GeomFromEWKB, "mariadb")  # type: ignore
+@compiles(functions.ST_GeomFromText, "mariadb")  # type: ignore
 def _MySQL_ST_GeomFromText(element, compiler, **kw):
     return _compile_GeomFromText_MySql(element, compiler, **kw)
 
 
 @compiles(functions.ST_GeomFromEWKT, "mysql")  # type: ignore
-@compiles(functions.ST_GeomFromEWKB, "mariadb")  # type: ignore
+@compiles(functions.ST_GeomFromEWKT, "mariadb")  # type: ignore
 def _MySQL_ST_GeomFromEWKT(element, compiler, **kw):
     return _compile_GeomFromText_MySql(element, compiler, **kw)
 
 
 @compiles(functions.ST_GeomFromWKB, "mysql")  # type: ignore
-@compiles(functions.ST_GeomFromEWKB, "mariadb")  # type: ignore
+@compiles(functions.ST_GeomFromWKB, "mariadb")  # type: ignore
 def _MySQL_ST_GeomFromWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_MySql(element, compiler, **kw)
 
