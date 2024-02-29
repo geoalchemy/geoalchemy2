@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.14.5
+------
+
+* Feat: Add experimental support for MariaDB @tebrown (#491)
+* CI: Setup pre-commit.ci @adrien-berchet (#492)
+
 0.14.4
 ------
 
