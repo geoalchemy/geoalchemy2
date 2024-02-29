@@ -197,4 +197,3 @@ def _MySQL_ST_GeomFromWKB(element, compiler, **kw):
 @compiles(functions.ST_GeomFromEWKB, "mariadb")  # type: ignore
 def _MySQL_ST_GeomFromEWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_MySql(element, compiler, **kw)
-

@@ -196,6 +196,7 @@ class _GISType(UserDefinedType):
 
         return geometry_type, srid
 
+
 @compiles(_GISType, "mariadb")
 @compiles(_GISType, "mysql")
 def get_col_spec(self, *args, **kwargs):
