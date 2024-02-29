@@ -39,6 +39,7 @@ def select_dialect(dialect_name):
     known_dialects = {
         "geopackage": dialects.geopackage,
         "mysql": dialects.mysql,
+        "mariadb": dialects.mysql,
         "postgresql": dialects.postgresql,
         "sqlite": dialects.sqlite,
     }
@@ -158,7 +159,7 @@ class _GISType(UserDefinedType):
                 kwargs = {}
                 if self.srid > 0:
                     kwargs["srid"] = self.srid
-                if self.extended is not None and dialect.name != "mysql":
+                if self.extended is not None and dialect.name not in ["mysql", "mariadb"]:
                     kwargs["extended"] = self.extended
                 return self.ElementType(value, **kwargs)
 
@@ -196,6 +197,7 @@ class _GISType(UserDefinedType):
         return geometry_type, srid
 
 
+@compiles(_GISType, "mariadb")
 @compiles(_GISType, "mysql")
 def get_col_spec(self, *args, **kwargs):
     if self.geometry_type is not None:
