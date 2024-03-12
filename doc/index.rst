@@ -152,6 +152,14 @@ Many thanks to Mike Bayer for his guidance and support! He also `fostered
 <https://groups.google.com/forum/?fromgroups=#!topic/geoalchemy/k3PmQOB_FX4>`_
 the birth of GeoAlchemy 2.
 
+Citation
+--------
+
+When you use this software, we kindly ask you to cite the following DOI:
+
+.. image:: https://zenodo.org/badge/5638538.svg
+  :target: https://zenodo.org/doi/10.5281/zenodo.10808783
+
 
 Indices and tables
 ------------------
