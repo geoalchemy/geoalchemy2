@@ -25,4 +25,7 @@ def bind_processor_process(spatial_type, bindvalue):
     elif isinstance(bindvalue, RasterElement):
         return "%s" % (bindvalue.data)
     else:
-        return bindvalue
+        try:
+            return str(bindvalue)
+        except TypeError:
+            return bindvalue
