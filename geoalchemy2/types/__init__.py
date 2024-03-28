@@ -114,7 +114,7 @@ class _GISType(UserDefinedType):
 
     def __init__(
         self,
-        geometry_type="GEOMETRY",
+        geometry_type: Optional[str] = "GEOMETRY",
         srid=-1,
         dimension=2,
         spatial_index=True,
