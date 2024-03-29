@@ -8,6 +8,7 @@ import warnings
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import Literal
 
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names as _postgresql_ischema_names
@@ -119,9 +120,9 @@ class _GISType(UserDefinedType):
         dimension=2,
         spatial_index=True,
         use_N_D_index=False,
-        use_typmod=None,
-        from_text=None,
-        name=None,
+        use_typmod: Optional[Any] | Literal[False] = None,
+        from_text: Optional[str] = None,
+        name: Optional[str] = None,
         nullable=True,
         _spatial_index_reflected=None,
     ) -> None:
