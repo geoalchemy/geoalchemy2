@@ -7,8 +7,8 @@ columns/properties in models.
 import warnings
 from typing import Any
 from typing import Dict
-from typing import Optional
 from typing import Literal
+from typing import Optional
 
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names as _postgresql_ischema_names
