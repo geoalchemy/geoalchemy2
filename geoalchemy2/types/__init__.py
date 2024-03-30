@@ -7,7 +7,6 @@ columns/properties in models.
 import warnings
 from typing import Any
 from typing import Dict
-from typing import Literal
 from typing import Optional
 
 from sqlalchemy.dialects import postgresql
@@ -120,7 +119,7 @@ class _GISType(UserDefinedType):
         dimension=2,
         spatial_index=True,
         use_N_D_index=False,
-        use_typmod: Optional[Any] | Literal[False] = None,
+        use_typmod: Optional[bool] = None,
         from_text: Optional[str] = None,
         name: Optional[str] = None,
         nullable=True,
