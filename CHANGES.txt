@@ -1,6 +1,13 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.14.7
+------
+
+* Allow geometry_type to be None at the type level to match documentation @logankaser (#500)
+* CI: Fix Py312 job in tox @adrien-berchet (#501)
+* Docs: Add Zenodo badge on the main page @adrien-berchet (#498)
+
 0.14.6
 ------
 
