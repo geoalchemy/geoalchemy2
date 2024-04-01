@@ -1,4 +1,5 @@
 """This module defines specific functions for MySQL dialect."""
+
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.sqltypes import NullType

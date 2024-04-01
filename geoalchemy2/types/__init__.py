@@ -4,6 +4,7 @@ The :class:`geoalchemy2.types.Geometry`, :class:`geoalchemy2.types.Geography`, a
 :class:`geoalchemy2.types.Raster` classes are used when defining geometry, geography and raster
 columns/properties in models.
 """
+
 import warnings
 from typing import Any
 from typing import Dict

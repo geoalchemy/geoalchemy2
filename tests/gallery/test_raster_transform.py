@@ -9,6 +9,7 @@ function on `Raster` requires minor tweaking.
 
 This example uses both SQLAlchemy core and ORM queries.
 """
+
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData

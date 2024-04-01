@@ -8,6 +8,7 @@ are projected in the DB. To avoid having to always tweak the query with a
 ``ST_Transform()``, it is possible to define a `TypeDecorator
 <https://docs.sqlalchemy.org/en/13/core/custom_types.html#sqlalchemy.types.TypeDecorator>`_
 """
+
 import re
 from typing import Any
 

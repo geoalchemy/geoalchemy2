@@ -5,6 +5,7 @@
     As GeoAlchemy 2 itself has no dependency on `Shapely`, applications using
     functions of this module have to ensure that `Shapely` is available.
 """
+
 from contextlib import contextmanager
 from typing import List
 from typing import Optional

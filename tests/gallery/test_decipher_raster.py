@@ -7,6 +7,7 @@ usually better to convert them into TIFF, PNG, JPEG or whatever. Nevertheless, i
 possible to decipher the WKB to get a 2D list of values.
 This example uses SQLAlchemy ORM queries.
 """
+
 import binascii
 import struct
 

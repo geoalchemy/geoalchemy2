@@ -1,4 +1,5 @@
 """This module defines specific functions for Postgresql dialect."""
+
 from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement

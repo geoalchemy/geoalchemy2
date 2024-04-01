@@ -1,4 +1,5 @@
 """Test alembic migrations of spatial columns."""
+
 import pytest
 import sqlalchemy as sa  # noqa (This import is only used in the migration scripts)
 from alembic import command

@@ -1,4 +1,5 @@
 """This module defines specific functions for SQLite dialect."""
+
 import os
 from typing import Optional
 
