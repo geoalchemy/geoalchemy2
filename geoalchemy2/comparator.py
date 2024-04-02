@@ -36,6 +36,7 @@ Using the ORM::
 
     Session.query(Cls).order_by(Cls.geom.distance_box('POINT(0 0)')).limit(10)
 """
+
 from typing import Union
 
 from sqlalchemy import types as sqltypes

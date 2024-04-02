@@ -1,4 +1,5 @@
 """This module defines specific functions for Postgresql dialect."""
+
 from sqlalchemy import Index
 from sqlalchemy import text
 from sqlalchemy.sql import func

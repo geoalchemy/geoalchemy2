@@ -1,4 +1,5 @@
 """This module defines the functions used for administration tasks."""
+
 from sqlalchemy import Column
 from sqlalchemy import Index
 from sqlalchemy import Table

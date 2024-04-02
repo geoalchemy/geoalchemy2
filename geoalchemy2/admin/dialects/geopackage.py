@@ -2,6 +2,7 @@
 
 See GeoPackage specifications here: http://www.geopackage.org/spec/
 """
+
 import re
 
 from sqlalchemy import text

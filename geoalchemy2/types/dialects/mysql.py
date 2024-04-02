@@ -1,4 +1,5 @@
 """This module defines specific functions for MySQL dialect."""
+
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement

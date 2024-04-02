@@ -1,4 +1,5 @@
 """Declare tables used in tests."""
+
 import pytest
 from sqlalchemy import Column
 from sqlalchemy import Integer
@@ -119,7 +120,7 @@ class TransformedGeometry(TypeDecorator):
         SRID of the resulting WKBElement is correct"""
         return getattr(func, self.impl.as_binary)(
             func.ST_Transform(col, self.app_srid),
-            type_=self.__class__.impl(srid=self.app_srid)
+            type_=self.__class__.impl(srid=self.app_srid),
             # srid could also be -1 so that the SRID is deduced from the
             # WKB data
         )

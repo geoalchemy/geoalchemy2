@@ -1,4 +1,5 @@
 """This module defines functions used by several dialects."""
+
 import sqlalchemy
 from packaging import version
 from sqlalchemy import Column

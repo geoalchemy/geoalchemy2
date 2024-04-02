@@ -6,6 +6,7 @@ It is possible to insert a geometry and ask PostgreSQL to compute its length at 
 time.
 This example uses SQLAlchemy core queries.
 """
+
 from sqlalchemy import Column
 from sqlalchemy import Float
 from sqlalchemy import Integer

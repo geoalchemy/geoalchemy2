@@ -1,4 +1,5 @@
 """GeoAlchemy2 package."""
+
 from geoalchemy2 import admin
 from geoalchemy2 import elements  # noqa
 from geoalchemy2 import exc  # noqa

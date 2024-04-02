@@ -28,6 +28,7 @@ with it.
 
 This example uses SQLAlchemy core queries.
 """
+
 from sqlalchemy import MetaData
 from sqlalchemy import func
 from sqlalchemy.ext.compiler import compiles

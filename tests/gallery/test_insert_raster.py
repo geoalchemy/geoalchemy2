@@ -13,6 +13,7 @@ This example uses SQLAlchemy ORM queries.
     raster and re-importing it using this method will properly import the values but might not
     keep the same internal types.
 """
+
 import struct
 from sys import byteorder
 

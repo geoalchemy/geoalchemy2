@@ -7,6 +7,7 @@ the wrapping of geometry columns with a `ST_AsEWKB()` function might be annoying
 this case it is possible to disable this wrapping.
 This example uses SQLAlchemy ORM queries.
 """
+
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import func
