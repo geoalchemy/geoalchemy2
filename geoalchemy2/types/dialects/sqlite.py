@@ -13,9 +13,16 @@ def bind_processor_process(spatial_type, bindvalue):
         else:
             return "SRID=%d;%s" % (bindvalue.srid, bindvalue.data)
     elif isinstance(bindvalue, WKBElement):
+        if bindvalue.srid == -1:
+            bindvalue.srid = spatial_type.srid
         # With SpatiaLite we use Shapely to convert the WKBElement to an EWKT string
         shape = to_shape(bindvalue)
-        return "SRID=%d;%s" % (bindvalue.srid, shape.wkt)
+        result = "SRID=%d;%s" % (bindvalue.srid, shape.wkt)
+        if shape.has_z:
+            # shapely.wkb.loads returns geom_type with a 'Z', for example, 'LINESTRING Z'
+            # which is a limitation with SpatiaLite. Hence, a temporary fix.
+            result = result.replace('Z ', '')
+        return result
     elif isinstance(bindvalue, RasterElement):
         return "%s" % (bindvalue.data)
     else:
