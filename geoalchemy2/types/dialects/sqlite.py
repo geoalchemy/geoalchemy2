@@ -21,7 +21,7 @@ def bind_processor_process(spatial_type, bindvalue):
         if shape.has_z:
             # shapely.wkb.loads returns geom_type with a 'Z', for example, 'LINESTRING Z'
             # which is a limitation with SpatiaLite. Hence, a temporary fix.
-            result = result.replace('Z ', '')
+            result = result.replace("Z ", "")
         return result
     elif isinstance(bindvalue, RasterElement):
         return "%s" % (bindvalue.data)

@@ -133,11 +133,7 @@ class TestAdmin:
         # Define the table
         col = Column(
             "geom",
-            Geometry(
-                geometry_type=None,
-                srid=4326,
-                spatial_index=False
-            ),
+            Geometry(geometry_type=None, srid=4326, spatial_index=False),
             nullable=False,
         )
         t = Table(
@@ -158,9 +154,7 @@ class TestAdmin:
         with pytest.raises((IntegrityError, OperationalError)):
             with conn.begin_nested():
                 # This returns a NULL for the geom field.
-                conn.execute(
-                    t.insert(), [{"geom": "SRID=4326;LINESTRING Z (0 0 0, 1 1 1)"}]
-                )
+                conn.execute(t.insert(), [{"geom": "SRID=4326;LINESTRING Z (0 0 0, 1 1 1)"}])
 
         results = conn.execute(t.select())
         rows = results.fetchall()
