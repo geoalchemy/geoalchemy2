@@ -275,6 +275,91 @@ class TestInsertionCore:
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
+    @pytest.mark.parametrize(
+        "geom_type,wkt",
+        [
+            pytest.param("POINT", "(1 2)", id="Point"),
+            pytest.param("POINTZ", "(1 2 3)", id="Point Z"),
+            pytest.param("LINESTRING", "(1 2, 3 4)", id="LineString"),
+            pytest.param("LINESTRINGZ", "(1 2 3, 4 5 6)", id="LineString Z"),
+            pytest.param("POLYGON", "((1 2, 3 4, 5 6, 1 2))", id="Polygon"),
+            pytest.param("POLYGONZ", "((1 2 3, 4 5 6, 7 8 9, 1 2 3))", id="Polygon Z"),
+            pytest.param("MULTIPOINT", "(1 2, 3 4)", id="Multi Point"),
+            pytest.param("MULTIPOINTZ", "(1 2 3, 4 5 6)", id="Multi Point Z"),
+            pytest.param("MULTILINESTRING", "((1 2, 3 4), (10 20, 30 40))", id="Multi LineString"),
+            pytest.param(
+                "MULTILINESTRINGZ",
+                "((1 2 3, 4 5 6), (10 20 30, 40 50 60))",
+                id="Multi LineString Z",
+            ),
+            pytest.param(
+                "MULTIPOLYGON",
+                "(((1 2, 3 4, 5 6, 1 2), (10 20, 30 40, 50 60, 10 20)))",
+                id="Multi Polygon",
+            ),
+            pytest.param(
+                "MULTIPOLYGONZ",
+                "(((1 2 3, 4 5 6, 7 8 9, 1 2 3), (10 20 30, 40 50 60, 70 80 90, 10 20 30)))",
+                id="Multi Polygon Z",
+            ),
+        ],
+    )
+    def test_insert_all_geom_types(self, dialect_name, base, conn, metadata, geom_type, wkt):
+        """Test insertion and selection of all geometry types."""
+        ndims = 2
+        if "Z" in geom_type[-2:]:
+            ndims += 1
+        if geom_type.endswith("M"):
+            ndims += 1
+
+        if ndims > 2 and dialect_name == "mysql":
+            # Explicitly skip MySQL dialect to show that it can only work with 2D geometries
+            pytest.skip(reason="MySQL only supports 2D geometry types")
+
+        class GeomTypeTable(base):
+            __tablename__ = "test_geom_types"
+            id = Column(Integer, primary_key=True)
+            geom = Column(Geometry(srid=4326, geometry_type=geom_type, dimension=ndims))
+
+        metadata.drop_all(bind=conn, checkfirst=True)
+        metadata.create_all(bind=conn)
+
+        inserted_wkt = f"{geom_type}{wkt}"
+
+        # Use the DB to generate the corresponding raw WKB
+        raw_wkb = conn.execute(
+            text("SELECT ST_AsBinary(ST_GeomFromText('{}', 4326))".format(inserted_wkt))
+        ).scalar()
+
+        inserted_elements = [
+            {"geom": f"SRID=4326;{inserted_wkt}"},
+            {"geom": WKTElement(inserted_wkt, srid=4326)},
+            {"geom": WKTElement(f"SRID=4326;{inserted_wkt}")},
+        ]
+        if dialect_name not in ["sqlite", "geopackage"]:
+            inserted_elements.append({"geom": inserted_wkt})
+        if dialect_name not in ["sqlite", "geopackage"] or ndims == 2:
+            inserted_elements.append({"geom": WKBElement(raw_wkb, srid=4326)})
+
+        # Insert the elements
+        conn.execute(
+            GeomTypeTable.__table__.insert(),
+            inserted_elements,
+        )
+
+        # Select the elements
+        query = select([GeomTypeTable.__table__.c.geom.ST_AsText()])
+        results = conn.execute(query)
+        rows = results.scalars().all()
+
+        # Check that the selected elements are the same as the inputs
+        for row in rows:
+            checked_wkt = row.upper().replace(" ", "")
+            expected_wkt = inserted_wkt.upper().replace(" ", "")
+            if dialect_name == "mysql" and geom_type == "MULTIPOINT":
+                checked_wkt = re.sub(r"\((\d+)\)", "\\1", checked_wkt)
+            assert checked_wkt == expected_wkt
+
     @test_only_with_dialects("postgresql", "sqlite")
     def test_insert_geom_poi(self, conn, Poi, setup_tables):
         conn.execute(
