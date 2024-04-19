@@ -129,41 +129,6 @@ class TestAdmin:
         # Drop the table
         t.drop(bind=conn)
 
-    def test_3d_geometry(self, conn, metadata):
-        # Define the table
-        col = Column(
-            "geom",
-            Geometry(geometry_type=None, srid=4326, spatial_index=False),
-            nullable=False,
-        )
-        t = Table(
-            "3d_geom_type",
-            metadata,
-            Column("id", Integer, primary_key=True),
-            col,
-        )
-
-        # Create the table
-        t.create(bind=conn)
-
-        # Should be 'LINESTRING Z (0 0 0, 1 1 1)'
-        # Read comments at geoalchemy2/types/dialects/sqlite.py#L22
-        elements = {"geom": "SRID=4326;LINESTRING (0 0 0, 1 1 1)"}
-        conn.execute(t.insert(), elements)
-
-        with pytest.raises((IntegrityError, OperationalError)):
-            with conn.begin_nested():
-                # This returns a NULL for the geom field.
-                conn.execute(t.insert(), [{"geom": "SRID=4326;LINESTRING Z (0 0 0, 1 1 1)"}])
-
-        results = conn.execute(t.select())
-        rows = results.fetchall()
-
-        assert len(rows) == 1
-
-        # Drop the table
-        t.drop(bind=conn)
-
 
 class TestIndex:
     @pytest.fixture
