@@ -358,11 +358,11 @@ class TestInsertionCore:
         metadata.drop_all(bind=conn, checkfirst=True)
         metadata.create_all(bind=conn)
 
-        if dialect_name == 'postgresql' and 'MULTIPOINT' in geom_type:
+        if dialect_name == "postgresql" and "MULTIPOINT" in geom_type:
             # formats wkt to wrap tuple elements in brackets,
             # for example '(1 2, 3 4)' to '((1 2), (3 4))'.
             wkt = "({})".format(
-                ", ".join(map(lambda x: '({})'.format(x.strip()), wkt[1:-1].split(',')))
+                ", ".join(map(lambda x: "({})".format(x.strip()), wkt[1:-1].split(",")))
             )
 
         inserted_wkt = f"{geom_type}{wkt}"
