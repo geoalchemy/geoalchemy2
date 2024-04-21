@@ -358,13 +358,6 @@ class TestInsertionCore:
         metadata.drop_all(bind=conn, checkfirst=True)
         metadata.create_all(bind=conn)
 
-        if dialect_name == "postgresql" and "MULTIPOINT" in geom_type:
-            # formats wkt to wrap tuple elements in brackets,
-            # for example '(1 2, 3 4)' to '((1 2), (3 4))'.
-            wkt = "({})".format(
-                ", ".join(map(lambda x: "({})".format(x.strip()), wkt[1:-1].split(",")))
-            )
-
         inserted_wkt = f"{geom_type}{wkt}"
 
         # Use the DB to generate the corresponding raw WKB
@@ -405,9 +398,10 @@ class TestInsertionCore:
         for row_id, row, srid in rows:
             checked_wkt = row.upper().replace(" ", "")
             expected_wkt = inserted_wkt.upper().replace(" ", "")
-            if dialect_name == "mysql" and geom_type == "MULTIPOINT":
-                checked_wkt = re.sub(r"\((\d+)\)", "\\1", checked_wkt)
-            print(row_id, row, srid)
+            if "MULTIPOINT" in geom_type:
+                # Some dialects return MULTIPOINT geometries with nested parenthesis and others
+                # do not so we remove them before checking the results
+                checked_wkt = re.sub(r"\(([0-9]+)\)", "\\1", checked_wkt)
             if row_id >= 5 and dialect_name in ["geopackage"] and has_m:
                 # Currently Shapely does not support geometry types with M dimension
                 assert checked_wkt != expected_wkt

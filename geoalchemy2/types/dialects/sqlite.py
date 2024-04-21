@@ -17,7 +17,7 @@ def format_geom_type(wkt, default_srid=None):
     geom_type = geom_type.replace(" ", "")
     if geom_type.endswith("ZM"):
         geom_type = geom_type[:-2]
-    if geom_type.endswith("Z"):
+    elif geom_type.endswith("Z"):
         geom_type = geom_type[:-1]
     if srid is None and default_srid is not None:
         srid = f"SRID={default_srid}"
