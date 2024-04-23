@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.15.0
+------
+
+* Specific process for geometries with Z or M coordinate with SpatiaLite dialect @spd5 (#506)
+* Chore: Fix type hints on stubs @adrien-berchet (#504)
+
 0.14.7
 ------
 
