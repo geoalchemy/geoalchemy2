@@ -5,7 +5,7 @@ RUN /install_requirements.sh
 
 COPY ./helpers/init_postgres.sh /
 env PGDATA="/var/lib/postgresql/data"
-env POSTGRES_PATH="/usr/lib/postgresql/14"
+env POSTGRES_PATH="/usr/lib/postgresql/16"
 RUN su postgres -c /init_postgres.sh
 
 ENV SPATIALITE_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu/mod_spatialite.so"

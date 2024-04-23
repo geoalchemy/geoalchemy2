@@ -29,9 +29,9 @@ packages=(
     python3.12-venv
 
     # PostgreSQL and PostGIS
-    postgresql
-    postgresql-14-postgis-3
-    postgresql-14-postgis-3-scripts
+    postgresql-16
+    postgresql-16-postgis-3
+    postgresql-16-postgis-3-scripts
     libpq-dev
     libgeos-dev
 
@@ -56,8 +56,10 @@ packages=(
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update -y
-apt-get install --no-install-recommends -y software-properties-common gnupg2
+apt-get install --no-install-recommends -y software-properties-common gnupg2 wget
 add-apt-repository ppa:deadsnakes/ppa
+sh -c 'echo "deb https://apt.PostgreSQL.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+wget --quiet -O - https://www.PostgreSQL.org/media/keys/ACCC4CF8.asc | apt-key add -
 apt-get update -y
 
 apt-get install --no-install-recommends -y "${packages[@]}"

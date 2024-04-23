@@ -54,7 +54,7 @@ Declare a Mapping
 Now that we have a working connection we can go ahead and create a mapping between
 a Python class and a database table::
 
-    >>> from sqlalchemy.ext.declarative import declarative_base
+    >>> from sqlalchemy.orm import declarative_base
     >>> from sqlalchemy import Column, Integer, String
     >>> from geoalchemy2 import Geometry
     >>>

@@ -275,6 +275,140 @@ class TestInsertionCore:
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
+    @pytest.mark.parametrize(
+        "geom_type,wkt",
+        [
+            pytest.param("POINT", "(1 2)", id="Point"),
+            pytest.param("POINTZ", "(1 2 3)", id="Point Z"),
+            pytest.param("POINTM", "(1 2 3)", id="Point M"),
+            pytest.param("POINTZM", "(1 2 3 4)", id="Point ZM"),
+            pytest.param("LINESTRING", "(1 2, 3 4)", id="LineString"),
+            pytest.param("LINESTRINGZ", "(1 2 3, 4 5 6)", id="LineString Z"),
+            pytest.param("LINESTRINGM", "(1 2 3, 4 5 6)", id="LineString M"),
+            pytest.param("LINESTRINGZM", "(1 2 3 4, 5 6 7 8)", id="LineString ZM"),
+            pytest.param("POLYGON", "((1 2, 3 4, 5 6, 1 2))", id="Polygon"),
+            pytest.param("POLYGONZ", "((1 2 3, 4 5 6, 7 8 9, 1 2 3))", id="Polygon Z"),
+            pytest.param("POLYGONM", "((1 2 3, 4 5 6, 7 8 9, 1 2 3))", id="Polygon M"),
+            pytest.param(
+                "POLYGONZM", "((1 2 3 4,  5 6 7 8, 9 10 11 12, 1 2 3 4))", id="Polygon ZM"
+            ),
+            pytest.param("MULTIPOINT", "(1 2, 3 4)", id="Multi Point"),
+            pytest.param("MULTIPOINTZ", "(1 2 3, 4 5 6)", id="Multi Point Z"),
+            pytest.param("MULTIPOINTM", "(1 2 3, 4 5 6)", id="Multi Point M"),
+            pytest.param("MULTIPOINTZM", "(1 2 3 4, 5 6 7 8)", id="Multi Point ZM"),
+            pytest.param("MULTILINESTRING", "((1 2, 3 4), (10 20, 30 40))", id="Multi LineString"),
+            pytest.param(
+                "MULTILINESTRINGZ",
+                "((1 2 3, 4 5 6), (10 20 30, 40 50 60))",
+                id="Multi LineString Z",
+            ),
+            pytest.param(
+                "MULTILINESTRINGM",
+                "((1 2 3, 4 5 6), (10 20 30, 40 50 60))",
+                id="Multi LineString M",
+            ),
+            pytest.param(
+                "MULTILINESTRINGZM",
+                "((1 2 3 4, 5 6 7 8), (10 20 30 40, 50 60 70 80))",
+                id="Multi LineString ZM",
+            ),
+            pytest.param(
+                "MULTIPOLYGON",
+                "(((1 2, 3 4, 5 6, 1 2)), ((10 20, 30 40, 50 60, 10 20)))",
+                id="Multi Polygon",
+            ),
+            pytest.param(
+                "MULTIPOLYGONZ",
+                "(((1 2 3, 4 5 6, 7 8 9, 1 2 3)), ((10 20 30, 40 50 60, 70 80 90, 10 20 30)))",
+                id="Multi Polygon Z",
+            ),
+            pytest.param(
+                "MULTIPOLYGONM",
+                "(((1 2 3, 4 5 6, 7 8 9, 1 2 3)), ((10 20 30, 40 50 60, 70 80 90, 10 20 30)))",
+                id="Multi Polygon M",
+            ),
+            pytest.param(
+                "MULTIPOLYGONZM",
+                "(((1 2 3 4, 5 6 7 8, 9 10 11 12, 1 2 3 4)),"
+                " ((10 20 30 40, 50 60 70 80, 90 100 100 120, 10 20 30 40)))",
+                id="Multi Polygon ZM",
+            ),
+        ],
+    )
+    def test_insert_all_geom_types(self, dialect_name, base, conn, metadata, geom_type, wkt):
+        """Test insertion and selection of all geometry types."""
+        ndims = 2
+        if "Z" in geom_type[-2:]:
+            ndims += 1
+        if geom_type.endswith("M"):
+            ndims += 1
+            has_m = True
+        else:
+            has_m = False
+
+        if ndims > 2 and dialect_name == "mysql":
+            # Explicitly skip MySQL dialect to show that it can only work with 2D geometries
+            pytest.xfail(reason="MySQL only supports 2D geometry types")
+
+        class GeomTypeTable(base):
+            __tablename__ = "test_geom_types"
+            id = Column(Integer, primary_key=True)
+            geom = Column(Geometry(srid=4326, geometry_type=geom_type, dimension=ndims))
+
+        metadata.drop_all(bind=conn, checkfirst=True)
+        metadata.create_all(bind=conn)
+
+        inserted_wkt = f"{geom_type}{wkt}"
+
+        # Use the DB to generate the corresponding raw WKB
+        raw_wkb = conn.execute(
+            text("SELECT ST_AsBinary(ST_GeomFromText('{}', 4326))".format(inserted_wkt))
+        ).scalar()
+
+        wkb_elem = WKBElement(raw_wkb, srid=4326)
+        inserted_elements = [
+            {"geom": inserted_wkt},
+            {"geom": f"SRID=4326;{inserted_wkt}"},
+            {"geom": WKTElement(inserted_wkt, srid=4326)},
+            {"geom": WKTElement(f"SRID=4326;{inserted_wkt}")},
+        ]
+        if dialect_name not in ["postgresql", "sqlite"] or not has_m:
+            # Currently Shapely does not support geometry types with M dimension
+            inserted_elements.append({"geom": wkb_elem})
+            inserted_elements.append({"geom": wkb_elem.as_ewkb()})
+
+        # Insert the elements
+        conn.execute(
+            GeomTypeTable.__table__.insert(),
+            inserted_elements,
+        )
+
+        # Select the elements
+        query = select(
+            [
+                GeomTypeTable.__table__.c.id,
+                GeomTypeTable.__table__.c.geom.ST_AsText(),
+                GeomTypeTable.__table__.c.geom.ST_SRID(),
+            ],
+        )
+        results = conn.execute(query)
+        rows = results.all()
+
+        # Check that the selected elements are the same as the inputs
+        for row_id, row, srid in rows:
+            checked_wkt = row.upper().replace(" ", "")
+            expected_wkt = inserted_wkt.upper().replace(" ", "")
+            if "MULTIPOINT" in geom_type:
+                # Some dialects return MULTIPOINT geometries with nested parenthesis and others
+                # do not so we remove them before checking the results
+                checked_wkt = re.sub(r"\(([0-9]+)\)", "\\1", checked_wkt)
+            if row_id >= 5 and dialect_name in ["geopackage"] and has_m:
+                # Currently Shapely does not support geometry types with M dimension
+                assert checked_wkt != expected_wkt
+            else:
+                assert checked_wkt == expected_wkt
+            assert srid == 4326
+
     @test_only_with_dialects("postgresql", "sqlite")
     def test_insert_geom_poi(self, conn, Poi, setup_tables):
         conn.execute(
@@ -380,7 +514,7 @@ class TestInsertionORM:
         lake = Lake("LINESTRING(0 0,1 1)")
         session.add(lake)
 
-        if (dialect_name == "postgresql" and postgis_version < 3) or dialect_name == "sqlite":
+        if dialect_name == "postgresql" and postgis_version < 3:
             with pytest.raises((DataError, IntegrityError)):
                 session.flush()
         else:

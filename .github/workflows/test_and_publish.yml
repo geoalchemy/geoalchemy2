@@ -41,7 +41,7 @@ jobs:
 
     services:
       postgres:
-        image: mdillon/postgis:11
+        image: postgis/postgis:16-3.4
         env:
           POSTGRES_DB: gis
           POSTGRES_PASSWORD: gis
@@ -84,10 +84,16 @@ jobs:
         psql -h localhost -p 5432 -U gis -d gis -c 'CREATE SCHEMA gis;'
 
         # Add PostGIS extension to "gis" database
-        psql -h localhost -p 5432 -U gis -d gis -c 'CREATE EXTENSION IF NOT EXISTS postgis;'
+        psql -h localhost -p 5432 -U gis -d gis -c 'CREATE EXTENSION IF NOT EXISTS postgis SCHEMA public;'
 
         # Drop PostGIS Tiger Geocoder extension to "gis" database
         psql -h localhost -p 5432 -U gis -d gis -c 'DROP EXTENSION IF EXISTS postgis_tiger_geocoder CASCADE;'
+
+        # Add PostGISRaster extension to "gis" database
+        psql -h localhost -p 5432 -U gis -d gis -c 'CREATE EXTENSION IF NOT EXISTS postgis_raster SCHEMA public;'
+
+        # Drop PostGIS Topology extension to "gis" database
+        psql -h localhost -p 5432 -U gis -d gis -c 'DROP EXTENSION IF EXISTS postgis_topology;'
 
     # Setup MySQL
     - name: Set up MySQL
