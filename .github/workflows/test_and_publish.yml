@@ -89,8 +89,8 @@ jobs:
         # Add PostGISRaster extension to "gis" database
         psql -h localhost -p 5432 -U gis -d gis -c 'CREATE EXTENSION IF NOT EXISTS postgis_raster SCHEMA public;'
 
-        # Drop PostGIS Tiger Geocoder extension to "gis" database
-        psql -h localhost -p 5432 -U gis -d gis -c 'DROP EXTENSION IF EXISTS postgis_tiger_geocoder CASCADE;'
+        # Drop PostGIS Topology extension to "gis" database
+        psql -h localhost -p 5432 -U gis -d gis -c 'DROP EXTENSION IF EXISTS postgis_topology;'
 
     # Setup MySQL
     - name: Set up MySQL
