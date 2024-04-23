@@ -13,8 +13,8 @@ class TableRowElement(ColumnElement):
     """The cache is disabled for this class."""
 
     def __init__(self, selectable: bool) -> None: ...
-    @property
-    def _from_objects(self) -> List[bool]: ...  # type: ignore[override]
+    @property  # type: ignore[override]
+    def _from_objects(self) -> List[bool]: ...
 
 class ST_AsGeoJSON(GenericFunction):
     """
