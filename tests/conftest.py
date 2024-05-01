@@ -161,18 +161,23 @@ def engine(tmpdir, db_url, _engine_echo):
         # Copy the input SQLite DB to a temporary file and return an engine to it
         input_url = str(db_url)[10:]
         output_file = "test_spatial_db.sqlite"
-        return copy_and_connect_sqlite_db(input_url, tmpdir / output_file, _engine_echo, "sqlite")
-
-    if db_url.startswith("gpkg:///"):
+        current_engine = copy_and_connect_sqlite_db(
+            input_url, tmpdir / output_file, _engine_echo, "sqlite"
+        )
+    elif db_url.startswith("gpkg:///"):
         # Copy the input SQLite DB to a temporary file and return an engine to it
         input_url = str(db_url)[8:]
         output_file = "test_spatial_db.gpkg"
-        return copy_and_connect_sqlite_db(input_url, tmpdir / output_file, _engine_echo, "gpkg")
+        current_engine = copy_and_connect_sqlite_db(
+            input_url, tmpdir / output_file, _engine_echo, "gpkg"
+        )
+    else:
+        # For other dialects the engine is directly returned
+        current_engine = create_engine(db_url, echo=_engine_echo)
+        current_engine.update_execution_options(search_path=["gis", "public"])
 
-    # For other dialects the engine is directly returned
-    engine = create_engine(db_url, echo=_engine_echo)
-    engine.update_execution_options(search_path=["gis", "public"])
-    return engine
+    yield current_engine
+    current_engine.dispose()
 
 
 @pytest.fixture
