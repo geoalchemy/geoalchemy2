@@ -335,7 +335,16 @@ class TestInsertionCore:
             ),
         ],
     )
-    def test_insert_all_geom_types(self, dialect_name, base, conn, metadata, geom_type, wkt):
+    @pytest.mark.parametrize(
+        "use_floating_point",
+        [
+            pytest.param(True, id="Use floating point"),
+            pytest.param(False, id="Do not use floating point"),
+        ],
+    )
+    def test_insert_all_geom_types(
+        self, dialect_name, base, conn, metadata, geom_type, wkt, use_floating_point
+    ):
         """Test insertion and selection of all geometry types."""
         ndims = 2
         if "Z" in geom_type[-2:]:
@@ -357,6 +366,9 @@ class TestInsertionCore:
 
         metadata.drop_all(bind=conn, checkfirst=True)
         metadata.create_all(bind=conn)
+
+        if use_floating_point:
+            wkt = wkt.replace("1 2", "1.5 2.5")
 
         inserted_wkt = f"{geom_type}{wkt}"
 
@@ -401,7 +413,7 @@ class TestInsertionCore:
             if "MULTIPOINT" in geom_type:
                 # Some dialects return MULTIPOINT geometries with nested parenthesis and others
                 # do not so we remove them before checking the results
-                checked_wkt = re.sub(r"\(([0-9]+)\)", "\\1", checked_wkt)
+                checked_wkt = re.sub(r"\(([0-9\.]+)\)", "\\1", checked_wkt)
             if row_id >= 5 and dialect_name in ["geopackage"] and has_m:
                 # Currently Shapely does not support geometry types with M dimension
                 assert checked_wkt != expected_wkt
