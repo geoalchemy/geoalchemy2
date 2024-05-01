@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.15.1
+------
+
+* Fix: Default SRID is bypassed when using floating point coordinates @aballet (#509)
+* Test: Dispose of the connection pools of the test engines @adrien-berchet (#511)
+
 0.15.0
 ------
 
