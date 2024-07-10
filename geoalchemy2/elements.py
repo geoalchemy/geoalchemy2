@@ -117,7 +117,7 @@ class WKTElement(_SpatialElement):
     """
 
     _REMOVE_SRID = re.compile("(SRID=([0-9]+); ?)?(.*)")
-    SPLIT_WKT_PATTERN = re.compile(r"((SRID=\d+) *; *)?([\w ]+) *(\([\d\. ,\(\)]+\))")
+    SPLIT_WKT_PATTERN = re.compile(r"((SRID=\d+) *; *)?([\w ]+) *(\([-\d\. ,\(\)]+\))")
 
     geom_from: str = "ST_GeomFromText"
     geom_from_extended_version: str = "ST_GeomFromEWKT"
