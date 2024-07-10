@@ -5,8 +5,7 @@ import shutil
 import sys
 
 import pytest
-from packaging import version
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import create_engine
 from sqlalchemy import select as raw_select
@@ -30,9 +29,9 @@ class test_only_with_dialects:
 
 def get_postgis_major_version(bind):
     try:
-        return version.parse(bind.execute(func.postgis_lib_version()).scalar()).major
+        return parse_version(bind.execute(func.postgis_lib_version()).scalar()).major
     except OperationalError:
-        return version.parse("0").major
+        return parse_version("0").major
 
 
 def get_postgres_major_version(bind):
@@ -81,7 +80,7 @@ def skip_pypy(msg=None):
 
 
 def select(args):
-    if version.parse(SA_VERSION) < version.parse("1.4"):
+    if parse_version(SA_VERSION) < parse_version("1.4"):
         return raw_select(args)
     else:
         return raw_select(*args)

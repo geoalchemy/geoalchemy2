@@ -1,7 +1,9 @@
 import re
 
 import pytest
+from shapely.geometry import GeometryCollection
 from shapely.geometry import LineString
+from shapely.geometry import Point
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import Integer
@@ -22,6 +24,7 @@ from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
 from geoalchemy2.shape import to_shape
 
+from . import format_wkt
 from . import select
 from . import skip_case_insensitivity
 from . import skip_pypy
@@ -308,6 +311,51 @@ class TestMiscellaneous:
         monkeypatch.delenv("SPATIALITE_LIBRARY_PATH")
         with pytest.raises(RuntimeError):
             load_spatialite(conn.connection.dbapi_connection)
+
+
+class TestInsertionCore:
+    @pytest.fixture
+    def GeomObject(self, base):
+        class GeomObject(base):
+            __tablename__ = "any_geom_object"
+            id = Column(Integer, primary_key=True)
+            geom = Column(Geometry(srid=4326))
+
+        return GeomObject
+
+    def test_insert_unparsable_WKT(self, conn, GeomObject, setup_tables, dialect_name):
+        with pytest.warns(
+            UserWarning,
+            match=(
+                "The given WKT could not be parsed by GeoAlchemy2, this could lead to undefined "
+                "behavior"
+            ),
+        ):
+            conn.execute(
+                GeomObject.__table__.insert(),
+                [
+                    {"geom": "SRID=4326;GeometryCollection(POINT (-1 1),LINESTRING (2 2, 3 3))"},
+                ],
+            )
+
+        results = conn.execute(GeomObject.__table__.select())
+        rows = results.fetchall()
+
+        for row in rows:
+            assert isinstance(row[1], WKBElement)
+            wkt = conn.execute(row[1].ST_AsText()).scalar()
+            assert format_wkt(wkt) == "GEOMETRYCOLLECTION(POINT(-1 1),LINESTRING(2 2,3 3))"
+            srid = conn.execute(row[1].ST_SRID()).scalar()
+            assert srid == 4326
+            if dialect_name == "mysql":
+                extended = None
+            else:
+                extended = True
+            assert row[1] == from_shape(
+                GeometryCollection([Point(-1, 1), LineString([[2, 2], [3, 3]])]),
+                srid=4326,
+                extended=extended,
+            )
 
 
 class TestInsertionORM:

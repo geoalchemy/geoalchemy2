@@ -445,6 +445,32 @@ class TestInsertionCore:
             assert srid == 4326
             assert row[1] == from_shape(Point(1, 1), srid=4326, extended=True)
 
+    def test_insert_negative_coords(self, conn, Poi, setup_tables, dialect_name):
+        conn.execute(
+            Poi.__table__.insert(),
+            [
+                {"geom": "SRID=4326;POINT(-1 1)"},
+                {"geom": WKTElement("POINT(-1 1)", srid=4326)},
+                {"geom": WKTElement("SRID=4326;POINT(-1 1)", extended=True)},
+                {"geom": from_shape(Point(-1, 1), srid=4326)},
+                {"geom": from_shape(Point(-1, 1), srid=4326, extended=True)},
+            ],
+        )
+
+        results = conn.execute(Poi.__table__.select())
+        rows = results.fetchall()
+
+        for row in rows:
+            assert isinstance(row[1], WKBElement)
+            wkt = conn.execute(row[1].ST_AsText()).scalar()
+            assert format_wkt(wkt) == "POINT(-1 1)"
+            srid = conn.execute(row[1].ST_SRID()).scalar()
+            assert srid == 4326
+            if dialect_name == "mysql":
+                assert row[1] == from_shape(Point(-1, 1), srid=4326)
+            else:
+                assert row[1] == from_shape(Point(-1, 1), srid=4326, extended=True)
+
 
 class TestSelectBindParam:
     @pytest.fixture

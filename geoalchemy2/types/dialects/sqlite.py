@@ -1,6 +1,7 @@
 """This module defines specific functions for SQLite dialect."""
 
 import re
+import warnings
 
 from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
@@ -12,6 +13,10 @@ def format_geom_type(wkt, default_srid=None):
     """Format the Geometry type for SQLite."""
     match = re.match(WKTElement.SPLIT_WKT_PATTERN, wkt)
     if match is None:
+        warnings.warn(
+            "The given WKT could not be parsed by GeoAlchemy2, this could lead to undefined "
+            f"behavior with Z, M or ZM geometries or with incorrect SRID. The WKT string is: {wkt}"
+        )
         return wkt
     _, srid, geom_type, coords = match.groups()
     geom_type = geom_type.replace(" ", "")
