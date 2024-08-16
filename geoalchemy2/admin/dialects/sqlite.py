@@ -277,7 +277,7 @@ def before_create(table, bind, **kw):
     current_indexes = set(table.indexes)
     for idx in current_indexes:
         for col in table.info["_saved_columns"]:
-            if (_check_spatial_type(col.type, Geometry, dialect)) and col in idx.columns.values():
+            if _check_spatial_type(col.type, Geometry, dialect) and col in idx.columns.values():
                 table.indexes.remove(idx)
                 if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
                     col.type, "spatial_index", False
@@ -294,12 +294,13 @@ def after_create(table, bind, **kw):
     table.columns = table.info.pop("_saved_columns")
     for col in table.columns:
         # Add the managed Geometry columns with RecoverGeometryColumn()
-        if _check_spatial_type(col.type, Geometry, dialect):
+        if _check_spatial_type(col.type, Geometry, dialect):  # and col.computed is None:
             col.type = col._actual_type
             del col._actual_type
             dimension = get_col_dim(col)
             args = [table.name, col.name, col.type.srid, col.type.geometry_type, dimension]
 
+            print("++++++++++++++++++++++++++++++++++++++++++++++++", args)
             stmt = select(*_format_select_args(func.RecoverGeometryColumn(*args)))
             stmt = stmt.execution_options(autocommit=True)
             bind.execute(stmt)
