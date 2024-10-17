@@ -59,15 +59,15 @@ jobs:
         ports:
           - 3307
         env:
-          MYSQL_USER: gis
-          MYSQL_PASSWORD: gis
-          MYSQL_DATABASE: gis
-          MYSQL_ROOT_PASSWORD: gis
+          MARIADB_USER: gis
+          MARIADB_PASSWORD: gis
+          MARIADB_DATABASE: gis
+          MARIADB_ROOT_PASSWORD: gis
         # Set health checks to wait until MariaDB has started
         options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=5s
-          --health-timeout=2s
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
           --health-retries=3
 
 
