@@ -174,6 +174,7 @@ class _GISType(UserDefinedType):
         """Specific bind_processor that automatically process spatial elements."""
 
         def process(bindvalue):
+            print("=================================================", type(bindvalue), bindvalue)
             return select_dialect(dialect.name).bind_processor_process(self, bindvalue)
 
         return process
@@ -198,9 +199,9 @@ class _GISType(UserDefinedType):
         return geometry_type, srid
 
 
-@compiles(_GISType, "mariadb")
 @compiles(_GISType, "mysql")
-def get_col_spec(self, *args, **kwargs):
+@compiles(_GISType, "mariadb")
+def get_col_spec_mysql(self, compiler, *args, **kwargs):
     if self.geometry_type is not None:
         spec = "%s" % self.geometry_type
     else:
@@ -208,7 +209,7 @@ def get_col_spec(self, *args, **kwargs):
 
     if not self.nullable or self.spatial_index:
         spec += " NOT NULL"
-    if self.srid > 0:
+    if self.srid > 0 and compiler.dialect.name != "mariadb":
         spec += " SRID %d" % self.srid
     return spec
 

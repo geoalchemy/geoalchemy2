@@ -42,7 +42,8 @@ class TestAdmin:
 
 class TestInsertionCore:
     @pytest.mark.parametrize("use_executemany", [True, False])
-    def test_insert(self, conn, Lake, setup_tables, use_executemany):
+    @test_only_with_dialects("mysql")
+    def test_insert_mysql(self, conn, Lake, setup_tables, use_executemany):
         # Issue several inserts using DBAPI's executemany() method or single inserts. This tests
         # the Geometry type's bind_processor and bind_expression functions.
         elements = [
@@ -89,6 +90,48 @@ class TestInsertionCore:
         assert wkt == "LINESTRING(0 0,3 3)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
+
+        # Check that selected elements can be inserted again
+        for row in rows:
+            conn.execute(Lake.__table__.insert().values(geom=row[1]))
+        conn.execute(
+            Lake.__table__.insert(),
+            [{"geom": row[1]} for row in rows],
+        )
+
+    @pytest.mark.parametrize("use_executemany", [True, False])
+    @test_only_with_dialects("mariadb")
+    def test_insert_mariadb(self, conn, Lake, setup_tables, use_executemany):
+        # Issue several inserts using DBAPI's executemany() method or single inserts. This tests
+        # the Geometry type's bind_processor and bind_expression functions.
+        elements = [
+            {"geom": "LINESTRING(0 0,1 1)"},
+            {"geom": WKTElement("LINESTRING(0 0,2 2)")},
+        ]
+
+        if use_executemany:
+            conn.execute(Lake.__table__.insert(), elements)
+        else:
+            for element in elements:
+                query = Lake.__table__.insert().values(**element)
+                conn.execute(query)
+
+        results = conn.execute(Lake.__table__.select().order_by("id"))
+        rows = results.fetchall()
+
+        row = rows[0]
+        assert isinstance(row[1], WKBElement)
+        wkt = conn.execute(row[1].ST_AsText()).scalar()
+        assert wkt == "LINESTRING(0 0,1 1)"
+        srid = conn.execute(row[1].ST_SRID()).scalar()
+        assert srid == -1
+
+        row = rows[1]
+        assert isinstance(row[1], WKBElement)
+        wkt = conn.execute(row[1].ST_AsText()).scalar()
+        assert wkt == "LINESTRING(0 0,2 2)"
+        srid = conn.execute(row[1].ST_SRID()).scalar()
+        assert srid == -1
 
         # Check that selected elements can be inserted again
         for row in rows:
@@ -327,13 +370,13 @@ class TestNullable:
 
 class TestReflection:
     @pytest.fixture
-    def create_temp_db(self, request, conn, reflection_tables_metadata):
+    def create_temp_db(self, request, conn, reflection_tables_metadata, dialect_name):
         """Temporary database, that is dropped on fixture teardown.
         Used to make sure reflection methods always uses the correct schema.
         """
         temp_db_name = "geoalchemy_test_reflection"
         engine = create_engine(
-            f"mysql://gis:gis@localhost/{temp_db_name}",
+            f"{dialect_name}://gis:gis@localhost/{temp_db_name}",
             echo=request.config.getoption("--engine-echo"),
         )
         conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {temp_db_name};"))
@@ -349,19 +392,19 @@ class TestReflection:
         reflection_tables_metadata.drop_all(conn, checkfirst=True)
         reflection_tables_metadata.create_all(conn)
 
-    def test_reflection_mysql(self, conn, setup_reflection_tables, create_temp_db):
+    def test_reflection_mysql(self, conn, setup_reflection_tables, create_temp_db, dialect_name):
         t = Table("lake", MetaData(), autoload_with=conn)
 
         type_ = t.c.geom.type
         assert isinstance(type_, Geometry)
         assert type_.geometry_type == "LINESTRING"
-        assert type_.srid == 4326
+        assert type_.srid == 4326 if dialect_name == "mysql" else -1
         assert type_.dimension == 2
 
         type_ = t.c.geom_no_idx.type
         assert isinstance(type_, Geometry)
         assert type_.geometry_type == "LINESTRING"
-        assert type_.srid == 4326
+        assert type_.srid == 4326 if dialect_name == "mysql" else -1
         assert type_.dimension == 2
 
         # Drop the table

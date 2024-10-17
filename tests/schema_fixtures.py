@@ -189,7 +189,7 @@ def reflection_tables_metadata(dialect_name):
             geom_no_idx = Column(
                 Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=False)
             )
-            if dialect_name != "mysql":
+            if dialect_name not in ["mysql", "mariadb"]:
                 geom_z = Column(Geometry(geometry_type="LINESTRINGZ", srid=4326, dimension=3))
                 geom_m = Column(Geometry(geometry_type="LINESTRINGM", srid=4326, dimension=3))
                 geom_zm = Column(Geometry(geometry_type="LINESTRINGZM", srid=4326, dimension=4))

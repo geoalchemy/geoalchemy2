@@ -6,9 +6,10 @@ if [ $(whoami) != "root" ]; then
     exit 1
 fi
 
+echo "Starting mysql server"
 /etc/init.d/mysql start
 
-echo "waiting for mysql to start"
+echo "Waiting for mysql to start"
 while ! mysqladmin ping -h 127.0.0.1 --silent; do
     sleep 0.2
 done

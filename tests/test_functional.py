@@ -249,7 +249,11 @@ class TestInsertionCore:
 
         row = rows[0]
         assert isinstance(row[1], WKBElement)
+        # import pdb
+        # pdb.set_trace()
+        print("++++++++++++++++++++++++++++++++++++++++++++++++")
         wkt = conn.execute(row[1].ST_AsText()).scalar()
+        print("++++++++++++++++++++++++++++++++++++++++++++++++")
         assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326

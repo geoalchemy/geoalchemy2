@@ -4,8 +4,10 @@ from pathlib import Path
 import pytest
 from sqlalchemy import MetaData
 from sqlalchemy import create_engine
+from sqlalchemy import text
 from sqlalchemy.dialects.mysql.base import MySQLDialect
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -42,7 +44,12 @@ def pytest_addoption(parser):
     parser.addoption(
         "--mysql_dburl",
         action="store",
-        help="MySQL DB URL used for tests with MySQL (`mysql://user:password@host:port/dbname`).",
+        help="MySQL DB URL used for tests (`mysql://user:password@host:port/dbname`).",
+    )
+    parser.addoption(
+        "--mariadb_dburl",
+        action="store",
+        help="MariaDB DB URL used for tests (`mariadb://user:password@host:port/dbname`).",
     )
     parser.addoption(
         "--engine-echo",
@@ -62,7 +69,7 @@ def pytest_generate_tests(metafunc):
         elif metafunc.module.__name__ == "tests.test_functional_sqlite":
             dialects = sqlite_dialects
         elif metafunc.module.__name__ == "tests.test_functional_mysql":
-            dialects = ["mysql"]
+            dialects = ["mysql", "mariadb"]
         elif metafunc.module.__name__ == "tests.test_functional_geopackage":
             dialects = ["geopackage"]
 
@@ -72,7 +79,7 @@ def pytest_generate_tests(metafunc):
             dialects = metafunc.cls.tested_dialects
 
         if dialects is None:
-            dialects = ["mysql", "postgresql"] + sqlite_dialects
+            dialects = ["mysql", "mariadb", "postgresql"] + sqlite_dialects
 
         if "sqlite" in dialects:
             # Order dialects
@@ -96,6 +103,15 @@ def db_url_mysql(request, tmpdir_factory):
         request.config.getoption("--mysql_dburl")
         or os.getenv("PYTEST_MYSQL_DB_URL")
         or "mysql://gis:gis@localhost/gis"
+    )
+
+
+@pytest.fixture(scope="session")
+def db_url_mariadb(request, tmpdir_factory):
+    return (
+        request.config.getoption("--mariadb_dburl")
+        or os.getenv("PYTEST_MARIADB_DB_URL")
+        or "mariadb://gis:gis@localhost/gis"
     )
 
 
@@ -134,16 +150,19 @@ def db_url(
     db_url_sqlite_spatialite4,
     db_url_geopackage,
     db_url_mysql,
+    db_url_mariadb,
 ):
     if request.param == "postgresql":
         return db_url_postgresql
     if request.param == "mysql":
         return db_url_mysql
-    elif request.param == "sqlite-spatialite3":
+    if request.param == "mariadb":
+        return db_url_mariadb
+    if request.param == "sqlite-spatialite3":
         return db_url_sqlite_spatialite3
-    elif request.param == "sqlite-spatialite4":
+    if request.param == "sqlite-spatialite4":
         return db_url_sqlite_spatialite4
-    elif request.param == "geopackage":
+    if request.param == "geopackage":
         return db_url_geopackage
     return None
 
@@ -157,24 +176,41 @@ def _engine_echo(request):
 @pytest.fixture
 def engine(tmpdir, db_url, _engine_echo):
     """Provide an engine to test database."""
-    if db_url.startswith("sqlite:///"):
-        # Copy the input SQLite DB to a temporary file and return an engine to it
-        input_url = str(db_url)[10:]
-        output_file = "test_spatial_db.sqlite"
-        current_engine = copy_and_connect_sqlite_db(
-            input_url, tmpdir / output_file, _engine_echo, "sqlite"
-        )
-    elif db_url.startswith("gpkg:///"):
-        # Copy the input SQLite DB to a temporary file and return an engine to it
-        input_url = str(db_url)[8:]
-        output_file = "test_spatial_db.gpkg"
-        current_engine = copy_and_connect_sqlite_db(
-            input_url, tmpdir / output_file, _engine_echo, "gpkg"
-        )
-    else:
-        # For other dialects the engine is directly returned
-        current_engine = create_engine(db_url, echo=_engine_echo)
-        current_engine.update_execution_options(search_path=["gis", "public"])
+    try:
+        if db_url.startswith("sqlite:///"):
+            # Copy the input SQLite DB to a temporary file and return an engine to it
+            input_url = str(db_url)[10:]
+            output_file = "test_spatial_db.sqlite"
+            current_engine = copy_and_connect_sqlite_db(
+                input_url, tmpdir / output_file, _engine_echo, "sqlite"
+            )
+        elif db_url.startswith("gpkg:///"):
+            # Copy the input GeoPackage to a temporary file and return an engine to it
+            input_url = str(db_url)[8:]
+            output_file = "test_spatial_db.gpkg"
+            current_engine = copy_and_connect_sqlite_db(
+                input_url, tmpdir / output_file, _engine_echo, "gpkg"
+            )
+        else:
+            # For other dialects the engine is directly returned
+            current_engine = create_engine(db_url, echo=_engine_echo)
+            current_engine.update_execution_options(search_path=["gis", "public"])
+    except Exception:
+        pytest.skip(reason=f"Could not create engine for this URL: {db_url}")
+
+    # Disambiguate MySQL and MariaDB
+    if current_engine.dialect.name in ["mysql", "mariadb"]:
+        try:
+            with current_engine.begin() as connection:
+                mysql_type = (
+                    "MariaDB"
+                    if "mariadb" in connection.execute(text("SELECT VERSION();")).scalar().lower()
+                    else "MySQL"
+                )
+            if current_engine.dialect.name != mysql_type.lower():
+                pytest.skip(reason=f"Can not execute {mysql_type} queries on {db_url}")
+        except InvalidRequestError:
+            pytest.skip(reason=f"Can not execute MariaDB queries on {db_url}")
 
     yield current_engine
     current_engine.dispose()

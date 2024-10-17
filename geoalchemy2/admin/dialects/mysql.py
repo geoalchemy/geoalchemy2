@@ -32,27 +32,20 @@ def reflect_geometry_column(inspector, table, column_info):
     schema = table.schema or inspector.default_schema_name
 
     if inspector.dialect.name == "mariadb":
-        geometry_type_query = """SELECT DATA_TYPE, IS_NULLABLE
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_NAME = '{}' and COLUMN_NAME = '{}'""".format(
-            table.name, column_name
-        )
-        if schema is not None:
-            geometry_type_query += """ and table_schema = '{}'""".format(schema)
-        geometry_type, nullable_str = inspector.bind.execute(text(geometry_type_query)).one()
-        is_nullable = str(nullable_str).lower() == "yes"
-        srid = 0
+        select_srid = "-1, "
     else:
-        # Check geometry type, SRID and if the column is nullable
-        geometry_type_query = """SELECT DATA_TYPE, SRS_ID, IS_NULLABLE
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_NAME = '{}' and COLUMN_NAME = '{}'""".format(
-            table.name, column_name
-        )
-        if schema is not None:
-            geometry_type_query += """ and table_schema = '{}'""".format(schema)
-        geometry_type, srid, nullable_str = inspector.bind.execute(text(geometry_type_query)).one()
-        is_nullable = str(nullable_str).lower() == "yes"
+        select_srid = "SRS_ID, "
+
+    # Check geometry type, SRID and if the column is nullable
+    geometry_type_query = """SELECT DATA_TYPE, {}IS_NULLABLE
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_NAME = '{}' and COLUMN_NAME = '{}'""".format(
+        select_srid, table.name, column_name
+    )
+    if schema is not None:
+        geometry_type_query += """ and table_schema = '{}'""".format(schema)
+    geometry_type, srid, nullable_str = inspector.bind.execute(text(geometry_type_query)).one()
+    is_nullable = str(nullable_str).lower() == "yes"
 
     if geometry_type not in _POSSIBLE_TYPES:
         return
