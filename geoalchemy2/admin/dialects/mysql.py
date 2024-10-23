@@ -169,6 +169,26 @@ def _compile_GeomFromText_MySql(element, compiler, **kw):
 
 def _compile_GeomFromWKB_MySql(element, compiler, **kw):
     element.identifier = "ST_GeomFromWKB"
+    try:
+        wkb_data = list(element.clauses)[0].value
+        if isinstance(wkb_data, memoryview):
+            list(element.clauses)[0].value = wkb_data.tobytes()
+    except Exception:
+        pass
+    compiled = compiler.process(element.clauses, **kw)
+    srid = element.type.srid
+
+    if srid > 0:
+        return "{}({}, {})".format(element.identifier, compiled, srid)
+    else:
+        return "{}({})".format(element.identifier, compiled)
+
+
+def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
+    element.identifier = "ST_GeomFromText"
+    import pdb
+
+    pdb.set_trace()
     wkb_data = list(element.clauses)[0].value
     if isinstance(wkb_data, memoryview):
         list(element.clauses)[0].value = wkb_data.tobytes()
@@ -194,12 +214,22 @@ def _MySQL_ST_GeomFromEWKT(element, compiler, **kw):
 
 
 @compiles(functions.ST_GeomFromWKB, "mysql")  # type: ignore
-@compiles(functions.ST_GeomFromWKB, "mariadb")  # type: ignore
+# @compiles(functions.ST_GeomFromWKB, "mariadb")  # type: ignore
 def _MySQL_ST_GeomFromWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_MySql(element, compiler, **kw)
 
 
 @compiles(functions.ST_GeomFromEWKB, "mysql")  # type: ignore
-@compiles(functions.ST_GeomFromEWKB, "mariadb")  # type: ignore
+# @compiles(functions.ST_GeomFromEWKB, "mariadb")  # type: ignore
 def _MySQL_ST_GeomFromEWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_MySql(element, compiler, **kw)
+
+
+# @compiles(functions.ST_GeomFromWKB, "mariadb")  # type: ignore
+# def _MariaDB_ST_GeomFromWKB(element, compiler, **kw):
+#     return _compile_GeomFromWKB_MariaDB(element, compiler, **kw)
+
+
+# @compiles(functions.ST_GeomFromEWKB, "mariadb")  # type: ignore
+# def _MariaDB_ST_GeomFromEWKB(element, compiler, **kw):
+#     return _compile_GeomFromWKB_MariaDB(element, compiler, **kw)

@@ -249,10 +249,46 @@ class TestInsertionCore:
 
         row = rows[0]
         assert isinstance(row[1], WKBElement)
+        print("++++++++++++++++++++++++++++++++++++++++++++++++")
+        print("WORKING WKB:", from_shape(LineString([[0, 0], [3, 3]]), srid=4326))
+        print("++++++++++++++++++++++++++++++++++++++++++++++++")
         # import pdb
         # pdb.set_trace()
-        print("++++++++++++++++++++++++++++++++++++++++++++++++")
+        print(
+            conn.execute(
+                func.ST_AsText(
+                    func.ST_GeomFromWKB(
+                        func.ST_AsBinary(func.ST_LineFromText("LINESTRING(0 4, 4 6)"))
+                    )
+                )
+            ).scalar()
+        )
+        # print(conn.execute(func.ST_AsText(func.ST_GeomFromWKB(func.ST_AsBinary(func.ST_LineFromText('LINESTRING(0 4, 4 6)'))))).scalar())
+        print(
+            "With explicit WKB from query:",
+            conn.execute(
+                func.ST_AsText(
+                    func.ST_GeomFromWKB(
+                        conn.execute(
+                            func.ST_AsBinary(func.ST_LineFromText("LINESTRING(0 4, 4 6)"))
+                        ).scalar()
+                    )
+                )
+            ).scalar(),
+        )
+        # print("With explicit WKB:", conn.execute(text("SELECT ST_GeomFromWKB('000000000140000000000000004010000000000000', 4326);")).scalar())
+        print(
+            conn.execute(
+                text(
+                    "SELECT ST_AsText(ST_GeomFromWKB(ST_AsBinary(ST_LineFromText('LINESTRING(0 4, 4 6)'))))"
+                )
+            ).scalar()
+        )
+        print("FAILING WKB:", row[1])
+        wkt = conn.execute(from_shape(LineString([[0, 0], [3, 3]]), srid=4326).ST_AsText()).scalar()
+        print("++++++++++++++++++++++++++++++++++++++++++++++++", wkt)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
+        print("++++++++++++++++++++++++++++++++++++++++++++++++", wkt)
         print("++++++++++++++++++++++++++++++++++++++++++++++++")
         assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()

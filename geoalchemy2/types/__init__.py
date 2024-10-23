@@ -40,7 +40,7 @@ def select_dialect(dialect_name):
     known_dialects = {
         "geopackage": dialects.geopackage,
         "mysql": dialects.mysql,
-        "mariadb": dialects.mysql,
+        "mariadb": dialects.mariadb,
         "postgresql": dialects.postgresql,
         "sqlite": dialects.sqlite,
     }
