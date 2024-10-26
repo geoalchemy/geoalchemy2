@@ -264,18 +264,15 @@ class TestInsertionCore:
             ).scalar()
         )
         # print(conn.execute(func.ST_AsText(func.ST_GeomFromWKB(func.ST_AsBinary(func.ST_LineFromText('LINESTRING(0 4, 4 6)'))))).scalar())
-        print(
-            "With explicit WKB from query:",
+        print("With explicit WKB from query:")
+        wkb_elem = WKBElement(
             conn.execute(
-                func.ST_AsText(
-                    func.ST_GeomFromWKB(
-                        conn.execute(
-                            func.ST_AsBinary(func.ST_LineFromText("LINESTRING(0 4, 4 6)"))
-                        ).scalar()
-                    )
-                )
-            ).scalar(),
+                func.ST_AsBinary(func.ST_LineFromText("LINESTRING(0 4, 4 6)"))
+            ).scalar()
         )
+        print("WKBElement:", wkb_elem)
+        wkt_str = conn.execute(func.ST_AsText(wkb_elem)).scalar()
+        print("Create geom and convert to WKT:", wkt_str)
         # print("With explicit WKB:", conn.execute(text("SELECT ST_GeomFromWKB('000000000140000000000000004010000000000000', 4326);")).scalar())
         print(
             conn.execute(
