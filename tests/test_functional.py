@@ -266,9 +266,7 @@ class TestInsertionCore:
         # print(conn.execute(func.ST_AsText(func.ST_GeomFromWKB(func.ST_AsBinary(func.ST_LineFromText('LINESTRING(0 4, 4 6)'))))).scalar())
         print("With explicit WKB from query:")
         wkb_elem = WKBElement(
-            conn.execute(
-                func.ST_AsBinary(func.ST_LineFromText("LINESTRING(0 4, 4 6)"))
-            ).scalar()
+            conn.execute(func.ST_AsBinary(func.ST_LineFromText("LINESTRING(0 4, 4 6)"))).scalar()
         )
         print("WKBElement:", wkb_elem)
         wkt_str = conn.execute(func.ST_AsText(wkb_elem)).scalar()

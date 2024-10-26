@@ -189,8 +189,12 @@ def _compile_GeomFromWKB_MySql(element, compiler, **kw):
 def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
     element.identifier = "ST_GeomFromText"
 
-    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& IN COMPILE FUNCTION: ELEMENT", element)
-    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& IN COMPILE FUNCTION: COMPILER", compiler)
+    print(
+        "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& IN COMPILE FUNCTION: ELEMENT", element
+    )
+    print(
+        "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& IN COMPILE FUNCTION: COMPILER", compiler
+    )
     try:
         # import pdb
         # pdb.set_trace()
