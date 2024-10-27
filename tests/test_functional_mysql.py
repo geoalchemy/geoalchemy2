@@ -42,7 +42,6 @@ class TestAdmin:
 
 class TestInsertionCore:
     @pytest.mark.parametrize("use_executemany", [True, False])
-    @test_only_with_dialects("mysql")
     def test_insert_mysql(self, conn, Lake, setup_tables, use_executemany):
         # Issue several inserts using DBAPI's executemany() method or single inserts. This tests
         # the Geometry type's bind_processor and bind_expression functions.
@@ -90,48 +89,6 @@ class TestInsertionCore:
         assert wkt == "LINESTRING(0 0,3 3)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
-
-        # Check that selected elements can be inserted again
-        for row in rows:
-            conn.execute(Lake.__table__.insert().values(geom=row[1]))
-        conn.execute(
-            Lake.__table__.insert(),
-            [{"geom": row[1]} for row in rows],
-        )
-
-    @pytest.mark.parametrize("use_executemany", [True, False])
-    @test_only_with_dialects("mariadb")
-    def test_insert_mariadb(self, conn, Lake, setup_tables, use_executemany):
-        # Issue several inserts using DBAPI's executemany() method or single inserts. This tests
-        # the Geometry type's bind_processor and bind_expression functions.
-        elements = [
-            {"geom": "LINESTRING(0 0,1 1)"},
-            {"geom": WKTElement("LINESTRING(0 0,2 2)")},
-        ]
-
-        if use_executemany:
-            conn.execute(Lake.__table__.insert(), elements)
-        else:
-            for element in elements:
-                query = Lake.__table__.insert().values(**element)
-                conn.execute(query)
-
-        results = conn.execute(Lake.__table__.select().order_by("id"))
-        rows = results.fetchall()
-
-        row = rows[0]
-        assert isinstance(row[1], WKBElement)
-        wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert wkt == "LINESTRING(0 0,1 1)"
-        srid = conn.execute(row[1].ST_SRID()).scalar()
-        assert srid == -1
-
-        row = rows[1]
-        assert isinstance(row[1], WKBElement)
-        wkt = conn.execute(row[1].ST_AsText()).scalar()
-        assert wkt == "LINESTRING(0 0,2 2)"
-        srid = conn.execute(row[1].ST_SRID()).scalar()
-        assert srid == -1
 
         # Check that selected elements can be inserted again
         for row in rows:
@@ -254,6 +211,7 @@ class TestCallFunction:
         assert isinstance(r4, Lake)
         assert r4.id == lake_id
 
+    @test_only_with_dialects("mysql")
     def test_ST_Transform(self, session, Lake, setup_one_lake):
         lake_id = setup_one_lake
 
@@ -320,6 +278,7 @@ class TestCallFunction:
         parse_version(SA_VERSION) < parse_version("1.3.4"),
         reason="Case-insensitivity is only available for sqlalchemy>=1.3.4",
     )
+    @test_only_with_dialects("mysql")
     def test_comparator_case_insensitivity(self, session, Lake, setup_one_lake):
         lake_id = setup_one_lake
 

@@ -38,11 +38,10 @@ def bind_processor_process(spatial_type, bindvalue):
 
     if isinstance(bindvalue, WKTElement):
         bindvalue = bindvalue.as_wkt()
-        if bindvalue.srid == -1:
+        if bindvalue.srid <= 0:
             bindvalue.srid = spatial_type.srid
         return bindvalue
     elif isinstance(bindvalue, WKBElement):
         # With MariaDB we use Shapely to convert the WKBElement to an EWKT string
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ CONVERT TO WKT")
         return to_shape(bindvalue).wkt
     return bindvalue

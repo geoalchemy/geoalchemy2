@@ -373,12 +373,6 @@ class TestInsertionCore:
 
         inserted_wkt = f"{geom_type}{wkt}"
 
-        # Use the DB to generate the corresponding raw WKB
-        raw_wkb = conn.execute(
-            text("SELECT ST_AsBinary(ST_GeomFromText('{}', 4326))".format(inserted_wkt))
-        ).scalar()
-
-        wkb_elem = WKBElement(raw_wkb, srid=4326)
         inserted_elements = [
             {"geom": inserted_wkt},
             {"geom": f"SRID=4326;{inserted_wkt}"},
@@ -386,6 +380,13 @@ class TestInsertionCore:
             {"geom": WKTElement(f"SRID=4326;{inserted_wkt}")},
         ]
         if dialect_name not in ["postgresql", "sqlite"] or not has_m:
+            # Use the DB to generate the corresponding raw WKB
+            raw_wkb = conn.execute(
+                text("SELECT ST_AsBinary(ST_GeomFromText('{}', 4326))".format(inserted_wkt))
+            ).scalar()
+
+            wkb_elem = WKBElement(raw_wkb, srid=4326)
+
             # Currently Shapely does not support geometry types with M dimension
             inserted_elements.append({"geom": wkb_elem})
             inserted_elements.append({"geom": wkb_elem.as_ewkb()})

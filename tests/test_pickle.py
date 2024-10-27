@@ -51,7 +51,7 @@ class TestPickle:
         unpickled = pickle.loads(pickled)
         assert unpickled.geom.srid == 4326
         assert str(unpickled.geom) == data_desc
-        if dialect_name == "mysql":
+        if dialect_name in ["mysql", "mariadb"]:
             assert unpickled.geom.extended is False
         else:
             assert unpickled.geom.extended is True
