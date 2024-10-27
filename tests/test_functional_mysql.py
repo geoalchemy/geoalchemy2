@@ -9,6 +9,7 @@ from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import bindparam
 from sqlalchemy import create_engine
 from sqlalchemy import text
+from sqlalchemy.engine import URL
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import StatementError
 from sqlalchemy.sql import func
@@ -329,13 +330,21 @@ class TestNullable:
 
 class TestReflection:
     @pytest.fixture
-    def create_temp_db(self, request, conn, reflection_tables_metadata, dialect_name):
+    def create_temp_db(self, request, engine, conn, reflection_tables_metadata):
         """Temporary database, that is dropped on fixture teardown.
         Used to make sure reflection methods always uses the correct schema.
         """
         temp_db_name = "geoalchemy_test_reflection"
+        temp_db_url = URL.create(
+            engine.url.drivername,
+            engine.url.username,
+            engine.url.password,
+            engine.url.host,
+            engine.url.port,
+            temp_db_name,
+        )
         engine = create_engine(
-            f"{dialect_name}://gis:gis@localhost/{temp_db_name}",
+            temp_db_url,
             echo=request.config.getoption("--engine-echo"),
         )
         conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {temp_db_name};"))
