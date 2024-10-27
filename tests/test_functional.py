@@ -249,42 +249,8 @@ class TestInsertionCore:
 
         row = rows[0]
         assert isinstance(row[1], WKBElement)
-        print("++++++++++++++++++++++++++++++++++++++++++++++++")
-        print("WORKING WKB:", from_shape(LineString([[0, 0], [3, 3]]), srid=4326))
-        print("++++++++++++++++++++++++++++++++++++++++++++++++")
-        # import pdb
-        # pdb.set_trace()
-        print(
-            conn.execute(
-                func.ST_AsText(
-                    func.ST_GeomFromWKB(
-                        func.ST_AsBinary(func.ST_LineFromText("LINESTRING(0 4, 4 6)"))
-                    )
-                )
-            ).scalar()
-        )
-        # print(conn.execute(func.ST_AsText(func.ST_GeomFromWKB(func.ST_AsBinary(func.ST_LineFromText('LINESTRING(0 4, 4 6)'))))).scalar())
-        print("With explicit WKB from query:")
-        wkb_elem = WKBElement(
-            conn.execute(func.ST_AsBinary(func.ST_LineFromText("LINESTRING(0 4, 4 6)"))).scalar()
-        )
-        print("WKBElement:", wkb_elem)
-        wkt_str = conn.execute(func.ST_AsText(wkb_elem)).scalar()
-        print("Create geom and convert to WKT:", wkt_str)
-        # print("With explicit WKB:", conn.execute(text("SELECT ST_GeomFromWKB('000000000140000000000000004010000000000000', 4326);")).scalar())
-        print(
-            conn.execute(
-                text(
-                    "SELECT ST_AsText(ST_GeomFromWKB(ST_AsBinary(ST_LineFromText('LINESTRING(0 4, 4 6)'))))"
-                )
-            ).scalar()
-        )
-        print("FAILING WKB:", row[1])
         wkt = conn.execute(from_shape(LineString([[0, 0], [3, 3]]), srid=4326).ST_AsText()).scalar()
-        print("++++++++++++++++++++++++++++++++++++++++++++++++", wkt)
         wkt = conn.execute(row[1].ST_AsText()).scalar()
-        print("++++++++++++++++++++++++++++++++++++++++++++++++", wkt)
-        print("++++++++++++++++++++++++++++++++++++++++++++++++")
         assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
@@ -390,7 +356,7 @@ class TestInsertionCore:
         else:
             has_m = False
 
-        if ndims > 2 and dialect_name == "mysql":
+        if ndims > 2 and dialect_name in ["mysql", "mariadb"]:
             # Explicitly skip MySQL dialect to show that it can only work with 2D geometries
             pytest.xfail(reason="MySQL only supports 2D geometry types")
 
@@ -501,10 +467,8 @@ class TestInsertionCore:
             assert format_wkt(wkt) == "POINT(-1 1)"
             srid = conn.execute(row[1].ST_SRID()).scalar()
             assert srid == 4326
-            if dialect_name == "mysql":
-                assert row[1] == from_shape(Point(-1, 1), srid=4326)
-            else:
-                assert row[1] == from_shape(Point(-1, 1), srid=4326, extended=True)
+            extended = dialect_name not in ["mysql", "mariadb"]
+            assert row[1] == from_shape(Point(-1, 1), srid=4326, extended=extended)
 
 
 class TestSelectBindParam:
@@ -551,7 +515,7 @@ class TestSelectBindParam:
         rows = results.fetchall()
         geom = rows[0][1]
         assert isinstance(geom, WKBElement)
-        if dialect_name == "mysql":
+        if dialect_name in ["mysql", "mariadb"]:
             assert geom.extended is False
         else:
             assert geom.extended is True
@@ -599,7 +563,7 @@ class TestInsertionORM:
         session.flush()
         session.expire(lake)
         assert isinstance(lake.geom, WKBElement)
-        if dialect_name == "mysql":
+        if dialect_name in ["mysql", "mariadb"]:
             # Not extended case
             assert str(lake.geom) == (
                 "0102000000020000000000000000000000000000000000000000000"
@@ -622,7 +586,7 @@ class TestInsertionORM:
         session.flush()
         session.expire(lake)
         assert isinstance(lake.geom, WKBElement)
-        if dialect_name == "mysql":
+        if dialect_name in ["mysql", "mariadb"]:
             # Not extended case
             assert str(lake.geom) == (
                 "0102000000020000000000000000000000000000000000000000000"
@@ -701,7 +665,7 @@ class TestUpdateORM:
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-        if dialect_name != "mysql":
+        if dialect_name not in ["mysql", "mariadb"]:
             # Set geometry to None
             lake.geom = None
 
@@ -743,7 +707,7 @@ class TestUpdateORM:
         srid = session.execute(lake.geom.ST_SRID()).scalar()
         assert srid == 4326
 
-        if dialect_name != "mysql":
+        if dialect_name not in ["mysql", "mariadb"]:
             # Set geometry to None
             lake.geom = None
 
@@ -794,7 +758,7 @@ class TestUpdateORM:
             session.flush()
             session.refresh(lake)
             assert lake.geom is None
-        elif dialect_name == "mysql":
+        elif dialect_name in ["mysql", "mariadb"]:
             with pytest.raises(OperationalError):
                 session.flush()
         else:
@@ -960,7 +924,7 @@ class TestShapely:
     def test_to_shape(self, session, Lake, setup_tables, dialect_name):
         if dialect_name in ["sqlite", "geopackage"]:
             data_type = str
-        elif dialect_name == "mysql":
+        elif dialect_name in ["mysql", "mariadb"]:
             data_type = bytes
         else:
             data_type = memoryview
