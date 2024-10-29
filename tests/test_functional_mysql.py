@@ -330,7 +330,7 @@ class TestNullable:
 
 class TestReflection:
     @pytest.fixture
-    def create_temp_db(self, request, engine, conn, reflection_tables_metadata):
+    def create_temp_db(self, _engine_echo, engine, conn, reflection_tables_metadata):
         """Temporary database, that is dropped on fixture teardown.
         Used to make sure reflection methods always uses the correct schema.
         """
@@ -345,7 +345,7 @@ class TestReflection:
         )
         engine = create_engine(
             temp_db_url,
-            echo=request.config.getoption("--engine-echo"),
+            echo=_engine_echo,
         )
         conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {temp_db_name};"))
         with engine.connect() as connection:

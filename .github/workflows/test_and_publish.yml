@@ -96,13 +96,18 @@ jobs:
       uses: mamba-org/setup-micromamba@v2
       with:
         environment-name: test_${{ matrix.python-version.flag }}
-        cache-environment: false
+        cache-environment: true
+        init-shell: bash
         create-args: >-
           ${{ matrix.python-version.pkg_name }}
           gdal
           libgdal
           libspatialite==5.0.1
+          proj
           pyproj
+          rasterio
+          shapely
+          sqlite
         condarc: |
           channels:
             - conda-forge
