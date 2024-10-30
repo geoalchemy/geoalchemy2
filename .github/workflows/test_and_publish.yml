@@ -106,8 +106,9 @@ jobs:
           ${{ matrix.python-version.pkg_name }}
           libgdal
           libspatialite==5.0.1
-          pyproj
-          rasterio<1.4
+          numpy<2
+          pyproj<=3.6.0
+          rasterio<=1.3.8
         condarc: |
           channels:
             - conda-forge
@@ -161,6 +162,8 @@ jobs:
     - name: Run the tests
       env:
         SPATIALITE_LIBRARY_PATH: /home/runner/micromamba/envs/test_${{ matrix.python-version.flag }}/lib/mod_spatialite.so
+        PROJ_DATA: /home/runner/micromamba/envs/test_${{ matrix.python-version.flag }}/share/proj
+        PROJ_LIB: /home/runner/micromamba/envs/test_${{ matrix.python-version.flag }}/share/proj
         COVERAGE_FILE: .coverage
         PYTEST_MYSQL_DB_URL: mysql://gis:gis@127.0.0.1:3307/gis
         PYTEST_MARIADB_DB_URL: mariadb://gis:gis@127.0.0.1:3308/gis

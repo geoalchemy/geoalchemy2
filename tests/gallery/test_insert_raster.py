@@ -215,6 +215,7 @@ class TestInsertRaster:
         with open(filename, "wb") as f:
             f.write(data.tobytes())
         return filename, pixel_type
+
     def test_insert_raster(self, session, conn, input_img):
         """Insert a TIFF image into a raster column."""
         filename, pixel_type = input_img
@@ -223,10 +224,7 @@ class TestInsertRaster:
 
         # Load the image and transform it into a WKB
         print("# ######################################################## #")
-        from osgeo import osr
-        print(osr.GetPROJVersionMajor())
-        print(osr.GetPROJVersionMinor())
-        print(osr.GetPROJSearchPaths())
+        print(rasterio.show_versions())
         print("# ######################################################## #")
         with rasterio.open(str(filename), "r+") as dataset:
             dataset.crs = rasterio.crs.CRS.from_epsg(4326)
