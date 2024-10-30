@@ -91,16 +91,28 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    # Install MariaDB
+    - name: Install MariaDB
+      run: |
+        sudo apt-get install -y mariadb-server mariadb-client
+
+    # Setup Conda for Python and Pypy
+    - name: Install Conda environment with Micromamba
+      uses: mamba-org/setup-micromamba@v2
       with:
-        python-version: ${{ matrix.python-version.flag }}
-    - name: Cache APT Packages
-      uses: awalsh128/cache-apt-pkgs-action@latest
-      with:
-        packages: gdal libsqlite3-mod-spatialite rasterio sqlite mariadb-server mariadb-client
-        version: 1.0
-        execute_install_scripts: true
+        environment-name: test_${{ matrix.python-version.flag }}
+        cache-environment: false
+        create-args: >-
+          ${{ matrix.python-version.pkg_name }}
+          libgdal
+          libspatialite==5.0.1
+          pyproj
+          rasterio<1.4
+        condarc: |
+          channels:
+            - conda-forge
+            - defaults
+          channel_priority: strict
 
     # Config PostgreSQL
     - name: Configure PostgreSQL
@@ -148,9 +160,7 @@ jobs:
     # Run the test suite
     - name: Run the tests
       env:
-        SPATIALITE_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/mod_spatialite.so
-        PROJ_LIB: /usr/share/proj
-        PROJ_DATA: /usr/share/proj
+        SPATIALITE_LIBRARY_PATH: /home/runner/micromamba/envs/test_${{ matrix.python-version.flag }}/lib/mod_spatialite.so
         COVERAGE_FILE: .coverage
         PYTEST_MYSQL_DB_URL: mysql://gis:gis@127.0.0.1:3307/gis
         PYTEST_MARIADB_DB_URL: mariadb://gis:gis@127.0.0.1:3308/gis
