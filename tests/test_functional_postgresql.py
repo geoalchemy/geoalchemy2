@@ -11,7 +11,7 @@ else:
     compat.register()
     del compat
 
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 from shapely.geometry import Point
 from sqlalchemy import Column
 from sqlalchemy import Integer

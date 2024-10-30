@@ -1,7 +1,7 @@
 from json import loads
 
 import pytest
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 from shapely.geometry import LineString
 from sqlalchemy import MetaData
 from sqlalchemy import Table
