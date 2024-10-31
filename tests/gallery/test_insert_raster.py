@@ -223,9 +223,6 @@ class TestInsertRaster:
         metadata.create_all(conn)
 
         # Load the image and transform it into a WKB
-        print("# ######################################################## #")
-        print(rasterio.show_versions())
-        print("# ######################################################## #")
         with rasterio.open(str(filename), "r+") as dataset:
             dataset.crs = rasterio.crs.CRS.from_epsg(4326)
             expected_values = dataset.read()[0]
