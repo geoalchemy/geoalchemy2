@@ -6,4 +6,4 @@ pytest
 pytest-cov
 pytest-html
 pytest-mypy
-rasterio
+rasterio;implementation_name!='pypy'
