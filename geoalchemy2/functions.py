@@ -254,14 +254,6 @@ class GenericFunction(_GeoFunctionBase):  # type: ignore
                 else:
                     func_name = elem.geom_from
                     func_args = [elem.data, elem.srid]
-                print(
-                    "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ IN functions.GenericFunction",
-                    elem,
-                    elem.data,
-                    args_list,
-                    expr,
-                    kwargs,
-                )
                 args_list[idx] = getattr(functions.func, func_name)(*func_args)
         _GeoFunctionParent.__init__(self, *args_list, **kwargs)
 
