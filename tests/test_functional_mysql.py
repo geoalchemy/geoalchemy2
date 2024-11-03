@@ -1,7 +1,7 @@
 from json import loads
 
 import pytest
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 from shapely.geometry import LineString
 from sqlalchemy import MetaData
 from sqlalchemy import Table
@@ -9,6 +9,7 @@ from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import bindparam
 from sqlalchemy import create_engine
 from sqlalchemy import text
+from sqlalchemy.engine import URL
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import StatementError
 from sqlalchemy.sql import func
@@ -42,7 +43,7 @@ class TestAdmin:
 
 class TestInsertionCore:
     @pytest.mark.parametrize("use_executemany", [True, False])
-    def test_insert(self, conn, Lake, setup_tables, use_executemany):
+    def test_insert_mysql(self, conn, Lake, setup_tables, use_executemany):
         # Issue several inserts using DBAPI's executemany() method or single inserts. This tests
         # the Geometry type's bind_processor and bind_expression functions.
         elements = [
@@ -211,6 +212,7 @@ class TestCallFunction:
         assert isinstance(r4, Lake)
         assert r4.id == lake_id
 
+    @test_only_with_dialects("mysql")
     def test_ST_Transform(self, session, Lake, setup_one_lake):
         lake_id = setup_one_lake
 
@@ -277,6 +279,7 @@ class TestCallFunction:
         parse_version(SA_VERSION) < parse_version("1.3.4"),
         reason="Case-insensitivity is only available for sqlalchemy>=1.3.4",
     )
+    @test_only_with_dialects("mysql")
     def test_comparator_case_insensitivity(self, session, Lake, setup_one_lake):
         lake_id = setup_one_lake
 
@@ -327,14 +330,22 @@ class TestNullable:
 
 class TestReflection:
     @pytest.fixture
-    def create_temp_db(self, request, conn, reflection_tables_metadata):
+    def create_temp_db(self, _engine_echo, engine, conn, reflection_tables_metadata):
         """Temporary database, that is dropped on fixture teardown.
         Used to make sure reflection methods always uses the correct schema.
         """
         temp_db_name = "geoalchemy_test_reflection"
+        temp_db_url = URL.create(
+            engine.url.drivername,
+            engine.url.username,
+            engine.url.password,
+            engine.url.host,
+            engine.url.port,
+            temp_db_name,
+        )
         engine = create_engine(
-            f"mysql://gis:gis@localhost/{temp_db_name}",
-            echo=request.config.getoption("--engine-echo"),
+            temp_db_url,
+            echo=_engine_echo,
         )
         conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {temp_db_name};"))
         with engine.connect() as connection:
@@ -349,19 +360,19 @@ class TestReflection:
         reflection_tables_metadata.drop_all(conn, checkfirst=True)
         reflection_tables_metadata.create_all(conn)
 
-    def test_reflection_mysql(self, conn, setup_reflection_tables, create_temp_db):
+    def test_reflection_mysql(self, conn, setup_reflection_tables, create_temp_db, dialect_name):
         t = Table("lake", MetaData(), autoload_with=conn)
 
         type_ = t.c.geom.type
         assert isinstance(type_, Geometry)
         assert type_.geometry_type == "LINESTRING"
-        assert type_.srid == 4326
+        assert type_.srid == 4326 if dialect_name == "mysql" else -1
         assert type_.dimension == 2
 
         type_ = t.c.geom_no_idx.type
         assert isinstance(type_, Geometry)
         assert type_.geometry_type == "LINESTRING"
-        assert type_.srid == 4326
+        assert type_.srid == 4326 if dialect_name == "mysql" else -1
         assert type_.dimension == 2
 
         # Drop the table

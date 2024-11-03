@@ -40,7 +40,7 @@ def select_dialect(dialect_name):
     known_dialects = {
         "geopackage": dialects.geopackage,
         "mysql": dialects.mysql,
-        "mariadb": dialects.mysql,
+        "mariadb": dialects.mariadb,
         "postgresql": dialects.postgresql,
         "sqlite": dialects.sqlite,
     }
@@ -198,9 +198,9 @@ class _GISType(UserDefinedType):
         return geometry_type, srid
 
 
-@compiles(_GISType, "mariadb")
 @compiles(_GISType, "mysql")
-def get_col_spec(self, *args, **kwargs):
+@compiles(_GISType, "mariadb")
+def get_col_spec_mysql(self, compiler, *args, **kwargs):
     if self.geometry_type is not None:
         spec = "%s" % self.geometry_type
     else:
@@ -208,7 +208,7 @@ def get_col_spec(self, *args, **kwargs):
 
     if not self.nullable or self.spatial_index:
         spec += " NOT NULL"
-    if self.srid > 0:
+    if self.srid > 0 and compiler.dialect.name != "mariadb":
         spec += " SRID %d" % self.srid
     return spec
 

@@ -7,7 +7,7 @@ if [ $(whoami) != "root" ]; then
 fi
 
 echo "Starting mysql server"
-/etc/init.d/mysql start
+/etc/init.d/mariadb start
 
 echo "Waiting for mysql to start"
 while ! mysqladmin ping -h 127.0.0.1 --silent; do
@@ -15,8 +15,8 @@ while ! mysqladmin ping -h 127.0.0.1 --silent; do
 done
 
 echo "Create the 'gis' role"
-mysql -e "CREATE USER 'gis'@'%' IDENTIFIED BY 'gis';"
-mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'gis'@'%' WITH GRANT OPTION;"
+mariadb -e "CREATE USER 'gis'@'%' IDENTIFIED BY 'gis';"
+mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'gis'@'%' WITH GRANT OPTION;"
 
 echo "Create the 'gis' database"
-mysql -u gis --password=gis -e "CREATE DATABASE gis;"
+mariadb -u gis --password=gis -e "CREATE DATABASE gis;"

@@ -17,7 +17,7 @@ GeoAlchemy 2 also supports the following dialects:
 * `GeoPackage <http://www.geopackage.org/spec/>`_
 
 Note that using GeoAlchemy 2 with these dialects may require some specific configuration on the
-application side.
+application side. It also may not be optimal for performance.
 
 GeoAlchemy 2 aims to be simpler than its predecessor, `GeoAlchemy
 <https://pypi.python.org/pypi/GeoAlchemy>`_. Simpler to use, and simpler

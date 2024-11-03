@@ -54,28 +54,53 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      mysql:
+        image: mysql:latest
+        ports:
+          - 3307:3306
+        env:
+          MYSQL_USER: gis
+          MYSQL_PASSWORD: gis
+          MYSQL_DATABASE: gis
+          MYSQL_ROOT_PASSWORD: gis
+        # Set health checks to wait until MySQL has started
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+      mariadb:
+        image: mariadb:latest
+        ports:
+          - 3308:3306
+        env:
+          MARIADB_USER: gis
+          MARIADB_PASSWORD: gis
+          MARIADB_DATABASE: gis
+          MARIADB_ROOT_PASSWORD: gis
+        # Set health checks to wait until MariaDB has started
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
 
     steps:
 
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v4
 
-    # Setup Conda for Python and Pypy
-    - name: Install Conda environment with Micromamba
-      uses: mamba-org/setup-micromamba@v1
+    # Setup Python
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
       with:
-        environment-name: test_${{ matrix.python-version.flag }}
-        cache-environment: true
-        create-args: >-
-          ${{ matrix.python-version.pkg_name }}
-          libgdal
-          libspatialite==5.0.1
-          pyproj
-        condarc: |
-          channels:
-            - conda-forge
-            - defaults
-          channel_priority: strict
+        python-version: ${{ matrix.python-version.flag }}
+
+    # Install MariaDB
+    - name: Install MariaDB and SpatiaLite
+      run: |
+        sudo apt-get install -y mariadb-server mariadb-client libsqlite3-mod-spatialite libgdal-dev gdal-bin rasterio
 
     # Config PostgreSQL
     - name: Configure PostgreSQL
@@ -95,13 +120,17 @@ jobs:
         # Drop PostGIS Topology extension to "gis" database
         psql -h localhost -p 5432 -U gis -d gis -c 'DROP EXTENSION IF EXISTS postgis_topology;'
 
-    # Setup MySQL
-    - name: Set up MySQL
+    # Check MySQL
+    - name: Check MySQL
       run: |
-        sudo systemctl start mysql
-        sudo mysql --user=root --password=root --host=127.0.0.1 -e "CREATE USER 'gis'@'%' IDENTIFIED BY 'gis';"
-        sudo mysql --user=root --password=root --host=127.0.0.1 -e "GRANT ALL PRIVILEGES ON *.* TO 'gis'@'%' WITH GRANT OPTION;"
-        mysql --user=gis --password=gis -e "CREATE DATABASE gis;"
+        mysql --user=gis --password=gis --host=127.0.0.1 -P 3307 -e "SELECT VERSION();"
+        mysql --user=root --password=gis --host=127.0.0.1 -P 3307 -e "GRANT ALL PRIVILEGES ON *.* TO 'gis'@'%' WITH GRANT OPTION;"
+
+    # Check MariaDB
+    - name: Check MariaDB
+      run: |
+        mysql --user=gis --password=gis --host=127.0.0.1 -P 3308 -e "SELECT VERSION();"
+        mysql --user=root --password=gis --host=127.0.0.1 -P 3308 -e "GRANT ALL PRIVILEGES ON *.* TO 'gis'@'%' WITH GRANT OPTION;"
 
     # Check python version
     - name: Display Python version
@@ -114,16 +143,19 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools
-        pip install tox-gh-actions
+        python -m pip install tox-gh-actions
 
     # Run the test suite
     - name: Run the tests
       env:
-        SPATIALITE_LIBRARY_PATH: /home/runner/micromamba/envs/test_${{ matrix.python-version.flag }}/lib/mod_spatialite.so
-        PROJ_LIB: /home/runner/micromamba/envs/test_${{ matrix.python-version.flag }}/share/proj
+        SPATIALITE_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/mod_spatialite.so
         COVERAGE_FILE: .coverage
-        PYTEST_MYSQL_DB_URL: mysql://gis:gis@127.0.0.1/gis
+        PYTEST_MYSQL_DB_URL: mysql://gis:gis@127.0.0.1:3307/gis
+        PYTEST_MARIADB_DB_URL: mariadb://gis:gis@127.0.0.1:3308/gis
       run: |
+        if [[ ${{ matrix.python-version.flag }} == 'pypy3.8' ]]; then
+          export PYTEST_ADDOPTS='--ignore=tests/gallery/test_insert_raster.py'
+        fi;
         # Run the unit test suite with SQLAlchemy=1.4.* and then with the latest version of SQLAlchemy
         tox -vv
 
