@@ -1216,6 +1216,7 @@ class TestAsBinaryWKT:
         t = Table("use_wkt", MetaData(), *cols)
 
         # Create the table
+        t.drop(bind=conn, checkfirst=True)
         t.create(bind=conn)
 
         # Test element insertion
