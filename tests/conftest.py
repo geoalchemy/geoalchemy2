@@ -57,6 +57,12 @@ def pytest_addoption(parser):
         default=False,
         help="If set to True, all statements of the engine are logged.",
     )
+    parser.addoption(
+        "--require-all-dialects",
+        action="store_true",
+        default=False,
+        help="If set to True, all dialects muts be properly executed.",
+    )
 
 
 def pytest_generate_tests(metafunc):
@@ -173,8 +179,14 @@ def _engine_echo(request):
     return _engine_echo
 
 
+@pytest.fixture(scope="session")
+def _require_all_dialects(request):
+    _require_all_dialects = request.config.getoption("--require-all-dialects")
+    return _require_all_dialects
+
+
 @pytest.fixture
-def engine(tmpdir, db_url, _engine_echo):
+def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
     """Provide an engine to test database."""
     try:
         if db_url.startswith("sqlite:///"):
@@ -196,7 +208,11 @@ def engine(tmpdir, db_url, _engine_echo):
             current_engine = create_engine(db_url, echo=_engine_echo)
             current_engine.update_execution_options(search_path=["gis", "public"])
     except Exception:
-        pytest.skip(reason=f"Could not create engine for this URL: {db_url}")
+        msg = f"Could not create engine for this URL: {db_url}"
+        if _require_all_dialects:
+            pytest.fail("All dialects are required. " + msg)
+        else:
+            pytest.skip(reason=msg)
 
     # Disambiguate MySQL and MariaDB
     if current_engine.dialect.name in ["mysql", "mariadb"]:
@@ -208,9 +224,17 @@ def engine(tmpdir, db_url, _engine_echo):
                     else "MySQL"
                 )
             if current_engine.dialect.name != mysql_type.lower():
-                pytest.skip(reason=f"Can not execute {mysql_type} queries on {db_url}")
+                msg = f"Can not execute {mysql_type} queries on {db_url}"
+                if _require_all_dialects:
+                    pytest.fail("All dialects are required. " + msg)
+                else:
+                    pytest.skip(reason=msg)
         except InvalidRequestError:
-            pytest.skip(reason=f"Can not execute MariaDB queries on {db_url}")
+            msg = f"Can not execute MariaDB queries on {db_url}"
+            if _require_all_dialects:
+                pytest.fail("All dialects are required. " + msg)
+            else:
+                pytest.skip(reason=msg)
 
     yield current_engine
     current_engine.dispose()
