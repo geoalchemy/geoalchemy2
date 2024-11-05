@@ -1195,3 +1195,69 @@ class TestToMetadata(ComparesTables):
 
         # Check that the spatial index was not duplicated
         assert len(new_Lake.indexes) == 1
+
+
+class TestAsBinaryWKT:
+    def test_create_insert(self, conn, dialect_name):
+        class GeometryWkt(Geometry):
+            """Geometry type that uses WKT strings."""
+
+            from_text = "ST_GeomFromEWKT"
+            as_binary = "ST_AsText"
+            ElementType = WKTElement
+
+        dialects_with_srid = ["geopackage", "mysql", "mariadb"]
+
+        # Define the table
+        cols = [
+            Column("id", Integer, primary_key=True),
+        ]
+        cols.append(Column("geom_with_srid", GeometryWkt(geometry_type="LINESTRING", srid=4326)))
+        if dialect_name not in dialects_with_srid:
+            cols.append(Column("geom", GeometryWkt(geometry_type="LINESTRING")))
+        t = Table("use_wkt", MetaData(), *cols)
+
+        # Create the table
+        t.drop(bind=conn, checkfirst=True)
+        t.create(bind=conn)
+
+        # Test element insertion
+        inserted_values = [
+            {"geom_with_srid": v}
+            for v in [
+                "SRID=4326;LINESTRING(0 0,1 1)",
+                WKTElement("LINESTRING(0 0,2 2)", srid=4326),
+                WKTElement("SRID=4326;LINESTRING(0 0,3 3)", extended=True),
+                from_shape(LineString([[0, 0], [4, 4]]), srid=4326),
+            ]
+        ]
+        if dialect_name not in dialects_with_srid:
+            for i, v in zip(
+                inserted_values,
+                [
+                    "LINESTRING(0 0,1 1)",
+                    WKTElement("LINESTRING(0 0,2 2)"),
+                    WKTElement("SRID=-1;LINESTRING(0 0,3 3)", extended=True),
+                    from_shape(LineString([[0, 0], [4, 4]])),
+                ],
+            ):
+                i["geom"] = v
+
+        conn.execute(t.insert(), inserted_values)
+
+        results = conn.execute(t.select())
+        rows = results.fetchall()
+
+        for row_num, row in enumerate(rows):
+            for num, element in enumerate(row[1:]):
+                assert isinstance(element, WKTElement)
+                wkt = conn.execute(element.ST_AsText()).scalar()
+                assert format_wkt(wkt) == f"LINESTRING(0 0,{row_num + 1} {row_num + 1})"
+                srid = conn.execute(element.ST_SRID()).scalar()
+                if num == 1:
+                    assert srid == 0 if dialect_name != "sqlite" else -1
+                else:
+                    assert srid == 4326
+
+        # Drop the table
+        t.drop(bind=conn)
