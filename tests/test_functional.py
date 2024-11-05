@@ -1206,12 +1206,14 @@ class TestAsBinaryWKT:
             as_binary = "ST_AsText"
             ElementType = WKTElement
 
+        dialects_with_srid = ["geopackage", "mysql", "mariadb"]
+
         # Define the table
         cols = [
             Column("id", Integer, primary_key=True),
         ]
         cols.append(Column("geom_with_srid", GeometryWkt(geometry_type="LINESTRING", srid=4326)))
-        if dialect_name not in ["geopackage", "mariadb"]:
+        if dialect_name not in dialects_with_srid:
             cols.append(Column("geom", GeometryWkt(geometry_type="LINESTRING")))
         t = Table("use_wkt", MetaData(), *cols)
 
@@ -1229,7 +1231,7 @@ class TestAsBinaryWKT:
                 from_shape(LineString([[0, 0], [4, 4]]), srid=4326),
             ]
         ]
-        if dialect_name not in ["geopackage", "mariadb"]:
+        if dialect_name not in dialects_with_srid:
             for i, v in zip(
                 inserted_values,
                 [
