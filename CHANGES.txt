@@ -1,6 +1,13 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.16.0
+------
+
+* Test: Add test in test_functional.py for custom Geometry that uses WKT elements @adrien-berchet (#525)
+* Add option to ensure all dialects are properly tested in CI @adrien-berchet (#526)
+* Improve MariaDB support @adrien-berchet (#524)
+
 0.15.2
 ------
 
