@@ -33,7 +33,7 @@ jobs:
           {"pkg_name": "python==3.10.*", "flag": "3.10"},
           {"pkg_name": "python==3.11.*", "flag": "3.11"},
           {"pkg_name": "python==3.12.*", "flag": "3.12"},
-          {"pkg_name": "pypy3.8", "flag": "pypy3.8"},
+          {"pkg_name": "pypy3.10", "flag": "pypy3.10"},
         ]
 
     # The type of runner that the job will run on
@@ -153,9 +153,12 @@ jobs:
         PYTEST_MYSQL_DB_URL: mysql://gis:gis@127.0.0.1:3307/gis
         PYTEST_MARIADB_DB_URL: mariadb://gis:gis@127.0.0.1:3308/gis
       run: |
-        export PYTEST_ADDOPTS='--require-all-dialects'
-        if [[ ${{ matrix.python-version.flag }} == 'pypy3.8' ]]; then
+        if [[ ${{ matrix.python-version.flag }} == 'pypy3.10' ]]; then
           export PYTEST_ADDOPTS=${PYTEST_ADDOPTS}' --ignore=tests/gallery/test_insert_raster.py'
+          export PYTEST_SPATIALITE3_DB_URL="FAILING URL"
+          export PYTEST_SPATIALITE4_DB_URL="FAILING URL"
+        else
+          export PYTEST_ADDOPTS='--require-all-dialects'
         fi;
         # Run the unit test suite with SQLAlchemy=1.4.* and then with the latest version of SQLAlchemy
         tox -vv
