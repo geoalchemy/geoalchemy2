@@ -154,7 +154,7 @@ jobs:
         PYTEST_MARIADB_DB_URL: mariadb://gis:gis@127.0.0.1:3308/gis
       run: |
         export PYTEST_ADDOPTS='--require-all-dialects'
-        if [[ ${{ matrix.python-version.flag }} == 'pypy3.8' ]]; then
+        if [[ ${{ matrix.python-version.flag }} == 'pypy3.10' ]]; then
           export PYTEST_ADDOPTS=${PYTEST_ADDOPTS}' --ignore=tests/gallery/test_insert_raster.py'
         fi;
         # Run the unit test suite with SQLAlchemy=1.4.* and then with the latest version of SQLAlchemy
