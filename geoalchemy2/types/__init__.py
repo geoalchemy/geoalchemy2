@@ -245,7 +245,7 @@ class Geometry(_GISType):
     """ The element class to use. Used by the parent class'
         ``result_processor`` method. """
 
-    cache_ok = False
+    cache_ok = True
     """ Disable cache for this type. """
 
 
@@ -275,7 +275,7 @@ class Geography(_GISType):
     """ The element class to use. Used by the parent class'
         ``result_processor`` method. """
 
-    cache_ok = False
+    cache_ok = True
     """ Disable cache for this type. """
 
 
@@ -315,7 +315,7 @@ class Raster(_GISType):
     """ The element class to use. Used by the parent class'
         ``result_processor`` method. """
 
-    cache_ok = False
+    cache_ok = True
     """ Disable cache for this type. """
 
     def __init__(self, spatial_index=True, from_text=None, name=None, nullable=True) -> None:

@@ -172,9 +172,6 @@ def _compile_GeomFromText_MySql(element, compiler, **kw):
 
 def _compile_GeomFromWKB_MySql(element, compiler, **kw):
     element.identifier = "ST_GeomFromWKB"
-    wkb_data = list(element.clauses)[0].value
-    if isinstance(wkb_data, memoryview):
-        list(element.clauses)[0].value = wkb_data.tobytes()
     compiled = compiler.process(element.clauses, **kw)
     srid = element.type.srid
 
