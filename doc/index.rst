@@ -121,6 +121,7 @@ Reference Documentation
    :maxdepth: 1
 
    admin
+   plugin
    types
    elements
    spatial_functions

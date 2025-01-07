@@ -98,7 +98,7 @@ def setup_ddl_event_listeners():
         )
 
     @event.listens_for(Table, "column_reflect")
-    def _reflect_geometry_column(inspector, table, column_info):
+    def column_reflect(inspector, table, column_info):
         select_dialect(inspector.bind.dialect.name).reflect_geometry_column(
             inspector, table, column_info
         )

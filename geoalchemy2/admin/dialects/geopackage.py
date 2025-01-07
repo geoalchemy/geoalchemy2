@@ -71,15 +71,15 @@ def init_geopackage(dbapi_conn, *args):
         dbapi_conn.execute("SELECT gpkgCreateBaseTables();")
 
 
-def load_spatialite_gpkg(*args, **kwargs):
+def load_spatialite_gpkg(dbapi_conn, *args, **kwargs):
     """Load SpatiaLite extension in GeoPackage and initialize internal tables.
 
     See :func:`geoalchemy2.admin.dialects.geopackage.load_geopackage_driver` and
     :func:`geoalchemy2.admin.dialects.geopackage.init_geopackage` functions for details about
     arguments.
     """
-    load_geopackage_driver(*args)
-    init_geopackage(*args, **kwargs)
+    load_geopackage_driver(dbapi_conn)
+    init_geopackage(dbapi_conn, **kwargs)
 
 
 def _get_spatialite_attrs(bind, table_name, col_name):
@@ -186,6 +186,10 @@ def reflect_geometry_column(inspector, table, column_info):
 
         # Spatial indexes are not automatically reflected with GeoPackage dialect
         column_info["type"]._spatial_index_reflected = False
+
+
+def connect(dbapi_conn, *args, **kwargs):
+    return load_spatialite_gpkg(dbapi_conn, *args, **kwargs)
 
 
 def before_create(table, bind, **kw):

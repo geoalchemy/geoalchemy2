@@ -7,7 +7,6 @@ from sqlalchemy import create_engine
 from sqlalchemy import text
 from sqlalchemy.dialects.mysql.base import MySQLDialect
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
-from sqlalchemy.event import listens_for
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -206,10 +205,10 @@ def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
             )
         else:
             # For other dialects the engine is directly returned
-            current_engine = create_engine(db_url, echo=_engine_echo)
+            current_engine = create_engine(db_url, echo=_engine_echo, plugins=["geoalchemy2"])
             current_engine.update_execution_options(search_path=["gis", "public"])
-    except Exception:
-        msg = f"Could not create engine for this URL: {db_url}"
+    except Exception as exc:
+        msg = f"Could not create engine for this URL: {db_url}\nThe exception was: {exc}"
         if _require_all_dialects:
             pytest.fail("All dialects are required. " + msg)
         else:
@@ -236,19 +235,6 @@ def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
                 pytest.fail("All dialects are required. " + msg)
             else:
                 pytest.skip(reason=msg)
-
-        @listens_for(current_engine, "before_cursor_execute", retval=True)
-        def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-            if isinstance(parameters, (tuple, list)):
-                parameters = tuple(
-                    x.tobytes() if isinstance(x, memoryview) else x for x in parameters
-                )
-            elif isinstance(parameters, dict):
-                for k in parameters:
-                    if isinstance(parameters[k], memoryview):
-                        parameters[k] = parameters[k].tobytes()
-
-            return statement, parameters
 
     yield current_engine
     current_engine.dispose()

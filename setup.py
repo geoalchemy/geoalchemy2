@@ -39,4 +39,9 @@ setup(
     extras_require={
         "shapely": ["Shapely>=1.7"],
     },
+    entry_points={
+        "sqlalchemy.plugins": [
+            "geoalchemy2 = geoalchemy2.admin.plugin:GeoEngine",
+        ]
+    },
 )

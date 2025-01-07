@@ -101,7 +101,10 @@ def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo, dialect):
 
     db_url = f"{dialect}:///{tmp_db}"
     engine = create_engine(
-        db_url, echo=engine_echo, execution_options={"schema_translate_map": {"gis": None}}
+        db_url,
+        echo=engine_echo,
+        execution_options={"schema_translate_map": {"gis": None}},
+        plugins=["geoalchemy2"],
     )
 
     if dialect == "gpkg":

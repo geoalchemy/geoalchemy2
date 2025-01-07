@@ -75,6 +75,18 @@ def reflect_geometry_column(inspector, table, column_info):
     )
 
 
+def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    """Event handler to cast the parameters properly."""
+    if isinstance(parameters, (tuple, list)):
+        parameters = tuple(x.tobytes() if isinstance(x, memoryview) else x for x in parameters)
+    elif isinstance(parameters, dict):
+        for k in parameters:
+            if isinstance(parameters[k], memoryview):
+                parameters[k] = parameters[k].tobytes()
+
+    return statement, parameters
+
+
 def before_create(table, bind, **kw):
     """Handle spatial indexes during the before_create event."""
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
