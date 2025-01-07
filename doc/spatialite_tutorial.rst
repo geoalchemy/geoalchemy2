@@ -12,8 +12,18 @@ the :ref:`orm_tutorial`, which you may want to read first.
 Connect to the DB
 -----------------
 
-Just like when using PostGIS connecting to a SpatiaLite database requires an ``Engine``. This is how
-you create one for SpatiaLite::
+Just like when using PostGIS connecting to a SpatiaLite database requires an ``Engine``. An engine
+for the SpatiaLite dialect can be created in two ways. Using the plugin provided by
+``GeoAlchemy2`` (see :ref:`plugin` for more details)::
+
+    >>> from sqlalchemy import create_engine
+    >>> engine = create_engine(
+    ...     "sqlite:///gis.db",
+    ...     echo=True,
+    ...     plugins=["geoalchemy2"]
+    ... )
+
+Or by attaching the listeners manually::
 
     >>> from geoalchemy2 import load_spatialite
     >>> from sqlalchemy import create_engine
@@ -201,7 +211,7 @@ GeoPackage format
 Starting from the version ``4.2`` of Spatialite, it is possible to use GeoPackage files as DB
 containers. GeoAlchemy 2 is able to handle most of the GeoPackage features automatically if the
 GeoPackage dialect is used (i.e. the DB URL starts with ``gpkg:///``) and the SpatiaLite extension
-is loaded. Usually, this extension should be loaded using the ``load_spatialite_gpkg`` listener::
+is loaded. Usually, this extension should be loaded using the the ``GeoAlchemy2`` plugin (see :ref:`connect <spatialite_connect>` section) or by attaching the ``load_spatialite_gpkg`` listener to the engine::
 
     >>> from geoalchemy2 import load_spatialite_gpkg
     >>> from sqlalchemy import create_engine
