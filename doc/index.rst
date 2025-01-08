@@ -134,10 +134,14 @@ Development
 
 The code is available on GitHub: https://github.com/geoalchemy/geoalchemy2.
 
-Contributors:
+Main authors:
 
 * Adrien Berchet (https://github.com/adrien-berchet)
 * Éric Lemoine (https://github.com/elemoine)
+
+Other contributors:
+
+* Caleb Johnson (https://github.com/calebj)
 * Dolf Andringa (https://github.com/dolfandringa)
 * Frédéric Junod, Camptocamp SA (https://github.com/fredj)
 * ijl (https://github.com/ijl)

@@ -1,6 +1,13 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.17.0
+------
+
+* Perf: Enable cache for all types of GeoAlchemy2 @adrien-berchet (#525)
+* Feat: Add new plugin to automatically attach events based on the engine dialect @adrien-berchet (#525)
+* CI: Disable SQLite for Pypy job @adrien-berchet (#528)
+
 0.16.0
 ------
 
