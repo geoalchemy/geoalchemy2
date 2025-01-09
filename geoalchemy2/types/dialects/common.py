@@ -2,4 +2,4 @@
 
 
 def bind_processor_process(spatial_type, bindvalue):
-    return bindvalue
+    return bindvalue  # pragma: no cover

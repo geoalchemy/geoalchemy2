@@ -53,7 +53,7 @@ def setup_ddl_event_listeners():
     @event.listens_for(Column, "after_parent_attach")
     def after_parent_attach(column, table):
         """Automatically add spatial indexes."""
-        if not isinstance(table, Table):
+        if not isinstance(table, Table):  # pragma: no cover
             # For old versions of SQLAlchemy, subqueries might trigger the after_parent_attach event
             # with a selectable as table, so we want to skip this case.
             return
@@ -75,7 +75,7 @@ def setup_ddl_event_listeners():
         try:
             if column.type._spatial_index_reflected:
                 return
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             pass
 
         kwargs = {

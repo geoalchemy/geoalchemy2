@@ -45,10 +45,31 @@ class GeoEngine(CreateEnginePlugin):
         if journal_mode is not None:
             self.params["connect"]["sqlite"]["journal_mode"] = journal_mode
 
+        before_cursor_execute_convert_mysql = url.query.get(
+            "geoalchemy2_before_cursor_execute_mysql_convert", None
+        )
+        if before_cursor_execute_convert_mysql is not None:
+            self.params["before_cursor_execute"]["mysql"]["convert"] = self.str_to_bool(
+                before_cursor_execute_convert_mysql
+            )
+
+        before_cursor_execute_convert_mariadb = url.query.get(
+            "geoalchemy2_before_cursor_execute_mariadb_convert", None
+        )
+        if before_cursor_execute_convert_mariadb is not None:
+            self.params["before_cursor_execute"]["mariadb"]["convert"] = self.str_to_bool(
+                before_cursor_execute_convert_mariadb
+            )
+
     @staticmethod
-    def str_to_bool(string):
-        """Cast string to bool."""
-        return True if str(string).lower() in ["true", "1", "yes"] else False
+    def str_to_bool(argument):
+        """Cast argument to bool."""
+        lowered = str(argument).lower()
+        if lowered in ("yes", "y", "true", "t", "1", "enable", "on"):
+            return True
+        elif lowered in ("no", "n", "false", "f", "0", "disable", "off"):
+            return False
+        raise ValueError(argument)
 
     def update_url(self, url):
         """Update the URL to one that no longer includes specific parameters."""
@@ -57,6 +78,8 @@ class GeoEngine(CreateEnginePlugin):
                 "geoalchemy2_connect_sqlite_transaction",
                 "geoalchemy2_connect_sqlite_init_mode",
                 "geoalchemy2_connect_sqlite_journal_mode",
+                "geoalchemy2_before_cursor_execute_mysql_convert",
+                "geoalchemy2_before_cursor_execute_mariadb_convert",
             ],
         )
 

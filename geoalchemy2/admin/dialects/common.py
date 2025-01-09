@@ -85,20 +85,20 @@ def setup_create_drop(table, bind, check_col_management=None):
 
 
 def reflect_geometry_column(inspector, table, column_info):
-    return
+    return  # pragma: no cover
 
 
 def before_create(table, bind, **kw):
-    return
+    return  # pragma: no cover
 
 
 def after_create(table, bind, **kw):
-    return
+    return  # pragma: no cover
 
 
 def before_drop(table, bind, **kw):
-    return
+    return  # pragma: no cover
 
 
 def after_drop(table, bind, **kw):
-    return
+    return  # pragma: no cover

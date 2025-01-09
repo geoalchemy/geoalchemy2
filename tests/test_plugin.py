@@ -18,6 +18,8 @@ def test_geo_engine_init():
             "geoalchemy2_connect_sqlite_transaction": "true",
             "geoalchemy2_connect_sqlite_init_mode": "WGS84",
             "geoalchemy2_connect_sqlite_journal_mode": "OFF",
+            "geoalchemy2_before_cursor_execute_mysql_convert": "off",
+            "geoalchemy2_before_cursor_execute_mariadb_convert": "off",
         },
     )
     plugin = GeoEngine(url, {})
@@ -26,6 +28,14 @@ def test_geo_engine_init():
         "transaction": True,
         "init_mode": "WGS84",
         "journal_mode": "OFF",
+    }
+
+    assert plugin.params["before_cursor_execute"]["mysql"] == {
+        "convert": False,
+    }
+
+    assert plugin.params["before_cursor_execute"]["mariadb"] == {
+        "convert": False,
     }
 
 
@@ -40,12 +50,17 @@ def test_geo_engine_init():
         ("False", False),
         ("0", False),
         ("no", False),
-        ("anything_else", False),
     ],
 )
 def test_str_to_bool(value, expected):
     """Test string to boolean conversion."""
     assert GeoEngine.str_to_bool(value) == expected
+
+
+def test_invalid_str_to_bool():
+    """Test unknown parameter in boolean conversion."""
+    with pytest.raises(ValueError):
+        GeoEngine.str_to_bool("anything_else")
 
 
 def test_update_url():
@@ -56,6 +71,8 @@ def test_update_url():
             "geoalchemy2_connect_sqlite_transaction": "true",
             "geoalchemy2_connect_sqlite_init_mode": "WGS84",
             "geoalchemy2_connect_sqlite_journal_mode": "OFF",
+            "geoalchemy2_before_cursor_execute_mysql_convert": "yes",
+            "geoalchemy2_before_cursor_execute_mariadb_convert": "y",
             "other_param": "value",
         },
     )
@@ -66,6 +83,8 @@ def test_update_url():
     assert "geoalchemy2_connect_sqlite_transaction" not in updated_url.query
     assert "geoalchemy2_connect_sqlite_init_mode" not in updated_url.query
     assert "geoalchemy2_connect_sqlite_journal_mode" not in updated_url.query
+    assert "geoalchemy2_before_cursor_execute_mysql_convert" not in updated_url.query
+    assert "geoalchemy2_before_cursor_execute_mariadb_convert" not in updated_url.query
 
     # Check that other parameters are preserved
     assert updated_url.query["other_param"] == "value"

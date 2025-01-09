@@ -1,10 +1,26 @@
+import pytest
 import shapely.wkb
 from shapely.geometry import Point
 
+import geoalchemy2.shape
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
 from geoalchemy2.shape import to_shape
+
+
+def test_check_shapely(monkeypatch):
+
+    @geoalchemy2.shape.check_shapely()
+    def f():
+        return "ok"
+
+    assert f() == "ok"
+
+    with monkeypatch.context() as m:
+        m.setattr(geoalchemy2.shape, "HAS_SHAPELY", False)
+        with pytest.raises(ImportError):
+            f()
 
 
 def test_to_shape_WKBElement():
@@ -56,6 +72,11 @@ def test_to_shape_WKTElement():
     assert isinstance(s, Point)
     assert s.x == 1
     assert s.y == 2
+
+
+def test_to_shape_wrong_type():
+    with pytest.raises(TypeError, match="Only WKBElement and WKTElement objects are supported"):
+        to_shape(0)
 
 
 def test_from_shape():

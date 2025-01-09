@@ -48,7 +48,7 @@ def reflect_geometry_column(inspector, table, column_info):
     is_nullable = str(nullable_str).lower() == "yes"
 
     if geometry_type not in _POSSIBLE_TYPES:
-        return
+        return  # pragma: no cover
 
     # Check if the column has spatial index
     has_index_query = """SELECT DISTINCT
@@ -72,14 +72,15 @@ def reflect_geometry_column(inspector, table, column_info):
     )
 
 
-def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+def before_cursor_execute(conn, cursor, statement, parameters, context, executemany, convert=True):
     """Event handler to cast the parameters properly."""
-    if isinstance(parameters, (tuple, list)):
-        parameters = tuple(x.tobytes() if isinstance(x, memoryview) else x for x in parameters)
-    elif isinstance(parameters, dict):
-        for k in parameters:
-            if isinstance(parameters[k], memoryview):
-                parameters[k] = parameters[k].tobytes()
+    if convert:
+        if isinstance(parameters, (tuple, list)):
+            parameters = tuple(x.tobytes() if isinstance(x, memoryview) else x for x in parameters)
+        elif isinstance(parameters, dict):
+            for k in parameters:
+                if isinstance(parameters[k], memoryview):
+                    parameters[k] = parameters[k].tobytes()
 
     return statement, parameters
 
