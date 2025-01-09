@@ -205,10 +205,10 @@ def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
             )
         else:
             # For other dialects the engine is directly returned
-            current_engine = create_engine(db_url, echo=_engine_echo)
+            current_engine = create_engine(db_url, echo=_engine_echo, plugins=["geoalchemy2"])
             current_engine.update_execution_options(search_path=["gis", "public"])
-    except Exception:
-        msg = f"Could not create engine for this URL: {db_url}"
+    except Exception as exc:
+        msg = f"Could not create engine for this URL: {db_url}\nThe exception was: {exc}"
         if _require_all_dialects:
             pytest.fail("All dialects are required. " + msg)
         else:

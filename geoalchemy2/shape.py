@@ -48,7 +48,6 @@ def to_shape(element: Union[WKBElement, WKTElement]):
         lake = Session.query(Lake).get(1)
         polygon = to_shape(lake.geom)
     """
-    assert isinstance(element, (WKBElement, WKTElement))
     if isinstance(element, WKBElement):
         data, hex = (
             (element.data, True) if isinstance(element.data, str) else (bytes(element.data), False)

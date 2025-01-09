@@ -21,7 +21,11 @@ For this tutorial we will use a PostGIS 2 database. To connect we use
 SQLAlchemy's ``create_engine()`` function::
 
     >>> from sqlalchemy import create_engine
-    >>> engine = create_engine('postgresql://gis:gis@localhost/gis', echo=True)
+    >>> engine = create_engine(
+    ...     'postgresql://gis:gis@localhost/gis',
+    ...     echo=True,
+    ...     plugins=["geoalchemy2"],
+    ... )
 
 In this example the name of the database, the database user, and the database
 password, is ``gis``.
@@ -29,6 +33,11 @@ password, is ``gis``.
 The ``echo`` flag is a shortcut to setting up SQLAlchemy logging, which is
 accomplished via Python's standard logging module. With it is enabled, we'll
 see all the generated SQL produced.
+
+The ``plugins`` argument adds some event listeners to adapt the behavior of
+``GeoAlchemy2`` to the dialect. This is not mandatory but if the plugin is not
+loaded, then the listeners will have to be added to the engine manually (see an
+example in :ref:`spatialite_dialect`).
 
 The return value of ``create_engine`` is an ``Engine`` object, which
 represents the core interface to the database.
@@ -84,7 +93,10 @@ be registered into SQLAlchemy, even if it is not used explicitly.
 
     >>> from geoalchemy2 import Geometry  # <= not used but must be imported
     >>> from sqlalchemy import create_engine, MetaData
-    >>> engine = create_engine("postgresql://myuser:mypass@mydb.host.tld/mydbname")
+    >>> engine = create_engine(
+    ...     "postgresql://myuser:mypass@mydb.host.tld/mydbname",
+    ...     plugins=["geoalchemy2"]
+    ... )
     >>> meta = MetaData()
     >>> meta.reflect(bind=engine)
 

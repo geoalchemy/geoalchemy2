@@ -1,4 +1,4 @@
-.. _spatialite_tutorial:
+.. _spatialite_dialect:
 
 SpatiaLite Tutorial
 ===================
@@ -12,8 +12,18 @@ the :ref:`orm_tutorial`, which you may want to read first.
 Connect to the DB
 -----------------
 
-Just like when using PostGIS connecting to a SpatiaLite database requires an ``Engine``. This is how
-you create one for SpatiaLite::
+Just like when using PostGIS connecting to a SpatiaLite database requires an ``Engine``. An engine
+for the SpatiaLite dialect can be created in two ways. Using the plugin provided by
+``GeoAlchemy2`` (see :ref:`plugin` for more details)::
+
+    >>> from sqlalchemy import create_engine
+    >>> engine = create_engine(
+    ...     "sqlite:///gis.db",
+    ...     echo=True,
+    ...     plugins=["geoalchemy2"]
+    ... )
+
+Or by attaching the listeners manually::
 
     >>> from geoalchemy2 import load_spatialite
     >>> from sqlalchemy import create_engine
@@ -70,108 +80,6 @@ From the user point of view this works in the same way as with PostGIS. The diff
 internally the ``RecoverGeometryColumn`` and ``DiscardGeometryColumn`` management functions will be
 used for the creation and removal of the geometry column.
 
-Create the Table in the Database
---------------------------------
-
-We can now create the ``lake`` table in the ``gis.db`` database::
-
-    >>> Lake.__table__.create(engine)
-
-If we wanted to drop the table we'd use::
-
-    >>> Lake.__table__.drop(engine)
-
-There's nothing specific to SpatiaLite here.
-
-Create a Session
-----------------
-
-When using the SQLAlchemy ORM the ORM interacts with the database through a ``Session``.
-
-    >>> from sqlalchemy.orm import sessionmaker
-    >>> Session = sessionmaker(bind=engine)
-    >>> session = Session()
-
-The session is associated with our SpatiaLite ``Engine``. Again, there's nothing
-specific to SpatiaLite here.
-
-Add New Objects
----------------
-
-We can now create and insert new ``Lake`` objects into the database, the same way we'd
-do it using GeoAlchemy 2 with PostGIS.
-
-::
-
-    >>> lake = Lake(name="Majeur", geom="POLYGON((0 0,1 0,1 1,0 1,0 0))")
-    >>> session.add(lake)
-    >>> session.commit()
-
-We can now query the database for ``Majeur``::
-
-    >>> our_lake = session.query(Lake).filter_by(name="Majeur").first()
-    >>> our_lake.name
-    u"Majeur"
-    >>> our_lake.geom
-    <WKBElement at 0x9af594c; "0103000000010000000500000000000000000000000000000000000000000000000000f03f0000000000000000000000000000f03f000000000000f03f0000000000000000000000000000f03f00000000000000000000000000000000">
-    >>> our_lake.id
-    1
-
-Let's add more lakes::
-
-    >>> session.add_all([
-    ...     Lake(name="Garde", geom="POLYGON((1 0,3 0,3 2,1 2,1 0))"),
-    ...     Lake(name="Orta", geom="POLYGON((3 0,6 0,6 3,3 3,3 0))")
-    ... ])
-    >>> session.commit()
-
-Query
------
-
-Let's make a simple, non-spatial, query::
-
-    >>> query = session.query(Lake).order_by(Lake.name)
-    >>> for lake in query:
-    ...     print(lake.name)
-    ...
-    Garde
-    Majeur
-    Orta
-
-Now a spatial query::
-
-    >>> from geolachemy2 import WKTElement
-    >>> query = session.query(Lake).filter(
-    ...             func.ST_Contains(Lake.geom, WKTElement("POINT(4 1)")))
-    ...
-    >>> for lake in query:
-    ...     print(lake.name)
-    ...
-    Orta
-
-Here's another spatial query, using ``ST_Intersects`` this time::
-
-    >>> query = session.query(Lake).filter(
-    ...             Lake.geom.ST_Intersects(WKTElement("LINESTRING(2 1,4 1)")))
-    ...
-    >>> for lake in query:
-    ...     print(lake.name)
-    ...
-    Garde
-    Orta
-
-We can also apply relationship functions to :class:`geoalchemy2.elements.WKBElement`. For example::
-
-    >>> lake = session.query(Lake).filter_by(name="Garde").one()
-    >>> print(session.scalar(lake.geom.ST_Intersects(WKTElement("LINESTRING(2 1,4 1)"))))
-    1
-
-``session.scalar`` allows executing a clause and returning a scalar value (an integer value in this
-case).
-
-The value ``1`` indicates that the lake "Garde" does intersects the ``LINESTRING(2 1,4 1)``
-geometry. See the SpatiaLite SQL functions reference list for more information.
-
 Function mapping
 ----------------
 
@@ -201,7 +109,7 @@ GeoPackage format
 Starting from the version ``4.2`` of Spatialite, it is possible to use GeoPackage files as DB
 containers. GeoAlchemy 2 is able to handle most of the GeoPackage features automatically if the
 GeoPackage dialect is used (i.e. the DB URL starts with ``gpkg:///``) and the SpatiaLite extension
-is loaded. Usually, this extension should be loaded using the ``load_spatialite_gpkg`` listener::
+is loaded. Usually, this extension should be loaded using the the ``GeoAlchemy2`` plugin (see :ref:`connect <spatialite_connect>` section) or by attaching the ``load_spatialite_gpkg`` listener to the engine::
 
     >>> from geoalchemy2 import load_spatialite_gpkg
     >>> from sqlalchemy import create_engine

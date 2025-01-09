@@ -100,6 +100,7 @@ jobs:
     # Install MariaDB
     - name: Install MariaDB and SpatiaLite
       run: |
+        sudo apt-get update
         sudo apt-get install -y mariadb-server mariadb-client libsqlite3-mod-spatialite libgdal-dev gdal-bin rasterio
 
     # Config PostgreSQL

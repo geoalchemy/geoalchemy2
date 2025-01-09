@@ -51,6 +51,8 @@ def init_spatialite(
 
     Args:
         dbapi_conn: The DBAPI connection.
+        transaction: If set to `True` the whole operation will be handled as a single Transaction
+            (faster). The default value is `False` (slower, but safer).
         init_mode: Can be `None` to load all EPSG SRIDs, `'WGS84'` to load only the ones related
             to WGS84 or `'EMPTY'` to not load any EPSG SRID.
 
@@ -58,8 +60,6 @@ def init_spatialite(
 
                 It is possible to load other EPSG SRIDs afterwards using `InsertEpsgSrid(srid)`.
 
-        transaction: If set to `True` the whole operation will be handled as a single Transaction
-            (faster). The default value is `False` (slower, but safer).
         journal_mode: Change the journal mode to the given value. This can make the table creation
             much faster. The possible values are the following: <JOURNAL_MODE_VALUES>. See
             https://www.sqlite.org/pragma.html#pragma_journal_mode for more details.
@@ -127,15 +127,15 @@ def init_spatialite(
             dbapi_conn.execute("PRAGMA journal_mode = {}".format(current_journal_mode))
 
 
-def load_spatialite(*args, **kwargs):
+def load_spatialite(dbapi_conn, *args, **kwargs):
     """Load SpatiaLite extension in SQLite DB and initialize internal tables.
 
     See :func:`geoalchemy2.admin.dialects.sqlite.load_spatialite_driver` and
     :func:`geoalchemy2.admin.dialects.sqlite.init_spatialite` functions for details about
     arguments.
     """
-    load_spatialite_driver(*args)
-    init_spatialite(*args, **kwargs)
+    load_spatialite_driver(dbapi_conn)
+    init_spatialite(dbapi_conn, **kwargs)
 
 
 def _get_spatialite_attrs(bind, table_name, col_name):
@@ -258,6 +258,11 @@ def reflect_geometry_column(inspector, table, column_info):
 
         # Spatial indexes are not automatically reflected with SQLite dialect
         column_info["type"]._spatial_index_reflected = False
+
+
+def connect(dbapi_conn, *args, **kwargs):
+    """Even handler to load spatial extension when a new connection is created."""
+    return load_spatialite(dbapi_conn, *args, **kwargs)
 
 
 def before_create(table, bind, **kw):

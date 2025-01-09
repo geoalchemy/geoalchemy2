@@ -8,9 +8,6 @@ from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import setup_create_drop
-from geoalchemy2.elements import WKBElement
-from geoalchemy2.elements import WKTElement
-from geoalchemy2.shape import to_shape
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 
@@ -51,7 +48,7 @@ def reflect_geometry_column(inspector, table, column_info):
     is_nullable = str(nullable_str).lower() == "yes"
 
     if geometry_type not in _POSSIBLE_TYPES:
-        return
+        return  # pragma: no cover
 
     # Check if the column has spatial index
     has_index_query = """SELECT DISTINCT
@@ -73,6 +70,25 @@ def reflect_geometry_column(inspector, table, column_info):
         nullable=is_nullable,
         _spatial_index_reflected=True,
     )
+
+
+def before_cursor_execute(
+    conn, cursor, statement, parameters, context, executemany, convert=True
+):  # noqa: D417
+    """Event handler to cast the parameters properly.
+
+    Args:
+        convert (bool): Trigger the conversion.
+    """
+    if convert:
+        if isinstance(parameters, (tuple, list)):
+            parameters = tuple(x.tobytes() if isinstance(x, memoryview) else x for x in parameters)
+        elif isinstance(parameters, dict):
+            for k in parameters:
+                if isinstance(parameters[k], memoryview):
+                    parameters[k] = parameters[k].tobytes()
+
+    return statement, parameters
 
 
 def before_create(table, bind, **kw):
@@ -137,7 +153,6 @@ def _compiles_mysql(cls, fn):
         return "{}({})".format(fn, compiler.process(element.clauses, **kw))
 
     compiles(getattr(functions, cls), "mysql")(_compile_mysql)
-    compiles(getattr(functions, cls), "mariadb")(_compile_mysql)
 
 
 def register_mysql_mapping(mapping):
@@ -172,9 +187,6 @@ def _compile_GeomFromText_MySql(element, compiler, **kw):
 
 def _compile_GeomFromWKB_MySql(element, compiler, **kw):
     element.identifier = "ST_GeomFromWKB"
-    wkb_data = list(element.clauses)[0].value
-    if isinstance(wkb_data, memoryview):
-        list(element.clauses)[0].value = wkb_data.tobytes()
     compiled = compiler.process(element.clauses, **kw)
     srid = element.type.srid
 
@@ -182,50 +194,6 @@ def _compile_GeomFromWKB_MySql(element, compiler, **kw):
         return "{}({}, {})".format(element.identifier, compiled, srid)
     else:
         return "{}({})".format(element.identifier, compiled)
-
-
-def _compile_GeomFromText_MariaDB(element, compiler, **kw):
-    element.identifier = "ST_GeomFromText"
-    compiled = compiler.process(element.clauses, **kw)
-    try:
-        clauses = list(element.clauses)
-        data_element = WKTElement(clauses[0].value)
-        srid = max(0, data_element.srid)
-        if srid <= 0:
-            srid = max(0, element.type.srid)
-        if len(clauses) > 1 and srid > 0:
-            clauses[1].value = srid
-    except Exception:
-        srid = max(0, element.type.srid)
-
-    if srid > 0:
-        res = "{}({}, {})".format(element.identifier, compiled, srid)
-    else:
-        res = "{}({})".format(element.identifier, compiled)
-    return res
-
-
-def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
-    element.identifier = "ST_GeomFromText"
-
-    try:
-        clauses = list(element.clauses)
-        data_element = WKBElement(clauses[0].value)
-        srid = max(0, data_element.srid)
-        if srid <= 0:
-            srid = max(0, element.type.srid)
-        clauses[0].value = to_shape(data_element).wkt.encode("utf-8")
-        if len(clauses) > 1 and srid > 0:
-            clauses[1].value = srid
-    except Exception:
-        srid = max(0, element.type.srid)
-    compiled = compiler.process(element.clauses, **kw)
-
-    if srid > 0:
-        res = "{}({}, {})".format(element.identifier, compiled, srid)
-    else:
-        res = "{}({})".format(element.identifier, compiled)
-    return res
 
 
 @compiles(functions.ST_GeomFromText, "mysql")  # type: ignore
@@ -238,16 +206,6 @@ def _MySQL_ST_GeomFromEWKT(element, compiler, **kw):
     return _compile_GeomFromText_MySql(element, compiler, **kw)
 
 
-@compiles(functions.ST_GeomFromText, "mariadb")  # type: ignore
-def _MariaDB_ST_GeomFromText(element, compiler, **kw):
-    return _compile_GeomFromText_MariaDB(element, compiler, **kw)
-
-
-@compiles(functions.ST_GeomFromEWKT, "mariadb")  # type: ignore
-def _MariaDB_ST_GeomFromEWKT(element, compiler, **kw):
-    return _compile_GeomFromText_MariaDB(element, compiler, **kw)
-
-
 @compiles(functions.ST_GeomFromWKB, "mysql")  # type: ignore
 def _MySQL_ST_GeomFromWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_MySql(element, compiler, **kw)
@@ -256,13 +214,3 @@ def _MySQL_ST_GeomFromWKB(element, compiler, **kw):
 @compiles(functions.ST_GeomFromEWKB, "mysql")  # type: ignore
 def _MySQL_ST_GeomFromEWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_MySql(element, compiler, **kw)
-
-
-@compiles(functions.ST_GeomFromWKB, "mariadb")  # type: ignore
-def _MariaDB_ST_GeomFromWKB(element, compiler, **kw):
-    return _compile_GeomFromWKB_MariaDB(element, compiler, **kw)
-
-
-@compiles(functions.ST_GeomFromEWKB, "mariadb")  # type: ignore
-def _MariaDB_ST_GeomFromEWKB(element, compiler, **kw):
-    return _compile_GeomFromWKB_MariaDB(element, compiler, **kw)

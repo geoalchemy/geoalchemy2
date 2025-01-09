@@ -33,8 +33,13 @@ MySQL/MariadDB-specific objects
    :private-members:
    :show-inheritance:
 
+.. automodule:: geoalchemy2.admin.dialects.mariadb
+   :members:
+   :private-members:
+   :show-inheritance:
+
 SQLite-specific objects
----------------------------
+-----------------------
 
 .. automodule:: geoalchemy2.admin.dialects.sqlite
    :members:
