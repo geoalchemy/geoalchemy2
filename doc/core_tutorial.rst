@@ -37,7 +37,7 @@ see all the generated SQL produced.
 The ``plugins`` argument adds some event listeners to adapt the behavior of
 ``GeoAlchemy2`` to the dialect. This is not mandatory but if the plugin is not
 loaded, then the listeners will have to be added to the engine manually (see an
-example in :ref:`spatialite_tutorial`).
+example in :ref:`spatialite_dialect`).
 
 The return value of ``create_engine`` is an ``Engine`` object, which
 represents the core interface to the database.

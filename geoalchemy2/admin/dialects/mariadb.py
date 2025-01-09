@@ -22,8 +22,14 @@ def _cast(param):
     return param
 
 
-def before_cursor_execute(conn, cursor, statement, parameters, context, executemany, convert=True):
-    """Event handler to cast the parameters properly."""
+def before_cursor_execute(
+    conn, cursor, statement, parameters, context, executemany, convert=True
+):  # noqa: D417
+    """Event handler to cast the parameters properly.
+
+    Args:
+        convert (bool): Trigger the conversion.
+    """
     if convert:
         if isinstance(parameters, (tuple, list)):
             parameters = tuple(_cast(x) for x in parameters)

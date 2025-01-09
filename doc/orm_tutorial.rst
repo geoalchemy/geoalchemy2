@@ -36,7 +36,7 @@ see all the generated SQL produced.
 The ``plugins`` argument adds some event listeners to adapt the behavior of
 ``GeoAlchemy2`` to the dialect. This is not mandatory but if the plugin is not
 loaded, then the listeners will have to be added to the engine manually (see an
-example in :ref:`spatialite_tutorial`).
+example in :ref:`spatialite_dialect`).
 
 The return value of ``create_engine`` is an ``Engine`` object, which
 represents the core interface to the database.
@@ -137,7 +137,9 @@ Add New Objects
 
 To persist our ``Lake`` object, we ``add()`` it to the ``Session``::
 
+    >>> lake = Lake(name="Majeur", geom="POLYGON((0 0,1 0,1 1,0 1,0 0))")
     >>> session.add(lake)
+    >>> session.commit()
 
 At this point the ``lake`` object has been added to the ``Session``, but no SQL
 has been issued to the database. The object is in a *pending* state. To persist
@@ -245,6 +247,9 @@ We can also apply relationship functions to
 
 ``session.scalar`` allows executing a clause and returning a scalar
 value (a boolean value in this case).
+
+The value ``True`` indicates that the lake "Garde" does intersects the ``LINESTRING(2 1,4 1)``
+geometry. See the SpatiaLite SQL functions reference list for more information.
 
 The GeoAlchemy functions all start with ``ST_``. Operators are also called as
 functions, but the function names don't include the ``ST_`` prefix. As an

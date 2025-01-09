@@ -87,7 +87,7 @@ system. If you're new to GeoAlchemy 2 start with this.
 
    orm_tutorial
    core_tutorial
-   spatialite_tutorial
+   dialect_specific_features
 
 
 Gallery

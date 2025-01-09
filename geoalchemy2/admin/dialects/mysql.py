@@ -72,8 +72,14 @@ def reflect_geometry_column(inspector, table, column_info):
     )
 
 
-def before_cursor_execute(conn, cursor, statement, parameters, context, executemany, convert=True):
-    """Event handler to cast the parameters properly."""
+def before_cursor_execute(
+    conn, cursor, statement, parameters, context, executemany, convert=True
+):  # noqa
+    """Event handler to cast the parameters properly.
+
+    Args:
+        convert (bool): Trigger the conversion.
+    """
     if convert:
         if isinstance(parameters, (tuple, list)):
             parameters = tuple(x.tobytes() if isinstance(x, memoryview) else x for x in parameters)
