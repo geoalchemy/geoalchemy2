@@ -535,6 +535,7 @@ def create_geo_table(context, revision, op):
             schema=op.schema,
             _namespace_metadata=op._namespace_metadata,
             _constraints_included=op._constraints_included,
+            **op.kw,
         )
     else:
         new_op = op
