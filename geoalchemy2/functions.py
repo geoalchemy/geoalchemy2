@@ -76,6 +76,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import annotation
 from sqlalchemy.sql import functions
 from sqlalchemy.sql.elements import ColumnElement
+from sqlalchemy.sql.selectable import FromClause
 
 from geoalchemy2 import elements
 from geoalchemy2._functions import _FUNCTIONS
@@ -138,7 +139,7 @@ class TableRowElement(ColumnElement):
         self.selectable = selectable
 
     @property
-    def _from_objects(self) -> List[bool]:
+    def _from_objects(self) -> List[FromClause]:
         return [self.selectable]
 
 
