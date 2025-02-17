@@ -50,6 +50,7 @@ from typing import List
 
 from sqlalchemy.sql import functions
 from sqlalchemy.sql.elements import ColumnElement
+from sqlalchemy.sql.selectable import FromClause
 
 import geoalchemy2.types
 
@@ -60,8 +61,8 @@ class TableRowElement(ColumnElement):
     """The cache is disabled for this class."""
 
     def __init__(self, selectable: bool) -> None: ...
-    @property  # type: ignore[override]
-    def _from_objects(self) -> List[bool]: ...
+    @property
+    def _from_objects(self) -> List[FromClause]: ...
 '''
     stub_file_parts = [header]
 
