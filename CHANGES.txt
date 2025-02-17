@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.17.1
+------
+
+* Fix: Pass through keyword args for alembic_helpers.create_geospatial_table() @jurgispods (#533)
+* Chore: Fix stubs for TableRowElement @adrien-berchet (#534)
+
 0.17.0
 ------
 
