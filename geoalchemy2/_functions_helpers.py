@@ -61,7 +61,7 @@ class TableRowElement(ColumnElement):
     """The cache is disabled for this class."""
 
     def __init__(self, selectable: bool) -> None: ...
-    @property  # type: ignore[override]
+    @property
     def _from_objects(self) -> List[FromClause]: ...
 '''
     stub_file_parts = [header]
