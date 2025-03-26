@@ -54,3 +54,7 @@ Your requests must include the following features:
   - type: markdown
     attributes:
       value: "### Thanks! Have a nice day!"
+
+  - type: markdown
+    attributes:
+      value: "Note that a Pull Request to fix this bug would be very welcome if you have the time and skills to do it"

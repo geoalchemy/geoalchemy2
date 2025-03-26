@@ -4,20 +4,11 @@ set -e
 # based on geoalchemy2/TEST.rst
 packages=(
     # for managing virtual environments
-    tox
     git
     pypy3
     pypy3-dev
     pypy3-venv
-    python3.7
-    python3.7-dev
-    python3.7-venv
-    python3.8
-    python3.8-dev
-    python3.8-venv
-    python3.9
-    python3.9-dev
-    python3.9-venv
+    python3-pip
     python3.10
     python3.10-dev
     python3.10-venv
@@ -27,6 +18,9 @@ packages=(
     python3.12
     python3.12-dev
     python3.12-venv
+    python3.13
+    python3.13-dev
+    python3.13-venv
 
     # PostgreSQL and PostGIS
     postgresql-16
@@ -56,13 +50,18 @@ packages=(
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update -y
-apt-get install --no-install-recommends -y software-properties-common gnupg2 wget
+apt-get install --no-install-recommends -y software-properties-common gnupg2 wget curl ca-certificates
 add-apt-repository ppa:deadsnakes/ppa
-sh -c 'echo "deb https://apt.PostgreSQL.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-wget --quiet -O - https://www.PostgreSQL.org/media/keys/ACCC4CF8.asc | apt-key add -
+add-apt-repository ppa:pypy/ppa
+mkdir -p /usr/share/postgresql-common/pgdg/
+curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
+sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 apt-get update -y
 
 apt-get install --no-install-recommends -y "${packages[@]}"
 
+python3 -m pip install -U pip tox
+
 # clear the package list cache (populated with apt-get update)
+apt-get clean
 rm -rf /var/lib/apt/lists/*

@@ -26,6 +26,8 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+.env
+.venv
 
 # Installer logs
 pip-log.txt
@@ -59,6 +61,11 @@ reports/
 # Sphinx documentation
 doc/_build/
 doc/gallery/
+
+# Mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
 # Miscellaneous
 *.csv
