@@ -155,7 +155,6 @@ jobs:
         PYTEST_MARIADB_DB_URL: mariadb://gis:gis@127.0.0.1:3308/gis
       run: |
         if [[ ${{ matrix.python-version.flag }} == 'pypy3.10' ]]; then
-          export PYTEST_ADDOPTS=${PYTEST_ADDOPTS}' --ignore=tests/gallery/test_insert_raster.py'
           export PYTEST_SPATIALITE3_DB_URL="FAILING URL"
           export PYTEST_SPATIALITE4_DB_URL="FAILING URL"
         else
