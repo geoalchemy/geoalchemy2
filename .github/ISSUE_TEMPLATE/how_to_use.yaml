@@ -82,7 +82,7 @@ If the message is a warning, run your program with the ``-Werror`` flag: ``pytho
     id: package_version
     attributes:
       label: GeoAlchemy 2 Version in Use
-      description: e.g. 1.4.42, 2.0.2, etc or commit hash
+      description: e.g. 1.4.42, 2.0.2, etc. or commit hash
     validations:
       required: true
 

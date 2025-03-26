@@ -112,3 +112,7 @@ If the message is a warning, run your program with the ``-Werror`` flag: ``pytho
   - type: markdown
     attributes:
       value: "### Thanks! Have a nice day!"
+
+  - type: markdown
+    attributes:
+      value: "Note that a Pull Request to fix this bug would be very welcome if you have the time and skills to do it"
