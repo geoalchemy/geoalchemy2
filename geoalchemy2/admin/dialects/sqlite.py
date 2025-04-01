@@ -12,6 +12,7 @@ from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _format_select_args
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
+from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
@@ -341,7 +342,7 @@ def after_drop(table, bind, **kw):
 # the ST_ prefix.
 _SQLITE_FUNCTIONS = {
     "ST_GeomFromEWKT": "GeomFromEWKT",
-    "ST_GeomFromEWKB": "GeomFromEWKB",
+    # "ST_GeomFromEWKB": "GeomFromEWKB",
     "ST_AsBinary": "AsBinary",
     "ST_AsEWKB": "AsEWKB",
     "ST_AsGeoJSON": "AsGeoJSON",
@@ -372,3 +373,23 @@ def register_sqlite_mapping(mapping):
 
 
 register_sqlite_mapping(_SQLITE_FUNCTIONS)
+
+
+def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, **kw):
+    compiled = compile_bin_literal(element, compiler, literal_compilation_prefix="X'", literal_compilation_suffix="'", **kw)
+    srid = element.type.srid
+
+    if srid > 0:
+        return "{}({}, {})".format(identifier, compiled, srid)
+    else:
+        return "{}({})".format(identifier, compiled)
+
+
+@compiles(functions.ST_GeomFromWKB, "sqlite")  # type: ignore
+def _SQLite_ST_GeomFromWKB(element, compiler, **kw):
+    return _compile_GeomFromWKB_SQLite(element, compiler, identifier="GeomFromWKB", **kw)
+
+
+@compiles(functions.ST_GeomFromEWKB, "sqlite")  # type: ignore
+def _SQLite_ST_GeomFromEWKB(element, compiler, **kw):
+    return _compile_GeomFromWKB_SQLite(element, compiler, identifier="GeomFromEWKB", **kw)

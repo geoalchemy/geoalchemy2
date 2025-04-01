@@ -1,11 +1,14 @@
 """This module defines specific functions for MySQL dialect."""
+from copy import deepcopy
 
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.elements import ClauseList
 from sqlalchemy.sql.sqltypes import NullType
 
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
+from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
@@ -186,14 +189,30 @@ def _compile_GeomFromText_MySql(element, compiler, **kw):
 
 
 def _compile_GeomFromWKB_MySql(element, compiler, **kw):
-    element.identifier = "ST_GeomFromWKB"
-    compiled = compiler.process(element.clauses, **kw)
-    srid = element.type.srid
+    identifier = "ST_GeomFromWKB"
+    element = deepcopy(element)
+
+    # Store the SRID and drop it from the clauses
+    try:
+        srid = list(element.clauses)[1].value
+        element.clauses = ClauseList(list(element.clauses)[0])
+    except (IndexError, TypeError, ValueError):
+        srid = element.type.srid
+
+    new_element, changed = compile_bin_literal(element, **kw)
+    if changed:
+        prefix = "unhex("
+        suffix = ")"
+    else:
+        prefix = ""
+        suffix = ""
+
+    compiled = compiler.process(new_element.clauses, **kw)
 
     if srid > 0:
-        return "{}({}, {})".format(element.identifier, compiled, srid)
+        return "{}({}{}{}, {})".format(identifier, prefix, compiled, suffix, srid)
     else:
-        return "{}({})".format(element.identifier, compiled)
+        return "{}({}{}{})".format(identifier, prefix, compiled, suffix)
 
 
 @compiles(functions.ST_GeomFromText, "mysql")  # type: ignore

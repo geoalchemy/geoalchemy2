@@ -610,14 +610,14 @@ class TestInsertionORM:
 
     @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4")
     def test_transform(self, session, LocalPoint, setup_tables):
-        if session.bind.dialect.name == "mysql":
-            # Explicitly skip MySQL dialect to show that there is an issue
-            pytest.skip(
-                reason=(
-                    "The SRID is not properly retrieved so an exception is raised. TODO: This "
-                    "should be fixed later"
-                )
-            )
+        # if session.bind.dialect.name == "mysql":
+        #     # Explicitly skip MySQL dialect to show that there is an issue
+        #     pytest.skip(
+        #         reason=(
+        #             "The SRID is not properly retrieved so an exception is raised. TODO: This "
+        #             "should be fixed later"
+        #         )
+        #     )
         # Create new point instance
         p = LocalPoint()
         p.geom = "SRID=4326;POINT(5 45)"  # Insert geometry with wrong SRID
@@ -1266,3 +1266,25 @@ class TestAsBinaryWKT:
 
         # Drop the table
         t.drop(bind=conn)
+
+
+class TestCompileQuery:
+    def test_compile_query(self, conn):
+        wkb = (
+            b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@"
+        )
+        elem = WKBElement(wkb)
+        query = select([func.ST_AsText(elem)])
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$ query:", query)
+        compiled = str(query.compile(conn, compile_kwargs={'literal_binds': True}))
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$ compiled:", compiled)
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$ compiled type:", type(compiled))
+        res_query = conn.execute(query).scalar()
+        assert res_query == "POINT(1 2)"
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$ res_query:", res_query)
+        res_text = conn.execute(text(compiled)).scalar()
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$ res_text:", res_text)
+        assert res_text == "POINT(1 2)"
+
+        assert compiled.startswith("SELECT ST_AsText(")
+        assert "0101000000000000000000f03f0000000000000040" in compiled

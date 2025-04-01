@@ -1,8 +1,12 @@
 """This module defines functions used by several dialects."""
 
+from copy import deepcopy
 import sqlalchemy
 from packaging import version
 from sqlalchemy import Column
+from sqlalchemy import String
+from sqlalchemy.sql import bindparam
+from sqlalchemy.sql.elements import ClauseList
 from sqlalchemy.sql import expression
 from sqlalchemy.types import TypeDecorator
 
@@ -102,3 +106,23 @@ def before_drop(table, bind, **kw):
 
 def after_drop(table, bind, **kw):
     return  # pragma: no cover
+
+
+def compile_bin_literal(element, **kw):
+    """Compile a binary literal for WKBElement."""
+    wkb_clause = list(element.clauses)[0]
+    wkb_data = wkb_clause.value
+    changed = False
+    if kw.get('literal_binds') and isinstance(wkb_data, bytes | memoryview):
+        if isinstance(wkb_data, memoryview):
+            wkb_data = wkb_data.tobytes()
+
+        wkb_clause = deepcopy(wkb_clause)
+        wkb_clause.value = wkb_data.hex()
+        wkb_clause.type = String()
+        new_element = deepcopy(element)
+        new_element.clauses = ClauseList(wkb_clause, *list(element.clauses)[1:])
+        element = new_element
+        changed = True
+    # compiled = f"{compilation_prefix}{compiler.process(wkb_clause, **kw)}{compilation_suffix}"
+    return element, changed

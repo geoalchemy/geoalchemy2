@@ -1,11 +1,16 @@
 """This module defines specific functions for Postgresql dialect."""
+from copy import deepcopy
 
 from sqlalchemy import Index
 from sqlalchemy import text
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.elements import ClauseList
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
 
+from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
+from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import _format_select_args
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import setup_create_drop
@@ -160,3 +165,40 @@ def after_drop(table, bind, **kw):
     saved_cols = table.info.pop("_saved_columns", None)
     if saved_cols is not None:
         table.columns = saved_cols
+
+
+
+def _compile_GeomFromWKB_Postgresql(element, compiler, **kw):
+    element = deepcopy(element)
+
+    # Store the SRID and drop it from the clauses
+    try:
+        srid = list(element.clauses)[1].value
+        element.clauses = ClauseList(list(element.clauses)[0])
+    except (IndexError, TypeError, ValueError):
+        srid = element.type.srid
+
+    new_element, changed = compile_bin_literal(element, **kw)
+    if changed:
+        prefix = "decode("
+        suffix = ", 'hex')"
+    else:
+        prefix = ""
+        suffix = ""
+
+    compiled = compiler.process(new_element.clauses, **kw)
+
+    if srid > 0:
+        return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)
+    else:
+        return "{}({}{}{})".format(element.identifier, prefix, compiled, suffix)
+
+
+@compiles(functions.ST_GeomFromWKB, "postgresql")  # type: ignore
+def _PostgreSQL_ST_GeomFromWKB(element, compiler, **kw):
+    return _compile_GeomFromWKB_Postgresql(element, compiler, **kw)
+
+
+@compiles(functions.ST_GeomFromEWKB, "postgresql")  # type: ignore
+def _PostgreSQL_ST_GeomFromEWKB(element, compiler, **kw):
+    return _compile_GeomFromWKB_Postgresql(element, compiler, **kw)
