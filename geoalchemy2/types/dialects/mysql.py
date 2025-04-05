@@ -38,11 +38,12 @@ def bind_processor_process(spatial_type, bindvalue):
 
     if isinstance(bindvalue, WKTElement):
         bindvalue = bindvalue.as_wkt()
-        if bindvalue.srid == -1:
+        if bindvalue.srid <= 0:
             bindvalue.srid = spatial_type.srid
         return bindvalue
     elif isinstance(bindvalue, WKBElement):
         if "wkb" not in spatial_type.from_text.lower():
             # With MySQL we use Shapely to convert the WKBElement to an EWKT string
             return to_shape(bindvalue).wkt
-        return bindvalue
+        # return bindvalue.desc
+    return bindvalue

@@ -4,15 +4,14 @@ from copy import deepcopy
 from sqlalchemy import Index
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.sql.elements import ClauseList
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
 
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
-from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import _format_select_args
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
+from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
@@ -169,16 +168,13 @@ def after_drop(table, bind, **kw):
 
 
 def _compile_GeomFromWKB_Postgresql(element, compiler, **kw):
-    element = deepcopy(element)
-
-    # Store the SRID and drop it from the clauses
+    # Store the SRID
     try:
         srid = list(element.clauses)[1].value
-        element.clauses = ClauseList(list(element.clauses)[0])
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    new_element, changed = compile_bin_literal(element, **kw)
+    wkb_clause, changed = compile_bin_literal(list(element.clauses)[0], **kw)
     if changed:
         prefix = "decode("
         suffix = ", 'hex')"
@@ -186,7 +182,7 @@ def _compile_GeomFromWKB_Postgresql(element, compiler, **kw):
         prefix = ""
         suffix = ""
 
-    compiled = compiler.process(new_element.clauses, **kw)
+    compiled = compiler.process(wkb_clause, **kw)
 
     if srid > 0:
         return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)

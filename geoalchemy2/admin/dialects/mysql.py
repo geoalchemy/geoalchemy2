@@ -91,6 +91,12 @@ def before_cursor_execute(
                 if isinstance(parameters[k], memoryview):
                     parameters[k] = parameters[k].tobytes()
 
+
+    # ##################### #
+    # import pdb
+    # pdb.set_trace()
+    # ##################### #
+
     return statement, parameters
 
 
@@ -178,41 +184,46 @@ register_mysql_mapping(_MYSQL_FUNCTIONS)
 
 
 def _compile_GeomFromText_MySql(element, compiler, **kw):
-    element.identifier = "ST_GeomFromText"
+    identifier = "ST_GeomFromText"
     compiled = compiler.process(element.clauses, **kw)
     srid = element.type.srid
 
     if srid > 0:
-        return "{}({}, {})".format(element.identifier, compiled, srid)
+        return "{}({}, {})".format(identifier, compiled, srid)
     else:
-        return "{}({})".format(element.identifier, compiled)
+        return "{}({})".format(identifier, compiled)
 
 
 def _compile_GeomFromWKB_MySql(element, compiler, **kw):
-    identifier = "ST_GeomFromWKB"
-    element = deepcopy(element)
+    element.identifier = "ST_GeomFromWKB"
 
-    # Store the SRID and drop it from the clauses
+    # Store the SRID
+    clauses = list(element.clauses)
     try:
-        srid = list(element.clauses)[1].value
-        element.clauses = ClauseList(list(element.clauses)[0])
+        srid = clauses[1].value
+        element.type.srid = srid
+        # element.clauses = ClauseList(list(element.clauses)[0])
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    new_element, changed = compile_bin_literal(element, **kw)
+    wkb_clause, changed = compile_bin_literal(clauses[0], force=False, **kw)
     if changed:
         prefix = "unhex("
         suffix = ")"
     else:
         prefix = ""
         suffix = ""
+    # prefix = "unhex("
+    # suffix = ")"
 
-    compiled = compiler.process(new_element.clauses, **kw)
+    compiled = compiler.process(wkb_clause, **kw)
+
+    print("============================", compiled, clauses[0].value, "=>", wkb_clause.value, srid, changed)
 
     if srid > 0:
-        return "{}({}{}{}, {})".format(identifier, prefix, compiled, suffix, srid)
+        return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)
     else:
-        return "{}({}{}{})".format(identifier, prefix, compiled, suffix)
+        return "{}({}{}{})".format(element.identifier, prefix, compiled, suffix)
 
 
 @compiles(functions.ST_GeomFromText, "mysql")  # type: ignore

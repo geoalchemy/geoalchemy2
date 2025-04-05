@@ -168,6 +168,7 @@ class _GISType(UserDefinedType):
 
     def bind_expression(self, bindvalue):
         """Specific bind_expression that automatically adds a conversion function."""
+        # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ bind_expression")
         return getattr(func, self.from_text)(bindvalue, type_=self)
 
     def bind_processor(self, dialect):

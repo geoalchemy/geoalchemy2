@@ -1,6 +1,6 @@
 """This module defines functions used by several dialects."""
 
-from copy import deepcopy
+from copy import copy
 import sqlalchemy
 from packaging import version
 from sqlalchemy import Column
@@ -10,6 +10,7 @@ from sqlalchemy.sql.elements import ClauseList
 from sqlalchemy.sql import expression
 from sqlalchemy.types import TypeDecorator
 
+from geoalchemy2.elements import WKBElement
 from geoalchemy2.types import Geometry
 
 _SQLALCHEMY_VERSION_BEFORE_14 = version.parse(sqlalchemy.__version__) < version.parse("1.4")
@@ -108,21 +109,26 @@ def after_drop(table, bind, **kw):
     return  # pragma: no cover
 
 
-def compile_bin_literal(element, **kw):
+def compile_bin_literal(wkb_clause, force=False, **kw):
     """Compile a binary literal for WKBElement."""
-    wkb_clause = list(element.clauses)[0]
     wkb_data = wkb_clause.value
     changed = False
-    if kw.get('literal_binds') and isinstance(wkb_data, bytes | memoryview):
+    if (force or kw.get('literal_binds')) and isinstance(wkb_data, bytes | memoryview | WKBElement):
         if isinstance(wkb_data, memoryview):
             wkb_data = wkb_data.tobytes()
+        if isinstance(wkb_data, bytes):
+            wkb_data = wkb_data.hex()
+        elif isinstance(wkb_data, WKBElement):
+            wkb_data = wkb_data.desc
 
-        wkb_clause = deepcopy(wkb_clause)
-        wkb_clause.value = wkb_data.hex()
+        # wkb_clause = copy(wkb_clause)
+
+        # ##################### #
+        # import pdb
+        # pdb.set_trace()
+        # ##################### #
+
+        wkb_clause.value = wkb_data
         wkb_clause.type = String()
-        new_element = deepcopy(element)
-        new_element.clauses = ClauseList(wkb_clause, *list(element.clauses)[1:])
-        element = new_element
         changed = True
-    # compiled = f"{compilation_prefix}{compiler.process(wkb_clause, **kw)}{compilation_suffix}"
-    return element, changed
+    return wkb_clause, changed

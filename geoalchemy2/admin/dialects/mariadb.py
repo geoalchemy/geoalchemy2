@@ -3,9 +3,11 @@
 from sqlalchemy.ext.compiler import compiles
 
 from geoalchemy2 import functions
+from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.mysql import after_create  # noqa
 from geoalchemy2.admin.dialects.mysql import after_drop  # noqa
 from geoalchemy2.admin.dialects.mysql import before_create  # noqa
+from geoalchemy2.admin.dialects.mysql import before_cursor_execute  # noqa
 from geoalchemy2.admin.dialects.mysql import before_drop  # noqa
 from geoalchemy2.admin.dialects.mysql import reflect_geometry_column  # noqa
 from geoalchemy2.elements import WKBElement
@@ -17,8 +19,12 @@ def _cast(param):
     if isinstance(param, memoryview):
         param = param.tobytes()
     if isinstance(param, bytes):
-        data_element = WKBElement(param)
-        param = to_shape(data_element).wkt.encode("utf-8")
+        param = WKBElement(param)
+    if isinstance(param, WKBElement):
+        param = param.desc
+        # param = to_shape(data_element).wkt.encode("utf-8")
+        # param = data_element.desc
+    print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ IN _cast", param)
     return param
 
 
@@ -72,7 +78,7 @@ register_mariadb_mapping(_MARIADB_FUNCTIONS)
 
 
 def _compile_GeomFromText_MariaDB(element, compiler, **kw):
-    element.identifier = "ST_GeomFromText"
+    identifier = "ST_GeomFromText"
     compiled = compiler.process(element.clauses, **kw)
     try:
         clauses = list(element.clauses)
@@ -80,38 +86,41 @@ def _compile_GeomFromText_MariaDB(element, compiler, **kw):
         srid = max(0, data_element.srid)
         if srid <= 0:
             srid = max(0, element.type.srid)
-        if len(clauses) > 1 and srid > 0:
-            clauses[1].value = srid
+        # if len(clauses) > 1 and srid > 0:
+        #     clauses[1].value = srid
     except Exception:
         srid = max(0, element.type.srid)
 
     if srid > 0:
-        res = "{}({}, {})".format(element.identifier, compiled, srid)
+        res = "{}({}, {})".format(identifier, compiled, srid)
     else:
-        res = "{}({})".format(element.identifier, compiled)
+        res = "{}({})".format(identifier, compiled)
     return res
 
 
 def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
-    element.identifier = "ST_GeomFromText"
+    element.identifier = "ST_GeomFromWKB"
 
+    # Store the SRID
+    clauses = list(element.clauses)
     try:
-        clauses = list(element.clauses)
-        data_element = WKBElement(clauses[0].value)
-        srid = max(0, data_element.srid)
-        if srid <= 0:
-            srid = max(0, element.type.srid)
-        if len(clauses) > 1 and srid > 0:
-            clauses[1].value = srid
-    except Exception:
-        srid = max(0, element.type.srid)
-    compiled = compiler.process(element.clauses, **kw)
+        srid = clauses[1].value
+        element.type.srid = srid
+    except (IndexError, TypeError, ValueError):
+        srid = element.type.srid
+
+    wkb_clause, changed = compile_bin_literal(clauses[0], force=True, **kw)
+    prefix = "unhex("
+    suffix = ")"
+
+    compiled = compiler.process(wkb_clause, **kw)
+
+    print("============================", compiled, clauses[0].value, "=>", wkb_clause.value, srid, changed)
 
     if srid > 0:
-        res = "{}({}, {})".format(element.identifier, compiled, srid)
+        return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)
     else:
-        res = "{}({})".format(element.identifier, compiled)
-    return res
+        return "{}({}{}{})".format(element.identifier, prefix, compiled, suffix)
 
 
 @compiles(functions.ST_GeomFromText, "mariadb")  # type: ignore

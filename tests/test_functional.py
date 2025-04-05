@@ -236,30 +236,60 @@ class TestInsertionCore:
     def test_insert(self, conn, Lake, setup_tables):
         # Issue inserts using DBAPI's executemany() method. This tests the
         # Geometry type's bind_processor and bind_expression functions.
+        import time
         conn.execute(
             Lake.__table__.insert(),
             [
-                {"geom": "SRID=4326;LINESTRING(0 0,1 1)"},
-                {"geom": WKTElement("LINESTRING(0 0,2 2)", srid=4326)},
-                {"geom": WKTElement("SRID=4326;LINESTRING(0 0,2 2)", extended=True)},
-                {"geom": from_shape(LineString([[0, 0], [3, 3]]), srid=4326)},
+                {"id": 1, "geom": "SRID=4326;LINESTRING(0 0,1 1)"},
+                {"id": 2, "geom": WKTElement("LINESTRING(0 0,2 2)", srid=4326)},
+                {"id": 3, "geom": WKTElement("SRID=4326;LINESTRING(0 0,2 2)", extended=True)},
+                {"id": 4, "geom": from_shape(LineString([[0, 0], [3, 3]]), srid=4326)},
             ],
         )
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ INSERT $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        time.sleep(0.1)
 
-        results = conn.execute(Lake.__table__.select())
+        results = conn.execute(Lake.__table__.select().order_by("id"))
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ SELECT $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        time.sleep(0.1)
         rows = results.fetchall()
+        time.sleep(0.1)
 
         row = rows[0]
         assert isinstance(row[1], WKBElement)
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ WKT1 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         wkt = conn.execute(from_shape(LineString([[0, 0], [3, 3]]), srid=4326).ST_AsText()).scalar()
-        wkt = conn.execute(row[1].ST_AsText()).scalar()
+        time.sleep(0.1)
+        print("First call (row[0]): BEFORE")
+        q1 = row[1].ST_AsText()
+        wkt = conn.execute(q1).scalar()
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ WKT2 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        print("First call (row[0]): AFTER")
+        time.sleep(0.1)
         assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ SRID $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        time.sleep(0.1)
         assert srid == 4326
 
         row = rows[1]
         assert isinstance(row[1], WKBElement)
-        wkt = conn.execute(row[1].ST_AsText()).scalar()
+        print(rows)
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ GET WKT $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        q2 = row[1].ST_AsText()
+        all_wkt = conn.execute(q2).fetchall()
+        time.sleep(0.1)
+        wkt = conn.execute(q2).scalar()
+
+        # ##################### #
+        # import pdb
+        # pdb.set_trace()
+        print(q1)
+        print(q1._generate_cache_key())
+        print(q2)
+        print(q2._generate_cache_key())
+        # ##################### #
+
         assert format_wkt(wkt) == "LINESTRING(0 0,2 2)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
@@ -1275,16 +1305,20 @@ class TestCompileQuery:
         )
         elem = WKBElement(wkb)
         query = select([func.ST_AsText(elem)])
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$ query:", query)
-        compiled = str(query.compile(conn, compile_kwargs={'literal_binds': True}))
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$ compiled:", compiled)
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$ compiled type:", type(compiled))
+        compiled_with_literal = str(query.compile(conn, compile_kwargs={'literal_binds': True}))
+        compiled_without_literal = str(query.compile(conn, compile_kwargs={'literal_binds': False}))
+
+        print("BEFORE EXECUTE")
         res_query = conn.execute(query).scalar()
         assert res_query == "POINT(1 2)"
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$ res_query:", res_query)
-        res_text = conn.execute(text(compiled)).scalar()
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$ res_text:", res_text)
+
+        res_text = conn.execute(text(compiled_with_literal)).scalar()
         assert res_text == "POINT(1 2)"
 
-        assert compiled.startswith("SELECT ST_AsText(")
-        assert "0101000000000000000000f03f0000000000000040" in compiled
+        res_text = conn.execute(text(compiled_without_literal)).scalar()
+        assert res_text == "POINT(1 2)"
+
+        assert compiled_with_literal.startswith("SELECT ST_AsText(")
+        assert "0101000000000000000000f03f0000000000000040" in compiled_with_literal
+        assert compiled_without_literal.startswith("SELECT ST_AsText(")
+        assert "0101000000000000000000f03f0000000000000040" in compiled_without_literal
