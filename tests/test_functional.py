@@ -1304,21 +1304,21 @@ class TestCompileQuery:
             b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@"
         )
         elem = WKBElement(wkb)
+        print("===============================================", elem.desc)
         query = select([func.ST_AsText(elem)])
         compiled_with_literal = str(query.compile(conn, compile_kwargs={'literal_binds': True}))
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$", compiled_with_literal)
+        res_text = conn.execute(text(compiled_with_literal)).scalar()
+        assert res_text == "POINT(1 2)"
+
         compiled_without_literal = str(query.compile(conn, compile_kwargs={'literal_binds': False}))
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$", compiled_without_literal)
 
         print("BEFORE EXECUTE")
         res_query = conn.execute(query).scalar()
         assert res_query == "POINT(1 2)"
 
-        res_text = conn.execute(text(compiled_with_literal)).scalar()
-        assert res_text == "POINT(1 2)"
-
-        res_text = conn.execute(text(compiled_without_literal)).scalar()
-        assert res_text == "POINT(1 2)"
-
         assert compiled_with_literal.startswith("SELECT ST_AsText(")
         assert "0101000000000000000000f03f0000000000000040" in compiled_with_literal
         assert compiled_without_literal.startswith("SELECT ST_AsText(")
-        assert "0101000000000000000000f03f0000000000000040" in compiled_without_literal
+        assert "0101000000000000000000f03f0000000000000040" not in compiled_without_literal

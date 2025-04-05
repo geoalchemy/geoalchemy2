@@ -388,12 +388,13 @@ def create_spatial_ref_sys_view(bind):
 
 def _compile_GeomFromWKB_gpkg(element, compiler, *, identifier, **kw):
     # Store the SRID
+    clauses = list(element.clauses)
     try:
-        srid = list(element.clauses)[1].value
+        srid = clauses[1].value
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    wkb_clause, changed = compile_bin_literal(list(element.clauses)[0], **kw)
+    wkb_clause, changed = compile_bin_literal(clauses[0], **kw)
     if changed:
         prefix = "X"
         suffix = ""

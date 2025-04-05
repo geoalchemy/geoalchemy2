@@ -216,14 +216,18 @@ class WKBElement(_SpatialElement):
                 srid = int(wkb_srid)
         _SpatialElement.__init__(self, data, srid, extended)
 
+    @staticmethod
+    def _wkb_to_hex(data: Union[str, bytes, memoryview]) -> str:
+        """Convert WKB to hex string."""
+        if isinstance(data, str):
+            # SpatiaLite case
+            return data.lower()
+        return str(binascii.hexlify(data), encoding="utf-8").lower()
+
     @property
     def desc(self) -> str:
         """This element's description string."""
-        if isinstance(self.data, str):
-            # SpatiaLite case
-            return self.data.lower()
-        desc = str(binascii.hexlify(self.data), encoding="utf-8").lower()
-        return desc
+        return self._wkb_to_hex(self.data)
 
     @staticmethod
     def _data_from_desc(desc) -> bytes:

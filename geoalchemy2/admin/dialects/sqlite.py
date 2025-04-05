@@ -377,13 +377,15 @@ register_sqlite_mapping(_SQLITE_FUNCTIONS)
 
 def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, **kw):
     # Store the SRID
+    clauses = list(element.clauses)
     try:
-        srid = list(element.clauses)[1].value
+        srid = clauses[1].value
+        element.type.srid = srid
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    wkb_clause, changed = compile_bin_literal(list(element.clauses)[0], **kw)
-    if changed:
+    wkb_clause, changed = compile_bin_literal(clauses[0], **kw)
+    if isinstance(wkb_clause.value, str) and wkb_clause.value.startswith("0"):
         prefix = "X"
         suffix = ""
     else:
@@ -392,10 +394,12 @@ def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, **kw):
 
     compiled = compiler.process(wkb_clause, **kw)
 
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++ COMPILE SQLite =>", compiled, clauses[0].value, "=>", wkb_clause.value, srid, changed, type(wkb_clause.value))
+
     if srid > 0:
-        return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)
+        return "{}({}{}{}, {})".format(identifier, prefix, compiled, suffix, srid)
     else:
-        return "{}({}{}{})".format(element.identifier, prefix, compiled, suffix)
+        return "{}({}{}{})".format(identifier, prefix, compiled, suffix)
 
 
 @compiles(functions.ST_GeomFromWKB, "sqlite")  # type: ignore

@@ -117,7 +117,7 @@ def compile_bin_literal(wkb_clause, force=False, **kw):
         if isinstance(wkb_data, memoryview):
             wkb_data = wkb_data.tobytes()
         if isinstance(wkb_data, bytes):
-            wkb_data = wkb_data.hex()
+            wkb_data = WKBElement._wkb_to_hex(wkb_data)
         elif isinstance(wkb_data, WKBElement):
             wkb_data = wkb_data.desc
 
