@@ -76,6 +76,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import annotation
 from sqlalchemy.sql import functions
 from sqlalchemy.sql.elements import ColumnElement
+from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.selectable import FromClause
 
 from geoalchemy2 import elements
@@ -257,6 +258,42 @@ class GenericFunction(_GeoFunctionBase):  # type: ignore
                     func_args = [elem.data, elem.srid]
                 args_list[idx] = getattr(functions.func, func_name)(*func_args)
         _GeoFunctionParent.__init__(self, *args_list, **kwargs)
+
+
+class GeomFromWKB(GenericFunction):
+    def __init__(self, *args, **kwargs):
+        expr = kwargs.pop('expr', None)
+        if expr is not None:
+            args = (expr,) + args
+        for idx, elem in enumerate(args):
+            if isinstance(elem, WKBElement):
+                args = list(args)
+                args[idx] = _handle_wkb_element(elem)
+        functions.GenericFunction.__init__(self, *args, **kwargs)
+
+
+# Ajout d'une nouvelle fonction utilitaire
+def _handle_wkb_element(element):
+    """
+    Handle WKBElement specially for SQLite dialect by converting to a literal.
+    For other dialects, return the element as is.
+    """
+    if isinstance(element, WKBElement):
+        # Si compilation pour SQLite, retourner un littéral au lieu d'un paramètre lié
+        compiler = element._compiler_dispatch
+
+        def _compiler_dispatch(visitor, **kw):
+            dialect = visitor.dialect
+            if dialect.name == 'sqlite':
+                # Pour SQLite, retourner un littéral avec préfixe X
+                return literal_column(f"X'{element.data.hex()}'")._compiler_dispatch(visitor, **kw)
+            else:
+                # Pour les autres dialectes, utiliser le compilateur d'origine
+                return compiler(visitor, **kw)
+
+        element._compiler_dispatch = _compiler_dispatch
+
+    return element
 
 
 __all__ = [

@@ -306,6 +306,12 @@ class WKBElement(_SpatialElement):
             return WKBElement(data, self.srid, extended=True)
         return WKBElement(self.data, self.srid)
 
+    def __str__(self):
+        return self.data.hex()
+
+    def _compiler_dispatch(self, visitor, **kw):
+        return visitor.process(self.bind_expression())
+
 
 class RasterElement(_SpatialElement):
     """Instances of this class wrap a ``raster`` value.
