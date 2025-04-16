@@ -260,16 +260,32 @@ class GenericFunction(_GeoFunctionBase):  # type: ignore
         _GeoFunctionParent.__init__(self, *args_list, **kwargs)
 
 
-class GeomFromWKB(GenericFunction):
-    def __init__(self, *args, **kwargs):
-        expr = kwargs.pop('expr', None)
-        if expr is not None:
-            args = (expr,) + args
-        for idx, elem in enumerate(args):
-            if isinstance(elem, WKBElement):
-                args = list(args)
-                args[idx] = _handle_wkb_element(elem)
-        functions.GenericFunction.__init__(self, *args, **kwargs)
+def _init_GeomFromWKB(args, kwargs):
+    """Initialize the GeomFromWKB function.
+
+    This function is used to handle WKBElement specially for SQLite dialect by
+    converting it to a literal.
+    """
+    expr = kwargs.pop("expr", None)
+    if expr is not None:
+        args = (expr,) + args
+    for idx, elem in enumerate(args):
+        if isinstance(elem, elements.WKBElement):
+            args = list(args)
+            args[idx] = _handle_wkb_element(elem)
+    return args, kwargs
+
+
+# class ST_GeomFromWKB(GenericFunction):
+#     def __init__(self, *args, **kwargs):
+#         args, kwargs = _init_GeomFromWKB(args, kwargs)
+#         functions.GenericFunction.__init__(self, *args, **kwargs)
+
+
+# class ST_GeomFromEWKB(GenericFunction):
+#     def __init__(self, *args, **kwargs):
+#         args, kwargs = _init_GeomFromWKB(args, kwargs)
+#         functions.GenericFunction.__init__(self, *args, **kwargs)
 
 
 # Ajout d'une nouvelle fonction utilitaire
@@ -278,15 +294,23 @@ def _handle_wkb_element(element):
     Handle WKBElement specially for SQLite dialect by converting to a literal.
     For other dialects, return the element as is.
     """
-    if isinstance(element, WKBElement):
+    if isinstance(element, WKBElement) or True:
         # Si compilation pour SQLite, retourner un littéral au lieu d'un paramètre lié
         compiler = element._compiler_dispatch
 
         def _compiler_dispatch(visitor, **kw):
             dialect = visitor.dialect
-            if dialect.name == 'sqlite':
+            if dialect.name == 'sqlite' or True:
                 # Pour SQLite, retourner un littéral avec préfixe X
-                return literal_column(f"X'{element.data.hex()}'")._compiler_dispatch(visitor, **kw)
+                if isinstance(element, memoryview):
+                    element = element.tobytes()
+                if isinstance(element, bytes):
+                    element = WKBElement._wkb_to_hex(element)
+                elif isinstance(element, elements.WKBElement):
+                    element = element.desc
+                print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ SET LITERAL COLUMN")
+                # return literal_column(f"X'{element.desc()}'")._compiler_dispatch(visitor, **kw)
+                return literal_column(f"X'{element}'")._compiler_dispatch(visitor, **kw)
             else:
                 # Pour les autres dialectes, utiliser le compilateur d'origine
                 return compiler(visitor, **kw)

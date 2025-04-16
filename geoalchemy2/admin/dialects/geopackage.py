@@ -387,6 +387,8 @@ def create_spatial_ref_sys_view(bind):
 
 
 def _compile_GeomFromWKB_gpkg(element, compiler, *, identifier, **kw):
+    element.identifier = identifier
+    
     # Store the SRID
     clauses = list(element.clauses)
     try:

@@ -3,6 +3,8 @@
 import os
 from typing import Optional
 
+from pyparsing import quoted_string
+
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
@@ -376,6 +378,9 @@ register_sqlite_mapping(_SQLITE_FUNCTIONS)
 
 
 def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, **kw):
+    element.identifier = identifier
+    # if element.identifier.startswith("ST_") or element.identifier.startswith("st_"):
+    #     element.identifier = element.identifier[3:]
     # Store the SRID
     clauses = list(element.clauses)
     try:
@@ -384,15 +389,48 @@ def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, **kw):
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    wkb_clause, changed = compile_bin_literal(clauses[0], **kw)
-    if isinstance(wkb_clause.value, str) and wkb_clause.value.startswith("0"):
-        prefix = "X"
-        suffix = ""
-    else:
-        prefix = ""
-        suffix = ""
-
+    wkb_clause, changed = compile_bin_literal(clauses[0], force=False, **kw)
+    # if isinstance(wkb_clause.value, str) and wkb_clause.value.startswith("0"):
+    #     prefix = "X'"
+    #     suffix = "'"
+    # else:
+    #     prefix = ""
+    #     suffix = ""
+    prefix = ""
+    suffix = ""
+    # compiled = wkb_clause.value
+    # from sqlalchemy.dialects.sqlite import CHAR
+    # wkb_clause.type = CHAR()
     compiled = compiler.process(wkb_clause, **kw)
+    # if isinstance(compiled, str) and compiled.startswith("0"):
+    #     compiled = f"X'{compiled}'"
+
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++ BEFORE COMPILE SQLite")
+    # from sqlalchemy import Unicode
+    # wkb_clause.style = Unicode
+    # compiled = compiler.process(wkb_clause, quote=False, **kw)
+
+    # wkb_clause, changed = compile_bin_literal(clauses[0], force=True, **kw)
+    # print("+++++++++++++++++++++++++++++++++++++++++++++++++ BEFORE COMPILE SQLite")
+
+    # # Si wkb_clause contient des données binaires ou une chaîne hexadécimale,
+    # # convertir en littéral SQLite directement
+    # if hasattr(wkb_clause, 'value'):
+    #     if isinstance(wkb_clause.value, (bytes, bytearray)):
+    #         # Convertir directement en littéral hexadécimal
+    #         compiled = f"X'{wkb_clause.value.hex()}'"
+    #     elif isinstance(wkb_clause.value, str) and wkb_clause.value.startswith("0"):
+    #         # C'est déjà une chaîne hexadécimale
+    #         compiled = f"X'{wkb_clause.value}'"
+    #     else:
+    #         # Pour les autres cas, laisser SQLAlchemy gérer
+    #         compiled = compiler.process(wkb_clause, **kw)
+    # else:
+    #     compiled = compiler.process(wkb_clause, **kw)
+    # prefix = ""
+    # suffix = ""
+
+    # compiled = compiler.process(wkb_clause, **kw)
 
     print("+++++++++++++++++++++++++++++++++++++++++++++++++ COMPILE SQLite =>", compiled, clauses[0].value, "=>", wkb_clause.value, srid, changed, type(wkb_clause.value))
 

@@ -307,7 +307,7 @@ class WKBElement(_SpatialElement):
         return WKBElement(self.data, self.srid)
 
     def __str__(self):
-        return self.data.hex()
+        return self.desc
 
     def _compiler_dispatch(self, visitor, **kw):
         return visitor.process(self.bind_expression())
