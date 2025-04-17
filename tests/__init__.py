@@ -2,9 +2,9 @@ import os
 import platform
 import re
 import shutil
-import sys
 
 import pytest
+import shapely
 from packaging.version import parse as parse_version
 from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import create_engine
@@ -112,26 +112,64 @@ def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo, dialect):
     else:
         listen(engine, "connect", load_spatialite)
 
-    with engine.begin() as connection:
-        print(
-            "SPATIALITE VERSION:",
-            connection.execute(text("SELECT spatialite_version();")).fetchone()[0],
-        )
-        print(
-            "GEOS VERSION:",
-            connection.execute(text("SELECT geos_version();")).fetchone()[0],
-        )
-        if sys.version_info.minor > 7:
-            print(
-                "PROJ VERSION:",
-                connection.execute(text("SELECT proj_version();")).fetchone()[0],
-            )
-            print(
-                "PROJ DB PATH:",
-                connection.execute(text("SELECT PROJ_GetDatabasePath();")).fetchone()[0],
-            )
-
     return engine
+
+
+def get_versions(conn):
+    """Get all versions."""
+    versions = {}
+    dialect_name = conn.dialect.name
+    if dialect_name == "postgresql":
+        db_version = "PostGIS_Full_Version()"
+        geos_version = "PostGIS_GEOS_Version()"
+        proj_version = "PostGIS_PROJ_Version()"
+        proj_path = ""
+    elif dialect_name in ["mysql", "mariadb"]:
+        db_version = "VERSION()"
+        geos_version = ""
+        proj_version = ""
+        proj_path = ""
+    else:
+        db_version = "spatialite_version()"
+        geos_version = "geos_version()"
+        proj_version = "proj_version()"
+        proj_path = "PROJ_GetDatabasePath()"
+
+    versions["dialect_name"] = dialect_name
+    versions["db_version"] = (
+        conn.execute(text(f"SELECT {db_version};")).fetchone()[0] if db_version else ""
+    )
+    versions["geos_version"] = (
+        conn.execute(text(f"SELECT {geos_version};")).fetchone()[0] if geos_version else ""
+    )
+    versions["proj_version"] = (
+        conn.execute(text(f"SELECT {proj_version};")).fetchone()[0] if proj_version else ""
+    )
+    versions["proj_path"] = (
+        conn.execute(text(f"SELECT {proj_path};")).fetchone()[0] if proj_path else ""
+    )
+    try:
+        versions["shapely"] = shapely.__version__
+    except AttributeError:
+        versions["shapely"] = ""
+    return versions
+
+
+def print_versions(versions):
+    """Print the provided versions."""
+    print("#########################################")
+    print(f"Versions for the {versions['dialect_name']} dialect")
+    if versions["db_version"]:
+        print("db_version:", versions["db_version"])
+    if versions["geos_version"]:
+        print("geos_version:", versions["geos_version"])
+    if versions["proj_version"]:
+        print("proj_version:", versions["proj_version"])
+    if versions["proj_path"]:
+        print("proj_path:", versions["proj_path"])
+    if versions["shapely"]:
+        print("shapely:", versions["shapely"])
+    print("#########################################")
 
 
 def check_indexes(conn, dialect_name, expected, table_name):

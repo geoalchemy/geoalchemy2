@@ -17,6 +17,8 @@ from geoalchemy2.alembic_helpers import _monkey_patch_get_indexes_for_sqlite
 from . import copy_and_connect_sqlite_db
 from . import get_postgis_major_version
 from . import get_postgres_major_version
+from . import get_versions
+from . import print_versions
 from .schema_fixtures import *  # noqa
 
 
@@ -223,7 +225,7 @@ def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
                     if "mariadb" in connection.execute(text("SELECT VERSION();")).scalar().lower()
                     else "MySQL"
                 )
-            if current_engine.dialect.name != mysql_type.lower():
+            if current_engine.dialect.name.lower() != mysql_type.lower():
                 msg = f"Can not execute {mysql_type} queries on {db_url}"
                 if _require_all_dialects:
                     pytest.fail("All dialects are required. " + msg)
@@ -236,6 +238,9 @@ def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
             else:
                 pytest.skip(reason=msg)
 
+    with current_engine.begin() as connection:
+        versions = get_versions(connection)
+    print_versions(versions)
     yield current_engine
     current_engine.dispose()
 
