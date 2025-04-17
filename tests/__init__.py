@@ -44,6 +44,13 @@ def get_postgres_major_version(bind):
         return "0"
 
 
+def skip_sqla_lt_2():
+    return pytest.mark.skipif(
+        parse_version(SA_VERSION) < parse_version("2"),
+        reason="requires SQLAlchemy >= 2",
+    )
+
+
 def skip_postgis1(bind):
     if get_postgis_major_version(bind) == 1:
         pytest.skip("requires PostGIS != 1")

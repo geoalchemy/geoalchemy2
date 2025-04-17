@@ -6,11 +6,15 @@ from typing import Tuple
 from typing import Union
 
 from sqlalchemy.sql.sqltypes import Boolean
-from sqlalchemy.sql.sqltypes import Double
 from sqlalchemy.sql.sqltypes import Float
 from sqlalchemy.sql.sqltypes import Integer
 from sqlalchemy.sql.sqltypes import LargeBinary
 from sqlalchemy.sql.sqltypes import String
+
+try:
+    from sqlalchemy.sql.sqltypes import Double
+except ImportError:
+    from sqlalchemy.sql.sqltypes import Float as Double
 
 from geoalchemy2 import types
 
