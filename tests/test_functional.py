@@ -393,6 +393,9 @@ class TestInsertionCore:
             inserted_elements.append({"geom": wkb_elem})
             inserted_elements.append({"geom": wkb_elem.as_ewkb()})
 
+        print(inserted_elements)
+        # raise ValueError()
+
         # Insert the elements
         conn.execute(
             GeomTypeTable.__table__.insert(),

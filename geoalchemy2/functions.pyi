@@ -53,7 +53,11 @@ class Find_SRID(GenericFunction):
     Returns the SRID defined for a geometry column.
 
     see https://postgis.net/docs/Find_SRID.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class Populate_Geometry_Columns(GenericFunction):
     """
@@ -187,7 +191,11 @@ class GeometryType(GenericFunction):
     Returns the type of a geometry as text.
 
     see https://postgis.net/docs/GeometryType.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_Boundary(GenericFunction):
     """
@@ -205,14 +213,22 @@ class ST_CoordDim(GenericFunction):
     Return the coordinate dimension of a geometry.
 
     see https://postgis.net/docs/ST_CoordDim.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_Dimension(GenericFunction):
     """
     Returns the topological dimension of a geometry.
 
     see https://postgis.net/docs/ST_Dimension.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_Dump(GenericFunction):
     """
@@ -309,14 +325,22 @@ class ST_GeometryType(GenericFunction):
     Returns the SQL-MM type of a geometry as text.
 
     see https://postgis.net/docs/ST_GeometryType.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_HasArc(GenericFunction):
     """
     Tests if a geometry contains a circular arc
 
     see https://postgis.net/docs/ST_HasArc.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_InteriorRingN(GenericFunction):
     """
@@ -335,7 +359,11 @@ class ST_IsPolygonCCW(GenericFunction):
     clockwise.
 
     see https://postgis.net/docs/ST_IsPolygonCCW.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsPolygonCW(GenericFunction):
     """
@@ -343,7 +371,11 @@ class ST_IsPolygonCW(GenericFunction):
     clockwise.
 
     see https://postgis.net/docs/ST_IsPolygonCW.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsClosed(GenericFunction):
     """
@@ -351,14 +383,22 @@ class ST_IsClosed(GenericFunction):
     closed (volumetric).
 
     see https://postgis.net/docs/ST_IsClosed.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsCollection(GenericFunction):
     """
     Tests if a geometry is a geometry collection type.
 
     see https://postgis.net/docs/ST_IsCollection.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsEmpty(GenericFunction):
     """
@@ -367,28 +407,44 @@ class ST_IsEmpty(GenericFunction):
     [raster] Returns true if the raster is empty (width = 0 and height = 0). Otherwise, returns false.
 
     see https://postgis.net/docs/ST_IsEmpty.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsRing(GenericFunction):
     """
     Tests if a LineString is closed and simple.
 
     see https://postgis.net/docs/ST_IsRing.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsSimple(GenericFunction):
     """
     Tests if a geometry has no points of self-intersection or self-tangency.
 
     see https://postgis.net/docs/ST_IsSimple.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_M(GenericFunction):
     """
     Returns the M coordinate of a Point.
 
     see https://postgis.net/docs/ST_M.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_MemSize(GenericFunction):
     """
@@ -397,63 +453,99 @@ class ST_MemSize(GenericFunction):
     [raster] Returns the amount of space (in bytes) the raster takes.
 
     see https://postgis.net/docs/ST_MemSize.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NDims(GenericFunction):
     """
     Returns the coordinate dimension of a geometry.
 
     see https://postgis.net/docs/ST_NDims.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NPoints(GenericFunction):
     """
     Returns the number of points (vertices) in a geometry.
 
     see https://postgis.net/docs/ST_NPoints.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NRings(GenericFunction):
     """
     Returns the number of rings in a polygonal geometry.
 
     see https://postgis.net/docs/ST_NRings.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NumGeometries(GenericFunction):
     """
     Returns the number of elements in a geometry collection.
 
     see https://postgis.net/docs/ST_NumGeometries.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NumInteriorRings(GenericFunction):
     """
     Returns the number of interior rings (holes) of a Polygon.
 
     see https://postgis.net/docs/ST_NumInteriorRings.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NumInteriorRing(GenericFunction):
     """
     Returns the number of interior rings (holes) of a Polygon. Aias for ST_NumInteriorRings
 
     see https://postgis.net/docs/ST_NumInteriorRing.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NumPatches(GenericFunction):
     """
     Return the number of faces on a Polyhedral Surface. Will return null for non-polyhedral geometries.
 
     see https://postgis.net/docs/ST_NumPatches.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NumPoints(GenericFunction):
     """
     Returns the number of points in a LineString or CircularString.
 
     see https://postgis.net/docs/ST_NumPoints.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_PatchN(GenericFunction):
     """
@@ -506,35 +598,55 @@ class ST_Summary(GenericFunction):
     [raster] Returns a text summary of the contents of the raster.
 
     see https://postgis.net/docs/ST_Summary.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_X(GenericFunction):
     """
     Returns the X coordinate of a Point.
 
     see https://postgis.net/docs/ST_X.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Y(GenericFunction):
     """
     Returns the Y coordinate of a Point.
 
     see https://postgis.net/docs/ST_Y.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Z(GenericFunction):
     """
     Returns the Z coordinate of a Point.
 
     see https://postgis.net/docs/ST_Z.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Zmflag(GenericFunction):
     """
     Returns a code indicating the ZM coordinate dimension of a geometry.
 
     see https://postgis.net/docs/ST_Zmflag.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_AddPoint(GenericFunction):
     """
@@ -820,7 +932,11 @@ class ST_IsValid(GenericFunction):
     Tests if a geometry is well-formed in 2D.
 
     see https://postgis.net/docs/ST_IsValid.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsValidDetail(GenericFunction):
     """
@@ -834,7 +950,11 @@ class ST_IsValidReason(GenericFunction):
     Returns text stating if a geometry is valid, or a reason for invalidity.
 
     see https://postgis.net/docs/ST_IsValidReason.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_SetSRID(GenericFunction):
     """
@@ -858,7 +978,11 @@ class ST_SRID(GenericFunction):
     [raster] Returns the spatial reference identifier of the raster as defined in spatial_ref_sys table.
 
     see https://postgis.net/docs/ST_SRID.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_Transform(GenericFunction):
     """
@@ -1228,14 +1352,22 @@ class ST_AsEWKT(GenericFunction):
     Return the Well-Known Text (WKT) representation of the geometry with SRID meta data.
 
     see https://postgis.net/docs/ST_AsEWKT.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsText(GenericFunction):
     """
     Return the Well-Known Text (WKT) representation of the geometry/geography without SRID metadata.
 
     see https://postgis.net/docs/ST_AsText.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsBinary(GenericFunction):
     """
@@ -1260,14 +1392,22 @@ class ST_AsHEXEWKB(GenericFunction):
     encoding.
 
     see https://postgis.net/docs/ST_AsHEXEWKB.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsEncodedPolyline(GenericFunction):
     """
     Returns an Encoded Polyline from a LineString geometry.
 
     see https://postgis.net/docs/ST_AsEncodedPolyline.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsGeobuf(GenericFunction):
     """
@@ -1281,7 +1421,11 @@ class ST_AsGML(GenericFunction):
     Return the geometry as a GML version 2 or 3 element.
 
     see https://postgis.net/docs/ST_AsGML.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsKML(GenericFunction):
     """
@@ -1289,14 +1433,22 @@ class ST_AsKML(GenericFunction):
     maxdecimaldigits=15
 
     see https://postgis.net/docs/ST_AsKML.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsLatLonText(GenericFunction):
     """
     Return the Degrees, Minutes, Seconds representation of the given point.
 
     see https://postgis.net/docs/ST_AsLatLonText.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsMVTGeom(GenericFunction):
     """
@@ -1342,7 +1494,11 @@ class ST_GeoHash(GenericFunction):
     Return a GeoHash representation of the geometry.
 
     see https://postgis.net/docs/ST_GeoHash.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_3DIntersects(GenericFunction):
     """
@@ -1350,7 +1506,11 @@ class ST_3DIntersects(GenericFunction):
     polyhedral surface (area).
 
     see https://postgis.net/docs/ST_3DIntersects.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Contains(GenericFunction):
     """
@@ -1361,7 +1521,11 @@ class ST_Contains(GenericFunction):
     one point of the interior of rastB lies in the interior of rastA.
 
     see https://postgis.net/docs/ST_Contains.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_ContainsProperly(GenericFunction):
     """
@@ -1372,7 +1536,11 @@ class ST_ContainsProperly(GenericFunction):
     rastA.
 
     see https://postgis.net/docs/ST_ContainsProperly.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Covers(GenericFunction):
     """
@@ -1381,7 +1549,11 @@ class ST_Covers(GenericFunction):
     [raster] Return true if no points of raster rastB lie outside raster rastA.
 
     see https://postgis.net/docs/ST_Covers.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_CoveredBy(GenericFunction):
     """
@@ -1390,14 +1562,22 @@ class ST_CoveredBy(GenericFunction):
     [raster] Return true if no points of raster rastA lie outside raster rastB.
 
     see https://postgis.net/docs/ST_CoveredBy.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Crosses(GenericFunction):
     """
     Returns TRUE if the supplied geometries have some, but not all, interior points in common.
 
     see https://postgis.net/docs/ST_Crosses.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_LineCrossingDirection(GenericFunction):
     """
@@ -1405,7 +1585,11 @@ class ST_LineCrossingDirection(GenericFunction):
     no crossing.
 
     see https://postgis.net/docs/ST_LineCrossingDirection.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_Disjoint(GenericFunction):
     """
@@ -1415,14 +1599,22 @@ class ST_Disjoint(GenericFunction):
     [raster] Return true if raster rastA does not spatially intersect rastB.
 
     see https://postgis.net/docs/ST_Disjoint.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Equals(GenericFunction):
     """
     Returns true if the given geometries represent the same geometry. Directionality is ignored.
 
     see https://postgis.net/docs/ST_Equals.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Intersects(GenericFunction):
     """
@@ -1433,7 +1625,11 @@ class ST_Intersects(GenericFunction):
     [raster] Return true if raster rastA spatially intersects raster rastB.
 
     see https://postgis.net/docs/ST_Intersects.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_OrderingEquals(GenericFunction):
     """
@@ -1441,7 +1637,11 @@ class ST_OrderingEquals(GenericFunction):
     directional order.
 
     see https://postgis.net/docs/ST_OrderingEquals.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Overlaps(GenericFunction):
     """
@@ -1452,14 +1652,22 @@ class ST_Overlaps(GenericFunction):
     other.
 
     see https://postgis.net/docs/ST_Overlaps.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_PointInsideCircle(GenericFunction):
     """
     Is the point geometry inside the circle defined by center_x, center_y, radius
 
     see https://postgis.net/docs/ST_PointInsideCircle.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Relate(GenericFunction):
     """
@@ -1469,14 +1677,22 @@ class ST_Relate(GenericFunction):
     intersectionMatrixPattern that relates the 2 geometries.
 
     see https://postgis.net/docs/ST_Relate.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_RelateMatch(GenericFunction):
     """
     Returns true if intersectionMattrixPattern1 implies intersectionMatrixPattern2
 
     see https://postgis.net/docs/ST_RelateMatch.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Touches(GenericFunction):
     """
@@ -1487,7 +1703,11 @@ class ST_Touches(GenericFunction):
     do not intersect.
 
     see https://postgis.net/docs/ST_Touches.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Within(GenericFunction):
     """
@@ -1497,21 +1717,33 @@ class ST_Within(GenericFunction):
     one point of the interior of rastA lies in the interior of rastB.
 
     see https://postgis.net/docs/ST_Within.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_3DDWithin(GenericFunction):
     """
     For 3d (z) geometry type Returns true if two geometries 3d distance is within number of units.
 
     see https://postgis.net/docs/ST_3DDWithin.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_3DDFullyWithin(GenericFunction):
     """
     Returns true if all of the 3D geometries are within the specified distance of one another.
 
     see https://postgis.net/docs/ST_3DDFullyWithin.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_DFullyWithin(GenericFunction):
     """
@@ -1521,7 +1753,11 @@ class ST_DFullyWithin(GenericFunction):
     other.
 
     see https://postgis.net/docs/ST_DFullyWithin.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_DWithin(GenericFunction):
     """
@@ -1533,14 +1769,22 @@ class ST_DWithin(GenericFunction):
     [raster] Return true if rasters rastA and rastB are within the specified distance of each other.
 
     see https://postgis.net/docs/ST_DWithin.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Area(GenericFunction):
     """
     Returns the area of a polygonal geometry.
 
     see https://postgis.net/docs/ST_Area.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Azimuth(GenericFunction):
     """
@@ -1548,14 +1792,22 @@ class ST_Azimuth(GenericFunction):
     pointA to pointB.
 
     see https://postgis.net/docs/ST_Azimuth.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Angle(GenericFunction):
     """
     Returns the angle between 3 points, or between 2 vectors (4 points or 2 lines).
 
     see https://postgis.net/docs/ST_Angle.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_ClosestPoint(GenericFunction):
     """
@@ -1584,7 +1836,11 @@ class ST_Distance(GenericFunction):
     Returns the distance between two geometry or geography values.
 
     see https://postgis.net/docs/ST_Distance.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_3DDistance(GenericFunction):
     """
@@ -1592,63 +1848,99 @@ class ST_3DDistance(GenericFunction):
     units.
 
     see https://postgis.net/docs/ST_3DDistance.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_DistanceSphere(GenericFunction):
     """
     Returns minimum distance in meters between two lon/lat geometries using a spherical earth model.
 
     see https://postgis.net/docs/ST_DistanceSphere.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_DistanceSpheroid(GenericFunction):
     """
     Returns the minimum distance between two lon/lat geometries using a spheroidal earth model.
 
     see https://postgis.net/docs/ST_DistanceSpheroid.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_FrechetDistance(GenericFunction):
     """
     Returns the Fréchet distance between two geometries.
 
     see https://postgis.net/docs/ST_FrechetDistance.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_HausdorffDistance(GenericFunction):
     """
     Returns the Hausdorff distance between two geometries.
 
     see https://postgis.net/docs/ST_HausdorffDistance.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Length(GenericFunction):
     """
     Returns the 2D length of a linear geometry.
 
     see https://postgis.net/docs/ST_Length.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Length2D(GenericFunction):
     """
     Returns the 2D length of a linear geometry. Alias for ST_Length
 
     see https://postgis.net/docs/ST_Length2D.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_3DLength(GenericFunction):
     """
     Returns the 3D length of a linear geometry.
 
     see https://postgis.net/docs/ST_3DLength.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_LengthSpheroid(GenericFunction):
     """
     Returns the 2D or 3D length/perimeter of a lon/lat geometry on a spheroid.
 
     see https://postgis.net/docs/ST_LengthSpheroid.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_LongestLine(GenericFunction):
     """
@@ -1677,7 +1969,11 @@ class ST_MaxDistance(GenericFunction):
     Returns the 2D largest distance between two geometries in projected units.
 
     see https://postgis.net/docs/ST_MaxDistance.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_3DMaxDistance(GenericFunction):
     """
@@ -1685,14 +1981,22 @@ class ST_3DMaxDistance(GenericFunction):
     units.
 
     see https://postgis.net/docs/ST_3DMaxDistance.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_MinimumClearance(GenericFunction):
     """
     Returns the minimum clearance of a geometry, a measure of a geometry's robustness.
 
     see https://postgis.net/docs/ST_MinimumClearance.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_MinimumClearanceLine(GenericFunction):
     """
@@ -1710,21 +2014,33 @@ class ST_Perimeter(GenericFunction):
     Returns the length of the boundary of a polygonal geometry or geography.
 
     see https://postgis.net/docs/ST_Perimeter.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Perimeter2D(GenericFunction):
     """
     Returns the 2D perimeter of a polygonal geometry. Alias for ST_Perimeter.
 
     see https://postgis.net/docs/ST_Perimeter2D.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_3DPerimeter(GenericFunction):
     """
     Returns the 3D perimeter of a polygonal geometry.
 
     see https://postgis.net/docs/ST_3DPerimeter.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Project(GenericFunction):
     """
@@ -2309,7 +2625,11 @@ class ST_ClusterDBSCAN(GenericFunction):
     Window function that returns a cluster id for each input geometry using the DBSCAN algorithm.
 
     see https://postgis.net/docs/ST_ClusterDBSCAN.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_ClusterIntersecting(GenericFunction):
     """
@@ -2327,7 +2647,11 @@ class ST_ClusterKMeans(GenericFunction):
     Window function that returns a cluster id for each input geometry using the K-means algorithm.
 
     see https://postgis.net/docs/ST_ClusterKMeans.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_ClusterWithin(GenericFunction):
     """
@@ -2407,42 +2731,66 @@ class ST_XMax(GenericFunction):
     Returns the X maxima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_XMax.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_XMin(GenericFunction):
     """
     Returns the X minima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_XMin.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_YMax(GenericFunction):
     """
     Returns the Y maxima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_YMax.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_YMin(GenericFunction):
     """
     Returns the Y minima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_YMin.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_ZMax(GenericFunction):
     """
     Returns the Z maxima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_ZMax.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_ZMin(GenericFunction):
     """
     Returns the Z minima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_ZMin.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_LineInterpolatePoint(GenericFunction):
     """
@@ -2485,7 +2833,11 @@ class ST_LineLocatePoint(GenericFunction):
     given Point, as a fraction of total 2d line length.
 
     see https://postgis.net/docs/ST_LineLocatePoint.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_LineSubstring(GenericFunction):
     """
@@ -2540,7 +2892,11 @@ class ST_InterpolatePoint(GenericFunction):
     Return the value of the measure dimension of a geometry at the point closed to the provided point.
 
     see https://postgis.net/docs/ST_InterpolatePoint.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_AddMeasure(GenericFunction):
     """
@@ -2559,35 +2915,55 @@ class ST_IsValidTrajectory(GenericFunction):
     Returns true if the geometry is a valid trajectory.
 
     see https://postgis.net/docs/ST_IsValidTrajectory.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_ClosestPointOfApproach(GenericFunction):
     """
     Returns the measure at which points interpolated along two trajectories are closest.
 
     see https://postgis.net/docs/ST_ClosestPointOfApproach.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_DistanceCPA(GenericFunction):
     """
     Returns the distance between the closest point of approach of two trajectories.
 
     see https://postgis.net/docs/ST_DistanceCPA.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_CPAWithin(GenericFunction):
     """
     Returns true if the closest point of approach of two trajectories is within the specified distance.
 
     see https://postgis.net/docs/ST_CPAWithin.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class postgis_sfcgal_version(GenericFunction):
     """
     Returns the version of SFCGAL in use
 
     see https://postgis.net/docs/postgis_sfcgal_version.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_Extrude(GenericFunction):
     """
@@ -2627,14 +3003,33 @@ class ST_IsPlanar(GenericFunction):
     Check if a surface is or not planar
 
     see https://postgis.net/docs/ST_IsPlanar.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Orientation(GenericFunction):
     """
     Determine surface orientation
 
     see https://postgis.net/docs/ST_Orientation.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
+
+class CG_Orientation(GenericFunction):
+    """
+    Determine surface orientation
+
+    see https://postgis.net/docs/CG_Orientation.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_ForceLHR(GenericFunction):
     """
@@ -2707,7 +3102,22 @@ class ST_3DArea(GenericFunction):
     Computes area of 3D surface geometries. Will return 0 for solids.
 
     see https://postgis.net/docs/ST_3DArea.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
+
+class CG_3DArea(GenericFunction):
+    """
+    Computes area of 3D surface geometries. Will return 0 for solids.
+
+    see https://postgis.net/docs/CG_3DArea.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Tesselate(GenericFunction):
     """
@@ -2726,7 +3136,11 @@ class ST_Volume(GenericFunction):
     Computes the volume of a 3D solid. If applied to surface (even closed) geometries will return 0.
 
     see https://postgis.net/docs/ST_Volume.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_MakeSolid(GenericFunction):
     """
@@ -2745,14 +3159,33 @@ class ST_IsSolid(GenericFunction):
     Test if the geometry is a solid. No validity check is performed.
 
     see https://postgis.net/docs/ST_IsSolid.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
+
+class CG_IsSolid(GenericFunction):
+    """
+    Test if the geometry is a solid. No validity check is performed.
+
+    see https://postgis.net/docs/CG_IsSolid.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class AddAuth(GenericFunction):
     """
     Adds an authorization token to be used in the current transaction.
 
     see https://postgis.net/docs/AddAuth.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class CheckAuth(GenericFunction):
     """
@@ -2760,35 +3193,55 @@ class CheckAuth(GenericFunction):
     token.
 
     see https://postgis.net/docs/CheckAuth.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class DisableLongTransactions(GenericFunction):
     """
     Disables long transaction support.
 
     see https://postgis.net/docs/DisableLongTransactions.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class EnableLongTransactions(GenericFunction):
     """
     Enables long transaction support.
 
     see https://postgis.net/docs/EnableLongTransactions.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class LockRow(GenericFunction):
     """
     Sets lock/authorization for a row in a table.
 
     see https://postgis.net/docs/LockRow.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class UnlockRows(GenericFunction):
     """
     Removes all locks held by an authorization token.
 
     see https://postgis.net/docs/UnlockRows.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class PostGIS_Extensions_Upgrade(GenericFunction):
     """
@@ -2796,91 +3249,143 @@ class PostGIS_Extensions_Upgrade(GenericFunction):
     latest available version.
 
     see https://postgis.net/docs/PostGIS_Extensions_Upgrade.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Full_Version(GenericFunction):
     """
     Reports full postgis version and build configuration infos.
 
     see https://postgis.net/docs/PostGIS_Full_Version.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_GEOS_Version(GenericFunction):
     """
     Returns the version number of the GEOS library.
 
     see https://postgis.net/docs/PostGIS_GEOS_Version.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Liblwgeom_Version(GenericFunction):
     """
     Returns the version number of the liblwgeom library. This should match the version of PostGIS.
 
     see https://postgis.net/docs/PostGIS_Liblwgeom_Version.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_LibXML_Version(GenericFunction):
     """
     Returns the version number of the libxml2 library.
 
     see https://postgis.net/docs/PostGIS_LibXML_Version.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Lib_Build_Date(GenericFunction):
     """
     Returns build date of the PostGIS library.
 
     see https://postgis.net/docs/PostGIS_Lib_Build_Date.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Lib_Version(GenericFunction):
     """
     Returns the version number of the PostGIS library.
 
     see https://postgis.net/docs/PostGIS_Lib_Version.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_PROJ_Version(GenericFunction):
     """
     Returns the version number of the PROJ4 library.
 
     see https://postgis.net/docs/PostGIS_PROJ_Version.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Wagyu_Version(GenericFunction):
     """
     Returns the version number of the internal Wagyu library.
 
     see https://postgis.net/docs/PostGIS_Wagyu_Version.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Scripts_Build_Date(GenericFunction):
     """
     Returns build date of the PostGIS scripts.
 
     see https://postgis.net/docs/PostGIS_Scripts_Build_Date.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Scripts_Installed(GenericFunction):
     """
     Returns version of the postgis scripts installed in this database.
 
     see https://postgis.net/docs/PostGIS_Scripts_Installed.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Scripts_Released(GenericFunction):
     """
     Returns the version number of the postgis.sql script released with the installed postgis lib.
 
     see https://postgis.net/docs/PostGIS_Scripts_Released.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Version(GenericFunction):
     """
     Returns PostGIS version number and compile-time options.
 
     see https://postgis.net/docs/PostGIS_Version.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_AddBBox(GenericFunction):
     """
@@ -2909,7 +3414,11 @@ class PostGIS_HasBBox(GenericFunction):
     Returns TRUE if the bbox of this geometry is cached, FALSE otherwise.
 
     see https://postgis.net/docs/PostGIS_HasBBox.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_AddBand(GenericFunction):
     """
@@ -3011,14 +3520,22 @@ class ST_GeoReference(GenericFunction):
     is GDAL.
 
     see https://postgis.net/docs/RT_ST_GeoReference.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_Height(GenericFunction):
     """
     Returns the height of the raster in pixels.
 
     see https://postgis.net/docs/RT_ST_Height.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_MetaData(GenericFunction):
     """
@@ -3033,35 +3550,55 @@ class ST_NumBands(GenericFunction):
     Returns the number of bands in the raster object.
 
     see https://postgis.net/docs/RT_ST_NumBands.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_PixelHeight(GenericFunction):
     """
     Returns the pixel height in geometric units of the spatial reference system.
 
     see https://postgis.net/docs/RT_ST_PixelHeight.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Double`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Double()
 
 class ST_PixelWidth(GenericFunction):
     """
     Returns the pixel width in geometric units of the spatial reference system.
 
     see https://postgis.net/docs/RT_ST_PixelWidth.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Double`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Double()
 
 class ST_ScaleX(GenericFunction):
     """
     Returns the X component of the pixel width in units of coordinate reference system.
 
     see https://postgis.net/docs/RT_ST_ScaleX.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_ScaleY(GenericFunction):
     """
     Returns the Y component of the pixel height in units of coordinate reference system.
 
     see https://postgis.net/docs/RT_ST_ScaleY.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_RasterToWorldCoord(GenericFunction):
     """
@@ -3077,7 +3614,11 @@ class ST_RasterToWorldCoordX(GenericFunction):
     rows starts at 1.
 
     see https://postgis.net/docs/RT_ST_RasterToWorldCoordX.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_RasterToWorldCoordY(GenericFunction):
     """
@@ -3085,49 +3626,77 @@ class ST_RasterToWorldCoordY(GenericFunction):
     columns and rows starts at 1.
 
     see https://postgis.net/docs/RT_ST_RasterToWorldCoordY.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Rotation(GenericFunction):
     """
     Returns the rotation of the raster in radian.
 
     see https://postgis.net/docs/RT_ST_Rotation.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_SkewX(GenericFunction):
     """
     Returns the georeference X skew (or rotation parameter).
 
     see https://postgis.net/docs/RT_ST_SkewX.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_SkewY(GenericFunction):
     """
     Returns the georeference Y skew (or rotation parameter).
 
     see https://postgis.net/docs/RT_ST_SkewY.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_UpperLeftX(GenericFunction):
     """
     Returns the upper left X coordinate of raster in projected spatial ref.
 
     see https://postgis.net/docs/RT_ST_UpperLeftX.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_UpperLeftY(GenericFunction):
     """
     Returns the upper left Y coordinate of raster in projected spatial ref.
 
     see https://postgis.net/docs/RT_ST_UpperLeftY.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Width(GenericFunction):
     """
     Returns the width of the raster in pixels.
 
     see https://postgis.net/docs/RT_ST_Width.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_WorldToRasterCoord(GenericFunction):
     """
@@ -3143,7 +3712,11 @@ class ST_WorldToRasterCoordX(GenericFunction):
     represented in world spatial reference system of raster.
 
     see https://postgis.net/docs/RT_ST_WorldToRasterCoordX.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_WorldToRasterCoordY(GenericFunction):
     """
@@ -3151,7 +3724,11 @@ class ST_WorldToRasterCoordY(GenericFunction):
     represented in world spatial reference system of raster.
 
     see https://postgis.net/docs/RT_ST_WorldToRasterCoordY.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_BandMetaData(GenericFunction):
     """
@@ -3165,49 +3742,77 @@ class ST_BandNoDataValue(GenericFunction):
     Returns the value in a given band that represents no data. If no band num 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_BandNoDataValue.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Double`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Double()
 
 class ST_BandIsNoData(GenericFunction):
     """
     Returns true if the band is filled with only nodata values.
 
     see https://postgis.net/docs/RT_ST_BandIsNoData.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_BandPath(GenericFunction):
     """
     Returns system file path to a band stored in file system. If no bandnum specified, 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_BandPath.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_BandFileSize(GenericFunction):
     """
     Returns the file size of a band stored in file system. If no bandnum specified, 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_BandFileSize.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_BandFileTimestamp(GenericFunction):
     """
     Returns the file timestamp of a band stored in file system. If no bandnum specified, 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_BandFileTimestamp.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_BandPixelType(GenericFunction):
     """
     Returns the type of pixel for given band. If no bandnum specified, 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_BandPixelType.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_MinPossibleValue(GenericFunction):
     """
     Returns the minimum value this pixeltype can store.
 
     see https://postgis.net/docs/ST_MinPossibleValue.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_HasNoBand(GenericFunction):
     """
@@ -3215,7 +3820,11 @@ class ST_HasNoBand(GenericFunction):
     number 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_HasNoBand.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_PixelAsPolygon(GenericFunction):
     """
@@ -3284,7 +3893,11 @@ class ST_Value(GenericFunction):
     exclude_nodata_value is not passed in then reads it from metadata of raster.
 
     see https://postgis.net/docs/RT_ST_Value.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Double`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Double()
 
 class ST_NearestValue(GenericFunction):
     """
@@ -3292,7 +3905,11 @@ class ST_NearestValue(GenericFunction):
     geometric point expressed in the same spatial reference coordinate system as the raster.
 
     see https://postgis.net/docs/RT_ST_NearestValue.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Double`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Double()
 
 class ST_Neighborhood(GenericFunction):
     """
@@ -3500,7 +4117,11 @@ class ST_Count(GenericFunction):
     equal to the nodata value.
 
     see https://postgis.net/docs/RT_ST_Count.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_CountAgg(GenericFunction):
     """
@@ -3509,7 +4130,11 @@ class ST_CountAgg(GenericFunction):
     equal to the NODATA value.
 
     see https://postgis.net/docs/RT_ST_CountAgg.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_Histogram(GenericFunction):
     """
@@ -3584,14 +4209,22 @@ class ST_AsWKB(GenericFunction):
     Return the Well-Known Binary (WKB) representation of the raster.
 
     see https://postgis.net/docs/RT_ST_AsBinary.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.LargeBinary`.
     """
+
+    type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_AsHexWKB(GenericFunction):
     """
     Return the Well-Known Binary (WKB) in Hex representation of the raster.
 
     see https://postgis.net/docs/RT_ST_AsHexWKB.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.LargeBinary`.
     """
+
+    type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_AsGDALRaster(GenericFunction):
     """
@@ -3600,7 +4233,11 @@ class ST_AsGDALRaster(GenericFunction):
     library.
 
     see https://postgis.net/docs/RT_ST_AsGDALRaster.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.LargeBinary`.
     """
+
+    type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_AsJPEG(GenericFunction):
     """
@@ -3609,7 +4246,11 @@ class ST_AsJPEG(GenericFunction):
     If only 3 bands then all 3 bands are used and mapped to RGB.
 
     see https://postgis.net/docs/RT_ST_AsJPEG.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.LargeBinary`.
     """
+
+    type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_AsPNG(GenericFunction):
     """
@@ -3619,7 +4260,11 @@ class ST_AsPNG(GenericFunction):
     RGBA space.
 
     see https://postgis.net/docs/RT_ST_AsPNG.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.LargeBinary`.
     """
+
+    type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_AsTIFF(GenericFunction):
     """
@@ -3627,7 +4272,11 @@ class ST_AsTIFF(GenericFunction):
     of specified bands does not exist in the raster, then will try to use all bands.
 
     see https://postgis.net/docs/RT_ST_AsTIFF.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.LargeBinary`.
     """
+
+    type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_Clip(GenericFunction):
     """
@@ -3674,7 +4323,11 @@ class ST_MapAlgebra(GenericFunction):
     and one or more user-specified SQL expressions.
 
     see https://postgis.net/docs/RT_ST_MapAlgebra.html
+
+    Return type: :class:`geoalchemy2.types.Raster`.
     """
+
+    type = geoalchemy2.types.Raster()
 
 class ST_MapAlgebraExpr(GenericFunction):
     """
@@ -3895,14 +4548,22 @@ class ST_SameAlignment(GenericFunction):
     grid without cutting into pixels) and false if they don't with notice detailing issue.
 
     see https://postgis.net/docs/RT_ST_SameAlignment.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_NotSameAlignmentReason(GenericFunction):
     """
     Returns text stating if rasters are aligned and if not aligned, a reason why.
 
     see https://postgis.net/docs/RT_ST_NotSameAlignmentReason.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
     """
+
+    type = sqlalchemy.sql.sqltypes.String()
 
 class ST_Distance_Sphere(GenericFunction):
     """
@@ -3911,4 +4572,8 @@ class ST_Distance_Sphere(GenericFunction):
     to 1.5 only implemented for points.
 
     see https://postgis.net/docs/ST_Distance_Sphere.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
     """
+
+    type = sqlalchemy.sql.sqltypes.Float()
