@@ -135,7 +135,7 @@ class TableRowElement(ColumnElement):
     inherit_cache: bool = False
     """The cache is disabled for this class."""
 
-    def __init__(self, selectable: bool) -> None:
+    def __init__(self, selectable: FromClause) -> None:
         self.selectable = selectable
 
     @property

@@ -178,7 +178,7 @@ class WKBElement(_SpatialElement):
     geom_from_extended_version: str = "ST_GeomFromEWKB"
 
     def __init__(
-        self, data: Union[str, bytes, memoryview], srid: int = -1, extended: Optional[bool] = None
+        self, data: str | bytes | memoryview, srid: int = -1, extended: Optional[bool] = None
     ) -> None:
         if srid == -1 or extended is None or extended:
             # read srid from the EWKB
@@ -277,7 +277,7 @@ class WKBElement(_SpatialElement):
             )
             wkb_type_int |= 536870912  # Set SRID bit to 1 and keep all other bits
 
-            data: Union[str, memoryview]
+            data: str | memoryview
             if isinstance(self.data, str):
                 wkb_type_hex = binascii.hexlify(
                     wkb_type_int.to_bytes(4, "little" if byte_order else "big")

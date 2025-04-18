@@ -11,6 +11,7 @@ else:
     compat.register()
     del compat
 
+import shapely
 from packaging.version import parse as parse_version
 from shapely.geometry import LineString
 from shapely.geometry import Point
@@ -54,6 +55,7 @@ from . import skip_postgis1
 from . import test_only_with_dialects
 
 SQLA_LT_2 = parse_version(SA_VERSION) <= parse_version("1.999")
+SHAPELY_LT_21 = parse_version(shapely.__version__) < parse_version("2.1")
 
 
 class TestAdmin:
@@ -391,6 +393,9 @@ class TestInsertionCore:
             inserted_elements.append({"geom": wkb_elem})
             inserted_elements.append({"geom": wkb_elem.as_ewkb()})
 
+        print(inserted_elements)
+        # raise ValueError()
+
         # Insert the elements
         conn.execute(
             GeomTypeTable.__table__.insert(),
@@ -416,7 +421,7 @@ class TestInsertionCore:
                 # Some dialects return MULTIPOINT geometries with nested parenthesis and others
                 # do not so we remove them before checking the results
                 checked_wkt = re.sub(r"\(([0-9\.]+)\)", "\\1", checked_wkt)
-            if row_id >= 5 and dialect_name in ["geopackage"] and has_m:
+            if row_id >= 5 and dialect_name in ["geopackage"] and has_m and SHAPELY_LT_21:
                 # Currently Shapely does not support geometry types with M dimension
                 assert checked_wkt != expected_wkt
             else:

@@ -65,7 +65,7 @@ class Ocean(Base):  # type: ignore
 class TestSTSummaryStatsAgg:
     @pytest.mark.skipif(
         parse_version(SA_VERSION) < parse_version("1.4"),
-        reason="requires SQLAlchely>1.4",
+        reason="requires SQLAlchemy>1.4",
     )
     def test_st_summary_stats_agg(self, session, conn):
         metadata.drop_all(conn, checkfirst=True)

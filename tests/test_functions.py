@@ -8,6 +8,8 @@ import geoalchemy2.functions
 from geoalchemy2._functions_helpers import _generate_stubs
 from geoalchemy2.types import Raster  # NOQA
 
+from . import skip_sqla_lt_2
+
 #
 # Importing geoalchemy2 actually registers the GeoAlchemy generic
 # functions in SQLAlchemy's function registry.
@@ -47,6 +49,7 @@ def _test_raster_returning_func(name, *args, **kwargs):
     )
 
 
+@skip_sqla_lt_2()
 def test_stubs_up_to_date() -> None:
     geoalchemy2_path = Path(geoalchemy2.__file__).parent
     current_stubs = (geoalchemy2_path / "functions.pyi").read_text()

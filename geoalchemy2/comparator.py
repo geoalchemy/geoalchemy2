@@ -37,7 +37,7 @@ Using the ORM::
     Session.query(Cls).order_by(Cls.geom.distance_box('POINT(0 0)')).limit(10)
 """
 
-from typing import Union
+from typing import Any
 
 from sqlalchemy import types as sqltypes
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
@@ -65,7 +65,7 @@ SAME: custom_op = custom_op("~=")
 DISTANCE_CENTROID: custom_op = custom_op("<->")
 DISTANCE_BOX: custom_op = custom_op("<#>")
 
-_COMPARATOR_INPUT_TYPE = Union[str, WKBElement, WKTElement]
+_COMPARATOR_INPUT_TYPE = str | WKBElement | WKTElement
 
 
 class BaseComparator(UserDefinedType.Comparator):
@@ -80,13 +80,13 @@ class BaseComparator(UserDefinedType.Comparator):
 
     key = None
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         # Function names that don't start with "ST_" are rejected.
         # This is not to mess up with SQLAlchemy's use of
         # hasattr/getattr on Column objects.
 
         if not name.lower().startswith("st_"):
-            raise AttributeError
+            raise AttributeError(f"Attribute {name} not found")
 
         # We create our own _FunctionGenerator here, and use it in place of
         # SQLAlchemy's "func" object. This is to be able to "bind" the
