@@ -14,7 +14,7 @@ from sqlalchemy.sql.sqltypes import String
 try:
     from sqlalchemy.sql.sqltypes import Double
 except ImportError:
-    from sqlalchemy.sql.sqltypes import Float as Double
+    Double = Float  # type: ignore [misc,assignment]
 
 from geoalchemy2 import types
 
