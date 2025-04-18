@@ -1,12 +1,9 @@
 """This module defines functions used by several dialects."""
 
-from copy import copy
 import sqlalchemy
 from packaging import version
 from sqlalchemy import Column
 from sqlalchemy import String
-from sqlalchemy.sql import bindparam
-from sqlalchemy.sql.elements import ClauseList
 from sqlalchemy.sql import expression
 from sqlalchemy.types import TypeDecorator
 
@@ -113,7 +110,7 @@ def compile_bin_literal(wkb_clause, force=False, **kw):
     """Compile a binary literal for WKBElement."""
     wkb_data = wkb_clause.value
     changed = False
-    if (force or kw.get('literal_binds')) and isinstance(wkb_data, bytes | memoryview | WKBElement):
+    if (force or kw.get("literal_binds")) and isinstance(wkb_data, bytes | memoryview | WKBElement):
         if isinstance(wkb_data, memoryview):
             wkb_data = wkb_data.tobytes()
         if isinstance(wkb_data, bytes):
@@ -122,12 +119,6 @@ def compile_bin_literal(wkb_clause, force=False, **kw):
             wkb_data = wkb_data.desc
 
         # wkb_clause = copy(wkb_clause)
-
-        # ##################### #
-        # import pdb
-        # pdb.set_trace()
-        # ##################### #
-
         wkb_clause.value = wkb_data
         wkb_clause.type = String()
         changed = True

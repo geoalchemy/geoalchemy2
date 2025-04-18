@@ -1,15 +1,13 @@
 """This module defines specific functions for MySQL dialect."""
-from copy import deepcopy
 
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.sql.elements import ClauseList
 from sqlalchemy.sql.sqltypes import NullType
 
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
-from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
+from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
@@ -90,12 +88,6 @@ def before_cursor_execute(
             for k in parameters:
                 if isinstance(parameters[k], memoryview):
                     parameters[k] = parameters[k].tobytes()
-
-
-    # ##################### #
-    # import pdb
-    # pdb.set_trace()
-    # ##################### #
 
     return statement, parameters
 
@@ -202,23 +194,18 @@ def _compile_GeomFromWKB_MySql(element, compiler, **kw):
     try:
         srid = clauses[1].value
         element.type.srid = srid
-        # element.clauses = ClauseList(list(element.clauses)[0])
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
     wkb_clause, changed = compile_bin_literal(clauses[0], force=False, **kw)
-    if changed:
+    if isinstance(wkb_clause.value, str) and wkb_clause.value.startswith("0"):
         prefix = "unhex("
         suffix = ")"
     else:
         prefix = ""
         suffix = ""
-    # prefix = "unhex("
-    # suffix = ")"
 
     compiled = compiler.process(wkb_clause, **kw)
-
-    print("============================", compiled, clauses[0].value, "=>", wkb_clause.value, srid, changed)
 
     if srid > 0:
         return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)

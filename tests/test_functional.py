@@ -236,7 +236,6 @@ class TestInsertionCore:
     def test_insert(self, conn, Lake, setup_tables):
         # Issue inserts using DBAPI's executemany() method. This tests the
         # Geometry type's bind_processor and bind_expression functions.
-        import time
         conn.execute(
             Lake.__table__.insert(),
             [
@@ -246,49 +245,23 @@ class TestInsertionCore:
                 {"id": 4, "geom": from_shape(LineString([[0, 0], [3, 3]]), srid=4326)},
             ],
         )
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ INSERT $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-        time.sleep(0.1)
 
         results = conn.execute(Lake.__table__.select().order_by("id"))
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ SELECT $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-        time.sleep(0.1)
         rows = results.fetchall()
-        time.sleep(0.1)
 
         row = rows[0]
         assert isinstance(row[1], WKBElement)
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ WKT1 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         wkt = conn.execute(from_shape(LineString([[0, 0], [3, 3]]), srid=4326).ST_AsText()).scalar()
-        time.sleep(0.1)
-        print("First call (row[0]): BEFORE")
         q1 = row[1].ST_AsText()
         wkt = conn.execute(q1).scalar()
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ WKT2 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-        print("First call (row[0]): AFTER")
-        time.sleep(0.1)
         assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ SRID $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-        time.sleep(0.1)
         assert srid == 4326
 
         row = rows[1]
         assert isinstance(row[1], WKBElement)
-        print(rows)
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ GET WKT $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         q2 = row[1].ST_AsText()
-        all_wkt = conn.execute(q2).fetchall()
-        time.sleep(0.1)
         wkt = conn.execute(q2).scalar()
-
-        # ##################### #
-        # import pdb
-        # pdb.set_trace()
-        print(q1)
-        print(q1._generate_cache_key())
-        print(q2)
-        print(q2._generate_cache_key())
-        # ##################### #
 
         assert format_wkt(wkt) == "LINESTRING(0 0,2 2)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
@@ -640,14 +613,14 @@ class TestInsertionORM:
 
     @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4")
     def test_transform(self, session, LocalPoint, setup_tables):
-        # if session.bind.dialect.name == "mysql":
-        #     # Explicitly skip MySQL dialect to show that there is an issue
-        #     pytest.skip(
-        #         reason=(
-        #             "The SRID is not properly retrieved so an exception is raised. TODO: This "
-        #             "should be fixed later"
-        #         )
-        #     )
+        if session.bind.dialect.name == "mysql":
+            # Explicitly skip MySQL dialect to show that there is an issue
+            pytest.skip(
+                reason=(
+                    "The SRID is not properly retrieved so an exception is raised. TODO: This "
+                    "should be fixed later"
+                )
+            )
         # Create new point instance
         p = LocalPoint()
         p.geom = "SRID=4326;POINT(5 45)"  # Insert geometry with wrong SRID
@@ -1300,19 +1273,23 @@ class TestAsBinaryWKT:
 
 class TestCompileQuery:
     def test_compile_query(self, conn):
-        wkb = (
-            b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@"
-        )
+        wkb = b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@"
         elem = WKBElement(wkb)
         print("===============================================", elem.desc)
         query = select([func.ST_AsText(elem)])
-        compiled_with_literal = str(query.compile(conn, compile_kwargs={'literal_binds': True}))
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$", compiled_with_literal)
+        compiled_with_literal = str(query.compile(conn, compile_kwargs={"literal_binds": True}))
+        print(
+            "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$",
+            compiled_with_literal,
+        )
         res_text = conn.execute(text(compiled_with_literal)).scalar()
         assert res_text == "POINT(1 2)"
 
-        compiled_without_literal = str(query.compile(conn, compile_kwargs={'literal_binds': False}))
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$", compiled_without_literal)
+        compiled_without_literal = str(query.compile(conn, compile_kwargs={"literal_binds": False}))
+        print(
+            "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$",
+            compiled_without_literal,
+        )
 
         print("BEFORE EXECUTE")
         res_query = conn.execute(query).scalar()

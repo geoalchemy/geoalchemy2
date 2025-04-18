@@ -388,7 +388,7 @@ def create_spatial_ref_sys_view(bind):
 
 def _compile_GeomFromWKB_gpkg(element, compiler, *, identifier, **kw):
     element.identifier = identifier
-    
+
     # Store the SRID
     clauses = list(element.clauses)
     try:
@@ -397,9 +397,9 @@ def _compile_GeomFromWKB_gpkg(element, compiler, *, identifier, **kw):
         srid = element.type.srid
 
     wkb_clause, changed = compile_bin_literal(clauses[0], **kw)
-    if changed:
-        prefix = "X"
-        suffix = ""
+    if isinstance(wkb_clause.value, str) and wkb_clause.value.startswith("0"):
+        prefix = "unhex("
+        suffix = ")"
     else:
         prefix = ""
         suffix = ""
@@ -407,9 +407,9 @@ def _compile_GeomFromWKB_gpkg(element, compiler, *, identifier, **kw):
     compiled = compiler.process(wkb_clause, **kw)
 
     if srid > 0:
-        return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)
+        return "{}({}{}{}, {})".format(identifier, prefix, compiled, suffix, srid)
     else:
-        return "{}({}{}{})".format(element.identifier, prefix, compiled, suffix)
+        return "{}({}{}{})".format(identifier, prefix, compiled, suffix)
 
 
 @compiles(functions.ST_GeomFromWKB, "geopackage")  # type: ignore

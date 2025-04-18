@@ -1,5 +1,4 @@
 """This module defines specific functions for Postgresql dialect."""
-from copy import deepcopy
 
 from sqlalchemy import Index
 from sqlalchemy import text
@@ -166,7 +165,6 @@ def after_drop(table, bind, **kw):
         table.columns = saved_cols
 
 
-
 def _compile_GeomFromWKB_Postgresql(element, compiler, **kw):
     # Store the SRID
     try:
@@ -176,12 +174,6 @@ def _compile_GeomFromWKB_Postgresql(element, compiler, **kw):
 
     wkb_clause, changed = compile_bin_literal(list(element.clauses)[0], **kw)
     if isinstance(wkb_clause.value, str) and wkb_clause.value.startswith("0"):
-        print("WKB clause changed:", wkb_clause.value)
-        # ##################### #
-        # import pdb
-        # pdb.set_trace()
-        # ##################### #
-
         prefix = "decode("
         suffix = ", 'hex')"
     else:
@@ -189,8 +181,6 @@ def _compile_GeomFromWKB_Postgresql(element, compiler, **kw):
         suffix = ""
 
     compiled = compiler.process(wkb_clause, **kw)
-
-    print("+++++++++++++++++++++++++++++++++++++++++++++++++", compiled, list(element.clauses)[0].value, "=>", wkb_clause.value, srid, changed, type(wkb_clause.value))
 
     if srid > 0:
         return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)

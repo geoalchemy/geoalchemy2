@@ -7,12 +7,10 @@ from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.mysql import after_create  # noqa
 from geoalchemy2.admin.dialects.mysql import after_drop  # noqa
 from geoalchemy2.admin.dialects.mysql import before_create  # noqa
-from geoalchemy2.admin.dialects.mysql import before_cursor_execute  # noqa
 from geoalchemy2.admin.dialects.mysql import before_drop  # noqa
 from geoalchemy2.admin.dialects.mysql import reflect_geometry_column  # noqa
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
-from geoalchemy2.shape import to_shape
 
 
 def _cast(param):
@@ -22,9 +20,6 @@ def _cast(param):
         param = WKBElement(param)
     if isinstance(param, WKBElement):
         param = param.desc
-        # param = to_shape(data_element).wkt.encode("utf-8")
-        # param = data_element.desc
-    print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ IN _cast", param)
     return param
 
 
@@ -114,8 +109,6 @@ def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
     suffix = ")"
 
     compiled = compiler.process(wkb_clause, **kw)
-
-    print("============================", compiled, clauses[0].value, "=>", wkb_clause.value, srid, changed)
 
     if srid > 0:
         return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)
