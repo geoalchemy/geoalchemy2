@@ -169,16 +169,24 @@ def _setup_dummy_type(table, gis_cols):
 
 def get_col_dim(col):
     """Get dimension of the column type."""
-    if col.type.dimension == 4:
-        dimension = "XYZM"
-    elif col.type.dimension == 2:
-        dimension = "XY"
-    else:
-        if col.type.geometry_type.endswith("M"):
-            dimension = "XYM"
-        else:
-            dimension = "XYZ"
-    return dimension
+    coord_dimension = col.type.dimension
+    geometry_type = col.type.geometry_type
+
+    if geometry_type.endswith("ZM"):
+        coord_dimension = 4
+    elif geometry_type[-1] in ["Z", "M"]:
+        coord_dimension = 3
+
+    if coord_dimension == 4:
+        return "XYZM"
+
+    if coord_dimension == 3:
+        if geometry_type.endswith("M"):
+            return "XYM"
+        return "XYZ"
+
+    # Anything else defaults to 2
+    return "XY"
 
 
 def create_spatial_index(bind, table, col):
