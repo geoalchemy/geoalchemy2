@@ -106,11 +106,10 @@ def after_drop(table, bind, **kw):
     return  # pragma: no cover
 
 
-def compile_bin_literal(wkb_clause, force=False, **kw):
+def compile_bin_literal(wkb_clause):
     """Compile a binary literal for WKBElement."""
     wkb_data = wkb_clause.value
-    changed = False
-    if (force or kw.get("literal_binds")) and isinstance(wkb_data, bytes | memoryview | WKBElement):
+    if isinstance(wkb_data, bytes | memoryview | WKBElement):
         if isinstance(wkb_data, memoryview):
             wkb_data = wkb_data.tobytes()
         if isinstance(wkb_data, bytes):
@@ -118,8 +117,10 @@ def compile_bin_literal(wkb_clause, force=False, **kw):
         elif isinstance(wkb_data, WKBElement):
             wkb_data = wkb_data.desc
 
-        # wkb_clause = copy(wkb_clause)
-        wkb_clause.value = wkb_data
-        wkb_clause.type = String()
-        changed = True
-    return wkb_clause, changed
+        wkb_clause = expression.bindparam(
+            key=wkb_clause.key,
+            value=wkb_data,
+            type_=String(),
+            unique=True,
+        )
+    return wkb_clause

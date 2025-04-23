@@ -167,16 +167,18 @@ def after_drop(table, bind, **kw):
 
 def _compile_GeomFromWKB_Postgresql(element, compiler, **kw):
     # Store the SRID
+    clauses = list(element.clauses)
     try:
-        srid = list(element.clauses)[1].value
+        srid = clauses[1].value
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    wkb_clause, changed = compile_bin_literal(list(element.clauses)[0], **kw)
-    if isinstance(wkb_clause.value, str) and wkb_clause.value.startswith("0"):
+    if kw.get("literal_binds", False):
+        wkb_clause = compile_bin_literal(clauses[0])
         prefix = "decode("
         suffix = ", 'hex')"
     else:
+        wkb_clause = clauses[0]
         prefix = ""
         suffix = ""
 

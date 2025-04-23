@@ -11,15 +11,15 @@ from geoalchemy2.admin.dialects.mysql import before_drop  # noqa
 from geoalchemy2.admin.dialects.mysql import reflect_geometry_column  # noqa
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
+from geoalchemy2.shape import to_shape
 
 
 def _cast(param):
     if isinstance(param, memoryview):
         param = param.tobytes()
     if isinstance(param, bytes):
-        param = WKBElement(param)
-    if isinstance(param, WKBElement):
-        param = param.desc
+        data_element = WKBElement(param)
+        param = to_shape(data_element).wkt.encode("utf-8")
     return param
 
 
@@ -94,8 +94,6 @@ def _compile_GeomFromText_MariaDB(element, compiler, **kw):
 
 
 def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
-    element.identifier = "ST_GeomFromWKB"
-
     # Store the SRID
     clauses = list(element.clauses)
     try:
@@ -104,16 +102,23 @@ def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    wkb_clause, changed = compile_bin_literal(clauses[0], force=True, **kw)
-    prefix = "unhex("
-    suffix = ")"
+    if kw.get("literal_binds", False):
+        wkb_clause = compile_bin_literal(clauses[0])
+        identifier = "ST_GeomFromWKB"
+        prefix = "unhex("
+        suffix = ")"
+    else:
+        wkb_clause = clauses[0]
+        identifier = "ST_GeomFromText"
+        prefix = ""
+        suffix = ""
 
     compiled = compiler.process(wkb_clause, **kw)
 
     if srid > 0:
-        return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)
+        return "{}({}{}{}, {})".format(identifier, prefix, compiled, suffix, srid)
     else:
-        return "{}({}{}{})".format(element.identifier, prefix, compiled, suffix)
+        return "{}({}{}{})".format(identifier, prefix, compiled, suffix)
 
 
 @compiles(functions.ST_GeomFromText, "mariadb")  # type: ignore

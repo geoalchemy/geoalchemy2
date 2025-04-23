@@ -386,11 +386,12 @@ def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, **kw):
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    wkb_clause, changed = compile_bin_literal(clauses[0], force=False, **kw)
-    if isinstance(wkb_clause.value, str) and wkb_clause.value.startswith("0"):
+    if kw.get("literal_binds", False):
+        wkb_clause = compile_bin_literal(clauses[0])
         prefix = "unhex("
         suffix = ")"
     else:
+        wkb_clause = clauses[0]
         prefix = ""
         suffix = ""
 

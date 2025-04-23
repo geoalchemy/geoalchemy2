@@ -387,8 +387,6 @@ def create_spatial_ref_sys_view(bind):
 
 
 def _compile_GeomFromWKB_gpkg(element, compiler, *, identifier, **kw):
-    element.identifier = identifier
-
     # Store the SRID
     clauses = list(element.clauses)
     try:
@@ -396,11 +394,12 @@ def _compile_GeomFromWKB_gpkg(element, compiler, *, identifier, **kw):
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    wkb_clause, changed = compile_bin_literal(clauses[0], **kw)
-    if isinstance(wkb_clause.value, str) and wkb_clause.value.startswith("0"):
+    if kw.get("literal_binds", False):
+        wkb_clause = compile_bin_literal(clauses[0])
         prefix = "unhex("
         suffix = ")"
     else:
+        wkb_clause = clauses[0]
         prefix = ""
         suffix = ""
 

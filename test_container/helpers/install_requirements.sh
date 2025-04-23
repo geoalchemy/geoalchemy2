@@ -21,6 +21,7 @@ packages=(
     python3.13
     python3.13-dev
     python3.13-venv
+    tox
 
     # PostgreSQL and PostGIS
     postgresql-16
@@ -35,7 +36,6 @@ packages=(
     # MySQL
     mysql-client
     mysql-server
-    default-libmysqlclient-dev
 
     # mysqlclient requirements
     # https://github.com/PyMySQL/mysqlclient#linux
@@ -51,16 +51,14 @@ export DEBIAN_FRONTEND=noninteractive
 
 apt-get update -y
 apt-get install --no-install-recommends -y software-properties-common gnupg2 wget curl ca-certificates
-add-apt-repository ppa:deadsnakes/ppa
-add-apt-repository ppa:pypy/ppa
+add-apt-repository -y ppa:deadsnakes/ppa
+add-apt-repository -y ppa:pypy/ppa
 mkdir -p /usr/share/postgresql-common/pgdg/
 curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
 sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 apt-get update -y
 
 apt-get install --no-install-recommends -y "${packages[@]}"
-
-python3 -m pip install -U pip tox
 
 # clear the package list cache (populated with apt-get update)
 apt-get clean

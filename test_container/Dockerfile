@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 COPY ./helpers/install_requirements.sh /
 RUN /install_requirements.sh
