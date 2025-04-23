@@ -431,6 +431,69 @@ class TestInsertionCore:
                 assert checked_wkt == expected_wkt
             assert srid == 4326
 
+    @pytest.mark.parametrize(
+        "geom_type",
+        [
+            pytest.param("POINT", id="Point"),
+            pytest.param("POINTZ", id="Point Z"),
+            pytest.param("POINTM", id="Point M"),
+            pytest.param("POINTZM", id="Point ZM"),
+            pytest.param("LINESTRING", id="LineString"),
+            pytest.param("LINESTRINGZ", id="LineString Z"),
+            pytest.param("LINESTRINGM", id="LineString M"),
+            pytest.param("LINESTRINGZM", id="LineString ZM"),
+            pytest.param("POLYGON", id="Polygon"),
+            pytest.param("POLYGONZ", id="Polygon Z"),
+            pytest.param("POLYGONM", id="Polygon M"),
+            pytest.param("POLYGONZM", id="Polygon ZM"),
+            pytest.param("MULTIPOINT", id="Multi Point"),
+            pytest.param("MULTIPOINTZ", id="Multi Point Z"),
+            pytest.param("MULTIPOINTM", id="Multi Point M"),
+            pytest.param("MULTIPOINTZM", id="Multi Point ZM"),
+            pytest.param("MULTILINESTRING", id="Multi LineString"),
+            pytest.param("MULTILINESTRINGZ", id="Multi LineString Z"),
+            pytest.param("MULTILINESTRINGM", id="Multi LineString M"),
+            pytest.param("MULTILINESTRINGZM", id="Multi LineString ZM"),
+            pytest.param("MULTIPOLYGON", id="Multi Polygon"),
+            pytest.param("MULTIPOLYGONZ", id="Multi Polygon Z"),
+            pytest.param("MULTIPOLYGONM", id="Multi Polygon M"),
+            pytest.param("MULTIPOLYGONZM", id="Multi Polygon ZM"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "dimension",
+        [
+            pytest.param(
+                None,
+                id="Dimension is None",
+            ),
+            pytest.param(
+                -1,
+                id="Negative dimension",
+            ),
+            pytest.param(
+                1,
+                id="Wrong dimension",
+            ),
+        ],
+    )
+    def test_check_ctor_args(self, dialect_name, base, conn, metadata, geom_type, dimension):
+        ndims = 2
+        if "Z" in geom_type[-2:]:
+            ndims += 1
+        if geom_type.endswith("M"):
+            ndims += 1
+
+        if ndims > 2 and dialect_name in ["mysql", "mariadb"]:
+            # Explicitly skip MySQL dialect to show that it can only work with 2D geometries
+            pytest.xfail(reason="MySQL only supports 2D geometry types")
+
+        if dimension is not None:
+            with pytest.raises(ValueError):
+                Geometry(srid=4326, geometry_type=geom_type, dimension=dimension)
+        else:
+            Geometry(srid=4326, geometry_type=geom_type, dimension=dimension)
+
     @test_only_with_dialects("postgresql", "sqlite")
     def test_insert_geom_poi(self, conn, Poi, setup_tables):
         conn.execute(
