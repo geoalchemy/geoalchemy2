@@ -46,7 +46,7 @@ def bind_processor_process(spatial_type, bindvalue):
             # With MariaDB we use Shapely to convert the WKBElement to an EWKT string
             wkt = to_shape(bindvalue).wkt
             if "multipoint" in wkt[:20].lower():
-                # Shapely>=2.1 adds parentheses around each sub-point which is not supported by MariaDB
+                # Shapely>=2.1 adds parentheses around each sub-point which is not supported
                 first_idx = wkt.find("(")
                 last_idx = wkt.rfind(")")
                 wkt = (
