@@ -35,7 +35,7 @@ jobs:
         ]
 
     # The type of runner that the job will run on
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     services:
       postgres:
@@ -95,11 +95,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version.flag }}
 
-    # Install MariaDB
-    - name: Install MariaDB and SpatiaLite
+    # Install SpatiaLite
+    - name: Install SpatiaLite
       run: |
         sudo apt-get update
-        sudo apt-get install -y mariadb-server mariadb-client libsqlite3-mod-spatialite libgdal-dev gdal-bin rasterio
+        sudo apt-get install -y libsqlite3-mod-spatialite libgdal-dev gdal-bin rasterio
 
     # Config PostgreSQL
     - name: Configure PostgreSQL

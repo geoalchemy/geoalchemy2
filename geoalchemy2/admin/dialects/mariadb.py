@@ -78,13 +78,11 @@ def _compile_GeomFromText_MariaDB(element, compiler, **kw):
     try:
         clauses = list(element.clauses)
         data_element = WKTElement(clauses[0].value)
-        srid = max(0, data_element.srid)
+        srid = data_element.srid
         if srid <= 0:
-            srid = max(0, element.type.srid)
-        # if len(clauses) > 1 and srid > 0:
-        #     clauses[1].value = srid
+            srid = element.type.srid
     except Exception:
-        srid = max(0, element.type.srid)
+        srid = element.type.srid
 
     if srid > 0:
         res = "{}({}, {})".format(identifier, compiled, srid)
@@ -98,7 +96,6 @@ def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
     clauses = list(element.clauses)
     try:
         srid = clauses[1].value
-        element.type.srid = srid
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 

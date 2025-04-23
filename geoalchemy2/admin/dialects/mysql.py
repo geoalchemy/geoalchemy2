@@ -187,13 +187,10 @@ def _compile_GeomFromText_MySql(element, compiler, **kw):
 
 
 def _compile_GeomFromWKB_MySql(element, compiler, **kw):
-    element.identifier = "ST_GeomFromWKB"
-
     # Store the SRID
     clauses = list(element.clauses)
     try:
         srid = clauses[1].value
-        element.type.srid = srid
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
