@@ -300,7 +300,7 @@ def _handle_wkb_element(element):
 
         def _compiler_dispatch(visitor, **kw):
             dialect = visitor.dialect
-            if dialect.name == 'sqlite' or True:
+            if dialect.name == "sqlite" or True:
                 # Pour SQLite, retourner un littéral avec préfixe X
                 if isinstance(element, memoryview):
                     element = element.tobytes()
