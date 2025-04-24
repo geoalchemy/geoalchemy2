@@ -1275,23 +1275,13 @@ class TestCompileQuery:
     def test_compile_query(self, conn):
         wkb = b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@"
         elem = WKBElement(wkb)
-        print("===============================================", elem.desc)
         query = select([func.ST_AsText(elem)])
         compiled_with_literal = str(query.compile(conn, compile_kwargs={"literal_binds": True}))
-        print(
-            "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$",
-            compiled_with_literal,
-        )
         res_text = conn.execute(text(compiled_with_literal)).scalar()
         assert res_text == "POINT(1 2)"
 
         compiled_without_literal = str(query.compile(conn, compile_kwargs={"literal_binds": False}))
-        print(
-            "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$",
-            compiled_without_literal,
-        )
 
-        print("BEFORE EXECUTE")
         res_query = conn.execute(query).scalar()
         assert res_query == "POINT(1 2)"
 
