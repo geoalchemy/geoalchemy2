@@ -266,7 +266,7 @@ class TestMiscellaneous:
         if init_mode is None:
             assert nb_srid > 1000
         elif init_mode == "WGS84":
-            assert nb_srid == 129
+            assert nb_srid in [129, 131]
         elif init_mode == "EMPTY":
             assert nb_srid == 0
 

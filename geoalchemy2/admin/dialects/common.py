@@ -3,9 +3,11 @@
 import sqlalchemy
 from packaging import version
 from sqlalchemy import Column
+from sqlalchemy import String
 from sqlalchemy.sql import expression
 from sqlalchemy.types import TypeDecorator
 
+from geoalchemy2.elements import WKBElement
 from geoalchemy2.types import Geometry
 
 _SQLALCHEMY_VERSION_BEFORE_14 = version.parse(sqlalchemy.__version__) < version.parse("1.4")
@@ -102,3 +104,23 @@ def before_drop(table, bind, **kw):
 
 def after_drop(table, bind, **kw):
     return  # pragma: no cover
+
+
+def compile_bin_literal(wkb_clause):
+    """Compile a binary literal for WKBElement."""
+    wkb_data = wkb_clause.value
+    if isinstance(wkb_data, bytes | memoryview | WKBElement):
+        if isinstance(wkb_data, memoryview):
+            wkb_data = wkb_data.tobytes()
+        if isinstance(wkb_data, bytes):
+            wkb_data = WKBElement._wkb_to_hex(wkb_data)
+        elif isinstance(wkb_data, WKBElement):
+            wkb_data = wkb_data.desc
+
+        wkb_clause = expression.bindparam(
+            key=wkb_clause.key,
+            value=wkb_data,
+            type_=String(),
+            unique=True,
+        )
+    return wkb_clause

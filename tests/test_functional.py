@@ -239,27 +239,30 @@ class TestInsertionCore:
         conn.execute(
             Lake.__table__.insert(),
             [
-                {"geom": "SRID=4326;LINESTRING(0 0,1 1)"},
-                {"geom": WKTElement("LINESTRING(0 0,2 2)", srid=4326)},
-                {"geom": WKTElement("SRID=4326;LINESTRING(0 0,2 2)", extended=True)},
-                {"geom": from_shape(LineString([[0, 0], [3, 3]]), srid=4326)},
+                {"id": 1, "geom": "SRID=4326;LINESTRING(0 0,1 1)"},
+                {"id": 2, "geom": WKTElement("LINESTRING(0 0,2 2)", srid=4326)},
+                {"id": 3, "geom": WKTElement("SRID=4326;LINESTRING(0 0,2 2)", extended=True)},
+                {"id": 4, "geom": from_shape(LineString([[0, 0], [3, 3]]), srid=4326)},
             ],
         )
 
-        results = conn.execute(Lake.__table__.select())
+        results = conn.execute(Lake.__table__.select().order_by("id"))
         rows = results.fetchall()
 
         row = rows[0]
         assert isinstance(row[1], WKBElement)
         wkt = conn.execute(from_shape(LineString([[0, 0], [3, 3]]), srid=4326).ST_AsText()).scalar()
-        wkt = conn.execute(row[1].ST_AsText()).scalar()
+        q1 = row[1].ST_AsText()
+        wkt = conn.execute(q1).scalar()
         assert format_wkt(wkt) == "LINESTRING(0 0,1 1)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
 
         row = rows[1]
         assert isinstance(row[1], WKBElement)
-        wkt = conn.execute(row[1].ST_AsText()).scalar()
+        q2 = row[1].ST_AsText()
+        wkt = conn.execute(q2).scalar()
+
         assert format_wkt(wkt) == "LINESTRING(0 0,2 2)"
         srid = conn.execute(row[1].ST_SRID()).scalar()
         assert srid == 4326
@@ -1266,3 +1269,23 @@ class TestAsBinaryWKT:
 
         # Drop the table
         t.drop(bind=conn)
+
+
+class TestCompileQuery:
+    def test_compile_query(self, conn):
+        wkb = b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@"
+        elem = WKBElement(wkb)
+        query = select([func.ST_AsText(elem)])
+        compiled_with_literal = str(query.compile(conn, compile_kwargs={"literal_binds": True}))
+        res_text = conn.execute(text(compiled_with_literal)).scalar()
+        assert res_text == "POINT(1 2)"
+
+        compiled_without_literal = str(query.compile(conn, compile_kwargs={"literal_binds": False}))
+
+        res_query = conn.execute(query).scalar()
+        assert res_query == "POINT(1 2)"
+
+        assert compiled_with_literal.startswith("SELECT ST_AsText(")
+        assert "0101000000000000000000f03f0000000000000040" in compiled_with_literal
+        assert compiled_without_literal.startswith("SELECT ST_AsText(")
+        assert "0101000000000000000000f03f0000000000000040" not in compiled_without_literal

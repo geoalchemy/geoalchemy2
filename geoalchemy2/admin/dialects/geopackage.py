@@ -16,6 +16,7 @@ from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _format_select_args
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
+from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.admin.dialects.sqlite import _SQLITE_FUNCTIONS
 from geoalchemy2.admin.dialects.sqlite import get_col_dim
@@ -383,3 +384,38 @@ def create_spatial_ref_sys_view(bind):
             FROM gpkg_spatial_ref_sys;"""
         )
     )
+
+
+def _compile_GeomFromWKB_gpkg(element, compiler, *, identifier, **kw):
+    # Store the SRID
+    clauses = list(element.clauses)
+    try:
+        srid = clauses[1].value
+    except (IndexError, TypeError, ValueError):
+        srid = element.type.srid
+
+    if kw.get("literal_binds", False):
+        wkb_clause = compile_bin_literal(clauses[0])
+        prefix = "unhex("
+        suffix = ")"
+    else:
+        wkb_clause = clauses[0]
+        prefix = ""
+        suffix = ""
+
+    compiled = compiler.process(wkb_clause, **kw)
+
+    if srid > 0:
+        return "{}({}{}{}, {})".format(identifier, prefix, compiled, suffix, srid)
+    else:
+        return "{}({}{}{})".format(identifier, prefix, compiled, suffix)
+
+
+@compiles(functions.ST_GeomFromWKB, "geopackage")  # type: ignore
+def _gpkg_ST_GeomFromWKB(element, compiler, **kw):
+    return _compile_GeomFromWKB_gpkg(element, compiler, identifier="GeomFromWKB", **kw)
+
+
+@compiles(functions.ST_GeomFromEWKB, "geopackage")  # type: ignore
+def _gpkg_ST_GeomFromEWKB(element, compiler, **kw):
+    return _compile_GeomFromWKB_gpkg(element, compiler, identifier="GeomFromEWKB", **kw)
