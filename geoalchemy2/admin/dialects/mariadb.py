@@ -11,15 +11,15 @@ from geoalchemy2.admin.dialects.mysql import before_drop  # noqa
 from geoalchemy2.admin.dialects.mysql import reflect_geometry_column  # noqa
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
-from geoalchemy2.shape import to_shape
 
 
 def _cast(param):
     if isinstance(param, memoryview):
         param = param.tobytes()
     if isinstance(param, bytes):
-        data_element = WKBElement(param)
-        param = to_shape(data_element).wkt.encode("utf-8")
+        param = WKBElement(param)
+    if isinstance(param, WKBElement):
+        param = param.as_wkb().desc
     return param
 
 
@@ -92,6 +92,7 @@ def _compile_GeomFromText_MariaDB(element, compiler, **kw):
 
 
 def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
+    identifier = "ST_GeomFromWKB"
     # Store the SRID
     clauses = list(element.clauses)
     try:
@@ -101,14 +102,10 @@ def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
 
     if kw.get("literal_binds", False):
         wkb_clause = compile_bin_literal(clauses[0])
-        identifier = "ST_GeomFromWKB"
-        prefix = "unhex("
-        suffix = ")"
     else:
         wkb_clause = clauses[0]
-        identifier = "ST_GeomFromText"
-        prefix = ""
-        suffix = ""
+    prefix = "unhex("
+    suffix = ")"
 
     compiled = compiler.process(wkb_clause, **kw)
 
