@@ -116,17 +116,17 @@ class _GISType(UserDefinedType):
     def __init__(
         self,
         geometry_type: Optional[str] = "GEOMETRY",
-        srid=-1,
-        dimension=2,
-        spatial_index=True,
-        use_N_D_index=False,
+        srid: int = -1,
+        dimension: Optional[int] = None,
+        spatial_index: bool = True,
+        use_N_D_index: bool = False,
         use_typmod: Optional[bool] = None,
         from_text: Optional[str] = None,
         name: Optional[str] = None,
-        nullable=True,
+        nullable: bool = True,
         _spatial_index_reflected=None,
     ) -> None:
-        geometry_type, srid = self.check_ctor_args(
+        geometry_type, srid, dimension = self.check_ctor_args(
             geometry_type, srid, dimension, use_typmod, nullable
         )
         self.geometry_type = geometry_type
@@ -195,7 +195,21 @@ class _GISType(UserDefinedType):
                 'The "nullable" and "use_typmod" arguments can not be used together'
             )
 
-        return geometry_type, srid
+        if dimension not in [None, 2, 3, 4]:
+            raise ValueError("dimension must be one of [None, 2, 3, 4] " "but got %s" % dimension)
+        if geometry_type is not None:
+            if geometry_type.endswith("ZM"):
+                if dimension not in [None, 4]:
+                    raise ValueError("dimension must be 4 when geometry_type ends with 'ZM'")
+                dimension = 4
+            elif geometry_type[-1] in ["Z", "M"]:
+                if dimension not in [None, 3]:
+                    raise ValueError("dimension must be 3 when geometry_type ends with 'Z' or 'M'")
+                dimension = 3
+            else:
+                dimension = 2
+
+        return geometry_type, srid, dimension
 
 
 @compiles(_GISType, "mysql")
@@ -323,7 +337,7 @@ class Raster(_GISType):
         super(Raster, self).__init__(
             geometry_type=None,
             srid=-1,
-            dimension=2,
+            dimension=None,
             spatial_index=spatial_index,
             use_N_D_index=False,
             use_typmod=False,
@@ -335,7 +349,7 @@ class Raster(_GISType):
 
     @staticmethod
     def check_ctor_args(*args, **kwargs):
-        return None, -1
+        return None, -1, None
 
 
 class _DummyGeometry(Geometry):

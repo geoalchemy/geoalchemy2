@@ -172,7 +172,7 @@ def get_col_dim(col):
     """Get dimension of the column type."""
     if col.type.dimension == 4:
         dimension = "XYZM"
-    elif col.type.dimension == 2:
+    elif col.type.dimension == 2 or col.type.geometry_type is None:
         dimension = "XY"
     else:
         if col.type.geometry_type.endswith("M"):
