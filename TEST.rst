@@ -16,13 +16,27 @@ Install and run the container::
 
 Run the tests inside the container::
 
-    # tox --workdir /output -vv
+    # tox --workdir /output -v run
+
+It is also possible to run the tests for a specific Python version.
+For example, to run the tests for Python 3.10 with the latest version of SQLAlchemy::
+
+    # tox --workdir /output -v run -e py310-sqlalatest
+
+You can combine `py310`, `py311`, `py312` with `sqla14` or `sqlalatest` to run the tests for
+Python 3.10, 3.11 or 3.12 with SQLAlchemy 1.4 or 2.*.
 
 Remove the container and associated data::
 
     $ sudo rm -rf test_container/output
     $ docker image rm geoalchemy2
     $ docker system prune
+
+If you want to run the tests for MariaDB, you should use the specific MariaDB image
+instead of the default image::
+
+    $ ./test_container/build_mariadb.sh
+    $ ./test_container/run_mariadb.sh
 
 
 Host System
