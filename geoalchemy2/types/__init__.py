@@ -204,7 +204,7 @@ class _GISType(UserDefinedType):
                 dimension = 4
             elif geometry_type[-1] in ["Z", "M"]:
                 if dimension not in [None, 3]:
-                    raise ValueError("dimension must be 3 when geometry_type ends with 'ZM'")
+                    raise ValueError("dimension must be 3 when geometry_type ends with 'Z' or 'M'")
                 dimension = 3
             else:
                 dimension = 2
