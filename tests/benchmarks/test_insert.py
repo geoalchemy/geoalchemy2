@@ -7,6 +7,8 @@ from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import to_shape
 
+from .. import test_only_with_dialects
+
 
 @pytest.fixture
 def WktTable(base, schema):
@@ -82,10 +84,13 @@ def _benchmark_insert(conn, table_class, metadata, benchmark, convert_wkb=False,
     return benchmark.pedantic(insert_all_points, args=(conn, table, points), iterations=1, rounds=1)
 
 
-def test_insert_wkt(benchmark, WktTable, conn, metadata):
+@pytest.mark.parametrize(
+    "N",
+    [2, 10, 50],
+)
+@test_only_with_dialects("postgresql")
+def test_insert_wkt(benchmark, WktTable, conn, metadata, N):
     """Benchmark the insert operation for WKT."""
-    N = 10
-
     _benchmark_insert(conn, WktTable, metadata, benchmark, N=N)
 
     assert (
@@ -96,10 +101,13 @@ def test_insert_wkt(benchmark, WktTable, conn, metadata):
     )
 
 
-def test_insert_wkb(benchmark, WkbTable, conn, metadata):
+@pytest.mark.parametrize(
+    "N",
+    [2, 10, 50],
+)
+@test_only_with_dialects("postgresql")
+def test_insert_wkb(benchmark, WkbTable, conn, metadata, N):
     """Benchmark the insert operation for WKB."""
-    N = 10
-
     _benchmark_insert(conn, WkbTable, metadata, benchmark, convert_wkb=True, N=N)
 
     assert (

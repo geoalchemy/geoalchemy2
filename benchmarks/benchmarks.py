@@ -1,6 +1,8 @@
 # Write the benchmarking functions here.
 # See "Writing benchmarks" in the asv docs for more information.
 
+import os
+
 import shapely
 from sqlalchemy import Column
 from sqlalchemy import Integer
@@ -12,7 +14,7 @@ from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import to_shape
 
-DB_URL = "postgresql://gis:gis@localhost/gis"
+DB_URL = os.getenv("BENCHMARK_POSTGRESQL_DB_URL") or "postgresql://gis:gis@localhost/gis"
 
 
 def create_points(N=50, convert_wkb=False):
@@ -21,7 +23,7 @@ def create_points(N=50, convert_wkb=False):
     for i in range(N):
         for j in range(N):
             for k in range(N):
-                wkt = f"POINT({i} {j} {k} {i + j + k})"
+                wkt = f"POINT ZM({i} {j} {k} {i + j + k})"
                 points.append(wkt)
     if convert_wkb:
         # Convert WKT to WKB
@@ -45,7 +47,7 @@ def insert_all_points(conn, table, points):
 class TimeInsertSuite:
     """Benchmark insertion."""
 
-    params = [2, 10, 100]
+    params = [2, 10, 50]
 
     def setup(self, N):
         current_engine = create_engine(DB_URL, plugins=["geoalchemy2"])
@@ -80,7 +82,6 @@ class TimeInsertSuite:
         # Create the table in the database
         self.metadata.drop_all(self.conn, checkfirst=True)
         self.metadata.create_all(self.conn)
-        print("Tables created")
 
         self.wkt_points = create_points(N, convert_wkb=False)
         self.wkb_points = create_points(N, convert_wkb=True)
@@ -93,7 +94,7 @@ class TimeInsertSuite:
         table = self.WkbTable.__table__
         insert_all_points(self.conn, table, self.wkb_points)
 
-    def teardown(self):
+    def teardown(self, N):
         self.metadata.drop_all(self.conn, checkfirst=True)
         self.conn.close()
         self.engine.dispose()
