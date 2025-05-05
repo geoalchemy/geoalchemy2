@@ -4,6 +4,7 @@ flake8
 mysql
 pytest
 pytest-cov
+pytest-benchmark
 pytest-html
 pytest-mypy
 rasterio;implementation_name!='pypy'
