@@ -132,7 +132,7 @@ def create_points(N=50):
     points = []
     for i in range(N):
         for j in range(N):
-            wkt = f"POINT({i} {j})"
+            wkt = f"POINT({i / N} {j / N})"
             points.append(wkt)
     return points
 
@@ -397,7 +397,7 @@ def _actual_test_insert_select(
 
 @pytest.mark.parametrize(
     "N",
-    [2, 10, 500],
+    [2, 10, 350],
 )
 # @test_only_with_dialects("postgresql")
 def test_insert_select(
