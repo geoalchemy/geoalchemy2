@@ -360,6 +360,11 @@ def _insert_select_fail_or_success_type(
         return AssertionError
     if dialect_name in ["mysql", "sqlite", "geopackage"] and is_extended_output:
         return AssertionError
+    if dialect_name in ["mariadb"] and is_extended_output:
+        if is_default_geom_type:
+            return AssertionError
+        else:
+            return OperationalError
     if not is_default_geom_type and is_extended_output:
         return AssertionError
     return SuccessfulTest
