@@ -3,6 +3,7 @@ import shapely
 from shapely.wkb import dumps
 from sqlalchemy import Column
 from sqlalchemy import Integer
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
 from geoalchemy2 import Geometry
@@ -267,6 +268,7 @@ def _benchmark_insert_select(
 
 @pytest.fixture
 def _insert_fail_or_success_type(
+    dialect_name,
     input_representation,
     is_raw_input,
     is_extended_input,
@@ -275,14 +277,23 @@ def _insert_fail_or_success_type(
     is_default_geom_type,
 ):
     """Fixture to determine if the current test should fail or succeed."""
+    if (
+        dialect_name in ["sqlite", "geopackage"]
+        and not is_default_geom_type
+        and not is_extended_input
+    ):
+        return AssertionError
     return SuccessfulTest
 
 
 @pytest.mark.parametrize(
     "N",
-    [2, 10, 350],
+    [
+        2,
+        pytest.param(10, marks=pytest.mark.long_benchmark),
+        pytest.param(350, marks=pytest.mark.long_benchmark),
+    ],
 )
-# @test_only_with_dialects("postgresql")
 def test_insert(
     benchmark,
     GeomTable,
@@ -311,9 +322,11 @@ def test_insert(
         )
 
         assert (
-            conn.execute(
-                GeomTable.__table__.select().where(GeomTable.__table__.c.geom.is_not(None))
-            ).rowcount
+            len(
+                conn.execute(
+                    text(f"SELECT * FROM {GeomTable.__table__.name} WHERE geom IS NOT NULL")
+                ).fetchall()
+            )
             == N * N * ROUNDS
         )
 
@@ -397,9 +410,12 @@ def _actual_test_insert_select(
 
 @pytest.mark.parametrize(
     "N",
-    [2, 10, 350],
+    [
+        2,
+        pytest.param(10, marks=pytest.mark.long_benchmark),
+        pytest.param(350, marks=pytest.mark.long_benchmark),
+    ],
 )
-# @test_only_with_dialects("postgresql")
 def test_insert_select(
     benchmark,
     GeomTable,

@@ -65,9 +65,38 @@ def pytest_addoption(parser):
         default=False,
         help="If set to True, all dialects muts be properly executed.",
     )
+    parser.addoption(
+        "--long-benchmarks",
+        action="store_true",
+        default=False,
+        help="If set to True, tests marked as long benchmarks will be ran.",
+    )
+
+
+def pytest_configure(config):
+    """Register additional marker."""
+    config.addinivalue_line("markers", "long_benchmark: mark a test as a long benchmark.")
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip tests marked with 'long_benchmark' if the '--long-benchmarks' option is not provided."""
+    # Check if the '--long-benchmarks' option is provided
+    if not config.getoption("--long-benchmarks"):
+        # Create custom marker to skip long benchmarks
+        skip_long_benchmarks = pytest.mark.skip(reason="Skip long benchmarks")
+
+        for item in items:
+            # If the test is marked with 'long_benchmark', add the skip marker
+            if "long_benchmark" in item.keywords:
+                item.add_marker(skip_long_benchmarks)
 
 
 def pytest_generate_tests(metafunc):
+    """Parametrize the tests with different database URLs.
+
+    This function is called for each test function and applies the appropriate database URL fixture
+    based on the test's module name.
+    """
     if "db_url" in metafunc.fixturenames:
         sqlite_dialects = ["sqlite-spatialite3", "sqlite-spatialite4", "geopackage"]
         dialects = None

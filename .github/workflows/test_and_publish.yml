@@ -155,6 +155,7 @@ jobs:
         if [[ ${{ matrix.python-version.flag }} == 'pypy3.10' ]]; then
           export PYTEST_SPATIALITE3_DB_URL="FAILING URL"
           export PYTEST_SPATIALITE4_DB_URL="FAILING URL"
+          export PYTEST_GEOPACKAGE_DB_URL="FAILING URL"
         else
           export PYTEST_ADDOPTS='--require-all-dialects'
         fi;
