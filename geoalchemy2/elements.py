@@ -35,6 +35,8 @@ class _SpatialElement:
 
     """
 
+    __slots__ = ("srid", "data", "extended")
+
     def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
         self.srid = srid
         self.data = data
@@ -116,6 +118,8 @@ class WKTElement(_SpatialElement):
         wkt_element_3 = WKTElement('SRID=4326;POINT(5 45)', extended=True)
     """
 
+    __slots__ = ()
+
     _REMOVE_SRID = re.compile("(SRID=([0-9]+); ?)?(.*)")
     SPLIT_WKT_PATTERN = re.compile(r"((SRID=\d+) *; *)?([\w ]+) *(\([-\d\. ,\(\)]+\))")
 
@@ -173,6 +177,8 @@ class WKBElement(_SpatialElement):
     Note: you can create ``WKBElement`` objects from Shapely geometries
     using the :func:`geoalchemy2.shape.from_shape` function.
     """
+
+    __slots__ = ()
 
     geom_from: str = "ST_GeomFromWKB"
     geom_from_extended_version: str = "ST_GeomFromEWKB"
@@ -314,6 +320,8 @@ class RasterElement(_SpatialElement):
     most cases you won't need to create ``RasterElement`` instances yourself.
     """
 
+    __slots__ = ()
+
     geom_from_extended_version: str = "raster"
 
     def __init__(self, data: Union[str, bytes, memoryview]) -> None:
@@ -343,6 +351,8 @@ class RasterElement(_SpatialElement):
 
 class CompositeElement(FunctionElement):
     """Instances of this class wrap a Postgres composite type."""
+
+    __slots__ = ()
 
     inherit_cache: bool = False
     """The cache is disabled for this class."""

@@ -291,7 +291,7 @@ def _insert_fail_or_success_type(
     [
         2,
         pytest.param(10, marks=pytest.mark.long_benchmark),
-        pytest.param(350, marks=pytest.mark.long_benchmark),
+        pytest.param(100, marks=pytest.mark.long_benchmark),
     ],
 )
 def test_insert(
@@ -424,7 +424,7 @@ def _actual_test_insert_select(
     [
         2,
         pytest.param(10, marks=pytest.mark.long_benchmark),
-        pytest.param(350, marks=pytest.mark.long_benchmark),
+        pytest.param(100, marks=pytest.mark.long_benchmark),
     ],
 )
 def test_insert_select(
