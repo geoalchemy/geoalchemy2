@@ -69,7 +69,7 @@ def pytest_addoption(parser):
         "--long-benchmarks",
         action="store_true",
         default=False,
-        help="If set to True, tests marked as long benchmarks will be ran.",
+        help="If set to True, tests marked as long benchmarks will be run.",
     )
 
 
