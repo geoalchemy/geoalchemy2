@@ -35,6 +35,9 @@ class _SpatialElement:
 
     """
 
+    # Define __slots__ to restrict attributes in this class.
+    # This is done intentionally to improve performance by preventing
+    # the creation of a dynamic __dict__ for each instance.
     __slots__ = ("srid", "data", "extended")
 
     def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
@@ -352,7 +355,7 @@ class RasterElement(_SpatialElement):
 class CompositeElement(FunctionElement):
     """Instances of this class wrap a Postgres composite type."""
 
-    __slots__ = ()
+    __slots__ = ("name", "type")
 
     inherit_cache: bool = False
     """The cache is disabled for this class."""
