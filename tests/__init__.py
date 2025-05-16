@@ -6,6 +6,7 @@ import shutil
 import pytest
 import shapely
 from packaging.version import parse as parse_version
+from shapely.wkb import dumps
 from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import create_engine
 from sqlalchemy import select as raw_select
@@ -16,6 +17,9 @@ from sqlalchemy.sql import func
 
 from geoalchemy2 import load_spatialite
 from geoalchemy2 import load_spatialite_gpkg
+from geoalchemy2.elements import WKBElement
+from geoalchemy2.elements import WKTElement
+from geoalchemy2.shape import to_shape
 
 
 class test_only_with_dialects:
@@ -232,3 +236,51 @@ def check_indexes(conn, dialect_name, expected, table_name):
         print("###############################################")
 
         raise exc
+
+
+def create_wkt_points(N=50):
+    """Create a list of points for benchmarking."""
+    points = []
+    for i in range(N):
+        for j in range(N):
+            wkt = f"POINT({i / N} {j / N})"
+            points.append(wkt)
+    return points
+
+
+def create_points(N, convert_wkb=False, extended=False, raw=False):
+    points = create_wkt_points(N)
+    print(f"Number of points to insert: {len(points)}")
+
+    if convert_wkb:
+        if not extended:
+            # Convert WKT to WKB
+            points = [
+                shapely.io.to_wkb(to_shape(WKTElement(point)), flavor="iso") for point in points
+            ]
+            print(f"Converted points to WKB: {len(points)}")
+        else:
+            # Convert WKT to EWKB
+            points = [
+                dumps(to_shape(WKTElement(point)), flavor="extended", srid=4326) for point in points
+            ]
+            print(f"Converted points to EWKB: {len(points)}")
+        if not raw:
+            # Convert WKB string to WKBElement
+            points = [WKBElement(point) for point in points]
+            print(f"Converted points to WKBElement: {len(points)}")
+    else:
+        if extended:
+            # Convert WKT to EWKT
+            points = ["SRID=4326; " + point for point in points]
+        if not raw:
+            # Convert WKT to WKTElement
+            points = [WKTElement(point) for point in points]
+            print(f"Converted points to WKTElement: {len(points)}")
+
+    if raw:
+        print("Example data:", points[0])
+    else:
+        print("Example data:", points[0], "=>", points[0].data)
+
+    return points

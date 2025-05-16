@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import binascii
 import re
 import struct
@@ -7,6 +5,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Self
 from typing import Set
 from typing import Union
 
@@ -119,6 +118,12 @@ class WKTElement(_SpatialElement):
         wkt_element_1 = WKTElement('POINT(5 45)')
         wkt_element_2 = WKTElement('POINT(5 45)', srid=4326)
         wkt_element_3 = WKTElement('SRID=4326;POINT(5 45)', extended=True)
+
+    Note::
+        This class uses ``__slots__`` to restrict its attributes and improve memory efficiency by
+        preventing the creation of a dynamic ``__dict__`` for each instance.
+        If you require dynamic attributes or support for weak references, use the
+        ``DynamicWKTElement`` subclass, which provides these capabilities.
     """
 
     __slots__ = ()
@@ -153,18 +158,27 @@ class WKTElement(_SpatialElement):
     def _data_from_desc(desc):
         return desc
 
-    def as_wkt(self) -> WKTElement:
+    def as_wkt(self) -> Self:
         if self.extended:
             srid_match = self._REMOVE_SRID.match(self.data)
             assert srid_match is not None
             return WKTElement(srid_match.group(3), self.srid, extended=False)
         return WKTElement(self.data, self.srid, self.extended)
 
-    def as_ewkt(self) -> WKTElement:
+    def as_ewkt(self) -> Self:
         if not self.extended and self.srid != -1:
             data = f"SRID={self.srid};" + self.data
             return WKTElement(data, extended=True)
         return WKTElement(self.data, self.srid, self.extended)
+
+
+class DynamicWKTElement(WKTElement):
+    """This is a subclass of ``WKTElement`` that allows dynamic attributes.
+
+    It is useful when you need to add attributes dynamically to the object.
+    """
+
+    __slots__ = ("__dict__", "__weakref__")
 
 
 class WKBElement(_SpatialElement):
@@ -179,6 +193,12 @@ class WKBElement(_SpatialElement):
 
     Note: you can create ``WKBElement`` objects from Shapely geometries
     using the :func:`geoalchemy2.shape.from_shape` function.
+
+    Note::
+        This class uses ``__slots__`` to restrict its attributes and improve memory efficiency by
+        preventing the creation of a dynamic ``__dict__`` for each instance.
+        If you require dynamic attributes or support for weak references, use the
+        ``DynamicWKBElement`` subclass, which provides these capabilities.
     """
 
     __slots__ = ()
@@ -243,7 +263,7 @@ class WKBElement(_SpatialElement):
         desc = desc.encode(encoding="utf-8")
         return binascii.unhexlify(desc)
 
-    def as_wkb(self) -> WKBElement:
+    def as_wkb(self) -> Self:
         if self.extended:
             if isinstance(self.data, str):
                 # SpatiaLite case
@@ -275,7 +295,7 @@ class WKBElement(_SpatialElement):
             return WKBElement(data, self.srid, extended=False)
         return WKBElement(self.data, self.srid)
 
-    def as_ewkb(self) -> WKBElement:
+    def as_ewkb(self) -> Self:
         if not self.extended and self.srid != -1:
             if isinstance(self.data, str):
                 # SpatiaLite case
@@ -316,11 +336,26 @@ class WKBElement(_SpatialElement):
         return WKBElement(self.data, self.srid)
 
 
+class DynamicWKBElement(WKBElement):
+    """This is a subclass of ``WKBElement`` that allows dynamic attributes.
+
+    It is useful when you need to add attributes dynamically to the object.
+    """
+
+    __slots__ = ("__dict__", "__weakref__")
+
+
 class RasterElement(_SpatialElement):
     """Instances of this class wrap a ``raster`` value.
 
     Raster values read from the database are converted to instances of this type. In
     most cases you won't need to create ``RasterElement`` instances yourself.
+
+    Note::
+        This class uses ``__slots__`` to restrict its attributes and improve memory efficiency by
+        preventing the creation of a dynamic ``__dict__`` for each instance.
+        If you require dynamic attributes or support for weak references, use the
+        ``DynamicRasterElement`` subclass, which provides these capabilities.
     """
 
     __slots__ = ()
@@ -352,6 +387,15 @@ class RasterElement(_SpatialElement):
         return desc
 
 
+class DynamicRasterElement(RasterElement):
+    """This is a subclass of ``RasterElement`` that allows dynamic attributes.
+
+    It is useful when you need to add attributes dynamically to the object.
+    """
+
+    __slots__ = ("__dict__", "__weakref__")
+
+
 class CompositeElement(FunctionElement):
     """Instances of this class wrap a Postgres composite type."""
 
@@ -378,6 +422,9 @@ __all__: List[str] = [
     "RasterElement",
     "WKBElement",
     "WKTElement",
+    "DynamicRasterElement",
+    "DynamicWKBElement",
+    "DynamicWKTElement",
 ]
 
 

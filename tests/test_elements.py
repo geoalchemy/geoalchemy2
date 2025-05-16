@@ -10,11 +10,15 @@ from sqlalchemy import Table
 from sqlalchemy import func
 
 from geoalchemy2.elements import CompositeElement
+from geoalchemy2.elements import DynamicWKBElement
+from geoalchemy2.elements import DynamicWKTElement
 from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.exc import ArgumentError
 from geoalchemy2.types import Geometry
+
+from . import create_points
 
 
 @pytest.fixture
@@ -553,3 +557,28 @@ class TestCompositeElement:
 
         e = CompositeElement(foo.c.one, "geom", String)
         assert str(e) == "(foo.one).geom"
+
+
+class TestDynamicElements:
+
+    parametrize_element_types = pytest.mark.parametrize(
+        "ElementType",
+        [
+            pytest.param(WKTElement, id="WKTElement"),
+            pytest.param(WKBElement, id="WKBElement"),
+            pytest.param(DynamicWKTElement, id="DynamicWKTElement"),
+            pytest.param(DynamicWKBElement, id="DynamicWKBElement"),
+        ],
+    )
+
+    @parametrize_element_types
+    @pytest.mark.long_benchmark
+    def test_create_elements(self, benchmark, ElementType):
+        points = create_points(500, convert_wkb="WKB" in ElementType.__name__, raw=True)
+        benchmark(lambda: [ElementType(point, srid=4326) for point in points])
+
+    @parametrize_element_types
+    @pytest.mark.long_benchmark
+    def test_access_elements(self, benchmark, ElementType):
+        points = create_points(500, convert_wkb="WKB" in ElementType.__name__, raw=False)
+        benchmark(lambda: [(point.srid, point.data, point.extended) for point in points])
