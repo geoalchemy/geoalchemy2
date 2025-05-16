@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import binascii
 import re
 import struct
@@ -5,7 +7,6 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Self
 from typing import Set
 from typing import Union
 
@@ -158,14 +159,14 @@ class WKTElement(_SpatialElement):
     def _data_from_desc(desc):
         return desc
 
-    def as_wkt(self) -> Self:
+    def as_wkt(self) -> WKTElement:
         if self.extended:
             srid_match = self._REMOVE_SRID.match(self.data)
             assert srid_match is not None
             return WKTElement(srid_match.group(3), self.srid, extended=False)
         return WKTElement(self.data, self.srid, self.extended)
 
-    def as_ewkt(self) -> Self:
+    def as_ewkt(self) -> WKTElement:
         if not self.extended and self.srid != -1:
             data = f"SRID={self.srid};" + self.data
             return WKTElement(data, extended=True)
@@ -263,7 +264,7 @@ class WKBElement(_SpatialElement):
         desc = desc.encode(encoding="utf-8")
         return binascii.unhexlify(desc)
 
-    def as_wkb(self) -> Self:
+    def as_wkb(self) -> WKBElement:
         if self.extended:
             if isinstance(self.data, str):
                 # SpatiaLite case
@@ -295,7 +296,7 @@ class WKBElement(_SpatialElement):
             return WKBElement(data, self.srid, extended=False)
         return WKBElement(self.data, self.srid)
 
-    def as_ewkb(self) -> Self:
+    def as_ewkb(self) -> WKBElement:
         if not self.extended and self.srid != -1:
             if isinstance(self.data, str):
                 # SpatiaLite case
