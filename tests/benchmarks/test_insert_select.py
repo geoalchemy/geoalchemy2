@@ -1,6 +1,4 @@
 import pytest
-import shapely
-from shapely.wkb import dumps
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import text
@@ -9,8 +7,8 @@ from sqlalchemy.exc import OperationalError
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
-from geoalchemy2.shape import to_shape
 
+from .. import create_points
 from .. import select
 
 ROUNDS = 5
@@ -78,10 +76,10 @@ def output_representation(request):
 def GeomTable(
     base,
     schema,
-    is_extended_input,
-    is_extended_output,
     input_representation,
+    is_extended_input,
     output_representation,
+    is_extended_output,
     is_default_geom_type,
 ):
     print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
@@ -128,16 +126,6 @@ def GeomTable(
     return GeomTable
 
 
-def create_points(N=50):
-    """Create a list of points for benchmarking."""
-    points = []
-    for i in range(N):
-        for j in range(N):
-            wkt = f"POINT({i / N} {j / N})"
-            points.append(wkt)
-    return points
-
-
 def insert_all_points(conn, table, points):
     """Insert all points into the database."""
     query = table.insert().values(
@@ -168,39 +156,7 @@ def _benchmark_setup(
 ):
     """Setup the database for benchmarking."""
     # Create the points to insert
-    points = create_points(N)
-    print(f"Number of points to insert: {len(points)}")
-
-    if convert_wkb:
-        if not extended:
-            # Convert WKT to WKB
-            points = [
-                shapely.io.to_wkb(to_shape(WKTElement(point)), flavor="iso") for point in points
-            ]
-            print(f"Converted points to WKB: {len(points)}")
-        else:
-            # Convert WKT to EWKB
-            points = [
-                dumps(to_shape(WKTElement(point)), flavor="extended", srid=4326) for point in points
-            ]
-            print(f"Converted points to EWKB: {len(points)}")
-        if not raw:
-            # Convert WKB string to WKBElement
-            points = [WKBElement(point) for point in points]
-            print(f"Converted points to WKBElement: {len(points)}")
-    else:
-        if extended:
-            # Convert WKT to EWKT
-            points = ["SRID=4326; " + point for point in points]
-        if not raw:
-            # Convert WKT to WKTElement
-            points = [WKTElement(point) for point in points]
-            print(f"Converted points to WKTElement: {len(points)}")
-
-    if raw:
-        print("Example data:", points[0])
-    else:
-        print("Example data:", points[0], "=>", points[0].data)
+    points = create_points(N, convert_wkb=convert_wkb, extended=extended, raw=raw)
 
     # Create the table in the database
     metadata.drop_all(conn, checkfirst=True)
@@ -291,7 +247,7 @@ def _insert_fail_or_success_type(
     [
         2,
         pytest.param(10, marks=pytest.mark.long_benchmark),
-        pytest.param(350, marks=pytest.mark.long_benchmark),
+        pytest.param(100, marks=pytest.mark.long_benchmark),
     ],
 )
 def test_insert(
@@ -424,7 +380,7 @@ def _actual_test_insert_select(
     [
         2,
         pytest.param(10, marks=pytest.mark.long_benchmark),
-        pytest.param(350, marks=pytest.mark.long_benchmark),
+        pytest.param(100, marks=pytest.mark.long_benchmark),
     ],
 )
 def test_insert_select(

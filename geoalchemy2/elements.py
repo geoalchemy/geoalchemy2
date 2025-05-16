@@ -35,6 +35,11 @@ class _SpatialElement:
 
     """
 
+    # Define __slots__ to restrict attributes in this class.
+    # This is done intentionally to improve performance by preventing
+    # the creation of a dynamic __dict__ for each instance.
+    __slots__ = ("srid", "data", "extended")
+
     def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
         self.srid = srid
         self.data = data
@@ -114,7 +119,15 @@ class WKTElement(_SpatialElement):
         wkt_element_1 = WKTElement('POINT(5 45)')
         wkt_element_2 = WKTElement('POINT(5 45)', srid=4326)
         wkt_element_3 = WKTElement('SRID=4326;POINT(5 45)', extended=True)
+
+    Note::
+        This class uses ``__slots__`` to restrict its attributes and improve memory efficiency by
+        preventing the creation of a dynamic ``__dict__`` for each instance.
+        If you require dynamic attributes or support for weak references, use the
+        ``DynamicWKTElement`` subclass, which provides these capabilities.
     """
+
+    __slots__ = ()
 
     _REMOVE_SRID = re.compile("(SRID=([0-9]+); ?)?(.*)")
     SPLIT_WKT_PATTERN = re.compile(r"((SRID=\d+) *; *)?([\w ]+) *(\([-\d\. ,\(\)]+\))")
@@ -160,6 +173,15 @@ class WKTElement(_SpatialElement):
         return WKTElement(self.data, self.srid, self.extended)
 
 
+class DynamicWKTElement(WKTElement):
+    """This is a subclass of ``WKTElement`` that allows dynamic attributes.
+
+    It is useful when you need to add attributes dynamically to the object.
+    """
+
+    __slots__ = ("__dict__", "__weakref__")
+
+
 class WKBElement(_SpatialElement):
     """Instances of this class wrap a WKB or EWKB value.
 
@@ -172,7 +194,15 @@ class WKBElement(_SpatialElement):
 
     Note: you can create ``WKBElement`` objects from Shapely geometries
     using the :func:`geoalchemy2.shape.from_shape` function.
+
+    Note::
+        This class uses ``__slots__`` to restrict its attributes and improve memory efficiency by
+        preventing the creation of a dynamic ``__dict__`` for each instance.
+        If you require dynamic attributes or support for weak references, use the
+        ``DynamicWKBElement`` subclass, which provides these capabilities.
     """
+
+    __slots__ = ()
 
     geom_from: str = "ST_GeomFromWKB"
     geom_from_extended_version: str = "ST_GeomFromEWKB"
@@ -307,12 +337,29 @@ class WKBElement(_SpatialElement):
         return WKBElement(self.data, self.srid)
 
 
+class DynamicWKBElement(WKBElement):
+    """This is a subclass of ``WKBElement`` that allows dynamic attributes.
+
+    It is useful when you need to add attributes dynamically to the object.
+    """
+
+    __slots__ = ("__dict__", "__weakref__")
+
+
 class RasterElement(_SpatialElement):
     """Instances of this class wrap a ``raster`` value.
 
     Raster values read from the database are converted to instances of this type. In
     most cases you won't need to create ``RasterElement`` instances yourself.
+
+    Note::
+        This class uses ``__slots__`` to restrict its attributes and improve memory efficiency by
+        preventing the creation of a dynamic ``__dict__`` for each instance.
+        If you require dynamic attributes or support for weak references, use the
+        ``DynamicRasterElement`` subclass, which provides these capabilities.
     """
+
+    __slots__ = ()
 
     geom_from_extended_version: str = "raster"
 
@@ -341,8 +388,19 @@ class RasterElement(_SpatialElement):
         return desc
 
 
+class DynamicRasterElement(RasterElement):
+    """This is a subclass of ``RasterElement`` that allows dynamic attributes.
+
+    It is useful when you need to add attributes dynamically to the object.
+    """
+
+    __slots__ = ("__dict__", "__weakref__")
+
+
 class CompositeElement(FunctionElement):
     """Instances of this class wrap a Postgres composite type."""
+
+    __slots__ = ("name", "type")
 
     inherit_cache: bool = False
     """The cache is disabled for this class."""
@@ -365,6 +423,9 @@ __all__: List[str] = [
     "RasterElement",
     "WKBElement",
     "WKTElement",
+    "DynamicRasterElement",
+    "DynamicWKBElement",
+    "DynamicWKTElement",
 ]
 
 
