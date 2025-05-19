@@ -305,7 +305,13 @@ def after_create(table, bind, **kw):
             col.type = col._actual_type
             del col._actual_type
             dimension = get_col_dim(col)
-            args = [table.name, col.name, col.type.srid, col.type.geometry_type, dimension]
+            args = [
+                table.name,
+                col.name,
+                col.type.srid,
+                col.type.geometry_type or "GEOMETRY",
+                dimension,
+            ]
 
             stmt = select(*_format_select_args(func.RecoverGeometryColumn(*args)))
             stmt = stmt.execution_options(autocommit=True)
