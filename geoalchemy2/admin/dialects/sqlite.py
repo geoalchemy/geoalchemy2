@@ -184,6 +184,9 @@ def get_col_dim(col):
 
 def create_spatial_index(bind, table, col):
     """Create spatial index on the given column."""
+    if col.computed is not None:
+        # Do not create spatial index for computed columns
+        return
     stmt = select(*_format_select_args(func.CreateSpatialIndex(table.name, col.name)))
     stmt = stmt.execution_options(autocommit=True)
     bind.execute(stmt)
@@ -191,6 +194,10 @@ def create_spatial_index(bind, table, col):
 
 def disable_spatial_index(bind, table, col):
     """Disable spatial indexes if present."""
+    if col.computed is not None:
+        # Do not disable spatial index for computed columns because it can not exist
+        return
+    # Check if the spatial index is enabled
     stmt = select(*_format_select_args(func.CheckSpatialIndex(table.name, col.name)))
     if bind.execute(stmt).fetchone()[0] is not None:
         stmt = select(*_format_select_args(func.DisableSpatialIndex(table.name, col.name)))
@@ -277,7 +284,7 @@ def before_create(table, bind, **kw):
     current_indexes = set(table.indexes)
     for idx in current_indexes:
         for col in table.info["_saved_columns"]:
-            if (_check_spatial_type(col.type, Geometry, dialect)) and col in idx.columns.values():
+            if _check_spatial_type(col.type, Geometry, dialect) and col in idx.columns.values():
                 table.indexes.remove(idx)
                 if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
                     col.type, "spatial_index", False
@@ -294,11 +301,17 @@ def after_create(table, bind, **kw):
     table.columns = table.info.pop("_saved_columns")
     for col in table.columns:
         # Add the managed Geometry columns with RecoverGeometryColumn()
-        if _check_spatial_type(col.type, Geometry, dialect):
+        if _check_spatial_type(col.type, Geometry, dialect) and col.computed is None:
             col.type = col._actual_type
             del col._actual_type
             dimension = get_col_dim(col)
-            args = [table.name, col.name, col.type.srid, col.type.geometry_type, dimension]
+            args = [
+                table.name,
+                col.name,
+                col.type.srid,
+                col.type.geometry_type or "GEOMETRY",
+                dimension,
+            ]
 
             stmt = select(*_format_select_args(func.RecoverGeometryColumn(*args)))
             stmt = stmt.execution_options(autocommit=True)
@@ -323,6 +336,9 @@ def before_drop(table, bind, **kw):
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
 
     for col in gis_cols:
+        if col.computed is not None:
+            # Computed columns are not managed
+            continue
         # Disable spatial indexes if present
         disable_spatial_index(bind, table, col)
 

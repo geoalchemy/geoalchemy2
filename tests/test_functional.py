@@ -17,6 +17,7 @@ from shapely.geometry import LineString
 from shapely.geometry import Point
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
+from sqlalchemy import Computed
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import String
@@ -230,6 +231,105 @@ class TestAdmin:
         metadata.drop_all(conn, checkfirst=True)
 
         assert marks == ["before_create", "after_create", "before_drop", "after_drop"]
+
+    def test_computed_column_core(self, conn):
+        meta = MetaData()
+
+        # Define the table
+        t = Table(
+            "computed_column",
+            meta,
+            Column("id", Integer, primary_key=True),
+            Column("x", Integer),
+            Column("y", Integer),
+            Column(
+                "computed_geom",
+                Geometry(geometry_type="POINT", srid=4326),
+                Computed("ST_POINT(x, y)", persisted=True),
+            ),
+        )
+
+        # Create the table
+        meta.create_all(bind=conn)
+
+        conn.execute(
+            t.insert(),
+            [
+                {"x": "1", "y": "2"},
+                {"x": "2", "y": "3"},
+            ],
+        )
+
+        res = conn.execute(
+            select(
+                [
+                    t.c.id,
+                    t.c.x,
+                    t.c.y,
+                    t.c.computed_geom.ST_AsText(),
+                ]
+            ),
+        ).fetchall()
+
+        # Check inserted data
+        for i in res:
+            x = i[1]
+            y = i[2]
+            p_x, p_y = [int(j) for j in re.findall(r"\d+", i[3])]
+            assert x == p_x
+            assert y == p_y
+
+        # Drop the table
+        meta.drop_all(bind=conn)
+
+    def test_computed_column_orm(self, conn, base, metadata):
+
+        # Define the table
+        class ComputedGeomTable(base):
+            __tablename__ = "computed_column"
+            id = Column(Integer, primary_key=True)
+            x = Column(Integer)
+            y = Column(Integer)
+            computed_geom = Column(
+                Geometry(geometry_type="POINT", srid=4326),
+                Computed("ST_POINT(x, y)", persisted=True),
+            )
+
+            def __init__(self, computed_geom):
+                self.computed_geom = computed_geom
+
+        # Create the table
+        metadata.create_all(bind=conn)
+
+        conn.execute(
+            ComputedGeomTable.__table__.insert(),
+            [
+                {"x": "1", "y": "2"},
+                {"x": "2", "y": "3"},
+            ],
+        )
+
+        res = conn.execute(
+            select(
+                [
+                    ComputedGeomTable.__table__.c.id,
+                    ComputedGeomTable.__table__.c.x,
+                    ComputedGeomTable.__table__.c.y,
+                    ComputedGeomTable.__table__.c.computed_geom.ST_AsText(),
+                ]
+            ),
+        ).fetchall()
+
+        # Check inserted data
+        for i in res:
+            x = i[1]
+            y = i[2]
+            p_x, p_y = [int(j) for j in re.findall(r"\d+", i[3])]
+            assert x == p_x
+            assert y == p_y
+
+        # Drop the table
+        metadata.drop_all(bind=conn)
 
 
 class TestInsertionCore:
