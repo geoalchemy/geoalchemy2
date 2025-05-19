@@ -5,11 +5,13 @@ The :class:`geoalchemy2.types.Geometry`, :class:`geoalchemy2.types.Geography`, a
 columns/properties in models.
 """
 
+import re
 import warnings
 from typing import Any
 from typing import Dict
 from typing import Optional
 
+from sqlalchemy import Computed
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import ischema_names as _postgresql_ischema_names
 from sqlalchemy.dialects.sqlite.base import ischema_names as _sqlite_ischema_names
@@ -220,10 +222,23 @@ def get_col_spec_mysql(self, compiler, *args, **kwargs):
     else:
         spec = "GEOMETRY"
 
-    if not self.nullable or self.spatial_index:
-        spec += " NOT NULL"
-    if self.srid > 0 and compiler.dialect.name != "mariadb":
-        spec += " SRID %d" % self.srid
+    type_expression = kwargs.get("type_expression", None)
+    if type_expression is None or type_expression.computed is None:
+        if not self.nullable or self.spatial_index:
+            spec += " NOT NULL"
+        if self.srid > 0 and compiler.dialect.name != "mariadb":
+            spec += " SRID %d" % self.srid
+    return spec
+
+
+@compiles(Computed, "mysql")
+@compiles(Computed, "mariadb")
+def get_col_spec_computed_mysql(self, compiler, *args, **kwargs):
+    # MySQL uses a different syntax for computed columns
+    # than PostgreSQL, so we need to handle it here.
+    spec = self.sqltext.compile(compiler, **kwargs).string
+    pattern = re.compile("st_", re.IGNORECASE)
+    spec = "AS (%s)" % re.sub(pattern, "", spec)
     return spec
 
 

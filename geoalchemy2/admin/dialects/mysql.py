@@ -125,6 +125,7 @@ def after_create(table, bind, **kw):
         if (
             _check_spatial_type(col.type, (Geometry, Geography), dialect)
             and col.type.spatial_index is True
+            and col.computed is None
         ):
             # If the index does not exist, define it and create it
             if not [i for i in table.indexes if col in i.columns.values()]:
