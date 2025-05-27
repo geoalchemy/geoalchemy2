@@ -13,6 +13,7 @@ from typing import Optional
 
 from sqlalchemy import Computed
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.mysql.base import ischema_names as _mysql_ischema_names
 from sqlalchemy.dialects.postgresql.base import ischema_names as _postgresql_ischema_names
 from sqlalchemy.dialects.sqlite.base import ischema_names as _sqlite_ischema_names
 from sqlalchemy.ext.compiler import compiles
@@ -416,6 +417,15 @@ class GeometryDump(CompositeType):
 _postgresql_ischema_names["geometry"] = Geometry
 _postgresql_ischema_names["geography"] = Geography
 _postgresql_ischema_names["raster"] = Raster
+
+_mysql_ischema_names["geometry"] = Geometry
+_mysql_ischema_names["point"] = Geometry
+_mysql_ischema_names["linestring"] = Geometry
+_mysql_ischema_names["polygon"] = Geometry
+_mysql_ischema_names["multipoint"] = Geometry
+_mysql_ischema_names["multilinestring"] = Geometry
+_mysql_ischema_names["multipolygon"] = Geometry
+_mysql_ischema_names["geometrycollection"] = Geometry
 
 _sqlite_ischema_names["GEOMETRY"] = Geometry
 _sqlite_ischema_names["POINT"] = Geometry
