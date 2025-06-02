@@ -13,9 +13,6 @@ from typing import Optional
 
 from sqlalchemy import Computed
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.mysql.base import ischema_names as _mysql_ischema_names
-from sqlalchemy.dialects.postgresql.base import ischema_names as _postgresql_ischema_names
-from sqlalchemy.dialects.sqlite.base import ischema_names as _sqlite_ischema_names
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
 from sqlalchemy.types import Float
@@ -411,32 +408,6 @@ class GeometryDump(CompositeType):
 
     cache_ok = True
     """ Enable cache for this type. """
-
-
-# Register Geometry, Geography and Raster to SQLAlchemy's reflection subsystems.
-_postgresql_ischema_names["geometry"] = Geometry
-_postgresql_ischema_names["geography"] = Geography
-_postgresql_ischema_names["raster"] = Raster
-
-_mysql_ischema_names["geometry"] = Geometry
-_mysql_ischema_names["point"] = Geometry
-_mysql_ischema_names["linestring"] = Geometry
-_mysql_ischema_names["polygon"] = Geometry
-_mysql_ischema_names["multipoint"] = Geometry
-_mysql_ischema_names["multilinestring"] = Geometry
-_mysql_ischema_names["multipolygon"] = Geometry
-_mysql_ischema_names["geometrycollection"] = Geometry
-
-_sqlite_ischema_names["GEOMETRY"] = Geometry
-_sqlite_ischema_names["POINT"] = Geometry
-_sqlite_ischema_names["LINESTRING"] = Geometry
-_sqlite_ischema_names["POLYGON"] = Geometry
-_sqlite_ischema_names["MULTIPOINT"] = Geometry
-_sqlite_ischema_names["MULTILINESTRING"] = Geometry
-_sqlite_ischema_names["MULTIPOLYGON"] = Geometry
-_sqlite_ischema_names["CURVE"] = Geometry
-_sqlite_ischema_names["GEOMETRYCOLLECTION"] = Geometry
-_sqlite_ischema_names["RASTER"] = Raster
 
 
 class SummaryStats(CompositeType):

@@ -2,6 +2,7 @@
 
 from sqlalchemy import Index
 from sqlalchemy import text
+from sqlalchemy.dialects.postgresql.base import ischema_names as _postgresql_ischema_names
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
@@ -14,6 +15,12 @@ from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
+from geoalchemy2.types import Raster
+
+# Register Geometry, Geography and Raster to SQLAlchemy's reflection subsystems.
+_postgresql_ischema_names["geometry"] = Geometry
+_postgresql_ischema_names["geography"] = Geography
+_postgresql_ischema_names["raster"] = Raster
 
 
 def check_management(column):

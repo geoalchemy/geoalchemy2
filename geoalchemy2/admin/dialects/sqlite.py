@@ -4,6 +4,7 @@ import os
 from typing import Optional
 
 from sqlalchemy import text
+from sqlalchemy.dialects.sqlite.base import ischema_names as _sqlite_ischema_names
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
@@ -16,8 +17,21 @@ from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
+from geoalchemy2.types import Raster
 from geoalchemy2.types import _DummyGeometry
 from geoalchemy2.utils import authorized_values_in_docstring
+
+# Register Geometry, Geography and Raster to SQLAlchemy's reflection subsystems.
+_sqlite_ischema_names["GEOMETRY"] = Geometry
+_sqlite_ischema_names["POINT"] = Geometry
+_sqlite_ischema_names["LINESTRING"] = Geometry
+_sqlite_ischema_names["POLYGON"] = Geometry
+_sqlite_ischema_names["MULTIPOINT"] = Geometry
+_sqlite_ischema_names["MULTILINESTRING"] = Geometry
+_sqlite_ischema_names["MULTIPOLYGON"] = Geometry
+_sqlite_ischema_names["CURVE"] = Geometry
+_sqlite_ischema_names["GEOMETRYCOLLECTION"] = Geometry
+_sqlite_ischema_names["RASTER"] = Raster
 
 
 def load_spatialite_driver(dbapi_conn, *args):
