@@ -1,6 +1,7 @@
 """This module defines specific functions for MySQL dialect."""
 
 from sqlalchemy import text
+from sqlalchemy.dialects.mysql.base import ischema_names as _mysql_ischema_names
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.sqltypes import NullType
 
@@ -11,6 +12,17 @@ from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
+
+# Register Geometry, Geography and Raster to SQLAlchemy's reflection subsystems.
+_mysql_ischema_names["geometry"] = Geometry
+_mysql_ischema_names["point"] = Geometry
+_mysql_ischema_names["linestring"] = Geometry
+_mysql_ischema_names["polygon"] = Geometry
+_mysql_ischema_names["multipoint"] = Geometry
+_mysql_ischema_names["multilinestring"] = Geometry
+_mysql_ischema_names["multipolygon"] = Geometry
+_mysql_ischema_names["geometrycollection"] = Geometry
+
 
 _POSSIBLE_TYPES = [
     "geometry",

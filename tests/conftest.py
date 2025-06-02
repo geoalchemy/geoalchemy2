@@ -248,7 +248,7 @@ def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
     # Disambiguate MySQL and MariaDB
     if current_engine.dialect.name in ["mysql", "mariadb"]:
         try:
-            with current_engine.begin() as connection:
+            with current_engine.connect() as connection:
                 mysql_type = (
                     "MariaDB"
                     if "mariadb" in connection.execute(text("SELECT VERSION();")).scalar().lower()
@@ -267,11 +267,13 @@ def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
             else:
                 pytest.skip(reason=msg)
 
-    with current_engine.begin() as connection:
+    with current_engine.connect() as connection:
         versions = get_versions(connection)
     print_versions(versions)
-    yield current_engine
-    current_engine.dispose()
+    try:
+        yield current_engine
+    finally:
+        current_engine.dispose()
 
 
 @pytest.fixture
@@ -290,8 +292,11 @@ def conn(engine):
     """Provide a connection to test database."""
     with engine.connect() as connection:
         trans = connection.begin()
-        yield connection
-        trans.rollback()
+        try:
+            yield connection
+        finally:
+            if trans.is_active:
+                trans.rollback()
 
 
 @pytest.fixture
