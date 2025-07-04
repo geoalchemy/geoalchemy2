@@ -273,7 +273,7 @@ class Geometry(_GISType):
         ``result_processor`` method. """
 
     cache_ok = True
-    """ Disable cache for this type. """
+    """ Enable cache for this type. """
 
 
 class Geography(_GISType):
@@ -303,7 +303,7 @@ class Geography(_GISType):
         ``result_processor`` method. """
 
     cache_ok = True
-    """ Disable cache for this type. """
+    """ Enable cache for this type. """
 
 
 class Raster(_GISType):
@@ -343,7 +343,7 @@ class Raster(_GISType):
         ``result_processor`` method. """
 
     cache_ok = True
-    """ Disable cache for this type. """
+    """ Enable cache for this type. """
 
     def __init__(self, spatial_index=True, from_text=None, name=None, nullable=True) -> None:
         # Enforce default values
