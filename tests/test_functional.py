@@ -1243,6 +1243,18 @@ class TestReflection:
                 assert type_.srid == 4326
                 assert type_.dimension == 2
 
+                type_ = t.c.rast.type
+                assert isinstance(type_, Raster)
+                assert type_.geometry_type is None
+                assert type_.srid == -1
+                assert type_.dimension is None
+
+                type_ = t.c.rast_no_idx.type
+                assert isinstance(type_, Raster)
+                assert type_.geometry_type is None
+                assert type_.srid == -1
+                assert type_.dimension is None
+
         # Drop the table
         t.drop(bind=conn)
 
@@ -1312,7 +1324,7 @@ class TestReflection:
                     ),
                     (
                         "idx_lake_rast",
-                        "CREATE INDEX idx_lake_rast ON gis.lake USING gist (st_convexhull(rast))",
+                        "CREATE INDEX idx_lake_rast ON gis.lake USING gist (st_envelope(rast))",
                     ),
                     (
                         "lake_pkey",

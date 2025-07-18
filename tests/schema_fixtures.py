@@ -198,7 +198,7 @@ def reflection_tables_metadata(dialect_name):
                 geom_geog_no_idx = Column(
                     Geography(geometry_type="LINESTRING", spatial_index=False)
                 )
-                rast = Column(Raster())
+                rast = Column(Raster(spatial_index=True))
                 rast_no_idx = Column(Raster(spatial_index=False))
 
     return metadata

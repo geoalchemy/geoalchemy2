@@ -25,9 +25,6 @@ _postgresql_ischema_names["raster"] = Raster
 
 def check_management(column):
     """Check if the column should be managed."""
-    if _check_spatial_type(column.type, Raster):
-        # Raster columns are not managed
-        return False
     return getattr(column.type, "use_typmod", None) is False
 
 
@@ -72,24 +69,32 @@ def reflect_geometry_column(inspector, table, column_info):
     else:
         schema_part = ""
 
-    has_index_query = """SELECT (indexrelid IS NOT NULL) AS has_index
-        FROM (
-            SELECT
-                    n.nspname,
-                    c.relname,
-                    c.oid AS relid,
-                    a.attname,
-                    a.attnum
-            FROM pg_attribute a
-            INNER JOIN pg_class c ON (a.attrelid=c.oid)
-            INNER JOIN pg_type t ON (a.atttypid=t.oid)
-            INNER JOIN pg_namespace n ON (c.relnamespace=n.oid)
-            WHERE c.relkind='r'
-        ) g
-        LEFT JOIN pg_index i ON (g.relid = i.indrelid AND g.attnum = ANY(i.indkey))
-        WHERE relname = '{}' AND attname = '{}'{};
-    """.format(
-        table.name, column_info["name"], schema_part
+    # Check if the column has a spatial index (the regular expression checks for the column name
+    # in the index definition, which is required for functional indexes)
+    has_index_query = """SELECT EXISTS (
+        SELECT 1
+        FROM pg_class t
+        JOIN pg_namespace n ON n.oid = t.relnamespace
+        JOIN pg_index ix ON t.oid = ix.indrelid
+        JOIN pg_class i ON i.oid = ix.indexrelid
+        JOIN pg_am am ON i.relam = am.oid
+        WHERE
+            t.relname = '{table_name}'{schema_part}
+            AND am.amname = 'gist'
+            AND (
+                EXISTS (
+                    SELECT 1
+                    FROM pg_attribute a
+                    WHERE a.attrelid = t.oid
+                    AND a.attnum = ANY(ix.indkey)
+                    AND a.attname = '{col_name}'
+                )
+                OR pg_get_indexdef(
+                    ix.indexrelid
+                ) ~ '(^|[^a-zA-Z0-9_])("?{col_name}"?)($|[^a-zA-Z0-9_])'
+            )
+    );""".format(
+        table_name=table.name, col_name=column_info["name"], schema_part=schema_part
     )
     spatial_index = inspector.bind.execute(text(has_index_query)).scalar()
 
