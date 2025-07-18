@@ -345,7 +345,14 @@ class Raster(_GISType):
     cache_ok = True
     """ Enable cache for this type. """
 
-    def __init__(self, spatial_index=True, from_text=None, name=None, nullable=True) -> None:
+    def __init__(
+        self,
+        spatial_index=True,
+        from_text=None,
+        name=None,
+        nullable=True,
+        _spatial_index_reflected=None,
+    ) -> None:
         # Enforce default values
         super(Raster, self).__init__(
             geometry_type=None,
@@ -357,6 +364,7 @@ class Raster(_GISType):
             from_text=from_text,
             name=name,
             nullable=nullable,
+            _spatial_index_reflected=_spatial_index_reflected,
         )
         self.extended = None
 

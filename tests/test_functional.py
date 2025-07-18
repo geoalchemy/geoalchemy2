@@ -1324,7 +1324,7 @@ class TestReflection:
                     ),
                     (
                         "idx_lake_rast",
-                        "CREATE INDEX idx_lake_rast ON gis.lake USING gist (st_envelope(rast))",
+                        "CREATE INDEX idx_lake_rast ON gis.lake USING gist (st_convexhull(rast))",
                     ),
                     (
                         "lake_pkey",

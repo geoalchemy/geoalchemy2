@@ -87,7 +87,7 @@ def setup_ddl_event_listeners():
             if column.type.use_N_D_index:
                 kwargs["postgresql_ops"] = {column.name: "gist_geometry_ops_nd"}
         elif _check_spatial_type(column.type, Raster):
-            col = func.ST_Envelope(column)
+            col = func.ST_ConvexHull(column)
 
         table.append_constraint(
             Index(

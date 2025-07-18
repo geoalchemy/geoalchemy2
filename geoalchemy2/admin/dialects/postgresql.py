@@ -1,5 +1,7 @@
 """This module defines specific functions for Postgresql dialect."""
 
+import sqlalchemy
+from packaging import version
 from sqlalchemy import Index
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql.base import ischema_names as _postgresql_ischema_names
@@ -17,6 +19,8 @@ from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import Raster
 
+_SQLALCHEMY_VERSION_BEFORE_2 = version.parse(sqlalchemy.__version__) < version.parse("2")
+
 # Register Geometry, Geography and Raster to SQLAlchemy's reflection subsystems.
 _postgresql_ischema_names["geometry"] = Geometry
 _postgresql_ischema_names["geography"] = Geography
@@ -25,6 +29,9 @@ _postgresql_ischema_names["raster"] = Raster
 
 def check_management(column):
     """Check if the column should be managed."""
+    if _check_spatial_type(column.type, Raster):
+        # Raster columns are not managed
+        return _SQLALCHEMY_VERSION_BEFORE_2
     return getattr(column.type, "use_typmod", None) is False
 
 
@@ -35,7 +42,7 @@ def create_spatial_index(bind, table, col):
     else:
         postgresql_ops = {}
     if _check_spatial_type(col.type, Raster):
-        col_func = func.ST_Envelope(col)
+        col_func = func.ST_ConvexHull(col)
     else:
         col_func = col
     idx = Index(
@@ -99,8 +106,9 @@ def reflect_geometry_column(inspector, table, column_info):
     spatial_index = inspector.bind.execute(text(has_index_query)).scalar()
 
     # Set attributes
-    column_info["type"].geometry_type = geometry_type
-    column_info["type"].dimension = coord_dimension
+    if not _check_spatial_type(column_info["type"], Raster):
+        column_info["type"].geometry_type = geometry_type
+        column_info["type"].dimension = coord_dimension
     column_info["type"].spatial_index = bool(spatial_index)
 
     # Spatial indexes are automatically reflected with PostgreSQL dialect
