@@ -1,6 +1,26 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.18.0
+------
+
+* Feat: Add support of spatial indexes for Raster type for PostgreSQL @adrien-berchet (#564)
+* Docs: Fix doc strings for cache enabled - @pjonsson (#562)
+* Chore: Move reflection type registering @adrien-berchet (#561)
+* (papacodebear/master) Fix: Remove warning from MySQL/MariaDB reflection @adrien-berchet (#560)
+* Feat: Handle computed columns @adrien-berchet (#557)
+* Test: Improve readability of benchmark results @adrien-berchet (#556)
+* Perf: Define __slots__ in element classes to reduce memory usage of elements @adrien-berchet (#555)
+* Chore: Create FUNDING.yml @adrien-berchet (#554)
+* Test: Add more benchmarks @adrien-berchet (#553)
+* Test: Add benchmark tests @adrien-berchet (#547)
+* Docs: Update doc to run the tests inside docker container @adrien-berchet (#546)
+* Perf (mariadb): Stop converting WKB to WKT @adrien-berchet (#545)
+* Feat: Improve Geometry initializer to make the dimension optional @adrien-berchet (#544)
+* Feat: Compile literal binds properly @adrien-berchet (#543)
+* Feat: Add more return types for spatial functions and update some typehints @adrien-berchet (#540)
+* Build: Deprecate Py<3.10 @adrien-berchet (#538)
+
 0.17.1
 ------
 
