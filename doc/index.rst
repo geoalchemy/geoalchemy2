@@ -15,6 +15,7 @@ GeoAlchemy 2 also supports the following dialects:
 * `MySQL <https://dev.mysql.com/doc/refman/8.0/en/spatial-types.html>`_ >= 8
 * `MariaDB <https://mariadb.com/kb/en/gis-features-in-533/>`_ >= 5.3.3 (experimental)
 * `GeoPackage <http://www.geopackage.org/spec/>`_
+* `CockroachDB <https://www.cockroachlabs.com/docs/stable/query-spatial-data>`_ (experimental)
 
 Note that using GeoAlchemy 2 with these dialects may require some specific configuration on the
 application side. It also may not be optimal for performance.
