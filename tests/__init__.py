@@ -98,7 +98,7 @@ def select(args):
 
 
 def format_wkt(wkt):
-    return wkt.replace(", ", ",")
+    return wkt.replace(", ", ",").replace(" (", "(")
 
 
 def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo, dialect):
@@ -130,7 +130,7 @@ def get_versions(conn):
     """Get all versions."""
     versions = {}
     dialect_name = conn.dialect.name
-    if dialect_name == "postgresql":
+    if dialect_name in ["postgresql", "cockroachdb"]:
         db_version = "PostGIS_Full_Version()"
         geos_version = "PostGIS_GEOS_Version()"
         proj_version = "PostGIS_PROJ_Version()"
