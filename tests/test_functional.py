@@ -776,14 +776,6 @@ class TestInsertionORM:
 
     @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4")
     def test_transform(self, session, LocalPoint, setup_tables):
-        if session.bind.dialect.name == "mysql":
-            # Explicitly skip MySQL dialect to show that there is an issue
-            pytest.skip(
-                reason=(
-                    "The SRID is not properly retrieved so an exception is raised. TODO: This "
-                    "should be fixed later"
-                )
-            )
         # Create new point instance
         p = LocalPoint()
         p.geom = "SRID=4326;POINT(5 45)"  # Insert geometry with wrong SRID

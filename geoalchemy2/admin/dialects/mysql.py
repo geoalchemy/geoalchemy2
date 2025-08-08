@@ -157,9 +157,18 @@ def after_drop(table, bind, **kw):
     return
 
 
-_MYSQL_FUNCTIONS = {
-    "ST_AsEWKB": "ST_AsBinary",
-}
+_MYSQL_FUNCTIONS = {}
+
+
+@compiles(functions.ST_AsEWKB, "mysql")
+@compiles(functions.ST_AsEWKB, "mariadb")
+def _compile_as_ewkb_mysql(element, compiler, **kw):
+    """Compile ST_AsEWKB for MySQL."""
+    srid = element.type.srid
+    if srid > 0:
+        return compiler.process(functions.func.ST_AsWKB(functions.func.ST_SRID(element.clauses.clauses[0], srid)), **kw)
+    else:
+        return compiler.process(functions.func.ST_AsWKB(element.clauses.clauses[0]), **kw)
 
 
 def _compiles_mysql(cls, fn):
