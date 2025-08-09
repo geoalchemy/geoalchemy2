@@ -160,19 +160,6 @@ def after_drop(table, bind, **kw):
 _MYSQL_FUNCTIONS = {}
 
 
-@compiles(functions.ST_AsEWKB, "mysql")
-@compiles(functions.ST_AsEWKB, "mariadb")
-def _compile_as_ewkb_mysql(element, compiler, **kw):
-    """Compile ST_AsEWKB for MySQL."""
-    srid = element.type.srid
-    if srid > 0:
-        return compiler.process(
-            functions.func.ST_AsWKB(functions.func.ST_SRID(element.clauses.clauses[0], srid)), **kw
-        )
-    else:
-        return compiler.process(functions.func.ST_AsWKB(element.clauses.clauses[0]), **kw)
-
-
 def _compiles_mysql(cls, fn):
     def _compile_mysql(element, compiler, **kw):
         return "{}({})".format(fn, compiler.process(element.clauses, **kw))
@@ -253,3 +240,14 @@ def _MySQL_ST_GeomFromWKB(element, compiler, **kw):
 @compiles(functions.ST_GeomFromEWKB, "mysql")  # type: ignore
 def _MySQL_ST_GeomFromEWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_MySql(element, compiler, **kw)
+
+
+@compiles(functions.ST_AsEWKB, "mysql")
+@compiles(functions.ST_AsEWKB, "mariadb")
+def _compile_as_ewkb_mysql(element, compiler, **kw):
+    """Compile ST_AsEWKB for MySQL."""
+    srid = element.type.srid
+    if srid > 0:
+        return compiler.process(functions.ST_AsWKB(functions.ST_SRID(element.clauses.clauses[0], srid)), **kw)
+    else:
+        return compiler.process(functions.ST_AsWKB(element.clauses.clauses[0]), **kw)

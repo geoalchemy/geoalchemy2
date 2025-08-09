@@ -110,10 +110,16 @@ class TransformedGeometry(TypeDecorator):
     impl = Geometry
 
     def __init__(self, db_srid, app_srid, **kwargs):
-        kwargs["srid"] = db_srid
+        self.decorator_kwargs = kwargs.copy()
+        kwargs["srid"] = app_srid
         self.impl = self.__class__.impl(**kwargs)
         self.app_srid = app_srid
         self.db_srid = db_srid
+
+    def load_dialect_impl(self, dialect):
+        impl_kwargs = self.decorator_kwargs.copy()
+        impl_kwargs["srid"] = self.db_srid
+        return dialect.type_descriptor(Geometry(**impl_kwargs))
 
     def column_expression(self, col):
         """The column_expression() method is overridden to ensure that the
