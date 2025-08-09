@@ -248,6 +248,8 @@ def _compile_as_ewkb_mysql(element, compiler, **kw):
     """Compile ST_AsEWKB for MySQL."""
     srid = element.type.srid
     if srid > 0:
-        return compiler.process(functions.ST_AsWKB(functions.ST_SRID(element.clauses.clauses[0], srid)), **kw)
+        return compiler.process(
+            functions.ST_AsWKB(functions.ST_SRID(element.clauses.clauses[0], srid)), **kw
+        )
     else:
         return compiler.process(functions.ST_AsWKB(element.clauses.clauses[0]), **kw)
