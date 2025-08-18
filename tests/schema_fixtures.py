@@ -11,6 +11,7 @@ from sqlalchemy.types import TypeDecorator
 from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
+from geoalchemy2.elements import WKTElement
 
 
 @pytest.fixture
@@ -110,16 +111,10 @@ class TransformedGeometry(TypeDecorator):
     impl = Geometry
 
     def __init__(self, db_srid, app_srid, **kwargs):
-        self.decorator_kwargs = kwargs.copy()
-        kwargs["srid"] = app_srid
+        kwargs["srid"] = db_srid
         self.impl = self.__class__.impl(**kwargs)
         self.app_srid = app_srid
         self.db_srid = db_srid
-
-    def load_dialect_impl(self, dialect):
-        impl_kwargs = self.decorator_kwargs.copy()
-        impl_kwargs["srid"] = self.db_srid
-        return dialect.type_descriptor(Geometry(**impl_kwargs))
 
     def column_expression(self, col):
         """The column_expression() method is overridden to ensure that the
@@ -132,7 +127,22 @@ class TransformedGeometry(TypeDecorator):
         )
 
     def bind_expression(self, bindvalue):
-        return func.ST_Transform(self.impl.bind_expression(bindvalue), self.db_srid)
+        return func.ST_Transform(func.ST_GeomFromText(bindvalue, self.app_srid), self.db_srid)
+
+    def bind_processor(self, dialect):
+        """Specific bind_processor that automatically process spatial elements.
+
+        Here we only use WKT representations.
+        """
+
+        def process(bindvalue):
+            bindvalue = WKTElement(bindvalue)
+            bindvalue = bindvalue.as_wkt()
+            if bindvalue.srid <= 0:
+                bindvalue.srid = self.srid
+            return bindvalue.desc
+
+        return process
 
 
 @pytest.fixture
