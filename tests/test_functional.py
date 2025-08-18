@@ -775,19 +775,18 @@ class TestInsertionORM:
         assert srid == 4326
 
     @test_only_with_dialects("postgresql", "mysql", "sqlite-spatialite3", "sqlite-spatialite4")
-    def test_transform(self, session, LocalPoint, setup_tables):
-        if session.bind.dialect.name == "mysql":
-            # Explicitly skip MySQL dialect to show that there is an issue
-            pytest.skip(
-                reason=(
-                    "The SRID is not properly retrieved so an exception is raised. TODO: This "
-                    "should be fixed later"
-                )
-            )
+    def test_transform(self, session, LocalPoint, setup_tables, dialect_name):
         # Create new point instance
         p = LocalPoint()
-        p.geom = "SRID=4326;POINT(5 45)"  # Insert geometry with wrong SRID
-        p.managed_geom = "SRID=4326;POINT(5 45)"  # Insert geometry with wrong SRID
+        if dialect_name in ["mysql", "mariadb"]:
+            expected_x = 45
+            expected_y = 5
+        else:
+            expected_x = 5
+            expected_y = 45
+        ewkt = f"SRID=4326;POINT({expected_x} {expected_y})"
+        p.geom = ewkt  # Insert geometry with wrong SRID
+        p.managed_geom = ewkt  # Insert geometry with wrong SRID
 
         # Insert point
         session.add(p)
@@ -800,11 +799,11 @@ class TestInsertionORM:
         assert pt.geom.srid == 4326
         assert pt.managed_geom.srid == 4326
         pt_wkb = to_shape(pt.geom)
-        assert round(pt_wkb.x, 5) == 5
-        assert round(pt_wkb.y, 5) == 45
+        assert round(pt_wkb.x, 5) == expected_x
+        assert round(pt_wkb.y, 5) == expected_y
         pt_wkb = to_shape(pt.managed_geom)
-        assert round(pt_wkb.x, 5) == 5
-        assert round(pt_wkb.y, 5) == 45
+        assert round(pt_wkb.x, 5) == expected_x
+        assert round(pt_wkb.y, 5) == expected_y
 
         # Check that the data is correct in DB using raw query
         q = text(
@@ -818,7 +817,10 @@ class TestInsertionORM:
         for i in [res_q.geom, res_q.managed_geom]:
             x, y = re.match(r"POINT\((\d+\.\d*) (\d+\.\d*)\)", i).groups()
             assert round(float(x), 3) == 857581.899
-            assert round(float(y), 3) == 6435414.748
+            if dialect_name in ["mysql", "mariadb"]:
+                assert round(float(y), 3) == 6434180.796
+            else:
+                assert round(float(y), 3) == 6435414.748
 
 
 class TestUpdateORM:

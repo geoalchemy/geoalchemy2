@@ -157,9 +157,7 @@ def after_drop(table, bind, **kw):
     return
 
 
-_MYSQL_FUNCTIONS = {
-    "ST_AsEWKB": "ST_AsBinary",
-}
+_MYSQL_FUNCTIONS = {"ST_AsEWKB": "ST_AsBinary", "ST_SetSRID": "ST_SRID"}
 
 
 def _compiles_mysql(cls, fn):
