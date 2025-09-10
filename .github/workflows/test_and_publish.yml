@@ -95,7 +95,21 @@ jobs:
           --health-timeout 5s
           --health-retries 30
           --health-start-period 10s
-
+      cockroachdb:
+        image: cockroachdb/cockroach:latest-v25.3
+        ports:
+          - 26257:26257
+          - 8080:8080
+        env:
+          COCKROACHDB_USER: gis
+          COCKROACHDB_PASSWORD: gis
+          COCKROACHDB_DATABASE: gis
+        # Set health checks to wait until CockroachDB has started
+        options: >-
+          --health-cmd="cockroach sql --user=gis --database=gis --execute='SELECT 1'"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
 
@@ -166,6 +180,12 @@ jobs:
         MSSQL_TEST_PASSWORD: gis
       run: |
         ./test_container/helpers/init_mssql.sh
+
+    # Check CockroachDB
+    - name: Check CockroachDB
+      run: |
+        cockroach sql --user=gis --database=gis --execute='SELECT VERSION();'
+        cockroach sql --user=root --database=gis --execute='GRANT ALL PRIVILEGES ON *.* TO "gis"@"%" WITH GRANT OPTION;'
 
     # Check python version
     - name: Display Python version
