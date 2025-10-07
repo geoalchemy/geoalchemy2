@@ -82,7 +82,21 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
-
+      cockroachdb:
+        image: cockroachdb/cockroach:latest-v25.3
+        ports:
+          - 26257:26257
+          - 8080:8080
+        env:
+          COCKROACHDB_USER: gis
+          COCKROACHDB_PASSWORD: gis
+          COCKROACHDB_DATABASE: gis
+        # Set health checks to wait until CockroachDB has started
+        options: >-
+          --health-cmd="cockroach sql --user=gis --database=gis --execute='SELECT 1'"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
 
@@ -130,6 +144,12 @@ jobs:
       run: |
         mysql --user=gis --password=gis --host=127.0.0.1 -P 3308 -e "SELECT VERSION();"
         mysql --user=root --password=gis --host=127.0.0.1 -P 3308 -e "GRANT ALL PRIVILEGES ON *.* TO 'gis'@'%' WITH GRANT OPTION;"
+
+    # Check CockroachDB
+    - name: Check CockroachDB
+      run: |
+        cockroach sql --user=gis --database=gis --execute='SELECT VERSION();'
+        cockroach sql --user=root --database=gis --execute='GRANT ALL PRIVILEGES ON *.* TO "gis"@"%" WITH GRANT OPTION;'
 
     # Check python version
     - name: Display Python version
