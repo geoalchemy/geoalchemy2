@@ -1,6 +1,12 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.18.1
+------
+
+- Fix: Allow scientific notation within WKT string - @autermann (#573)
+- Fix (mysql): Fix failing test for MySQL dialect - @adrien-berchet (#567)
+
 0.18.0
 ------
 
