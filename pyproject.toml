@@ -1,11 +1,56 @@
 # SETUPTOOLS
 [build-system]
 requires = [
-    "setuptools>=42",
-    "wheel",
-    "setuptools_scm[toml]>=3.4",
+    "setuptools>=61",
+    "setuptools_scm[toml]>=6.2",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "GeoAlchemy2"
+dynamic = ["version"]
+description = "Using SQLAlchemy with Spatial Databases"
+readme = "README.rst"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Eric Lemoine", email = "eric.lemoine@gmail.com"},
+    {name = "Adrien Berchet", email = "adrien.berchet@gmail.com"},
+]
+keywords = ["geo", "gis", "sqlalchemy", "orm"]
+classifiers = [
+    "Development Status :: 6 - Mature",
+    "Environment :: Plugins",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+dependencies = [
+    "SQLAlchemy>=1.4",
+    "packaging",
+]
+
+[project.optional-dependencies]
+shapely = ["Shapely>=1.7"]
+
+[project.urls]
+Homepage = "https://geoalchemy-2.readthedocs.io/en/stable/"
+Tracker = "https://github.com/geoalchemy/geoalchemy2/issues"
+Source = "https://github.com/geoalchemy/geoalchemy2"
+
+[project.entry-points."sqlalchemy.plugins"]
+geoalchemy2 = "geoalchemy2.admin.plugin:GeoEngine"
+
+[tool.setuptools]
+packages = ["geoalchemy2", "geoalchemy2.admin", "geoalchemy2.admin.dialects", "geoalchemy2.types", "geoalchemy2.types.dialects"]
+include-package-data = true
+zip-safe = false
 
 [tool.setuptools_scm]
 
