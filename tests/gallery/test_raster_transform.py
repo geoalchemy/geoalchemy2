@@ -1,5 +1,4 @@
-"""
-Reproject a Raster using ST_Transform
+"""Reproject a Raster using ST_Transform
 =====================================
 
 The `ST_Transform()` function (and a few others like `ST_SnapToGrid()`) can be used on

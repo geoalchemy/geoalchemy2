@@ -1,5 +1,4 @@
-"""
-Use CompositeType
+"""Use CompositeType
 =================
 
 Some functions return composite types. This example shows how to deal with this

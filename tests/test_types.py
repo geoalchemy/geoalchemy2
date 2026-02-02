@@ -93,7 +93,7 @@ class TestGeometry:
         s = select([text("foo")]).where(geometry_table.c.geom == "POINT(1 2)")
         eq_sql(
             s,
-            'SELECT foo FROM "table" WHERE ' '"table".geom = ST_GeomFromEWKT(:geom_1)',
+            'SELECT foo FROM "table" WHERE "table".geom = ST_GeomFromEWKT(:geom_1)',
         )
         assert s.compile().params == {"geom_1": "POINT(1 2)"}
 
@@ -106,8 +106,7 @@ class TestGeometry:
         s = select([geometry_table.c.geom.ST_Buffer(2)])
         eq_sql(
             s,
-            'SELECT ST_AsEWKB(ST_Buffer("table".geom, :ST_Buffer_2)) '
-            'AS "ST_Buffer_1" FROM "table"',
+            'SELECT ST_AsEWKB(ST_Buffer("table".geom, :ST_Buffer_2)) AS "ST_Buffer_1" FROM "table"',
         )
 
     def test_non_ST_function_call(self, geometry_table):
@@ -142,7 +141,7 @@ class TestGeography:
         s = select([text("foo")]).where(geography_table.c.geom == "POINT(1 2)")
         eq_sql(
             s,
-            'SELECT foo FROM "table" WHERE ' '"table".geom = ST_GeogFromText(:geom_1)',
+            'SELECT foo FROM "table" WHERE "table".geom = ST_GeogFromText(:geom_1)',
         )
         assert s.compile().params == {"geom_1": "POINT(1 2)"}
 
@@ -155,8 +154,7 @@ class TestGeography:
         s = select([geography_table.c.geom.ST_Buffer(2)])
         eq_sql(
             s,
-            'SELECT ST_AsEWKB(ST_Buffer("table".geom, :ST_Buffer_2)) '
-            'AS "ST_Buffer_1" FROM "table"',
+            'SELECT ST_AsEWKB(ST_Buffer("table".geom, :ST_Buffer_2)) AS "ST_Buffer_1" FROM "table"',
         )
 
     def test_non_ST_function_call(self, geography_table):
@@ -238,7 +236,7 @@ class TestRaster:
 
     def test_function_call(self, raster_table):
         s = select([raster_table.c.rast.ST_Height()])
-        eq_sql(s, 'SELECT ST_Height("table".rast) ' 'AS "ST_Height_1" FROM "table"')
+        eq_sql(s, 'SELECT ST_Height("table".rast) AS "ST_Height_1" FROM "table"')
 
     def test_non_ST_function_call(self, raster_table):
         with pytest.raises(AttributeError):
@@ -249,4 +247,4 @@ class TestCompositeType:
     def test_ST_Dump(self, geography_table):
         s = select([func.ST_Dump(geography_table.c.geom).geom.label("geom")])
 
-        eq_sql(s, 'SELECT ST_AsEWKB((ST_Dump("table".geom)).geom) AS geom ' 'FROM "table"')
+        eq_sql(s, 'SELECT ST_AsEWKB((ST_Dump("table".geom)).geom) AS geom FROM "table"')

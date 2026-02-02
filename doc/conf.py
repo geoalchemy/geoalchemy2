@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # GeoAlchemy2 documentation build configuration file, created by
 # sphinx-quickstart on Thu Aug 23 06:38:45 2012.

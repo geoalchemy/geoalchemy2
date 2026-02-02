@@ -127,33 +127,37 @@ class TestAdmin:
             ],
         )
 
-        with pytest.raises((IntegrityError, OperationalError)):
-            with conn.begin_nested():
-                conn.execute(
-                    t.insert(),
-                    [
-                        {
-                            "geom_not_nullable": None,
-                            "geom_nullable": None,
-                            "geom_col_not_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
-                            "geom_col_nullable": None,
-                        },
-                    ],
-                )
+        with (
+            pytest.raises((IntegrityError, OperationalError)),
+            conn.begin_nested(),
+        ):
+            conn.execute(
+                t.insert(),
+                [
+                    {
+                        "geom_not_nullable": None,
+                        "geom_nullable": None,
+                        "geom_col_not_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
+                        "geom_col_nullable": None,
+                    },
+                ],
+            )
 
-        with pytest.raises((IntegrityError, OperationalError)):
-            with conn.begin_nested():
-                conn.execute(
-                    t.insert(),
-                    [
-                        {
-                            "geom_not_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
-                            "geom_nullable": None,
-                            "geom_col_not_nullable": None,
-                            "geom_col_nullable": None,
-                        },
-                    ],
-                )
+        with (
+            pytest.raises((IntegrityError, OperationalError)),
+            conn.begin_nested(),
+        ):
+            conn.execute(
+                t.insert(),
+                [
+                    {
+                        "geom_not_nullable": "SRID=4326;LINESTRING(0 0,1 1)",
+                        "geom_nullable": None,
+                        "geom_col_not_nullable": None,
+                        "geom_col_nullable": None,
+                    },
+                ],
+            )
 
         results = conn.execute(t.select())
         rows = results.fetchall()
@@ -283,7 +287,6 @@ class TestAdmin:
         meta.drop_all(bind=conn)
 
     def test_computed_column_orm(self, conn, base, metadata):
-
         # Define the table
         class ComputedGeomTable(base):
             __tablename__ = "computed_column"
@@ -487,7 +490,7 @@ class TestInsertionCore:
         if dialect_name not in ["postgresql", "sqlite"] or not has_m:
             # Use the DB to generate the corresponding raw WKB
             raw_wkb = conn.execute(
-                text("SELECT ST_AsBinary(ST_GeomFromText('{}', 4326))".format(inserted_wkt))
+                text(f"SELECT ST_AsBinary(ST_GeomFromText('{inserted_wkt}', 4326))")
             ).scalar()
 
             wkb_elem = WKBElement(raw_wkb, srid=4326)
@@ -651,10 +654,7 @@ class TestSelectBindParam:
     def test_select_bindparam(self, conn, Lake, setup_one_lake):
         s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam("geom"))
         params = {"geom": "SRID=4326;LINESTRING(0 0,1 1)"}
-        if SQLA_LT_2:
-            results = conn.execute(s, **params)
-        else:
-            results = conn.execute(s, params)
+        results = conn.execute(s, **params) if SQLA_LT_2 else conn.execute(s, params)
         rows = results.fetchall()
 
         row = rows[0]
@@ -668,10 +668,7 @@ class TestSelectBindParam:
         s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam("geom"))
         wkbelement = from_shape(LineString([[0, 0], [1, 1]]), srid=4326)
         params = {"geom": wkbelement}
-        if SQLA_LT_2:
-            results = conn.execute(s, **params)
-        else:
-            results = conn.execute(s, params)
+        results = conn.execute(s, **params) if SQLA_LT_2 else conn.execute(s, params)
         rows = results.fetchall()
 
         row = rows[0]
@@ -694,10 +691,7 @@ class TestSelectBindParam:
 
         s = Lake.__table__.select().where(Lake.__table__.c.geom == bindparam("geom"))
         params = {"geom": geom}
-        if SQLA_LT_2:
-            results = conn.execute(s, **params)
-        else:
-            results = conn.execute(s, params)
+        results = conn.execute(s, **params) if SQLA_LT_2 else conn.execute(s, params)
         rows = results.fetchall()
 
         row = rows[0]
@@ -738,8 +732,7 @@ class TestInsertionORM:
         if dialect_name in ["mysql", "mariadb"]:
             # Not extended case
             assert str(lake.geom) == (
-                "0102000000020000000000000000000000000000000000000000000"
-                "0000000f03f000000000000f03f"
+                "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"
             )
         else:
             assert str(lake.geom) == (
@@ -761,8 +754,7 @@ class TestInsertionORM:
         if dialect_name in ["mysql", "mariadb"]:
             # Not extended case
             assert str(lake.geom) == (
-                "0102000000020000000000000000000000000000000000000000000"
-                "0000000f03f000000000000f03f"
+                "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"
             )
         else:
             assert str(lake.geom) == (
@@ -959,10 +951,7 @@ class TestCallFunction:
     def test_ST_GeometryType(self, session, Lake, setup_one_lake, dialect_name):
         lake_id = setup_one_lake
 
-        if dialect_name == "postgresql":
-            expected_geometry_type = "ST_LineString"
-        else:
-            expected_geometry_type = "LINESTRING"
+        expected_geometry_type = "ST_LineString" if dialect_name == "postgresql" else "LINESTRING"
 
         s = select([func.ST_GeometryType(Lake.__table__.c.geom)])
         r1 = session.execute(s).scalar()
@@ -1446,6 +1435,7 @@ class TestAsBinaryWKT:
                     WKTElement("SRID=-1;LINESTRING(0 0,3 3)", extended=True),
                     from_shape(LineString([[0, 0], [4, 4]])),
                 ],
+                strict=False,
             ):
                 i["geom"] = v
 

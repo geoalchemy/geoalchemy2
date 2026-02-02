@@ -37,14 +37,8 @@ def check_management(column):
 
 def create_spatial_index(bind, table, col):
     """Create spatial index on the given column."""
-    if col.type.use_N_D_index:
-        postgresql_ops = {col.name: "gist_geometry_ops_nd"}
-    else:
-        postgresql_ops = {}
-    if _check_spatial_type(col.type, Raster):
-        col_func = func.ST_ConvexHull(col)
-    else:
-        col_func = col
+    postgresql_ops = {col.name: "gist_geometry_ops_nd"} if col.type.use_N_D_index else {}
+    col_func = func.ST_ConvexHull(col) if _check_spatial_type(col.type, Raster) else col
     idx = Index(
         _spatial_idx_name(table.name, col.name),
         col_func,
@@ -71,10 +65,7 @@ def reflect_geometry_column(inspector, table, column_info):
             coord_dimension = 3
 
     # Query to check a given column has spatial index
-    if table.schema is not None:
-        schema_part = " AND nspname = '{}'".format(table.schema)
-    else:
-        schema_part = ""
+    schema_part = f" AND nspname = '{table.schema}'" if table.schema is not None else ""
 
     # Check if the column has a spatial index (the regular expression checks for the column name
     # in the index definition, which is required for functional indexes)
@@ -100,9 +91,7 @@ def reflect_geometry_column(inspector, table, column_info):
                     ix.indexrelid
                 ) ~ '(^|[^a-zA-Z0-9_])("?{col_name}"?)($|[^a-zA-Z0-9_])'
             )
-    );""".format(
-        table_name=table.name, col_name=column_info["name"], schema_part=schema_part
-    )
+    );""".format(table_name=table.name, col_name=column_info["name"], schema_part=schema_part)
     spatial_index = inspector.bind.execute(text(has_index_query)).scalar()
 
     # Set attributes
@@ -160,12 +149,10 @@ def after_create(table, bind, **kw):
         if (
             _check_spatial_type(col.type, (Geometry, Geography, Raster), dialect)
             and col.type.spatial_index is True
+            and not [i for i in table.indexes if col in i.columns.values()]
+            and check_management(col)
         ):
-            # If the index does not exist, define it and create it
-            if not [i for i in table.indexes if col in i.columns.values()] and check_management(
-                col
-            ):
-                create_spatial_index(bind, table, col)
+            create_spatial_index(bind, table, col)
 
     for idx in table.info.pop("_after_create_indexes"):
         table.indexes.add(idx)
@@ -217,9 +204,9 @@ def _compile_GeomFromWKB_Postgresql(element, compiler, **kw):
     compiled = compiler.process(wkb_clause, **kw)
 
     if srid > 0:
-        return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)
+        return f"{element.identifier}({prefix}{compiled}{suffix}, {srid})"
     else:
-        return "{}({}{}{})".format(element.identifier, prefix, compiled, suffix)
+        return f"{element.identifier}({prefix}{compiled}{suffix})"
 
 
 @compiles(functions.ST_GeomFromWKB, "postgresql")  # type: ignore

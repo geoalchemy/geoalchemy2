@@ -38,25 +38,20 @@ _POSSIBLE_TYPES = [
 
 def reflect_geometry_column(inspector, table, column_info):
     """Reflect a column of type Geometry with Postgresql dialect."""
-    if not isinstance(column_info.get("type"), (Geometry, NullType)):
+    if not isinstance(column_info.get("type"), Geometry | NullType):
         return
 
     column_name = column_info.get("name")
     schema = table.schema or inspector.default_schema_name
 
-    if inspector.dialect.name == "mariadb":
-        select_srid = "-1, "
-    else:
-        select_srid = "SRS_ID, "
+    select_srid = "-1, " if inspector.dialect.name == "mariadb" else "SRS_ID, "
 
     # Check geometry type, SRID and if the column is nullable
-    geometry_type_query = """SELECT DATA_TYPE, {}IS_NULLABLE
+    geometry_type_query = f"""SELECT DATA_TYPE, {select_srid}IS_NULLABLE
         FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_NAME = '{}' and COLUMN_NAME = '{}'""".format(
-        select_srid, table.name, column_name
-    )
+        WHERE TABLE_NAME = '{table.name}' and COLUMN_NAME = '{column_name}'"""
     if schema is not None:
-        geometry_type_query += """ and table_schema = '{}'""".format(schema)
+        geometry_type_query += f""" and table_schema = '{schema}'"""
     geometry_type, srid, nullable_str = inspector.bind.execute(text(geometry_type_query)).one()
     is_nullable = str(nullable_str).lower() == "yes"
 
@@ -64,14 +59,12 @@ def reflect_geometry_column(inspector, table, column_info):
         return  # pragma: no cover
 
     # Check if the column has spatial index
-    has_index_query = """SELECT DISTINCT
+    has_index_query = f"""SELECT DISTINCT
             INDEX_TYPE
         FROM INFORMATION_SCHEMA.STATISTICS
-        WHERE TABLE_NAME = '{}' and COLUMN_NAME = '{}'""".format(
-        table.name, column_name
-    )
+        WHERE TABLE_NAME = '{table.name}' and COLUMN_NAME = '{column_name}'"""
     if schema is not None:
-        has_index_query += """ and TABLE_SCHEMA = '{}'""".format(schema)
+        has_index_query += f""" and TABLE_SCHEMA = '{schema}'"""
     spatial_index_res = inspector.bind.execute(text(has_index_query)).scalar()
     spatial_index = str(spatial_index_res).lower() == "spatial"
 
@@ -85,16 +78,14 @@ def reflect_geometry_column(inspector, table, column_info):
     )
 
 
-def before_cursor_execute(
-    conn, cursor, statement, parameters, context, executemany, convert=True
-):  # noqa: D417
+def before_cursor_execute(conn, cursor, statement, parameters, context, executemany, convert=True):  # noqa: D417
     """Event handler to cast the parameters properly.
 
     Args:
         convert (bool): Trigger the conversion.
     """
     if convert:
-        if isinstance(parameters, (tuple, list)):
+        if isinstance(parameters, tuple | list):
             parameters = tuple(x.tobytes() if isinstance(x, memoryview) else x for x in parameters)
         elif isinstance(parameters, dict):
             for k in parameters:
@@ -138,12 +129,11 @@ def after_create(table, bind, **kw):
             _check_spatial_type(col.type, (Geometry, Geography), dialect)
             and col.type.spatial_index is True
             and col.computed is None
+            and not [i for i in table.indexes if col in i.columns.values()]
         ):
-            # If the index does not exist, define it and create it
-            if not [i for i in table.indexes if col in i.columns.values()]:
-                sql = "ALTER TABLE {} ADD SPATIAL INDEX({});".format(table.name, col.name)
-                q = text(sql)
-                bind.execute(q)
+            sql = f"ALTER TABLE {table.name} ADD SPATIAL INDEX({col.name});"
+            q = text(sql)
+            bind.execute(q)
 
     for idx in table.info.pop("_after_create_indexes"):
         table.indexes.add(idx)
@@ -162,7 +152,7 @@ _MYSQL_FUNCTIONS = {"ST_AsEWKB": "ST_AsBinary", "ST_SetSRID": "ST_SRID"}
 
 def _compiles_mysql(cls, fn):
     def _compile_mysql(element, compiler, **kw):
-        return "{}({})".format(fn, compiler.process(element.clauses, **kw))
+        return f"{fn}({compiler.process(element.clauses, **kw)})"
 
     compiles(getattr(functions, cls), "mysql")(_compile_mysql)
 
@@ -192,9 +182,9 @@ def _compile_GeomFromText_MySql(element, compiler, **kw):
     srid = element.type.srid
 
     if srid > 0:
-        return "{}({}, {})".format(identifier, compiled, srid)
+        return f"{identifier}({compiled}, {srid})"
     else:
-        return "{}({})".format(identifier, compiled)
+        return f"{identifier}({compiled})"
 
 
 def _compile_GeomFromWKB_MySql(element, compiler, **kw):
@@ -217,9 +207,9 @@ def _compile_GeomFromWKB_MySql(element, compiler, **kw):
     compiled = compiler.process(wkb_clause, **kw)
 
     if srid > 0:
-        return "{}({}{}{}, {})".format(element.identifier, prefix, compiled, suffix, srid)
+        return f"{element.identifier}({prefix}{compiled}{suffix}, {srid})"
     else:
-        return "{}({}{}{})".format(element.identifier, prefix, compiled, suffix)
+        return f"{element.identifier}({prefix}{compiled}{suffix})"
 
 
 @compiles(functions.ST_GeomFromText, "mysql")  # type: ignore

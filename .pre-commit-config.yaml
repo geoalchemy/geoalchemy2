@@ -10,27 +10,15 @@ repos:
       - id: debug-statements
       - id: end-of-file-fixer
       - id: trailing-whitespace
-  - repo: https://github.com/pycqa/isort
-    rev: 7.0.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.14
     hooks:
-      - id: isort
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.12.0
-    hooks:
-      - id: black
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:
       - id: codespell
-  - repo: https://github.com/PyCQA/pydocstyle
-    rev: 6.3.0
-    hooks:
-      - id: pydocstyle
-        additional_dependencies: ["tomli"]
-        exclude: "tests"
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.3.0
-    hooks:
-      - id: flake8
 ci:
   autoupdate_schedule: quarterly

@@ -8,8 +8,6 @@ columns/properties in models.
 import re
 import warnings
 from typing import Any
-from typing import Dict
-from typing import Optional
 
 from sqlalchemy import Computed
 from sqlalchemy.dialects import postgresql
@@ -94,15 +92,15 @@ class _GISType(UserDefinedType):
             ``AddGeometryColumn``. Note that this option is only available for PostGIS 2.x.
     """
 
-    name: Optional[str] = None
+    name: str | None = None
     """ Name used for defining the main geo type (geometry or geography)
         in CREATE TABLE statements. Set in subclasses. """
 
-    from_text: Optional[str] = None
+    from_text: str | None = None
     """ The name of "from text" function for this type.
         Set in subclasses. """
 
-    as_binary: Optional[str] = None
+    as_binary: str | None = None
     """ The name of the "as binary" function for this type.
         Set in subclasses. """
 
@@ -115,14 +113,14 @@ class _GISType(UserDefinedType):
 
     def __init__(
         self,
-        geometry_type: Optional[str] = "GEOMETRY",
+        geometry_type: str | None = "GEOMETRY",
         srid: int = -1,
-        dimension: Optional[int] = None,
+        dimension: int | None = None,
         spatial_index: bool = True,
         use_N_D_index: bool = False,
-        use_typmod: Optional[bool] = None,
-        from_text: Optional[str] = None,
-        name: Optional[str] = None,
+        use_typmod: bool | None = None,
+        from_text: str | None = None,
+        name: str | None = None,
         nullable: bool = True,
         _spatial_index_reflected=None,
     ) -> None:
@@ -139,14 +137,14 @@ class _GISType(UserDefinedType):
         self.spatial_index = spatial_index
         self.use_N_D_index = use_N_D_index
         self.use_typmod = use_typmod
-        self.extended: Optional[bool] = self.as_binary == "ST_AsEWKB"
+        self.extended: bool | None = self.as_binary == "ST_AsEWKB"
         self.nullable = nullable
         self._spatial_index_reflected = _spatial_index_reflected
 
     def get_col_spec(self):
         if not self.geometry_type:
             return self.name
-        return "%s(%s,%d)" % (self.name, self.geometry_type, self.srid)
+        return f"{self.name}({self.geometry_type},{self.srid})"
 
     def column_expression(self, col):
         """Specific column_expression that automatically adds a conversion function."""
@@ -184,11 +182,11 @@ class _GISType(UserDefinedType):
             # passing default SRID if it is NULL from DB
             srid = int(srid if srid is not None else -1)
         except (ValueError, TypeError):
-            raise ArgumentError("srid must be convertible to an integer")
+            raise ArgumentError("srid must be convertible to an integer") from None
         if geometry_type:
             geometry_type = geometry_type.upper()
         elif srid > 0:
-            warnings.warn("srid not enforced when geometry_type is None")
+            warnings.warn("srid not enforced when geometry_type is None", stacklevel=1)
 
         if use_typmod is not None and not nullable:
             raise ArgumentError(
@@ -196,7 +194,7 @@ class _GISType(UserDefinedType):
             )
 
         if dimension not in [None, 2, 3, 4]:
-            raise ValueError("dimension must be one of [None, 2, 3, 4] " "but got %s" % dimension)
+            raise ValueError(f"dimension must be one of [None, 2, 3, 4] but got {dimension}")
         if geometry_type is not None:
             if geometry_type.endswith("ZM"):
                 if dimension not in [None, 4]:
@@ -215,17 +213,14 @@ class _GISType(UserDefinedType):
 @compiles(_GISType, "mysql")
 @compiles(_GISType, "mariadb")
 def get_col_spec_mysql(self, compiler, *args, **kwargs):
-    if self.geometry_type is not None:
-        spec = "%s" % self.geometry_type
-    else:
-        spec = "GEOMETRY"
+    spec = f"{self.geometry_type}" if self.geometry_type is not None else "GEOMETRY"
 
-    type_expression = kwargs.get("type_expression", None)
+    type_expression = kwargs.get("type_expression")
     if type_expression is None or type_expression.computed is None:
         if not self.nullable or self.spatial_index:
             spec += " NOT NULL"
         if self.srid > 0 and compiler.dialect.name != "mariadb":
-            spec += " SRID %d" % self.srid
+            spec += f" SRID {self.srid}"
     return spec
 
 
@@ -236,7 +231,7 @@ def get_col_spec_computed_mysql(self, compiler, *args, **kwargs):
     # than PostgreSQL, so we need to handle it here.
     spec = self.sqltext.compile(compiler, **kwargs).string
     pattern = re.compile("st_", re.IGNORECASE)
-    spec = "AS (%s)" % re.sub(pattern, "", spec)
+    spec = f"AS ({re.sub(pattern, '', spec)})"
     return spec
 
 
@@ -354,7 +349,7 @@ class Raster(_GISType):
         _spatial_index_reflected=None,
     ) -> None:
         # Enforce default values
-        super(Raster, self).__init__(
+        super().__init__(
             geometry_type=None,
             srid=-1,
             dimension=None,
@@ -390,7 +385,7 @@ class CompositeType(UserDefinedType):
     This is used as the base class of :class:`geoalchemy2.types.GeometryDump`.
     """
 
-    typemap: Dict[str, _TypeEngineArgument] = {}
+    typemap: dict[str, _TypeEngineArgument] = {}
     """ Dictionary used for defining the content types and their
         corresponding keys. Set in subclasses. """
 
@@ -399,7 +394,9 @@ class CompositeType(UserDefinedType):
             try:
                 type_ = self.type.typemap[key]
             except KeyError:
-                raise AttributeError("Type '%s' doesn't have an attribute: '%s'" % (self.type, key))
+                raise AttributeError(
+                    f"Type '{self.type}' doesn't have an attribute: '{key}'"
+                ) from None
 
             return CompositeElement(self.expr, key, type_)
 

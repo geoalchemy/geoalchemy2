@@ -67,7 +67,7 @@ def _monkey_patch_get_indexes_for_sqlite():
         # Get spatial indexes
         if is_gpkg:
             spatial_index_query = text(
-                """SELECT A.table_name, A.column_name, IFNULL(B.has_index, 0) AS has_index
+                f"""SELECT A.table_name, A.column_name, IFNULL(B.has_index, 0) AS has_index
                 FROM "gpkg_geometry_columns"
                 AS A
                 LEFT JOIN (
@@ -78,24 +78,20 @@ def _monkey_patch_get_indexes_for_sqlite():
                 ) AS B
                 ON LOWER(A.table_name) = LOWER(B.table_name)
                 WHERE LOWER(A.table_name) = LOWER('{table_name}');
-            """.format(
-                    table_name=table_name
-                )
+            """
             )
         else:
             spatial_index_query = text(
-                """SELECT *
+                f"""SELECT *
                 FROM geometry_columns
-                WHERE f_table_name = '{}'
-                ORDER BY f_table_name, f_geometry_column;""".format(
-                    table_name
-                )
+                WHERE f_table_name = '{table_name}'
+                ORDER BY f_table_name, f_geometry_column;"""
             )
 
         spatial_indexes = connection.execute(spatial_index_query).fetchall()
 
         if spatial_indexes:
-            reflected_names = set([i["name"] for i in indexes])
+            reflected_names = {i["name"] for i in indexes}
             for idx in spatial_indexes:
                 idx_col = idx[1]
                 idx_name = _spatial_idx_name(table_name, idx_col)
@@ -129,18 +125,16 @@ def _monkey_patch_get_indexes_for_mysql():
         indexes = self._get_indexes_normal_behavior(connection, table_name, schema=None, **kw)
 
         # Get spatial indexes
-        has_index_query = """SELECT DISTINCT
+        has_index_query = f"""SELECT DISTINCT
                 COLUMN_NAME
             FROM INFORMATION_SCHEMA.STATISTICS
-            WHERE TABLE_NAME = '{}' AND INDEX_TYPE = 'SPATIAL'""".format(
-            table_name
-        )
+            WHERE TABLE_NAME = '{table_name}' AND INDEX_TYPE = 'SPATIAL'"""
         if schema is not None:
-            has_index_query += """ AND TABLE_SCHEMA = '{}'""".format(schema)
+            has_index_query += f""" AND TABLE_SCHEMA = '{schema}'"""
         spatial_indexes = connection.execute(text(has_index_query)).fetchall()
 
         if spatial_indexes:
-            reflected_names = set([i["name"] for i in indexes])
+            reflected_names = {i["name"] for i in indexes}
             for idx in spatial_indexes:
                 idx_col = idx[0]
                 idx_name = _spatial_idx_name(table_name, idx_col)
@@ -168,10 +162,10 @@ _monkey_patch_get_indexes_for_mysql()
 
 def render_item(obj_type, obj, autogen_context):
     """Add proper imports for spatial types."""
-    if obj_type == "type" and isinstance(obj, (Geometry, Geography, Raster)):
+    if obj_type == "type" and isinstance(obj, Geometry | Geography | Raster):
         import_name = obj.__class__.__name__
         autogen_context.imports.add(f"from geoalchemy2 import {import_name}")
-        return "%r" % obj
+        return f"{obj!r}"
 
     # Default rendering for other objects
     return False
@@ -185,19 +179,20 @@ def include_object(obj, name, obj_type, reflected, compare_to):
         In such case, you should create your own function to handle your specific table names.
 
     """
-    if obj_type == "table" and (
-        name.startswith("geometry_columns")
-        or name.startswith("spatial_ref_sys")
-        or name.startswith("spatialite_history")
-        or name.startswith("sqlite_sequence")
-        or name.startswith("views_geometry_columns")
-        or name.startswith("virts_geometry_columns")
-        or name.startswith("idx_")
-        or name.startswith("gpkg_")
-        or name.startswith("vgpkg_")
-    ):
-        return False
-    return True
+    return not (
+        obj_type == "table"
+        and (
+            name.startswith("geometry_columns")
+            or name.startswith("spatial_ref_sys")
+            or name.startswith("spatialite_history")
+            or name.startswith("sqlite_sequence")
+            or name.startswith("views_geometry_columns")
+            or name.startswith("virts_geometry_columns")
+            or name.startswith("idx_")
+            or name.startswith("gpkg_")
+            or name.startswith("vgpkg_")
+        )
+    )
 
 
 @Operations.register_operation("add_geospatial_column")
@@ -341,10 +336,9 @@ def visit_rename_geospatial_table(element, compiler, **kw):
     if table_is_spatial or new_table_is_spatial:
         # Here we suppose there is only one DB attached to the current engine, so the prefix
         # is set to NULL
-        return "SELECT RenameTable(NULL, '%s', '%s')" % (
-            format_table_name(compiler, element.table_name, element.schema),
-            format_table_name(compiler, element.new_table_name, element.schema),
-        )
+        old_name = format_table_name(compiler, element.table_name, element.schema)
+        new_name = format_table_name(compiler, element.new_table_name, element.schema)
+        return f"SELECT RenameTable(NULL, '{old_name}', '{new_name}')"
     else:
         return visit_rename_table(element, compiler, **kw)
 
@@ -356,8 +350,8 @@ def visit_drop_geospatial_table(element, compiler, **kw):
 
     if table_is_spatial:
         # Here we suppose there is only one DB attached to the current engine
-        return "SELECT DropTable(NULL, '%s')" % (
-            format_table_name(compiler, element.element.name, None),
+        return (
+            f"SELECT DropTable(NULL, '{format_table_name(compiler, element.element.name, None)}')"
         )
     else:
         return compiler.visit_drop_table(element, **kw)
@@ -384,7 +378,7 @@ def add_geo_column(context, revision, op):
     if isinstance(col_type, TypeDecorator):
         dialect = context.bind.dialect
         col_type = col_type.load_dialect_impl(dialect)
-    if isinstance(col_type, (Geometry, Geography, Raster)):
+    if isinstance(col_type, Geometry | Geography | Raster):
         op.column.type.spatial_index = False
         op.column.type._spatial_index_reflected = None
         new_op = AddGeospatialColumnOp(op.table_name, op.column, schema=op.schema)
@@ -400,7 +394,7 @@ def drop_geo_column(context, revision, op):
     if isinstance(col_type, TypeDecorator):
         dialect = context.bind.dialect
         col_type = col_type.load_dialect_impl(dialect)
-    if isinstance(col_type, (Geometry, Geography, Raster)):
+    if isinstance(col_type, Geometry | Geography | Raster):
         new_op = DropGeospatialColumnOp(op.table_name, op.column_name, schema=op.schema)
     else:
         new_op = op
@@ -550,12 +544,7 @@ def drop_geo_table(context, revision, op):
     table = op.to_table()
     gis_cols = _get_gis_cols(table, (Geometry, Geography, Raster), dialect)
 
-    if gis_cols:
-        new_op = DropGeospatialTableOp(op.table_name, schema=op.schema)
-    else:
-        new_op = op
-
-    return new_op
+    return DropGeospatialTableOp(op.table_name, schema=op.schema) if gis_cols else op
 
 
 @Operations.register_operation("create_geospatial_index")
@@ -723,7 +712,7 @@ def render_drop_geo_index(autogen_context, op):
     text = idx_render.replace(".drop_index(", ".drop_geospatial_index(")
 
     # Add column name as keyword argument
-    text = text[:-1] + ", column_name='%s')" % (op.column_name,)
+    text = text[:-1] + f", column_name='{op.column_name}')"
 
     return text
 
@@ -740,10 +729,7 @@ def create_geo_index(context, revision, op):
         ):
             # Fix index properties
             op.kw["postgresql_using"] = op.kw.get("postgresql_using", "gist")
-            if col.type.use_N_D_index:
-                postgresql_ops = {col.name: "gist_geometry_ops_nd"}
-            else:
-                postgresql_ops = {}
+            postgresql_ops = {col.name: "gist_geometry_ops_nd"} if col.type.use_N_D_index else {}
             op.kw["postgresql_ops"] = op.kw.get("postgresql_ops", postgresql_ops)
 
             return CreateGeospatialIndexOp(

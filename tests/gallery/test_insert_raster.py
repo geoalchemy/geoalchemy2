@@ -1,5 +1,4 @@
-"""
-Insert Raster
+"""Insert Raster
 =============
 
 The `RasterElement` objects store the Raster data in WKB form. This WKB format is usually fetched
@@ -68,7 +67,6 @@ def write_wkb_raster(dataset):
     https://github.com/nathancahill/wkb-raster/blob/master/wkb_raster.py
     and slightly adapted.
     """
-
     # Define format, see https://docs.python.org/3/library/struct.html
     format_string = "bHHddddddIHH"
 
@@ -80,7 +78,7 @@ def write_wkb_raster(dataset):
         endian_byte = 1
 
     # Write the raster header data.
-    header = bytes()
+    header = b""
 
     transform = dataset.transform.to_gdal()
 
@@ -165,7 +163,7 @@ def write_wkb_raster(dataset):
         bands.append(band_header + nodata + band_binary)
 
     # join all bands
-    allbands = bytes()
+    allbands = b""
     for b in bands:
         allbands += b
 
@@ -197,18 +195,16 @@ class TestInsertRaster:
         conn.execute(text("SET postgis.gdal_enabled_drivers = 'ENABLE_ALL';"))
         data = conn.execute(
             text(
-                """SELECT
+                f"""SELECT
                     ST_AsTIFF(
                         ST_AsRaster(
                             ST_GeomFromText('POLYGON((0 0,1 1,0 1,0 0))'),
                             5,
                             6,
-                            '{}'
+                            '{pixel_type}'
                         ),
                         'GTiff'
-                    );""".format(
-                    pixel_type
-                )
+                    );"""
             )
         ).scalar()
         filename = tmpdir / "image.tiff"

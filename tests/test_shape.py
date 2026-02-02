@@ -10,7 +10,6 @@ from geoalchemy2.shape import to_shape
 
 
 def test_check_shapely(monkeypatch):
-
     @geoalchemy2.shape.check_shapely()
     def f():
         return "ok"
@@ -36,7 +35,7 @@ def test_to_shape_WKBElement():
 
 def test_to_shape_WKBElement_str():
     # POINT(1 2)
-    e = WKBElement(str("0101000000000000000000f03f0000000000000040"))
+    e = WKBElement("0101000000000000000000f03f0000000000000040")
     s = to_shape(e)
     assert isinstance(s, Point)
     assert s.x == 1
@@ -81,7 +80,7 @@ def test_to_shape_wrong_type():
 
 def test_from_shape():
     # Standard case: POINT(1 2)
-    expected = WKBElement(str("0101000000000000000000f03f0000000000000040"))
+    expected = WKBElement("0101000000000000000000f03f0000000000000040")
     p = Point(1, 2)
     e = from_shape(p)
     assert isinstance(e, WKBElement)
@@ -93,7 +92,7 @@ def test_from_shape():
     assert s.equals(p)
 
     # Standard case with SRID: SRID=2145;POINT(1 2)
-    expected2 = WKBElement(str("0101000000000000000000f03f0000000000000040"), srid=2154)
+    expected2 = WKBElement("0101000000000000000000f03f0000000000000040", srid=2154)
     p = Point(1, 2)
     e2 = from_shape(p, srid=2154)
     assert isinstance(e2, WKBElement)
@@ -105,7 +104,7 @@ def test_from_shape():
     assert s2.equals(p)
 
     # Extended case: SRID=2145;POINT(1 2)
-    expected3 = WKBElement(str("01010000206a080000000000000000f03f0000000000000040"), extended=True)
+    expected3 = WKBElement("01010000206a080000000000000000f03f0000000000000040", extended=True)
     e3 = from_shape(p, srid=2154, extended=True)
     assert isinstance(e3, WKBElement)
     assert isinstance(e3.data, memoryview)

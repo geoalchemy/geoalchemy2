@@ -1,5 +1,4 @@
-"""
-New ORM Declarative Mapping Style
+"""New ORM Declarative Mapping Style
 =================================
 
 ``SQLAlchemy>=2`` introduced a new way to construct mappings using the

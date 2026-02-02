@@ -4,11 +4,6 @@ import binascii
 import re
 import struct
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Union
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
@@ -19,7 +14,7 @@ from geoalchemy2.exc import ArgumentError
 
 BinasciiError = binascii.Error
 
-function_registry: Set[str] = set()
+function_registry: set[str] = set()
 
 
 class _SpatialElement:
@@ -40,7 +35,7 @@ class _SpatialElement:
     # the creation of a dynamic __dict__ for each instance.
     __slots__ = ("srid", "data", "extended")
 
-    def __init__(self, data, srid: int = -1, extended: Optional[bool] = None) -> None:
+    def __init__(self, data, srid: int = -1, extended: bool | None = None) -> None:
         self.srid = srid
         self.data = data
         self.extended = extended
@@ -49,11 +44,7 @@ class _SpatialElement:
         return self.desc
 
     def __repr__(self) -> str:
-        return "<%s at 0x%x; %s>" % (
-            self.__class__.__name__,
-            id(self),
-            self,
-        )  # pragma: no cover
+        return f"<{self.__class__.__name__} at 0x{id(self):x}; {self}>"  # pragma: no cover
 
     def __eq__(self, other) -> bool:
         try:
@@ -93,7 +84,7 @@ class _SpatialElement:
         func_ = functions._FunctionGenerator(expr=self)
         return getattr(func_, name)
 
-    def __getstate__(self) -> Dict[str, Any]:
+    def __getstate__(self) -> dict[str, Any]:
         state = {
             "srid": self.srid,
             "data": str(self),
@@ -101,7 +92,7 @@ class _SpatialElement:
         }
         return state
 
-    def __setstate__(self, state: Dict[str, Any]) -> None:
+    def __setstate__(self, state: dict[str, Any]) -> None:
         self.srid = state["srid"]
         self.extended = state["extended"]
         self.data = self._data_from_desc(state["data"])
@@ -135,19 +126,19 @@ class WKTElement(_SpatialElement):
     geom_from: str = "ST_GeomFromText"
     geom_from_extended_version: str = "ST_GeomFromEWKT"
 
-    def __init__(self, data: str, srid: int = -1, extended: Optional[bool] = None) -> None:
+    def __init__(self, data: str, srid: int = -1, extended: bool | None = None) -> None:
         if extended is None:
             extended = data.startswith("SRID=")
         if extended and srid == -1:
             # read srid from EWKT
             data_s = data.split(";")
             if len(data_s) != 2:
-                raise ArgumentError("invalid EWKT string {}".format(data))
+                raise ArgumentError(f"invalid EWKT string {data}")
             header = data_s[0]
             try:
                 srid = int(header[5:])
             except ValueError:
-                raise ArgumentError("invalid EWKT string {}".format(data))
+                raise ArgumentError(f"invalid EWKT string {data}") from None
         _SpatialElement.__init__(self, data, srid, extended)
 
     @property
@@ -208,7 +199,7 @@ class WKBElement(_SpatialElement):
     geom_from_extended_version: str = "ST_GeomFromEWKB"
 
     def __init__(
-        self, data: str | bytes | memoryview, srid: int = -1, extended: Optional[bool] = None
+        self, data: str | bytes | memoryview, srid: int = -1, extended: bool | None = None
     ) -> None:
         if srid == -1 or extended is None or extended:
             # read srid from the EWKB
@@ -225,29 +216,24 @@ class WKBElement(_SpatialElement):
             # }
             # See https://trac.osgeo.org/postgis/browser/branches/3.0/doc/ZMSgeoms.txt
             # for more details about WKB/EWKB specifications.
-            if isinstance(data, str):
-                # SpatiaLite case
-                # assume that the string is an hex value
-                header = binascii.unhexlify(data[:18])
-            else:
-                header = data[:9]
+
+            # SpatiaLite case: assume that the string is an hex value
+            header = binascii.unhexlify(data[:18]) if isinstance(data, str) else data[:9]
             byte_order, wkb_type, wkb_srid = header[0], header[1:5], header[5:]
             byte_order_marker = "<I" if byte_order else ">I"
             wkb_type_int = (
                 int(struct.unpack(byte_order_marker, wkb_type)[0]) if len(wkb_type) == 4 else 0
             )
             if extended is None:
-                if not wkb_type_int:
-                    extended = False
-                else:
-                    extended = extended or bool(wkb_type_int & 536870912)  # Check SRID bit
+                # Check SRID bit
+                extended = False if not wkb_type_int else extended or bool(wkb_type_int & 536870912)
             if extended and srid == -1:
                 wkb_srid = struct.unpack(byte_order_marker, wkb_srid)[0]
                 srid = int(wkb_srid)
         _SpatialElement.__init__(self, data, srid, extended)
 
     @staticmethod
-    def _wkb_to_hex(data: Union[str, bytes, memoryview]) -> str:
+    def _wkb_to_hex(data: str | bytes | memoryview) -> str:
         """Convert WKB to hex string."""
         if isinstance(data, str):
             # SpatiaLite case
@@ -363,11 +349,11 @@ class RasterElement(_SpatialElement):
 
     geom_from_extended_version: str = "raster"
 
-    def __init__(self, data: Union[str, bytes, memoryview]) -> None:
+    def __init__(self, data: str | bytes | memoryview) -> None:
         # read srid from the WKB (binary or hexadecimal format)
         # The WKB structure is documented in the file
         # raster/doc/RFC2-WellKnownBinaryFormat of the PostGIS sources.
-        bin_data: Union[str, bytes, memoryview]
+        bin_data: str | bytes | memoryview
         try:
             bin_data = binascii.unhexlify(data[:114])
         except BinasciiError:
@@ -409,15 +395,15 @@ class CompositeElement(FunctionElement):
         self.name = field
         self.type = to_instance(type_)
 
-        super(CompositeElement, self).__init__(base)
+        super().__init__(base)
 
 
 @compiles(CompositeElement)
 def _compile_pgelem(expr, compiler, **kw) -> str:
-    return "(%s).%s" % (compiler.process(expr.clauses, **kw), expr.name)
+    return f"({compiler.process(expr.clauses, **kw)}).{expr.name}"
 
 
-__all__: List[str] = [
+__all__: list[str] = [
     "_SpatialElement",
     "CompositeElement",
     "RasterElement",
@@ -429,5 +415,5 @@ __all__: List[str] = [
 ]
 
 
-def __dir__() -> List[str]:
+def __dir__() -> list[str]:
     return __all__

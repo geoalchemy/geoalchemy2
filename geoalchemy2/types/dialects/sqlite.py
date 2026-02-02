@@ -15,7 +15,8 @@ def format_geom_type(wkt, default_srid=None):
     if match is None:
         warnings.warn(
             "The given WKT could not be parsed by GeoAlchemy2, this could lead to undefined "
-            f"behavior with Z, M or ZM geometries or with incorrect SRID. The WKT string is: {wkt}"
+            f"behavior with Z, M or ZM geometries or with incorrect SRID. The WKT string is: {wkt}",
+            stacklevel=1,
         )
         return wkt
     _, srid, geom_type, coords = match.groups()
@@ -27,9 +28,9 @@ def format_geom_type(wkt, default_srid=None):
     if srid is None and default_srid is not None:
         srid = f"SRID={default_srid}"
     if srid is not None:
-        return "%s;%s%s" % (srid, geom_type, coords)
+        return f"{srid};{geom_type}{coords}"
     else:
-        return "%s%s" % (geom_type, coords)
+        return f"{geom_type}{coords}"
 
 
 def bind_processor_process(spatial_type, bindvalue):
@@ -48,7 +49,7 @@ def bind_processor_process(spatial_type, bindvalue):
         )
         return res
     elif isinstance(bindvalue, RasterElement):
-        return "%s" % (bindvalue.data)
+        return f"{bindvalue.data}"
     elif isinstance(bindvalue, str):
         return format_geom_type(bindvalue, default_srid=spatial_type.srid)
     else:

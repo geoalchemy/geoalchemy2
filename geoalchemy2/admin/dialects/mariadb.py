@@ -23,16 +23,14 @@ def _cast(param):
     return param
 
 
-def before_cursor_execute(
-    conn, cursor, statement, parameters, context, executemany, convert=True
-):  # noqa: D417
+def before_cursor_execute(conn, cursor, statement, parameters, context, executemany, convert=True):  # noqa: D417
     """Event handler to cast the parameters properly.
 
     Args:
         convert (bool): Trigger the conversion.
     """
     if convert:
-        if isinstance(parameters, (tuple, list)):
+        if isinstance(parameters, tuple | list):
             parameters = tuple(_cast(x) for x in parameters)
         elif isinstance(parameters, dict):
             for k in parameters:
@@ -48,7 +46,7 @@ _MARIADB_FUNCTIONS = {
 
 def _compiles_mariadb(cls, fn):
     def _compile_mariadb(element, compiler, **kw):
-        return "{}({})".format(fn, compiler.process(element.clauses, **kw))
+        return f"{fn}({compiler.process(element.clauses, **kw)})"
 
     compiles(getattr(functions, cls), "mariadb")(_compile_mariadb)
 
@@ -84,10 +82,7 @@ def _compile_GeomFromText_MariaDB(element, compiler, **kw):
     except Exception:
         srid = element.type.srid
 
-    if srid > 0:
-        res = "{}({}, {})".format(identifier, compiled, srid)
-    else:
-        res = "{}({})".format(identifier, compiled)
+    res = f"{identifier}({compiled}, {srid})" if srid > 0 else f"{identifier}({compiled})"
     return res
 
 
@@ -100,19 +95,16 @@ def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    if kw.get("literal_binds", False):
-        wkb_clause = compile_bin_literal(clauses[0])
-    else:
-        wkb_clause = clauses[0]
+    wkb_clause = compile_bin_literal(clauses[0]) if kw.get("literal_binds", False) else clauses[0]
     prefix = "unhex("
     suffix = ")"
 
     compiled = compiler.process(wkb_clause, **kw)
 
     if srid > 0:
-        return "{}({}{}{}, {})".format(identifier, prefix, compiled, suffix, srid)
+        return f"{identifier}({prefix}{compiled}{suffix}, {srid})"
     else:
-        return "{}({}{}{})".format(identifier, prefix, compiled, suffix)
+        return f"{identifier}({prefix}{compiled}{suffix})"
 
 
 @compiles(functions.ST_GeomFromText, "mariadb")  # type: ignore

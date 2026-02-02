@@ -57,9 +57,7 @@ class TestWKTElement:
         f = e.ST_Buffer(2)
         eq_sql(
             f,
-            "ST_Buffer("
-            "ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2), "
-            ":ST_Buffer_1)",
+            "ST_Buffer(ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2), :ST_Buffer_1)",
         )
         assert f.compile().params == {
             "ST_Buffer_1": 2,
@@ -83,9 +81,7 @@ class TestWKTElement:
         f = unpickled.ST_Buffer(2)
         eq_sql(
             f,
-            "ST_Buffer("
-            "ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2), "
-            ":ST_Buffer_1)",
+            "ST_Buffer(ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2), :ST_Buffer_1)",
         )
         assert f.compile().params == {
             "ST_Buffer_1": 2,
@@ -102,8 +98,8 @@ class TestWKTElement:
         a = WKTElement(self._wkt)
         b = WKTElement("POINT(10 20)")
         c = WKTElement("POINT(10 20)")
-        assert set([a, b, c]) == set([a, b, c])
-        assert len(set([a, b, c])) == 2
+        assert {a, b, c} == {a, b, c}
+        assert len({a, b, c}) == 2
 
     def test_as_wkt_as_ewkt(self):
         e1 = WKTElement(self._wkt)
@@ -149,7 +145,7 @@ class TestExtendedWKTElement:
     def test_function_call(self):
         e = WKTElement(self._ewkt, extended=True)
         f = e.ST_Buffer(2)
-        eq_sql(f, "ST_Buffer(" "ST_GeomFromEWKT(:ST_GeomFromEWKT_1), " ":ST_Buffer_1)")
+        eq_sql(f, "ST_Buffer(ST_GeomFromEWKT(:ST_GeomFromEWKT_1), :ST_Buffer_1)")
         assert f.compile().params == {"ST_Buffer_1": 2, "ST_GeomFromEWKT_1": self._ewkt}
 
     def test_pickle_unpickle(self):
@@ -162,16 +158,16 @@ class TestExtendedWKTElement:
         assert unpickled.extended is True
         assert unpickled.data == self._ewkt
         f = unpickled.ST_Buffer(2)
-        eq_sql(f, "ST_Buffer(" "ST_GeomFromEWKT(:ST_GeomFromEWKT_1), " ":ST_Buffer_1)")
+        eq_sql(f, "ST_Buffer(ST_GeomFromEWKT(:ST_GeomFromEWKT_1), :ST_Buffer_1)")
         assert f.compile().params == {
             "ST_Buffer_1": 2,
             "ST_GeomFromEWKT_1": self._ewkt,
         }
 
     def test_unpack_srid_from_ewkt(self):
-        """
-        Unpack SRID from WKT struct (when it is not provided as arg)
-        to ensure geometry result processor preserves query SRID.
+        """Unpack SRID from WKT struct (when it is not provided as arg).
+
+        This ensures geometry result processor preserves query SRID.
         """
         e = WKTElement(self._ewkt, extended=True)
         assert e.srid == self._srid
@@ -199,8 +195,8 @@ class TestExtendedWKTElement:
         a = WKTElement("SRID=3857;POINT (1 2 3)", extended=True)
         b = WKTElement("SRID=3857;POINT (10 20 30)", extended=True)
         c = WKTElement("SRID=3857;POINT (10 20 30)", extended=True)
-        assert set([a, b, c]) == set([a, b, c])
-        assert len(set([a, b, c])) == 2
+        assert {a, b, c} == {a, b, c}
+        assert len({a, b, c}) == 2
 
     def test_missing_srid(self):
         with pytest.raises(ArgumentError, match="invalid EWKT string"):
@@ -251,7 +247,7 @@ class TestWKTElementFunction:
         expr = func.ST_Equals(geometry_table.c.geom, WKTElement("POINT(1 2)"))
         eq_sql(
             expr,
-            'ST_Equals("table".geom, ' "ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2))",
+            'ST_Equals("table".geom, ST_GeomFromText(:ST_GeomFromText_1, :ST_GeomFromText_2))',
         )
         assert expr.compile().params == {
             "ST_GeomFromText_1": "POINT(1 2)",
@@ -267,9 +263,7 @@ class TestExtendedWKTElementFunction:
         )
         eq_sql(
             expr,
-            "ST_Equals("
-            "ST_GeomFromEWKT(:ST_GeomFromEWKT_1), "
-            "ST_GeomFromEWKT(:ST_GeomFromEWKT_2))",
+            "ST_Equals(ST_GeomFromEWKT(:ST_GeomFromEWKT_1), ST_GeomFromEWKT(:ST_GeomFromEWKT_2))",
         )
         assert expr.compile().params == {
             "ST_GeomFromEWKT_1": "SRID=3857;POINT(1 2 3)",
@@ -280,7 +274,7 @@ class TestExtendedWKTElementFunction:
         expr = func.ST_Equals(
             geometry_table.c.geom, WKTElement("SRID=3857;POINT(1 2 3)", extended=True)
         )
-        eq_sql(expr, 'ST_Equals("table".geom, ' "ST_GeomFromEWKT(:ST_GeomFromEWKT_1))")
+        eq_sql(expr, 'ST_Equals("table".geom, ST_GeomFromEWKT(:ST_GeomFromEWKT_1))')
         assert expr.compile().params == {
             "ST_GeomFromEWKT_1": "SRID=3857;POINT(1 2 3)",
         }
@@ -296,8 +290,8 @@ class TestExtendedWKBElement:
     _bin_wkb = memoryview(
         b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@"
     )
-    _hex_ewkb = str("010100002003000000000000000000f03f0000000000000040")
-    _hex_wkb = str("0101000000000000000000f03f0000000000000040")
+    _hex_ewkb = "010100002003000000000000000000f03f0000000000000040"
+    _hex_wkb = "0101000000000000000000f03f0000000000000040"
     _srid = 3  # expected srid
     _wkt = "POINT (1 2)"  # expected wkt
 
@@ -314,7 +308,7 @@ class TestExtendedWKBElement:
     def test_function_call(self):
         e = WKBElement(self._bin_ewkb, extended=True)
         f = e.ST_Buffer(2)
-        eq_sql(f, "ST_Buffer(" "ST_GeomFromEWKB(:ST_GeomFromEWKB_1), " ":ST_Buffer_1)")
+        eq_sql(f, "ST_Buffer(ST_GeomFromEWKB(:ST_GeomFromEWKB_1), :ST_Buffer_1)")
         assert f.compile().params == {
             "ST_Buffer_1": 2,
             "ST_GeomFromEWKB_1": self._bin_ewkb,
@@ -334,16 +328,16 @@ class TestExtendedWKBElement:
         assert unpickled.extended is True
         assert unpickled.data == bytes(self._bin_ewkb)
         f = unpickled.ST_Buffer(2)
-        eq_sql(f, "ST_Buffer(" "ST_GeomFromEWKB(:ST_GeomFromEWKB_1), " ":ST_Buffer_1)")
+        eq_sql(f, "ST_Buffer(ST_GeomFromEWKB(:ST_GeomFromEWKB_1), :ST_Buffer_1)")
         assert f.compile().params == {
             "ST_Buffer_1": 2,
             "ST_GeomFromEWKB_1": bytes(self._bin_ewkb),
         }
 
     def test_unpack_srid_from_bin(self):
-        """
-        Unpack SRID from WKB struct (when it is not provided as arg)
-        to ensure geometry result processor preserves query SRID.
+        """Unpack SRID from WKB struct (when it is not provided as arg).
+
+        This ensures geometry result processor preserves query SRID.
         """
         e = WKBElement(self._bin_ewkb, extended=True)
         assert e.srid == self._srid
@@ -365,11 +359,11 @@ class TestExtendedWKBElement:
         assert a == b
 
     def test_hash(self):
-        a = WKBElement(str("010100002003000000000000000000f03f0000000000000040"), extended=True)
-        b = WKBElement(str("010100002003000000000000000000f02f0000000000000040"), extended=True)
-        c = WKBElement(str("010100002003000000000000000000f02f0000000000000040"), extended=True)
-        assert set([a, b, c]) == set([a, b, c])
-        assert len(set([a, b, c])) == 2
+        a = WKBElement("010100002003000000000000000000f03f0000000000000040", extended=True)
+        b = WKBElement("010100002003000000000000000000f02f0000000000000040", extended=True)
+        c = WKBElement("010100002003000000000000000000f02f0000000000000040", extended=True)
+        assert {a, b, c} == {a, b, c}
+        assert len({a, b, c}) == 2
 
     def test_as_wkt_as_ewkt(self):
         arbitrary_srid = self._srid + 1
@@ -425,7 +419,7 @@ class TestWKBElement:
         f = e.ST_Buffer(2)
         eq_sql(
             f,
-            "ST_Buffer(" "ST_GeomFromWKB(:ST_GeomFromWKB_1, :ST_GeomFromWKB_2), " ":ST_Buffer_1)",
+            "ST_Buffer(ST_GeomFromWKB(:ST_GeomFromWKB_1, :ST_GeomFromWKB_2), :ST_Buffer_1)",
         )
         assert f.compile().params == {
             "ST_Buffer_1": 2,
@@ -450,8 +444,8 @@ class TestWKBElement:
         a = WKBElement(b"\x01\x02")
         b = WKBElement(b"\x01\x03")
         c = WKBElement(b"\x01\x03")
-        assert set([a, b, c]) == set([a, b, c])
-        assert len(set([a, b, c])) == 2
+        assert {a, b, c} == {a, b, c}
+        assert len({a, b, c}) == 2
 
 
 class TestNotEqualSpatialElement:
@@ -462,7 +456,7 @@ class TestNotEqualSpatialElement:
         b"\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@"
     )
     _wkb = wkb.loads(bytes(_ewkb)).wkb
-    _hex = str("010100002003000000000000000000f03f0000000000000040")
+    _hex = "010100002003000000000000000000f03f0000000000000040"
     _srid = 3
     _wkt = "POINT (1 2)"
     _ewkt = "SRID=3;POINT (1 2)"
@@ -545,8 +539,8 @@ class TestRasterElement:
         a = WKBElement(self.hex_rast_data)
         b = WKBElement(new_hex_rast_data)
         c = WKBElement(new_hex_rast_data)
-        assert set([a, b, c]) == set([a, b, c])
-        assert len(set([a, b, c])) == 2
+        assert {a, b, c} == {a, b, c}
+        assert len({a, b, c}) == 2
 
 
 class TestCompositeElement:
@@ -560,7 +554,6 @@ class TestCompositeElement:
 
 
 class TestDynamicElements:
-
     parametrize_element_types = pytest.mark.parametrize(
         "ElementType",
         [

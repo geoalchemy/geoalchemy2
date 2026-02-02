@@ -17,7 +17,7 @@ def bind_processor_process(spatial_type, bindvalue):
         except (ValueError, TypeError):  # pragma: no cover
             raise ArgumentError(
                 f"The SRID ({srid}) of the supplied value can not be casted to integer"
-            )
+            ) from None
 
         if srid is not None and srid != spatial_type.srid:
             raise ArgumentError(

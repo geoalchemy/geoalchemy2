@@ -108,7 +108,7 @@ class TestIndex:
                     )
                 )
 
-        assert "Arg Error(use_N_D_index): spatial_index must be True" == excinfo.value.args[0]
+        assert excinfo.value.args[0] == "Arg Error(use_N_D_index): spatial_index must be True"
 
     def test_index_without_schema(self, conn, IndexTestWithoutSchema, setup_tables):
         inspector = get_inspector(conn)
@@ -277,7 +277,7 @@ class TestIndex:
 
         assert len(indices) == 8
 
-        for idx, expected_idx in zip(indices, expected_indices):
+        for idx, expected_idx in zip(indices, expected_indices, strict=False):
             assert idx[0] == expected_idx[0]
             assert idx[1] == re.sub("\n *", " ", expected_idx[1])
 
@@ -386,8 +386,9 @@ class TestUpdateORM:
 
 class TestTypMod:
     def test_SummitConstraints(self, conn, Summit, setup_tables):
-        """Make sure the geometry column of table Summit is created with
-        `use_typmod=False` (explicit constraints are created).
+        """Make sure the geometry column of table Summit is created with `use_typmod=False`.
+
+        Explicit constraints are created when `use_typmod=False`.
         """
         skip_pg12_sa1217(conn)
         inspector = get_inspector(conn)
@@ -577,8 +578,8 @@ class TestSTAsGeoJson:
     InternalBase = declarative_base()
 
     class TblWSpacesAndDots(InternalBase):  # type: ignore
-        """
-        Dummy class to test names with dots and spaces.
+        """Dummy class to test names with dots and spaces.
+
         No metadata is attached so the dialect is default SQL, not postgresql.
         """
 
@@ -605,7 +606,7 @@ class TestSTAsGeoJson:
         stmt = select([func.ST_AsGeoJSON(Lake, "geom")])
         self._assert_stmt(
             stmt,
-            "SELECT ST_AsGeoJSON(lake, %(ST_AsGeoJSON_2)s) AS " '"ST_AsGeoJSON_1" FROM gis.lake',
+            'SELECT ST_AsGeoJSON(lake, %(ST_AsGeoJSON_2)s) AS "ST_AsGeoJSON_1" FROM gis.lake',
         )
 
     def test_subquery(self, Lake):

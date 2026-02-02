@@ -1,5 +1,4 @@
-"""
-Automatically use a function at insert or select
+"""Automatically use a function at insert or select
 ================================================
 
 Sometimes the application wants to apply a function in an insert or in a select.
@@ -45,7 +44,7 @@ class TransformedGeometry(TypeDecorator):
         self.db_srid = db_srid
 
     def column_expression(self, col):
-        """The column_expression() method is overridden to set the correct type.
+        """Return the column expression with the correct type.
 
         This is needed so that the returned element will also be decorated. In this case we don't
         want to transform it again afterwards so we set the same SRID to both the ``db_srid`` and
@@ -73,7 +72,7 @@ class ThreeDGeometry(TypeDecorator):
     cache_ok = True
 
     def column_expression(self, col):
-        """The column_expression() method is overridden to set the correct type.
+        """Return the column expression with the correct type.
 
         This is not needed in this example but it is needed if one wants to override other methods
         of the TypeDecorator class, like ``process_result_value()`` for example.

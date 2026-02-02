@@ -397,7 +397,6 @@ def test_insert_select(
     _insert_select_fail_or_success_type,
 ):
     """Benchmark the insert operation."""
-
     try:
         _actual_test_insert_select(
             benchmark,

@@ -79,9 +79,8 @@ class TestAdmin:
         conn.execute(t.insert(), elements)
 
         if not nullable:
-            with pytest.raises((IntegrityError, OperationalError)):
-                with conn.begin_nested():
-                    conn.execute(t.insert(), [{"geom": None}])
+            with pytest.raises((IntegrityError, OperationalError)), conn.begin_nested():
+                conn.execute(t.insert(), [{"geom": None}])
 
         conn.execute(t.insert(), [{"geom": "SRID=4326;LINESTRING(0 0,1 1)"}])
 
@@ -174,9 +173,7 @@ class TestIndex:
                 "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%';"
             )
         ).fetchall()
-        if idx_name in [i[0] for i in tables]:
-            return True
-        return False
+        return idx_name in [i[0] for i in tables]
 
     @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
     def test_index(self, conn, Lake, setup_tables):
@@ -347,10 +344,7 @@ class TestInsertionCore:
             assert format_wkt(wkt) == "GEOMETRYCOLLECTION(POINT(-1 1),LINESTRING(2 2,3 3))"
             srid = conn.execute(row[1].ST_SRID()).scalar()
             assert srid == 4326
-            if dialect_name == "mysql":
-                extended = None
-            else:
-                extended = True
+            extended = None if dialect_name == "mysql" else True
             assert row[1] == from_shape(
                 GeometryCollection([Point(-1, 1), LineString([[2, 2], [3, 3]])]),
                 srid=4326,

@@ -72,3 +72,4 @@ dmypy.json
 *.sh
 *.txt
 issues
+mylocal_db/
