@@ -10,6 +10,7 @@ from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 from geoalchemy2.alembic_helpers import _monkey_patch_get_indexes_for_mysql
 from geoalchemy2.alembic_helpers import _monkey_patch_get_indexes_for_sqlite
@@ -220,6 +221,10 @@ def _require_all_dialects(request):
 def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
     """Provide an engine to test database."""
     try:
+        if db_url.startswith("mysql://") or db_url.startswith("mariadb://"):
+            pool_kwargs = {"poolclass": NullPool}
+        else:
+            pool_kwargs = {}
         if db_url.startswith("sqlite:///"):
             # Copy the input SQLite DB to a temporary file and return an engine to it
             input_url = str(db_url)[10:]
@@ -236,7 +241,12 @@ def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
             )
         else:
             # For other dialects the engine is directly returned
-            current_engine = create_engine(db_url, echo=_engine_echo, plugins=["geoalchemy2"])
+            current_engine = create_engine(
+                db_url,
+                echo=_engine_echo,
+                plugins=["geoalchemy2"],
+                **pool_kwargs,
+            )
             current_engine.update_execution_options(search_path=["gis", "public"])
     except Exception as exc:
         msg = f"Could not create engine for this URL: {db_url}\nThe exception was: {exc}"

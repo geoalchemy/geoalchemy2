@@ -200,7 +200,7 @@ def _compile_table_row_thing(element, compiler, **kw):
     # can get it w/ correct quoting
     schema = getattr(element.selectable, "schema", "")
     name = element.selectable.name
-    pattern = rf"(.?{schema}.?\.)?(.?{name}.)\."
+    pattern = rf"(.?{schema}.?\.)?(.?{name}.?)\."
     m = re.match(pattern, compiled)
     if m:
         return m.group(2)

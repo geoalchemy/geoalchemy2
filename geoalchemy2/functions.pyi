@@ -18,7 +18,8 @@ class TableRowElement(ColumnElement):
     def _from_objects(self) -> list[FromClause]: ...
 
 class ST_AsGeoJSON(GenericFunction):
-    """Return the geometry as a GeoJSON "geometry" object, or the row as a GeoJSON feature" object (PostGIS
+    """
+    Return the geometry as a GeoJSON "geometry" object, or the row as a GeoJSON feature" object (PostGIS
     3 only). (Cf GeoJSON specifications RFC 7946). 2D and 3D Geometries are both supported. GeoJSON only
     support SFS 1.1 geometry types (no curve support for example). See
     https://postgis.net/docs/ST_AsGeoJSON.html
@@ -27,25 +28,29 @@ class ST_AsGeoJSON(GenericFunction):
     """
 
 class AddGeometryColumn(GenericFunction):
-    """Adds a geometry column to an existing table.
+    """
+    Adds a geometry column to an existing table.
 
     see https://postgis.net/docs/AddGeometryColumn.html
     """
 
 class DropGeometryColumn(GenericFunction):
-    """Removes a geometry column from a spatial table.
+    """
+    Removes a geometry column from a spatial table.
 
     see https://postgis.net/docs/DropGeometryColumn.html
     """
 
 class DropGeometryTable(GenericFunction):
-    """Drops a table and all its references in geometry_columns.
+    """
+    Drops a table and all its references in geometry_columns.
 
     see https://postgis.net/docs/DropGeometryTable.html
     """
 
 class Find_SRID(GenericFunction):
-    """Returns the SRID defined for a geometry column.
+    """
+    Returns the SRID defined for a geometry column.
 
     see https://postgis.net/docs/Find_SRID.html
 
@@ -55,19 +60,22 @@ class Find_SRID(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class Populate_Geometry_Columns(GenericFunction):
-    """Ensures geometry columns are defined with type modifiers or have appropriate spatial constraints.
+    """
+    Ensures geometry columns are defined with type modifiers or have appropriate spatial constraints.
 
     see https://postgis.net/docs/Populate_Geometry_Columns.html
     """
 
 class UpdateGeometrySRID(GenericFunction):
-    """Updates the SRID of all features in a geometry column, and the table metadata.
+    """
+    Updates the SRID of all features in a geometry column, and the table metadata.
 
     see https://postgis.net/docs/UpdateGeometrySRID.html
     """
 
 class ST_Collect(GenericFunction):
-    """Creates a GeometryCollection or Multi* geometry from a set of geometries.
+    """
+    Creates a GeometryCollection or Multi* geometry from a set of geometries.
 
     see https://postgis.net/docs/ST_Collect.html
 
@@ -77,7 +85,8 @@ class ST_Collect(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LineFromMultiPoint(GenericFunction):
-    """Creates a LineString from a MultiPoint geometry.
+    """
+    Creates a LineString from a MultiPoint geometry.
 
     see https://postgis.net/docs/ST_LineFromMultiPoint.html
 
@@ -87,7 +96,8 @@ class ST_LineFromMultiPoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MakeEnvelope(GenericFunction):
-    """Creates a rectangular Polygon from minimum and maximum coordinates.
+    """
+    Creates a rectangular Polygon from minimum and maximum coordinates.
 
     see https://postgis.net/docs/ST_MakeEnvelope.html
 
@@ -97,7 +107,8 @@ class ST_MakeEnvelope(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MakeLine(GenericFunction):
-    """Creates a Linestring from Point, MultiPoint, or LineString geometries.
+    """
+    Creates a Linestring from Point, MultiPoint, or LineString geometries.
 
     see https://postgis.net/docs/ST_MakeLine.html
 
@@ -107,7 +118,8 @@ class ST_MakeLine(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MakePoint(GenericFunction):
-    """Creates a 2D, 3DZ or 4D Point.
+    """
+    Creates a 2D, 3DZ or 4D Point.
 
     see https://postgis.net/docs/ST_MakePoint.html
 
@@ -117,7 +129,8 @@ class ST_MakePoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MakePointM(GenericFunction):
-    """Creates a Point from X, Y and M values.
+    """
+    Creates a Point from X, Y and M values.
 
     see https://postgis.net/docs/ST_MakePointM.html
 
@@ -127,7 +140,8 @@ class ST_MakePointM(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MakePolygon(GenericFunction):
-    """Creates a Polygon from a shell and optional list of holes.
+    """
+    Creates a Polygon from a shell and optional list of holes.
 
     see https://postgis.net/docs/ST_MakePolygon.html
 
@@ -137,7 +151,8 @@ class ST_MakePolygon(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Point(GenericFunction):
-    """Creates a Point with the given coordinate values. Alias for ST_MakePoint.
+    """
+    Creates a Point with the given coordinate values. Alias for ST_MakePoint.
 
     see https://postgis.net/docs/ST_Point.html
 
@@ -147,7 +162,8 @@ class ST_Point(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Polygon(GenericFunction):
-    """[geometry] Creates a Polygon from a LineString with a specified SRID.
+    """
+    [geometry] Creates a Polygon from a LineString with a specified SRID.
     OR
     [raster] Returns a multipolygon geometry formed by the union of pixels that have a pixel value that
     is not no data value. If no band number is specified, band num defaults to 1.
@@ -160,7 +176,8 @@ class ST_Polygon(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_TileEnvelope(GenericFunction):
-    """Creates a rectangular Polygon in Web Mercator (SRID:3857) using the XYZ tile system.
+    """
+    Creates a rectangular Polygon in Web Mercator (SRID:3857) using the XYZ tile system.
 
     see https://postgis.net/docs/ST_TileEnvelope.html
 
@@ -170,7 +187,8 @@ class ST_TileEnvelope(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class GeometryType(GenericFunction):
-    """Returns the type of a geometry as text.
+    """
+    Returns the type of a geometry as text.
 
     see https://postgis.net/docs/GeometryType.html
 
@@ -180,7 +198,8 @@ class GeometryType(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_Boundary(GenericFunction):
-    """Returns the boundary of a geometry.
+    """
+    Returns the boundary of a geometry.
 
     see https://postgis.net/docs/ST_Boundary.html
 
@@ -190,7 +209,8 @@ class ST_Boundary(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_CoordDim(GenericFunction):
-    """Return the coordinate dimension of a geometry.
+    """
+    Return the coordinate dimension of a geometry.
 
     see https://postgis.net/docs/ST_CoordDim.html
 
@@ -200,7 +220,8 @@ class ST_CoordDim(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_Dimension(GenericFunction):
-    """Returns the topological dimension of a geometry.
+    """
+    Returns the topological dimension of a geometry.
 
     see https://postgis.net/docs/ST_Dimension.html
 
@@ -210,7 +231,8 @@ class ST_Dimension(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_Dump(GenericFunction):
-    """Returns a set of geometry_dump rows for the components of a geometry.
+    """
+    Returns a set of geometry_dump rows for the components of a geometry.
 
     see https://postgis.net/docs/ST_Dump.html
 
@@ -220,7 +242,8 @@ class ST_Dump(GenericFunction):
     type = geoalchemy2.types.GeometryDump()
 
 class ST_DumpPoints(GenericFunction):
-    """Returns a set of geometry_dump rows for the points in a geometry.
+    """
+    Returns a set of geometry_dump rows for the points in a geometry.
 
     see https://postgis.net/docs/ST_DumpPoints.html
 
@@ -230,7 +253,8 @@ class ST_DumpPoints(GenericFunction):
     type = geoalchemy2.types.GeometryDump()
 
 class ST_DumpRings(GenericFunction):
-    """Returns a set of geometry_dump rows for the exterior and interior rings of a Polygon.
+    """
+    Returns a set of geometry_dump rows for the exterior and interior rings of a Polygon.
 
     see https://postgis.net/docs/ST_DumpRings.html
 
@@ -240,7 +264,8 @@ class ST_DumpRings(GenericFunction):
     type = geoalchemy2.types.GeometryDump()
 
 class ST_EndPoint(GenericFunction):
-    """Returns the last point of a LineString or CircularLineString.
+    """
+    Returns the last point of a LineString or CircularLineString.
 
     see https://postgis.net/docs/ST_EndPoint.html
 
@@ -250,7 +275,8 @@ class ST_EndPoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Envelope(GenericFunction):
-    """[geometry] Returns a geometry representing the bounding box of a geometry.
+    """
+    [geometry] Returns a geometry representing the bounding box of a geometry.
     OR
     [raster] Returns the polygon representation of the extent of the raster.
 
@@ -262,7 +288,8 @@ class ST_Envelope(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_BoundingDiagonal(GenericFunction):
-    """Returns the diagonal of a geometry's bounding box.
+    """
+    Returns the diagonal of a geometry's bounding box.
 
     see https://postgis.net/docs/ST_BoundingDiagonal.html
 
@@ -272,7 +299,8 @@ class ST_BoundingDiagonal(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ExteriorRing(GenericFunction):
-    """Returns a LineString representing the exterior ring of a Polygon.
+    """
+    Returns a LineString representing the exterior ring of a Polygon.
 
     see https://postgis.net/docs/ST_ExteriorRing.html
 
@@ -282,7 +310,8 @@ class ST_ExteriorRing(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeometryN(GenericFunction):
-    """Return the Nth geometry element of a geometry collection.
+    """
+    Return the Nth geometry element of a geometry collection.
 
     see https://postgis.net/docs/ST_GeometryN.html
 
@@ -292,7 +321,8 @@ class ST_GeometryN(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeometryType(GenericFunction):
-    """Returns the SQL-MM type of a geometry as text.
+    """
+    Returns the SQL-MM type of a geometry as text.
 
     see https://postgis.net/docs/ST_GeometryType.html
 
@@ -302,7 +332,8 @@ class ST_GeometryType(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_HasArc(GenericFunction):
-    """Tests if a geometry contains a circular arc
+    """
+    Tests if a geometry contains a circular arc
 
     see https://postgis.net/docs/ST_HasArc.html
 
@@ -312,7 +343,8 @@ class ST_HasArc(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_InteriorRingN(GenericFunction):
-    """Returns the Nth interior ring (hole) of a Polygon.
+    """
+    Returns the Nth interior ring (hole) of a Polygon.
 
     see https://postgis.net/docs/ST_InteriorRingN.html
 
@@ -322,7 +354,8 @@ class ST_InteriorRingN(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_IsPolygonCCW(GenericFunction):
-    """Tests if Polygons have exterior rings oriented counter-clockwise and interior rings oriented
+    """
+    Tests if Polygons have exterior rings oriented counter-clockwise and interior rings oriented
     clockwise.
 
     see https://postgis.net/docs/ST_IsPolygonCCW.html
@@ -333,7 +366,8 @@ class ST_IsPolygonCCW(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsPolygonCW(GenericFunction):
-    """Tests if Polygons have exterior rings oriented clockwise and interior rings oriented counter-
+    """
+    Tests if Polygons have exterior rings oriented clockwise and interior rings oriented counter-
     clockwise.
 
     see https://postgis.net/docs/ST_IsPolygonCW.html
@@ -344,7 +378,8 @@ class ST_IsPolygonCW(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsClosed(GenericFunction):
-    """Tests if a LineStrings's start and end points are coincident. For a PolyhedralSurface tests if it is
+    """
+    Tests if a LineStrings's start and end points are coincident. For a PolyhedralSurface tests if it is
     closed (volumetric).
 
     see https://postgis.net/docs/ST_IsClosed.html
@@ -355,7 +390,8 @@ class ST_IsClosed(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsCollection(GenericFunction):
-    """Tests if a geometry is a geometry collection type.
+    """
+    Tests if a geometry is a geometry collection type.
 
     see https://postgis.net/docs/ST_IsCollection.html
 
@@ -365,7 +401,8 @@ class ST_IsCollection(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsEmpty(GenericFunction):
-    """[geometry] Tests if a geometry is empty.
+    """
+    [geometry] Tests if a geometry is empty.
     OR
     [raster] Returns true if the raster is empty (width = 0 and height = 0). Otherwise, returns false.
 
@@ -377,7 +414,8 @@ class ST_IsEmpty(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsRing(GenericFunction):
-    """Tests if a LineString is closed and simple.
+    """
+    Tests if a LineString is closed and simple.
 
     see https://postgis.net/docs/ST_IsRing.html
 
@@ -387,7 +425,8 @@ class ST_IsRing(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsSimple(GenericFunction):
-    """Tests if a geometry has no points of self-intersection or self-tangency.
+    """
+    Tests if a geometry has no points of self-intersection or self-tangency.
 
     see https://postgis.net/docs/ST_IsSimple.html
 
@@ -397,7 +436,8 @@ class ST_IsSimple(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_M(GenericFunction):
-    """Returns the M coordinate of a Point.
+    """
+    Returns the M coordinate of a Point.
 
     see https://postgis.net/docs/ST_M.html
 
@@ -407,7 +447,8 @@ class ST_M(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_MemSize(GenericFunction):
-    """[geometry] Returns the amount of memory space a geometry takes.
+    """
+    [geometry] Returns the amount of memory space a geometry takes.
     OR
     [raster] Returns the amount of space (in bytes) the raster takes.
 
@@ -419,7 +460,8 @@ class ST_MemSize(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NDims(GenericFunction):
-    """Returns the coordinate dimension of a geometry.
+    """
+    Returns the coordinate dimension of a geometry.
 
     see https://postgis.net/docs/ST_NDims.html
 
@@ -429,7 +471,8 @@ class ST_NDims(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NPoints(GenericFunction):
-    """Returns the number of points (vertices) in a geometry.
+    """
+    Returns the number of points (vertices) in a geometry.
 
     see https://postgis.net/docs/ST_NPoints.html
 
@@ -439,7 +482,8 @@ class ST_NPoints(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NRings(GenericFunction):
-    """Returns the number of rings in a polygonal geometry.
+    """
+    Returns the number of rings in a polygonal geometry.
 
     see https://postgis.net/docs/ST_NRings.html
 
@@ -449,7 +493,8 @@ class ST_NRings(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NumGeometries(GenericFunction):
-    """Returns the number of elements in a geometry collection.
+    """
+    Returns the number of elements in a geometry collection.
 
     see https://postgis.net/docs/ST_NumGeometries.html
 
@@ -459,7 +504,8 @@ class ST_NumGeometries(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NumInteriorRings(GenericFunction):
-    """Returns the number of interior rings (holes) of a Polygon.
+    """
+    Returns the number of interior rings (holes) of a Polygon.
 
     see https://postgis.net/docs/ST_NumInteriorRings.html
 
@@ -469,7 +515,8 @@ class ST_NumInteriorRings(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NumInteriorRing(GenericFunction):
-    """Returns the number of interior rings (holes) of a Polygon. Aias for ST_NumInteriorRings
+    """
+    Returns the number of interior rings (holes) of a Polygon. Aias for ST_NumInteriorRings
 
     see https://postgis.net/docs/ST_NumInteriorRing.html
 
@@ -479,7 +526,8 @@ class ST_NumInteriorRing(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NumPatches(GenericFunction):
-    """Return the number of faces on a Polyhedral Surface. Will return null for non-polyhedral geometries.
+    """
+    Return the number of faces on a Polyhedral Surface. Will return null for non-polyhedral geometries.
 
     see https://postgis.net/docs/ST_NumPatches.html
 
@@ -489,7 +537,8 @@ class ST_NumPatches(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_NumPoints(GenericFunction):
-    """Returns the number of points in a LineString or CircularString.
+    """
+    Returns the number of points in a LineString or CircularString.
 
     see https://postgis.net/docs/ST_NumPoints.html
 
@@ -499,7 +548,8 @@ class ST_NumPoints(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_PatchN(GenericFunction):
-    """Returns the Nth geometry (face) of a PolyhedralSurface.
+    """
+    Returns the Nth geometry (face) of a PolyhedralSurface.
 
     see https://postgis.net/docs/ST_PatchN.html
 
@@ -509,7 +559,8 @@ class ST_PatchN(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_PointN(GenericFunction):
-    """Returns the Nth point in the first LineString or circular LineString in a geometry.
+    """
+    Returns the Nth point in the first LineString or circular LineString in a geometry.
 
     see https://postgis.net/docs/ST_PointN.html
 
@@ -519,7 +570,8 @@ class ST_PointN(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Points(GenericFunction):
-    """Returns a MultiPoint containing all the coordinates of a geometry.
+    """
+    Returns a MultiPoint containing all the coordinates of a geometry.
 
     see https://postgis.net/docs/ST_Points.html
 
@@ -529,7 +581,8 @@ class ST_Points(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_StartPoint(GenericFunction):
-    """Returns the first point of a LineString.
+    """
+    Returns the first point of a LineString.
 
     see https://postgis.net/docs/ST_StartPoint.html
 
@@ -539,7 +592,8 @@ class ST_StartPoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Summary(GenericFunction):
-    """[geometry] Returns a text summary of the contents of a geometry.
+    """
+    [geometry] Returns a text summary of the contents of a geometry.
     OR
     [raster] Returns a text summary of the contents of the raster.
 
@@ -551,7 +605,8 @@ class ST_Summary(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_X(GenericFunction):
-    """Returns the X coordinate of a Point.
+    """
+    Returns the X coordinate of a Point.
 
     see https://postgis.net/docs/ST_X.html
 
@@ -561,7 +616,8 @@ class ST_X(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Y(GenericFunction):
-    """Returns the Y coordinate of a Point.
+    """
+    Returns the Y coordinate of a Point.
 
     see https://postgis.net/docs/ST_Y.html
 
@@ -571,7 +627,8 @@ class ST_Y(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Z(GenericFunction):
-    """Returns the Z coordinate of a Point.
+    """
+    Returns the Z coordinate of a Point.
 
     see https://postgis.net/docs/ST_Z.html
 
@@ -581,7 +638,8 @@ class ST_Z(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Zmflag(GenericFunction):
-    """Returns a code indicating the ZM coordinate dimension of a geometry.
+    """
+    Returns a code indicating the ZM coordinate dimension of a geometry.
 
     see https://postgis.net/docs/ST_Zmflag.html
 
@@ -591,7 +649,8 @@ class ST_Zmflag(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_AddPoint(GenericFunction):
-    """Add a point to a LineString.
+    """
+    Add a point to a LineString.
 
     see https://postgis.net/docs/ST_AddPoint.html
 
@@ -601,7 +660,8 @@ class ST_AddPoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_CollectionExtract(GenericFunction):
-    """Given a (multi)geometry, return a (multi)geometry consisting only of elements of the specified type.
+    """
+    Given a (multi)geometry, return a (multi)geometry consisting only of elements of the specified type.
 
     see https://postgis.net/docs/ST_CollectionExtract.html
 
@@ -611,7 +671,8 @@ class ST_CollectionExtract(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_CollectionHomogenize(GenericFunction):
-    """Given a geometry collection, return the "simplest" representation of the contents.
+    """
+    Given a geometry collection, return the "simplest" representation of the contents.
 
     see https://postgis.net/docs/ST_CollectionHomogenize.html
 
@@ -621,7 +682,8 @@ class ST_CollectionHomogenize(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Force2D(GenericFunction):
-    """Force the geometries into a "2-dimensional mode".
+    """
+    Force the geometries into a "2-dimensional mode".
 
     see https://postgis.net/docs/ST_Force2D.html
 
@@ -631,7 +693,8 @@ class ST_Force2D(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Force3D(GenericFunction):
-    """Force the geometries into XYZ mode. This is an alias for ST_Force3DZ.
+    """
+    Force the geometries into XYZ mode. This is an alias for ST_Force3DZ.
 
     see https://postgis.net/docs/ST_Force_3D.html
 
@@ -641,7 +704,8 @@ class ST_Force3D(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Force3DZ(GenericFunction):
-    """Force the geometries into XYZ mode.
+    """
+    Force the geometries into XYZ mode.
 
     see https://postgis.net/docs/ST_Force_3DZ.html
 
@@ -651,7 +715,8 @@ class ST_Force3DZ(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Force3DM(GenericFunction):
-    """Force the geometries into XYM mode.
+    """
+    Force the geometries into XYM mode.
 
     see https://postgis.net/docs/ST_Force_3DZ.html
 
@@ -661,7 +726,8 @@ class ST_Force3DM(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Force4D(GenericFunction):
-    """Force the geometries into XYZM mode.
+    """
+    Force the geometries into XYZM mode.
 
     see https://postgis.net/docs/ST_Force_4D.html
 
@@ -671,7 +737,8 @@ class ST_Force4D(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ForcePolygonCCW(GenericFunction):
-    """Orients all exterior rings counter-clockwise and all interior rings clockwise.
+    """
+    Orients all exterior rings counter-clockwise and all interior rings clockwise.
 
     see https://postgis.net/docs/ST_ForcePolygonCCW.html
 
@@ -681,7 +748,8 @@ class ST_ForcePolygonCCW(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ForceCollection(GenericFunction):
-    """Convert the geometry into a GEOMETRYCOLLECTION.
+    """
+    Convert the geometry into a GEOMETRYCOLLECTION.
 
     see https://postgis.net/docs/ST_Force_Collection.html
 
@@ -691,7 +759,8 @@ class ST_ForceCollection(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ForcePolygonCW(GenericFunction):
-    """Orients all exterior rings clockwise and all interior rings counter-clockwise.
+    """
+    Orients all exterior rings clockwise and all interior rings counter-clockwise.
 
     see https://postgis.net/docs/ST_ForcePolygonCW.html
 
@@ -701,7 +770,8 @@ class ST_ForcePolygonCW(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ForceSFS(GenericFunction):
-    """Force the geometries to use SFS 1.1 geometry types only.
+    """
+    Force the geometries to use SFS 1.1 geometry types only.
 
     see https://postgis.net/docs/ST_ForceSFS.html
 
@@ -711,7 +781,8 @@ class ST_ForceSFS(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ForceRHR(GenericFunction):
-    """Force the orientation of the vertices in a polygon to follow the Right-Hand-Rule.
+    """
+    Force the orientation of the vertices in a polygon to follow the Right-Hand-Rule.
 
     see https://postgis.net/docs/ST_ForceRHR.html
 
@@ -721,7 +792,8 @@ class ST_ForceRHR(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ForceCurve(GenericFunction):
-    """Upcast a geometry into its curved type, if applicable.
+    """
+    Upcast a geometry into its curved type, if applicable.
 
     see https://postgis.net/docs/ST_ForceCurve.html
 
@@ -731,7 +803,8 @@ class ST_ForceCurve(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LineMerge(GenericFunction):
-    """Return a (set of) LineString(s) formed by sewing together a MULTILINESTRING.
+    """
+    Return a (set of) LineString(s) formed by sewing together a MULTILINESTRING.
 
     see https://postgis.net/docs/ST_LineMerge.html
 
@@ -741,7 +814,8 @@ class ST_LineMerge(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Multi(GenericFunction):
-    """Return the geometry as a MULTI* geometry.
+    """
+    Return the geometry as a MULTI* geometry.
 
     see https://postgis.net/docs/ST_Multi.html
 
@@ -751,7 +825,8 @@ class ST_Multi(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Normalize(GenericFunction):
-    """Return the geometry in its canonical form.
+    """
+    Return the geometry in its canonical form.
 
     see https://postgis.net/docs/ST_Normalize.html
 
@@ -761,7 +836,8 @@ class ST_Normalize(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_QuantizeCoordinates(GenericFunction):
-    """Sets least significant bits of coordinates to zero
+    """
+    Sets least significant bits of coordinates to zero
 
     see https://postgis.net/docs/ST_QuantizeCoordinates.html
 
@@ -771,7 +847,8 @@ class ST_QuantizeCoordinates(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_RemovePoint(GenericFunction):
-    """Remove point from a linestring.
+    """
+    Remove point from a linestring.
 
     see https://postgis.net/docs/ST_RemovePoint.html
 
@@ -781,7 +858,8 @@ class ST_RemovePoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Reverse(GenericFunction):
-    """Return the geometry with vertex order reversed.
+    """
+    Return the geometry with vertex order reversed.
 
     see https://postgis.net/docs/ST_Reverse.html
 
@@ -791,7 +869,8 @@ class ST_Reverse(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Segmentize(GenericFunction):
-    """Return a modified geometry/geography having no segment longer than the given distance.
+    """
+    Return a modified geometry/geography having no segment longer than the given distance.
 
     see https://postgis.net/docs/ST_Segmentize.html
 
@@ -801,7 +880,8 @@ class ST_Segmentize(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_SetPoint(GenericFunction):
-    """Replace point of a linestring with a given point.
+    """
+    Replace point of a linestring with a given point.
 
     see https://postgis.net/docs/ST_SetPoint.html
 
@@ -811,7 +891,8 @@ class ST_SetPoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_SnapToGrid(GenericFunction):
-    """[geometry] Snap all points of the input geometry to a regular grid.
+    """
+    [geometry] Snap all points of the input geometry to a regular grid.
     OR
     [raster] Resample a raster by snapping it to a grid. New pixel values are computed using the
     NearestNeighbor (english or american spelling), Bilinear, Cubic, CubicSpline or Lanczos resampling
@@ -825,7 +906,8 @@ class ST_SnapToGrid(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Snap(GenericFunction):
-    """Snap segments and vertices of input geometry to vertices of a reference geometry.
+    """
+    Snap segments and vertices of input geometry to vertices of a reference geometry.
 
     see https://postgis.net/docs/ST_Snap.html
 
@@ -835,7 +917,8 @@ class ST_Snap(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_SwapOrdinates(GenericFunction):
-    """Returns a version of the given geometry with given ordinate values swapped.
+    """
+    Returns a version of the given geometry with given ordinate values swapped.
 
     see https://postgis.net/docs/ST_SwapOrdinates.html
 
@@ -845,7 +928,8 @@ class ST_SwapOrdinates(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_IsValid(GenericFunction):
-    """Tests if a geometry is well-formed in 2D.
+    """
+    Tests if a geometry is well-formed in 2D.
 
     see https://postgis.net/docs/ST_IsValid.html
 
@@ -855,13 +939,15 @@ class ST_IsValid(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_IsValidDetail(GenericFunction):
-    """Returns a valid_detail row stating if a geometry is valid, and if not a reason why and a location.
+    """
+    Returns a valid_detail row stating if a geometry is valid, and if not a reason why and a location.
 
     see https://postgis.net/docs/ST_IsValidDetail.html
     """
 
 class ST_IsValidReason(GenericFunction):
-    """Returns text stating if a geometry is valid, or a reason for invalidity.
+    """
+    Returns text stating if a geometry is valid, or a reason for invalidity.
 
     see https://postgis.net/docs/ST_IsValidReason.html
 
@@ -871,7 +957,8 @@ class ST_IsValidReason(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_SetSRID(GenericFunction):
-    """[geometry] Set the SRID on a geometry to a particular integer value.
+    """
+    [geometry] Set the SRID on a geometry to a particular integer value.
     OR
     [raster] Sets the SRID of a raster to a particular integer srid defined in the spatial_ref_sys
     table.
@@ -884,7 +971,8 @@ class ST_SetSRID(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_SRID(GenericFunction):
-    """[geometry] Returns the spatial reference identifier for the ST_Geometry as defined in
+    """
+    [geometry] Returns the spatial reference identifier for the ST_Geometry as defined in
     spatial_ref_sys table.
     OR
     [raster] Returns the spatial reference identifier of the raster as defined in spatial_ref_sys table.
@@ -897,7 +985,8 @@ class ST_SRID(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_Transform(GenericFunction):
-    """[geometry] Return a new geometry with its coordinates transformed to a different spatial reference
+    """
+    [geometry] Return a new geometry with its coordinates transformed to a different spatial reference
     system.
     OR
     [raster] Reprojects a raster in a known spatial reference system to another known spatial reference
@@ -912,7 +1001,8 @@ class ST_Transform(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_BdPolyFromText(GenericFunction):
-    """Construct a Polygon given an arbitrary collection of closed linestrings as a MultiLineString Well-
+    """
+    Construct a Polygon given an arbitrary collection of closed linestrings as a MultiLineString Well-
     Known text representation.
 
     see https://postgis.net/docs/ST_BdPolyFromText.html
@@ -923,7 +1013,8 @@ class ST_BdPolyFromText(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_BdMPolyFromText(GenericFunction):
-    """Construct a MultiPolygon given an arbitrary collection of closed linestrings as a MultiLineString
+    """
+    Construct a MultiPolygon given an arbitrary collection of closed linestrings as a MultiLineString
     text representation Well-Known text representation.
 
     see https://postgis.net/docs/ST_BdMPolyFromText.html
@@ -934,7 +1025,8 @@ class ST_BdMPolyFromText(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeogFromText(GenericFunction):
-    """Return a specified geography value from Well-Known Text representation or extended (WKT).
+    """
+    Return a specified geography value from Well-Known Text representation or extended (WKT).
 
     see https://postgis.net/docs/ST_GeogFromText.html
 
@@ -944,7 +1036,8 @@ class ST_GeogFromText(GenericFunction):
     type = geoalchemy2.types.Geography()
 
 class ST_GeographyFromText(GenericFunction):
-    """Return a specified geography value from Well-Known Text representation or extended (WKT).
+    """
+    Return a specified geography value from Well-Known Text representation or extended (WKT).
 
     see https://postgis.net/docs/ST_GeographyFromText.html
 
@@ -954,7 +1047,8 @@ class ST_GeographyFromText(GenericFunction):
     type = geoalchemy2.types.Geography()
 
 class ST_GeomCollFromText(GenericFunction):
-    """Makes a collection Geometry from collection WKT with the given SRID. If SRID is not given, it
+    """
+    Makes a collection Geometry from collection WKT with the given SRID. If SRID is not given, it
     defaults to 0.
 
     see https://postgis.net/docs/ST_GeomCollFromText.html
@@ -965,7 +1059,8 @@ class ST_GeomCollFromText(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeomFromEWKT(GenericFunction):
-    """Return a specified ST_Geometry value from Extended Well-Known Text representation (EWKT).
+    """
+    Return a specified ST_Geometry value from Extended Well-Known Text representation (EWKT).
 
     see https://postgis.net/docs/ST_GeomFromEWKT.html
 
@@ -975,7 +1070,8 @@ class ST_GeomFromEWKT(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeometryFromText(GenericFunction):
-    """Return a specified ST_Geometry value from Well-Known Text representation (WKT). This is an alias
+    """
+    Return a specified ST_Geometry value from Well-Known Text representation (WKT). This is an alias
     name for ST_GeomFromText
 
     see https://postgis.net/docs/ST_GeometryFromText.html
@@ -986,7 +1082,8 @@ class ST_GeometryFromText(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeomFromText(GenericFunction):
-    """Return a specified ST_Geometry value from Well-Known Text representation (WKT).
+    """
+    Return a specified ST_Geometry value from Well-Known Text representation (WKT).
 
     see https://postgis.net/docs/ST_GeomFromText.html
 
@@ -996,7 +1093,8 @@ class ST_GeomFromText(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LineFromText(GenericFunction):
-    """Makes a Geometry from WKT representation with the given SRID. If SRID is not given, it defaults to
+    """
+    Makes a Geometry from WKT representation with the given SRID. If SRID is not given, it defaults to
     0.
 
     see https://postgis.net/docs/ST_LineFromText.html
@@ -1007,7 +1105,8 @@ class ST_LineFromText(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MLineFromText(GenericFunction):
-    """Return a specified ST_MultiLineString value from WKT representation.
+    """
+    Return a specified ST_MultiLineString value from WKT representation.
 
     see https://postgis.net/docs/ST_MLineFromText.html
 
@@ -1017,7 +1116,8 @@ class ST_MLineFromText(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MPointFromText(GenericFunction):
-    """Makes a Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
+    """
+    Makes a Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
 
     see https://postgis.net/docs/ST_MPointFromText.html
 
@@ -1027,7 +1127,8 @@ class ST_MPointFromText(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MPolyFromText(GenericFunction):
-    """Makes a MultiPolygon Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
+    """
+    Makes a MultiPolygon Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
 
     see https://postgis.net/docs/ST_MPolyFromText.html
 
@@ -1037,7 +1138,8 @@ class ST_MPolyFromText(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_PointFromText(GenericFunction):
-    """Makes a point Geometry from WKT with the given SRID. If SRID is not given, it defaults to unknown.
+    """
+    Makes a point Geometry from WKT with the given SRID. If SRID is not given, it defaults to unknown.
 
     see https://postgis.net/docs/ST_PointFromText.html
 
@@ -1047,7 +1149,8 @@ class ST_PointFromText(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_PolygonFromText(GenericFunction):
-    """Makes a Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
+    """
+    Makes a Geometry from WKT with the given SRID. If SRID is not given, it defaults to 0.
 
     see https://postgis.net/docs/ST_PolygonFromText.html
 
@@ -1057,7 +1160,8 @@ class ST_PolygonFromText(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_WKTToSQL(GenericFunction):
-    """Return a specified ST_Geometry value from Well-Known Text representation (WKT). This is an alias
+    """
+    Return a specified ST_Geometry value from Well-Known Text representation (WKT). This is an alias
     name for ST_GeomFromText
 
     see https://postgis.net/docs/ST_WKTToSQL.html
@@ -1068,7 +1172,8 @@ class ST_WKTToSQL(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeogFromWKB(GenericFunction):
-    """Creates a geography instance from a Well-Known Binary geometry representation (WKB) or extended Well
+    """
+    Creates a geography instance from a Well-Known Binary geometry representation (WKB) or extended Well
     Known Binary (EWKB).
 
     see https://postgis.net/docs/ST_GeogFromWKB.html
@@ -1079,7 +1184,8 @@ class ST_GeogFromWKB(GenericFunction):
     type = geoalchemy2.types.Geography()
 
 class ST_GeomFromEWKB(GenericFunction):
-    """Return a specified ST_Geometry value from Extended Well-Known Binary representation (EWKB).
+    """
+    Return a specified ST_Geometry value from Extended Well-Known Binary representation (EWKB).
 
     see https://postgis.net/docs/ST_GeomFromEWKB.html
 
@@ -1089,7 +1195,8 @@ class ST_GeomFromEWKB(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeomFromWKB(GenericFunction):
-    """Creates a geometry instance from a Well-Known Binary geometry representation (WKB) and optional
+    """
+    Creates a geometry instance from a Well-Known Binary geometry representation (WKB) and optional
     SRID.
 
     see https://postgis.net/docs/ST_GeomFromWKB.html
@@ -1100,7 +1207,8 @@ class ST_GeomFromWKB(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LineFromWKB(GenericFunction):
-    """Makes a LINESTRING from WKB with the given SRID
+    """
+    Makes a LINESTRING from WKB with the given SRID
 
     see https://postgis.net/docs/ST_LineFromWKB.html
 
@@ -1110,7 +1218,8 @@ class ST_LineFromWKB(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LinestringFromWKB(GenericFunction):
-    """Makes a geometry from WKB with the given SRID.
+    """
+    Makes a geometry from WKB with the given SRID.
 
     see https://postgis.net/docs/ST_LinestringFromWKB.html
 
@@ -1120,7 +1229,8 @@ class ST_LinestringFromWKB(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_PointFromWKB(GenericFunction):
-    """Makes a geometry from WKB with the given SRID
+    """
+    Makes a geometry from WKB with the given SRID
 
     see https://postgis.net/docs/ST_PointFromWKB.html
 
@@ -1130,7 +1240,8 @@ class ST_PointFromWKB(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_WKBToSQL(GenericFunction):
-    """Return a specified ST_Geometry value from Well-Known Binary representation (WKB). This is an alias
+    """
+    Return a specified ST_Geometry value from Well-Known Binary representation (WKB). This is an alias
     name for ST_GeomFromWKB that takes no srid
 
     see https://postgis.net/docs/ST_WKBToSQL.html
@@ -1141,13 +1252,15 @@ class ST_WKBToSQL(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Box2dFromGeoHash(GenericFunction):
-    """Return a BOX2D from a GeoHash string.
+    """
+    Return a BOX2D from a GeoHash string.
 
     see https://postgis.net/docs/ST_Box2dFromGeoHash.html
     """
 
 class ST_GeomFromGeoHash(GenericFunction):
-    """Return a geometry from a GeoHash string.
+    """
+    Return a geometry from a GeoHash string.
 
     see https://postgis.net/docs/ST_GeomFromGeoHash.html
 
@@ -1157,7 +1270,8 @@ class ST_GeomFromGeoHash(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeomFromGML(GenericFunction):
-    """Takes as input GML representation of geometry and outputs a PostGIS geometry object
+    """
+    Takes as input GML representation of geometry and outputs a PostGIS geometry object
 
     see https://postgis.net/docs/ST_GeomFromGML.html
 
@@ -1167,7 +1281,8 @@ class ST_GeomFromGML(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeomFromGeoJSON(GenericFunction):
-    """Takes as input a geojson representation of a geometry and outputs a PostGIS geometry object
+    """
+    Takes as input a geojson representation of a geometry and outputs a PostGIS geometry object
 
     see https://postgis.net/docs/ST_GeomFromGeoJSON.html
 
@@ -1177,7 +1292,8 @@ class ST_GeomFromGeoJSON(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeomFromKML(GenericFunction):
-    """Takes as input KML representation of geometry and outputs a PostGIS geometry object
+    """
+    Takes as input KML representation of geometry and outputs a PostGIS geometry object
 
     see https://postgis.net/docs/ST_GeomFromKML.html
 
@@ -1187,7 +1303,8 @@ class ST_GeomFromKML(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeomFromTWKB(GenericFunction):
-    """Creates a geometry instance from a TWKB ("Tiny Well-Known Binary") geometry representation.
+    """
+    Creates a geometry instance from a TWKB ("Tiny Well-Known Binary") geometry representation.
 
     see https://postgis.net/docs/ST_GeomFromTWKB.html
 
@@ -1197,7 +1314,8 @@ class ST_GeomFromTWKB(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GMLToSQL(GenericFunction):
-    """Return a specified ST_Geometry value from GML representation. This is an alias name for
+    """
+    Return a specified ST_Geometry value from GML representation. This is an alias name for
     ST_GeomFromGML
 
     see https://postgis.net/docs/ST_GMLToSQL.html
@@ -1208,7 +1326,8 @@ class ST_GMLToSQL(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LineFromEncodedPolyline(GenericFunction):
-    """Creates a LineString from an Encoded Polyline.
+    """
+    Creates a LineString from an Encoded Polyline.
 
     see https://postgis.net/docs/ST_LineFromEncodedPolyline.html
 
@@ -1218,7 +1337,8 @@ class ST_LineFromEncodedPolyline(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_PointFromGeoHash(GenericFunction):
-    """Return a point from a GeoHash string.
+    """
+    Return a point from a GeoHash string.
 
     see https://postgis.net/docs/ST_PointFromGeoHash.html
 
@@ -1228,7 +1348,8 @@ class ST_PointFromGeoHash(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_AsEWKT(GenericFunction):
-    """Return the Well-Known Text (WKT) representation of the geometry with SRID meta data.
+    """
+    Return the Well-Known Text (WKT) representation of the geometry with SRID meta data.
 
     see https://postgis.net/docs/ST_AsEWKT.html
 
@@ -1238,7 +1359,8 @@ class ST_AsEWKT(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsText(GenericFunction):
-    """Return the Well-Known Text (WKT) representation of the geometry/geography without SRID metadata.
+    """
+    Return the Well-Known Text (WKT) representation of the geometry/geography without SRID metadata.
 
     see https://postgis.net/docs/ST_AsText.html
 
@@ -1248,7 +1370,8 @@ class ST_AsText(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsBinary(GenericFunction):
-    """[geometry] Return the Well-Known Binary (WKB) representation of the geometry/geography without SRID
+    """
+    [geometry] Return the Well-Known Binary (WKB) representation of the geometry/geography without SRID
     meta data.
     OR
     [raster] Return the Well-Known Binary (WKB) representation of the raster.
@@ -1257,13 +1380,15 @@ class ST_AsBinary(GenericFunction):
     """
 
 class ST_AsEWKB(GenericFunction):
-    """Return the Well-Known Binary (WKB) representation of the geometry with SRID meta data.
+    """
+    Return the Well-Known Binary (WKB) representation of the geometry with SRID meta data.
 
     see https://postgis.net/docs/ST_AsEWKB.html
     """
 
 class ST_AsHEXEWKB(GenericFunction):
-    """Returns a Geometry in HEXEWKB format (as text) using either little-endian (NDR) or big-endian (XDR)
+    """
+    Returns a Geometry in HEXEWKB format (as text) using either little-endian (NDR) or big-endian (XDR)
     encoding.
 
     see https://postgis.net/docs/ST_AsHEXEWKB.html
@@ -1274,7 +1399,8 @@ class ST_AsHEXEWKB(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsEncodedPolyline(GenericFunction):
-    """Returns an Encoded Polyline from a LineString geometry.
+    """
+    Returns an Encoded Polyline from a LineString geometry.
 
     see https://postgis.net/docs/ST_AsEncodedPolyline.html
 
@@ -1284,13 +1410,15 @@ class ST_AsEncodedPolyline(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsGeobuf(GenericFunction):
-    """Return a Geobuf representation of a set of rows.
+    """
+    Return a Geobuf representation of a set of rows.
 
     see https://postgis.net/docs/ST_AsGeobuf.html
     """
 
 class ST_AsGML(GenericFunction):
-    """Return the geometry as a GML version 2 or 3 element.
+    """
+    Return the geometry as a GML version 2 or 3 element.
 
     see https://postgis.net/docs/ST_AsGML.html
 
@@ -1300,7 +1428,8 @@ class ST_AsGML(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsKML(GenericFunction):
-    """Return the geometry as a KML element. Several variants. Default version=2, default
+    """
+    Return the geometry as a KML element. Several variants. Default version=2, default
     maxdecimaldigits=15
 
     see https://postgis.net/docs/ST_AsKML.html
@@ -1311,7 +1440,8 @@ class ST_AsKML(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsLatLonText(GenericFunction):
-    """Return the Degrees, Minutes, Seconds representation of the given point.
+    """
+    Return the Degrees, Minutes, Seconds representation of the given point.
 
     see https://postgis.net/docs/ST_AsLatLonText.html
 
@@ -1321,7 +1451,8 @@ class ST_AsLatLonText(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_AsMVTGeom(GenericFunction):
-    """Transform a geometry into the coordinate space of a Mapbox Vector Tile.
+    """
+    Transform a geometry into the coordinate space of a Mapbox Vector Tile.
 
     see https://postgis.net/docs/ST_AsMVTGeom.html
 
@@ -1331,31 +1462,36 @@ class ST_AsMVTGeom(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_AsMVT(GenericFunction):
-    """Aggregate function returning a Mapbox Vector Tile representation of a set of rows.
+    """
+    Aggregate function returning a Mapbox Vector Tile representation of a set of rows.
 
     see https://postgis.net/docs/ST_AsMVT.html
     """
 
 class ST_AsSVG(GenericFunction):
-    """Returns SVG path data for a geometry.
+    """
+    Returns SVG path data for a geometry.
 
     see https://postgis.net/docs/ST_AsSVG.html
     """
 
 class ST_AsTWKB(GenericFunction):
-    """Returns the geometry as TWKB, aka "Tiny Well-Known Binary"
+    """
+    Returns the geometry as TWKB, aka "Tiny Well-Known Binary"
 
     see https://postgis.net/docs/ST_AsTWKB.html
     """
 
 class ST_AsX3D(GenericFunction):
-    """Returns a Geometry in X3D xml node element format: ISO-IEC-19776-1.2-X3DEncodings-XML
+    """
+    Returns a Geometry in X3D xml node element format: ISO-IEC-19776-1.2-X3DEncodings-XML
 
     see https://postgis.net/docs/ST_AsX3D.html
     """
 
 class ST_GeoHash(GenericFunction):
-    """Return a GeoHash representation of the geometry.
+    """
+    Return a GeoHash representation of the geometry.
 
     see https://postgis.net/docs/ST_GeoHash.html
 
@@ -1365,7 +1501,8 @@ class ST_GeoHash(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_3DIntersects(GenericFunction):
-    """Returns TRUE if the Geometries "spatially intersect" in 3D - only for points, linestrings, polygons,
+    """
+    Returns TRUE if the Geometries "spatially intersect" in 3D - only for points, linestrings, polygons,
     polyhedral surface (area).
 
     see https://postgis.net/docs/ST_3DIntersects.html
@@ -1376,7 +1513,8 @@ class ST_3DIntersects(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Contains(GenericFunction):
-    """[geometry] Returns true if and only if no points of B lie in the exterior of A, and at least one
+    """
+    [geometry] Returns true if and only if no points of B lie in the exterior of A, and at least one
     point of the interior of B lies in the interior of A.
     OR
     [raster] Return true if no points of raster rastB lie in the exterior of raster rastA and at least
@@ -1390,7 +1528,8 @@ class ST_Contains(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_ContainsProperly(GenericFunction):
-    """[geometry] Returns true if B intersects the interior of A but not the boundary (or exterior). A does
+    """
+    [geometry] Returns true if B intersects the interior of A but not the boundary (or exterior). A does
     not contain properly itself, but does contain itself.
     OR
     [raster] Return true if rastB intersects the interior of rastA but not the boundary or exterior of
@@ -1404,7 +1543,8 @@ class ST_ContainsProperly(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Covers(GenericFunction):
-    """[geometry] Returns 1 (TRUE) if no point in Geometry B is outside Geometry A
+    """
+    [geometry] Returns 1 (TRUE) if no point in Geometry B is outside Geometry A
     OR
     [raster] Return true if no points of raster rastB lie outside raster rastA.
 
@@ -1416,7 +1556,8 @@ class ST_Covers(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_CoveredBy(GenericFunction):
-    """[geometry] Returns 1 (TRUE) if no point in Geometry/Geography A is outside Geometry/Geography B
+    """
+    [geometry] Returns 1 (TRUE) if no point in Geometry/Geography A is outside Geometry/Geography B
     OR
     [raster] Return true if no points of raster rastA lie outside raster rastB.
 
@@ -1428,7 +1569,8 @@ class ST_CoveredBy(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Crosses(GenericFunction):
-    """Returns TRUE if the supplied geometries have some, but not all, interior points in common.
+    """
+    Returns TRUE if the supplied geometries have some, but not all, interior points in common.
 
     see https://postgis.net/docs/ST_Crosses.html
 
@@ -1438,7 +1580,8 @@ class ST_Crosses(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_LineCrossingDirection(GenericFunction):
-    """Given 2 linestrings, returns a number between -3 and 3 denoting what kind of crossing behavior. 0 is
+    """
+    Given 2 linestrings, returns a number between -3 and 3 denoting what kind of crossing behavior. 0 is
     no crossing.
 
     see https://postgis.net/docs/ST_LineCrossingDirection.html
@@ -1449,7 +1592,8 @@ class ST_LineCrossingDirection(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_Disjoint(GenericFunction):
-    """[geometry] Returns TRUE if the Geometries do not "spatially intersect" - if they do not share any
+    """
+    [geometry] Returns TRUE if the Geometries do not "spatially intersect" - if they do not share any
     space together.
     OR
     [raster] Return true if raster rastA does not spatially intersect rastB.
@@ -1462,7 +1606,8 @@ class ST_Disjoint(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Equals(GenericFunction):
-    """Returns true if the given geometries represent the same geometry. Directionality is ignored.
+    """
+    Returns true if the given geometries represent the same geometry. Directionality is ignored.
 
     see https://postgis.net/docs/ST_Equals.html
 
@@ -1472,7 +1617,8 @@ class ST_Equals(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Intersects(GenericFunction):
-    """[geometry] Returns TRUE if the Geometries/Geography "spatially intersect in 2D" - (share any portion
+    """
+    [geometry] Returns TRUE if the Geometries/Geography "spatially intersect in 2D" - (share any portion
     of space) and FALSE if they don't (they are Disjoint). For geography tolerance is 0.00001 meters (so
     any points that close are considered to intersect)
     OR
@@ -1486,7 +1632,8 @@ class ST_Intersects(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_OrderingEquals(GenericFunction):
-    """Returns true if the given geometries represent the same geometry and points are in the same
+    """
+    Returns true if the given geometries represent the same geometry and points are in the same
     directional order.
 
     see https://postgis.net/docs/ST_OrderingEquals.html
@@ -1497,7 +1644,8 @@ class ST_OrderingEquals(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Overlaps(GenericFunction):
-    """[geometry] Returns TRUE if the Geometries share space, are of the same dimension, but are not
+    """
+    [geometry] Returns TRUE if the Geometries share space, are of the same dimension, but are not
     completely contained by each other.
     OR
     [raster] Return true if raster rastA and rastB intersect but one does not completely contain the
@@ -1511,7 +1659,8 @@ class ST_Overlaps(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_PointInsideCircle(GenericFunction):
-    """Is the point geometry inside the circle defined by center_x, center_y, radius
+    """
+    Is the point geometry inside the circle defined by center_x, center_y, radius
 
     see https://postgis.net/docs/ST_PointInsideCircle.html
 
@@ -1521,7 +1670,8 @@ class ST_PointInsideCircle(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Relate(GenericFunction):
-    """Returns true if this Geometry is spatially related to anotherGeometry, by testing for intersections
+    """
+    Returns true if this Geometry is spatially related to anotherGeometry, by testing for intersections
     between the Interior, Boundary and Exterior of the two geometries as specified by the values in the
     intersectionMatrixPattern. If no intersectionMatrixPattern is passed in, then returns the maximum
     intersectionMatrixPattern that relates the 2 geometries.
@@ -1534,7 +1684,8 @@ class ST_Relate(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_RelateMatch(GenericFunction):
-    """Returns true if intersectionMattrixPattern1 implies intersectionMatrixPattern2
+    """
+    Returns true if intersectionMattrixPattern1 implies intersectionMatrixPattern2
 
     see https://postgis.net/docs/ST_RelateMatch.html
 
@@ -1544,7 +1695,8 @@ class ST_RelateMatch(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Touches(GenericFunction):
-    """[geometry] Returns TRUE if the geometries have at least one point in common, but their interiors do
+    """
+    [geometry] Returns TRUE if the geometries have at least one point in common, but their interiors do
     not intersect.
     OR
     [raster] Return true if raster rastA and rastB have at least one point in common but their interiors
@@ -1558,7 +1710,8 @@ class ST_Touches(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Within(GenericFunction):
-    """[geometry] Returns true if the geometry A is completely inside geometry B
+    """
+    [geometry] Returns true if the geometry A is completely inside geometry B
     OR
     [raster] Return true if no points of raster rastA lie in the exterior of raster rastB and at least
     one point of the interior of rastA lies in the interior of rastB.
@@ -1571,7 +1724,8 @@ class ST_Within(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_3DDWithin(GenericFunction):
-    """For 3d (z) geometry type Returns true if two geometries 3d distance is within number of units.
+    """
+    For 3d (z) geometry type Returns true if two geometries 3d distance is within number of units.
 
     see https://postgis.net/docs/ST_3DDWithin.html
 
@@ -1581,7 +1735,8 @@ class ST_3DDWithin(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_3DDFullyWithin(GenericFunction):
-    """Returns true if all of the 3D geometries are within the specified distance of one another.
+    """
+    Returns true if all of the 3D geometries are within the specified distance of one another.
 
     see https://postgis.net/docs/ST_3DDFullyWithin.html
 
@@ -1591,7 +1746,8 @@ class ST_3DDFullyWithin(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_DFullyWithin(GenericFunction):
-    """[geometry] Returns true if all of the geometries are within the specified distance of one another
+    """
+    [geometry] Returns true if all of the geometries are within the specified distance of one another
     OR
     [raster] Return true if rasters rastA and rastB are fully within the specified distance of each
     other.
@@ -1604,7 +1760,8 @@ class ST_DFullyWithin(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_DWithin(GenericFunction):
-    """[geometry] Returns true if the geometries are within the specified distance of one another. For
+    """
+    [geometry] Returns true if the geometries are within the specified distance of one another. For
     geometry units are in those of spatial reference and for geography units are in meters and
     measurement is defaulted to use_spheroid=true (measure around spheroid), for faster check,
     use_spheroid=false to measure along sphere.
@@ -1619,7 +1776,8 @@ class ST_DWithin(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Area(GenericFunction):
-    """Returns the area of a polygonal geometry.
+    """
+    Returns the area of a polygonal geometry.
 
     see https://postgis.net/docs/ST_Area.html
 
@@ -1629,7 +1787,8 @@ class ST_Area(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Azimuth(GenericFunction):
-    """Returns the north-based azimuth as the angle in radians measured clockwise from the vertical on
+    """
+    Returns the north-based azimuth as the angle in radians measured clockwise from the vertical on
     pointA to pointB.
 
     see https://postgis.net/docs/ST_Azimuth.html
@@ -1640,7 +1799,8 @@ class ST_Azimuth(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Angle(GenericFunction):
-    """Returns the angle between 3 points, or between 2 vectors (4 points or 2 lines).
+    """
+    Returns the angle between 3 points, or between 2 vectors (4 points or 2 lines).
 
     see https://postgis.net/docs/ST_Angle.html
 
@@ -1650,7 +1810,8 @@ class ST_Angle(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_ClosestPoint(GenericFunction):
-    """Returns the 2D point on g1 that is closest to g2. This is the first point of the shortest line.
+    """
+    Returns the 2D point on g1 that is closest to g2. This is the first point of the shortest line.
 
     see https://postgis.net/docs/ST_ClosestPoint.html
 
@@ -1660,7 +1821,8 @@ class ST_ClosestPoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_3DClosestPoint(GenericFunction):
-    """Returns the 3D point on g1 that is closest to g2. This is the first point of the 3D shortest line.
+    """
+    Returns the 3D point on g1 that is closest to g2. This is the first point of the 3D shortest line.
 
     see https://postgis.net/docs/ST_3DClosestPoint.html
 
@@ -1670,7 +1832,8 @@ class ST_3DClosestPoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Distance(GenericFunction):
-    """Returns the distance between two geometry or geography values.
+    """
+    Returns the distance between two geometry or geography values.
 
     see https://postgis.net/docs/ST_Distance.html
 
@@ -1680,7 +1843,8 @@ class ST_Distance(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_3DDistance(GenericFunction):
-    """Returns the 3D cartesian minimum distance (based on spatial ref) between two geometries in projected
+    """
+    Returns the 3D cartesian minimum distance (based on spatial ref) between two geometries in projected
     units.
 
     see https://postgis.net/docs/ST_3DDistance.html
@@ -1691,7 +1855,8 @@ class ST_3DDistance(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_DistanceSphere(GenericFunction):
-    """Returns minimum distance in meters between two lon/lat geometries using a spherical earth model.
+    """
+    Returns minimum distance in meters between two lon/lat geometries using a spherical earth model.
 
     see https://postgis.net/docs/ST_DistanceSphere.html
 
@@ -1701,7 +1866,8 @@ class ST_DistanceSphere(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_DistanceSpheroid(GenericFunction):
-    """Returns the minimum distance between two lon/lat geometries using a spheroidal earth model.
+    """
+    Returns the minimum distance between two lon/lat geometries using a spheroidal earth model.
 
     see https://postgis.net/docs/ST_DistanceSpheroid.html
 
@@ -1711,7 +1877,8 @@ class ST_DistanceSpheroid(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_FrechetDistance(GenericFunction):
-    """Returns the Fréchet distance between two geometries.
+    """
+    Returns the Fréchet distance between two geometries.
 
     see https://postgis.net/docs/ST_FrechetDistance.html
 
@@ -1721,7 +1888,8 @@ class ST_FrechetDistance(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_HausdorffDistance(GenericFunction):
-    """Returns the Hausdorff distance between two geometries.
+    """
+    Returns the Hausdorff distance between two geometries.
 
     see https://postgis.net/docs/ST_HausdorffDistance.html
 
@@ -1731,7 +1899,8 @@ class ST_HausdorffDistance(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Length(GenericFunction):
-    """Returns the 2D length of a linear geometry.
+    """
+    Returns the 2D length of a linear geometry.
 
     see https://postgis.net/docs/ST_Length.html
 
@@ -1741,7 +1910,8 @@ class ST_Length(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Length2D(GenericFunction):
-    """Returns the 2D length of a linear geometry. Alias for ST_Length
+    """
+    Returns the 2D length of a linear geometry. Alias for ST_Length
 
     see https://postgis.net/docs/ST_Length2D.html
 
@@ -1751,7 +1921,8 @@ class ST_Length2D(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_3DLength(GenericFunction):
-    """Returns the 3D length of a linear geometry.
+    """
+    Returns the 3D length of a linear geometry.
 
     see https://postgis.net/docs/ST_3DLength.html
 
@@ -1761,7 +1932,8 @@ class ST_3DLength(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_LengthSpheroid(GenericFunction):
-    """Returns the 2D or 3D length/perimeter of a lon/lat geometry on a spheroid.
+    """
+    Returns the 2D or 3D length/perimeter of a lon/lat geometry on a spheroid.
 
     see https://postgis.net/docs/ST_LengthSpheroid.html
 
@@ -1771,7 +1943,8 @@ class ST_LengthSpheroid(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_LongestLine(GenericFunction):
-    """Returns the 2D longest line between two geometries.
+    """
+    Returns the 2D longest line between two geometries.
 
     see https://postgis.net/docs/ST_LongestLine.html
 
@@ -1781,7 +1954,8 @@ class ST_LongestLine(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_3DLongestLine(GenericFunction):
-    """Returns the 3D longest line between two geometries
+    """
+    Returns the 3D longest line between two geometries
 
     see https://postgis.net/docs/ST_3DLongestLine.html
 
@@ -1791,7 +1965,8 @@ class ST_3DLongestLine(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MaxDistance(GenericFunction):
-    """Returns the 2D largest distance between two geometries in projected units.
+    """
+    Returns the 2D largest distance between two geometries in projected units.
 
     see https://postgis.net/docs/ST_MaxDistance.html
 
@@ -1801,7 +1976,8 @@ class ST_MaxDistance(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_3DMaxDistance(GenericFunction):
-    """Returns the 3D cartesian maximum distance (based on spatial ref) between two geometries in projected
+    """
+    Returns the 3D cartesian maximum distance (based on spatial ref) between two geometries in projected
     units.
 
     see https://postgis.net/docs/ST_3DMaxDistance.html
@@ -1812,7 +1988,8 @@ class ST_3DMaxDistance(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_MinimumClearance(GenericFunction):
-    """Returns the minimum clearance of a geometry, a measure of a geometry's robustness.
+    """
+    Returns the minimum clearance of a geometry, a measure of a geometry's robustness.
 
     see https://postgis.net/docs/ST_MinimumClearance.html
 
@@ -1822,7 +1999,8 @@ class ST_MinimumClearance(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_MinimumClearanceLine(GenericFunction):
-    """Returns the two-point LineString spanning a geometry's minimum clearance.
+    """
+    Returns the two-point LineString spanning a geometry's minimum clearance.
 
     see https://postgis.net/docs/ST_MinimumClearanceLine.html
 
@@ -1832,7 +2010,8 @@ class ST_MinimumClearanceLine(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Perimeter(GenericFunction):
-    """Returns the length of the boundary of a polygonal geometry or geography.
+    """
+    Returns the length of the boundary of a polygonal geometry or geography.
 
     see https://postgis.net/docs/ST_Perimeter.html
 
@@ -1842,7 +2021,8 @@ class ST_Perimeter(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Perimeter2D(GenericFunction):
-    """Returns the 2D perimeter of a polygonal geometry. Alias for ST_Perimeter.
+    """
+    Returns the 2D perimeter of a polygonal geometry. Alias for ST_Perimeter.
 
     see https://postgis.net/docs/ST_Perimeter2D.html
 
@@ -1852,7 +2032,8 @@ class ST_Perimeter2D(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_3DPerimeter(GenericFunction):
-    """Returns the 3D perimeter of a polygonal geometry.
+    """
+    Returns the 3D perimeter of a polygonal geometry.
 
     see https://postgis.net/docs/ST_3DPerimeter.html
 
@@ -1862,7 +2043,8 @@ class ST_3DPerimeter(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Project(GenericFunction):
-    """Returns a point projected from a start point by a distance and bearing (azimuth).
+    """
+    Returns a point projected from a start point by a distance and bearing (azimuth).
 
     see https://postgis.net/docs/ST_Project.html
 
@@ -1872,7 +2054,8 @@ class ST_Project(GenericFunction):
     type = geoalchemy2.types.Geography()
 
 class ST_ShortestLine(GenericFunction):
-    """Returns the 2D shortest line between two geometries
+    """
+    Returns the 2D shortest line between two geometries
 
     see https://postgis.net/docs/ST_ShortestLine.html
 
@@ -1882,7 +2065,8 @@ class ST_ShortestLine(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_3DShortestLine(GenericFunction):
-    """Returns the 3D shortest line between two geometries
+    """
+    Returns the 3D shortest line between two geometries
 
     see https://postgis.net/docs/ST_3DShortestLine.html
 
@@ -1892,7 +2076,8 @@ class ST_3DShortestLine(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Buffer(GenericFunction):
-    """(T) Returns a geometry covering all points within a given distance from the input geometry.
+    """
+    (T) Returns a geometry covering all points within a given distance from the input geometry.
 
     see https://postgis.net/docs/ST_Buffer.html
 
@@ -1902,7 +2087,8 @@ class ST_Buffer(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_BuildArea(GenericFunction):
-    """Creates an areal geometry formed by the constituent linework of given geometry
+    """
+    Creates an areal geometry formed by the constituent linework of given geometry
 
     see https://postgis.net/docs/ST_BuildArea.html
 
@@ -1912,7 +2098,8 @@ class ST_BuildArea(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Centroid(GenericFunction):
-    """Returns the geometric center of a geometry.
+    """
+    Returns the geometric center of a geometry.
 
     see https://postgis.net/docs/ST_Centroid.html
 
@@ -1922,7 +2109,8 @@ class ST_Centroid(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ClipByBox2D(GenericFunction):
-    """Returns the portion of a geometry falling within a rectangle.
+    """
+    Returns the portion of a geometry falling within a rectangle.
 
     see https://postgis.net/docs/ST_ClipByBox2D.html
 
@@ -1932,7 +2120,8 @@ class ST_ClipByBox2D(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ConcaveHull(GenericFunction):
-    """The concave hull of a geometry represents a possibly concave geometry that encloses all geometries
+    """
+    The concave hull of a geometry represents a possibly concave geometry that encloses all geometries
     within the set. You can think of it as shrink wrapping.
 
     see https://postgis.net/docs/ST_ConcaveHull.html
@@ -1943,7 +2132,8 @@ class ST_ConcaveHull(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ConvexHull(GenericFunction):
-    """[geometry] Computes the convex hull of a geometry.
+    """
+    [geometry] Computes the convex hull of a geometry.
     OR
     [raster] Return the convex hull geometry of the raster including pixel values equal to
     BandNoDataValue. For regular shaped and non-skewed rasters, this gives the same result as
@@ -1957,7 +2147,8 @@ class ST_ConvexHull(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_CurveToLine(GenericFunction):
-    """Converts a CIRCULARSTRING/CURVEPOLYGON/MULTISURFACE to a LINESTRING/POLYGON/MULTIPOLYGON
+    """
+    Converts a CIRCULARSTRING/CURVEPOLYGON/MULTISURFACE to a LINESTRING/POLYGON/MULTIPOLYGON
 
     see https://postgis.net/docs/ST_CurveToLine.html
 
@@ -1967,7 +2158,8 @@ class ST_CurveToLine(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_DelaunayTriangles(GenericFunction):
-    """Return a Delaunay triangulation around the given input points.
+    """
+    Return a Delaunay triangulation around the given input points.
 
     see https://postgis.net/docs/ST_DelaunayTriangles.html
 
@@ -1977,7 +2169,8 @@ class ST_DelaunayTriangles(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Difference(GenericFunction):
-    """Returns a geometry that represents that part of geometry A that does not intersect with geometry B.
+    """
+    Returns a geometry that represents that part of geometry A that does not intersect with geometry B.
 
     see https://postgis.net/docs/ST_Difference.html
 
@@ -1987,7 +2180,8 @@ class ST_Difference(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_FlipCoordinates(GenericFunction):
-    """Returns a version of the given geometry with X and Y axis flipped. Useful for people who have built
+    """
+    Returns a version of the given geometry with X and Y axis flipped. Useful for people who have built
     latitude/longitude features and need to fix them.
 
     see https://postgis.net/docs/ST_FlipCoordinates.html
@@ -1998,7 +2192,8 @@ class ST_FlipCoordinates(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeneratePoints(GenericFunction):
-    """Converts a polygon or multi-polygon into a multi-point composed of randomly location points within
+    """
+    Converts a polygon or multi-polygon into a multi-point composed of randomly location points within
     the original areas.
 
     see https://postgis.net/docs/ST_GeneratePoints.html
@@ -2009,7 +2204,8 @@ class ST_GeneratePoints(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_GeometricMedian(GenericFunction):
-    """Returns the geometric median of a MultiPoint.
+    """
+    Returns the geometric median of a MultiPoint.
 
     see https://postgis.net/docs/ST_GeometricMedian.html
 
@@ -2019,7 +2215,8 @@ class ST_GeometricMedian(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Intersection(GenericFunction):
-    """[geometry] (T) Returns a geometry that represents the shared portion of geomA and geomB.
+    """
+    [geometry] (T) Returns a geometry that represents the shared portion of geomA and geomB.
     OR
     [raster] Returns a raster or a set of geometry-pixelvalue pairs representing the shared portion of
     two rasters or the geometrical intersection of a vectorization of the raster and a geometry.
@@ -2032,7 +2229,8 @@ class ST_Intersection(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LineToCurve(GenericFunction):
-    """Converts a LINESTRING/POLYGON to a CIRCULARSTRING, CURVEPOLYGON
+    """
+    Converts a LINESTRING/POLYGON to a CIRCULARSTRING, CURVEPOLYGON
 
     see https://postgis.net/docs/ST_LineToCurve.html
 
@@ -2042,7 +2240,8 @@ class ST_LineToCurve(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MakeValid(GenericFunction):
-    """Attempts to make an invalid geometry valid without losing vertices.
+    """
+    Attempts to make an invalid geometry valid without losing vertices.
 
     see https://postgis.net/docs/ST_MakeValid.html
 
@@ -2052,7 +2251,8 @@ class ST_MakeValid(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MemUnion(GenericFunction):
-    """Same as ST_Union, only memory-friendly (uses less memory and more processor time).
+    """
+    Same as ST_Union, only memory-friendly (uses less memory and more processor time).
 
     see https://postgis.net/docs/ST_MemUnion.html
 
@@ -2062,7 +2262,8 @@ class ST_MemUnion(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MinimumBoundingCircle(GenericFunction):
-    """Returns the smallest circle polygon that can fully contain a geometry. Default uses 48 segments per
+    """
+    Returns the smallest circle polygon that can fully contain a geometry. Default uses 48 segments per
     quarter circle.
 
     see https://postgis.net/docs/ST_MinimumBoundingCircle.html
@@ -2073,13 +2274,15 @@ class ST_MinimumBoundingCircle(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MinimumBoundingRadius(GenericFunction):
-    """Returns the center point and radius of the smallest circle that can fully contain a geometry.
+    """
+    Returns the center point and radius of the smallest circle that can fully contain a geometry.
 
     see https://postgis.net/docs/ST_MinimumBoundingRadius.html
     """
 
 class ST_OrientedEnvelope(GenericFunction):
-    """Returns a minimum rotated rectangle enclosing a geometry.
+    """
+    Returns a minimum rotated rectangle enclosing a geometry.
 
     see https://postgis.net/docs/ST_OrientedEnvelope.html
 
@@ -2089,7 +2292,8 @@ class ST_OrientedEnvelope(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Polygonize(GenericFunction):
-    """Aggregate. Creates a GeometryCollection containing possible polygons formed from the constituent
+    """
+    Aggregate. Creates a GeometryCollection containing possible polygons formed from the constituent
     linework of a set of geometries.
 
     see https://postgis.net/docs/ST_Polygonize.html
@@ -2100,7 +2304,8 @@ class ST_Polygonize(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Node(GenericFunction):
-    """Node a set of linestrings.
+    """
+    Node a set of linestrings.
 
     see https://postgis.net/docs/ST_Node.html
 
@@ -2110,7 +2315,8 @@ class ST_Node(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_OffsetCurve(GenericFunction):
-    """Return an offset line at a given distance and side from an input line. Useful for computing parallel
+    """
+    Return an offset line at a given distance and side from an input line. Useful for computing parallel
     lines about a center line
 
     see https://postgis.net/docs/ST_OffsetCurve.html
@@ -2121,7 +2327,8 @@ class ST_OffsetCurve(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_PointOnSurface(GenericFunction):
-    """Returns a POINT guaranteed to lie on the surface.
+    """
+    Returns a POINT guaranteed to lie on the surface.
 
     see https://postgis.net/docs/ST_PointOnSurface.html
 
@@ -2131,7 +2338,8 @@ class ST_PointOnSurface(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_RemoveRepeatedPoints(GenericFunction):
-    """Returns a version of the given geometry with duplicated points removed.
+    """
+    Returns a version of the given geometry with duplicated points removed.
 
     see https://postgis.net/docs/ST_RemoveRepeatedPoints.html
 
@@ -2141,7 +2349,8 @@ class ST_RemoveRepeatedPoints(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_SharedPaths(GenericFunction):
-    """Returns a collection containing paths shared by the two input linestrings/multilinestrings.
+    """
+    Returns a collection containing paths shared by the two input linestrings/multilinestrings.
 
     see https://postgis.net/docs/ST_SharedPaths.html
 
@@ -2151,7 +2360,8 @@ class ST_SharedPaths(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ShiftLongitude(GenericFunction):
-    """Toggle geometry coordinates between -180..180 and 0..360 ranges.
+    """
+    Toggle geometry coordinates between -180..180 and 0..360 ranges.
 
     see https://postgis.net/docs/ST_Shift_Longitude.html
 
@@ -2161,7 +2371,8 @@ class ST_ShiftLongitude(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_WrapX(GenericFunction):
-    """Wrap a geometry around an X value.
+    """
+    Wrap a geometry around an X value.
 
     see https://postgis.net/docs/ST_WrapX.html
 
@@ -2171,7 +2382,8 @@ class ST_WrapX(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Simplify(GenericFunction):
-    """Returns a "simplified" version of the given geometry using the Douglas-Peucker algorithm.
+    """
+    Returns a "simplified" version of the given geometry using the Douglas-Peucker algorithm.
 
     see https://postgis.net/docs/ST_Simplify.html
 
@@ -2181,7 +2393,8 @@ class ST_Simplify(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_SimplifyPreserveTopology(GenericFunction):
-    """Returns a "simplified" version of the given geometry using the Douglas-Peucker algorithm. Will avoid
+    """
+    Returns a "simplified" version of the given geometry using the Douglas-Peucker algorithm. Will avoid
     creating derived geometries (polygons in particular) that are invalid.
 
     see https://postgis.net/docs/ST_SimplifyPreserveTopology.html
@@ -2192,7 +2405,8 @@ class ST_SimplifyPreserveTopology(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_SimplifyVW(GenericFunction):
-    """Returns a "simplified" version of the given geometry using the Visvalingam-Whyatt algorithm
+    """
+    Returns a "simplified" version of the given geometry using the Visvalingam-Whyatt algorithm
 
     see https://postgis.net/docs/ST_SimplifyVW.html
 
@@ -2202,7 +2416,8 @@ class ST_SimplifyVW(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ChaikinSmoothing(GenericFunction):
-    """Returns a "smoothed" version of the given geometry using the Chaikin algorithm
+    """
+    Returns a "smoothed" version of the given geometry using the Chaikin algorithm
 
     see https://postgis.net/docs/ST_ChaikinSmoothing.html
 
@@ -2212,7 +2427,8 @@ class ST_ChaikinSmoothing(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_FilterByM(GenericFunction):
-    """Filters vertex points based on their m-value
+    """
+    Filters vertex points based on their m-value
 
     see https://postgis.net/docs/ST_FilterByM.html
 
@@ -2222,7 +2438,8 @@ class ST_FilterByM(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_SetEffectiveArea(GenericFunction):
-    """Sets the effective area for each vertex, storing the value in the M ordinate. A simplified geometry
+    """
+    Sets the effective area for each vertex, storing the value in the M ordinate. A simplified geometry
     can then be generated by filtering on the M ordinate.
 
     see https://postgis.net/docs/ST_SetEffectiveArea.html
@@ -2233,7 +2450,8 @@ class ST_SetEffectiveArea(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Split(GenericFunction):
-    """Returns a collection of geometries resulting by splitting a geometry.
+    """
+    Returns a collection of geometries resulting by splitting a geometry.
 
     see https://postgis.net/docs/ST_Split.html
 
@@ -2243,7 +2461,8 @@ class ST_Split(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_SymDifference(GenericFunction):
-    """Returns a geometry that represents the portions of A and B that do not intersect. It is called a
+    """
+    Returns a geometry that represents the portions of A and B that do not intersect. It is called a
     symmetric difference because ST_SymDifference(A,B) = ST_SymDifference(B,A).
 
     see https://postgis.net/docs/ST_SymDifference.html
@@ -2254,7 +2473,8 @@ class ST_SymDifference(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Subdivide(GenericFunction):
-    """Returns a set of geometry where no geometry in the set has more than the specified number of
+    """
+    Returns a set of geometry where no geometry in the set has more than the specified number of
     vertices.
 
     see https://postgis.net/docs/ST_Subdivide.html
@@ -2265,7 +2485,8 @@ class ST_Subdivide(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Union(GenericFunction):
-    """[geometry] Returns a geometry that represents the point set union of the Geometries.
+    """
+    [geometry] Returns a geometry that represents the point set union of the Geometries.
     OR
     [raster] Returns the union of a set of raster tiles into a single raster composed of 1 or more
     bands.
@@ -2278,7 +2499,8 @@ class ST_Union(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_UnaryUnion(GenericFunction):
-    """Like ST_Union, but working at the geometry component level.
+    """
+    Like ST_Union, but working at the geometry component level.
 
     see https://postgis.net/docs/ST_UnaryUnion.html
 
@@ -2288,7 +2510,8 @@ class ST_UnaryUnion(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_VoronoiLines(GenericFunction):
-    """Returns the boundaries between the cells of the Voronoi diagram constructed from the vertices of a
+    """
+    Returns the boundaries between the cells of the Voronoi diagram constructed from the vertices of a
     geometry.
 
     see https://postgis.net/docs/ST_VoronoiLines.html
@@ -2299,7 +2522,8 @@ class ST_VoronoiLines(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_VoronoiPolygons(GenericFunction):
-    """Returns the cells of the Voronoi diagram constructed from the vertices of a geometry.
+    """
+    Returns the cells of the Voronoi diagram constructed from the vertices of a geometry.
 
     see https://postgis.net/docs/ST_VoronoiPolygons.html
 
@@ -2309,7 +2533,8 @@ class ST_VoronoiPolygons(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Affine(GenericFunction):
-    """Apply a 3D affine transformation to a geometry.
+    """
+    Apply a 3D affine transformation to a geometry.
 
     see https://postgis.net/docs/ST_Affine.html
 
@@ -2319,7 +2544,8 @@ class ST_Affine(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Rotate(GenericFunction):
-    """Rotates a geometry about an origin point.
+    """
+    Rotates a geometry about an origin point.
 
     see https://postgis.net/docs/ST_Rotate.html
 
@@ -2329,7 +2555,8 @@ class ST_Rotate(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_RotateX(GenericFunction):
-    """Rotates a geometry about the X axis.
+    """
+    Rotates a geometry about the X axis.
 
     see https://postgis.net/docs/ST_RotateX.html
 
@@ -2339,7 +2566,8 @@ class ST_RotateX(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_RotateY(GenericFunction):
-    """Rotates a geometry about the Y axis.
+    """
+    Rotates a geometry about the Y axis.
 
     see https://postgis.net/docs/ST_RotateY.html
 
@@ -2349,7 +2577,8 @@ class ST_RotateY(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_RotateZ(GenericFunction):
-    """Rotates a geometry about the Z axis.
+    """
+    Rotates a geometry about the Z axis.
 
     see https://postgis.net/docs/ST_RotateZ.html
 
@@ -2359,7 +2588,8 @@ class ST_RotateZ(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Scale(GenericFunction):
-    """Scales a geometry by given factors.
+    """
+    Scales a geometry by given factors.
 
     see https://postgis.net/docs/ST_Scale.html
 
@@ -2369,7 +2599,8 @@ class ST_Scale(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Translate(GenericFunction):
-    """Translates a geometry by given offsets.
+    """
+    Translates a geometry by given offsets.
 
     see https://postgis.net/docs/ST_Translate.html
 
@@ -2379,7 +2610,8 @@ class ST_Translate(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_TransScale(GenericFunction):
-    """Translates and scales a geometry by given offsets and factors.
+    """
+    Translates and scales a geometry by given offsets and factors.
 
     see https://postgis.net/docs/ST_TransScale.html
 
@@ -2389,7 +2621,8 @@ class ST_TransScale(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ClusterDBSCAN(GenericFunction):
-    """Window function that returns a cluster id for each input geometry using the DBSCAN algorithm.
+    """
+    Window function that returns a cluster id for each input geometry using the DBSCAN algorithm.
 
     see https://postgis.net/docs/ST_ClusterDBSCAN.html
 
@@ -2399,7 +2632,8 @@ class ST_ClusterDBSCAN(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_ClusterIntersecting(GenericFunction):
-    """Aggregate function that clusters the input geometries into connected sets.
+    """
+    Aggregate function that clusters the input geometries into connected sets.
 
     see https://postgis.net/docs/ST_ClusterIntersecting.html
 
@@ -2409,7 +2643,8 @@ class ST_ClusterIntersecting(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ClusterKMeans(GenericFunction):
-    """Window function that returns a cluster id for each input geometry using the K-means algorithm.
+    """
+    Window function that returns a cluster id for each input geometry using the K-means algorithm.
 
     see https://postgis.net/docs/ST_ClusterKMeans.html
 
@@ -2419,7 +2654,8 @@ class ST_ClusterKMeans(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_ClusterWithin(GenericFunction):
-    """Aggregate function that clusters the input geometries by separation distance.
+    """
+    Aggregate function that clusters the input geometries by separation distance.
 
     see https://postgis.net/docs/ST_ClusterWithin.html
 
@@ -2429,13 +2665,15 @@ class ST_ClusterWithin(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class Box2D(GenericFunction):
-    """Returns a BOX2D representing the 2D extent of the geometry.
+    """
+    Returns a BOX2D representing the 2D extent of the geometry.
 
     see https://postgis.net/docs/Box2D_type.html
     """
 
 class Box3D(GenericFunction):
-    """[geometry] Returns a BOX3D representing the 3D extent of the geometry.
+    """
+    [geometry] Returns a BOX3D representing the 3D extent of the geometry.
     OR
     [raster] Returns the box 3d representation of the enclosing box of the raster.
 
@@ -2443,13 +2681,15 @@ class Box3D(GenericFunction):
     """
 
 class ST_EstimatedExtent(GenericFunction):
-    """Return the 'estimated' extent of a spatial table.
+    """
+    Return the 'estimated' extent of a spatial table.
 
     see https://postgis.net/docs/ST_EstimatedExtent.html
     """
 
 class ST_Expand(GenericFunction):
-    """Returns a bounding box expanded from another bounding box or a geometry.
+    """
+    Returns a bounding box expanded from another bounding box or a geometry.
 
     see https://postgis.net/docs/ST_Expand.html
 
@@ -2459,31 +2699,36 @@ class ST_Expand(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Extent(GenericFunction):
-    """an aggregate function that returns the bounding box that bounds rows of geometries.
+    """
+    an aggregate function that returns the bounding box that bounds rows of geometries.
 
     see https://postgis.net/docs/ST_Extent.html
     """
 
 class ST_3DExtent(GenericFunction):
-    """an aggregate function that returns the 3D bounding box that bounds rows of geometries.
+    """
+    an aggregate function that returns the 3D bounding box that bounds rows of geometries.
 
     see https://postgis.net/docs/ST_3DExtent.html
     """
 
 class ST_MakeBox2D(GenericFunction):
-    """Creates a BOX2D defined by two 2D point geometries.
+    """
+    Creates a BOX2D defined by two 2D point geometries.
 
     see https://postgis.net/docs/ST_MakeBox2D.html
     """
 
 class ST_3DMakeBox(GenericFunction):
-    """Creates a BOX3D defined by two 3D point geometries.
+    """
+    Creates a BOX3D defined by two 3D point geometries.
 
     see https://postgis.net/docs/ST_3DMakeBox.html
     """
 
 class ST_XMax(GenericFunction):
-    """Returns the X maxima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the X maxima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_XMax.html
 
@@ -2493,7 +2738,8 @@ class ST_XMax(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_XMin(GenericFunction):
-    """Returns the X minima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the X minima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_XMin.html
 
@@ -2503,7 +2749,8 @@ class ST_XMin(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_YMax(GenericFunction):
-    """Returns the Y maxima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the Y maxima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_YMax.html
 
@@ -2513,7 +2760,8 @@ class ST_YMax(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_YMin(GenericFunction):
-    """Returns the Y minima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the Y minima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_YMin.html
 
@@ -2523,7 +2771,8 @@ class ST_YMin(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_ZMax(GenericFunction):
-    """Returns the Z maxima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the Z maxima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_ZMax.html
 
@@ -2533,7 +2782,8 @@ class ST_ZMax(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_ZMin(GenericFunction):
-    """Returns the Z minima of a 2D or 3D bounding box or a geometry.
+    """
+    Returns the Z minima of a 2D or 3D bounding box or a geometry.
 
     see https://postgis.net/docs/ST_ZMin.html
 
@@ -2543,7 +2793,8 @@ class ST_ZMin(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_LineInterpolatePoint(GenericFunction):
-    """Returns a point interpolated along a line. Second argument is a float8 between 0 and 1 representing
+    """
+    Returns a point interpolated along a line. Second argument is a float8 between 0 and 1 representing
     fraction of total length of linestring the point has to be located.
 
     see https://postgis.net/docs/ST_LineInterpolatePoint.html
@@ -2554,7 +2805,8 @@ class ST_LineInterpolatePoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_3DLineInterpolatePoint(GenericFunction):
-    """Returns a point interpolated along a line in 3D. Second argument is a float8 between 0 and 1
+    """
+    Returns a point interpolated along a line in 3D. Second argument is a float8 between 0 and 1
     representing fraction of total length of linestring the point has to be located.
 
     see https://postgis.net/docs/ST_3DLineInterpolatePoint.html
@@ -2565,7 +2817,8 @@ class ST_3DLineInterpolatePoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LineInterpolatePoints(GenericFunction):
-    """Returns one or more points interpolated along a line.
+    """
+    Returns one or more points interpolated along a line.
 
     see https://postgis.net/docs/ST_LineInterpolatePoints.html
 
@@ -2575,7 +2828,8 @@ class ST_LineInterpolatePoints(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LineLocatePoint(GenericFunction):
-    """Returns a float between 0 and 1 representing the location of the closest point on LineString to the
+    """
+    Returns a float between 0 and 1 representing the location of the closest point on LineString to the
     given Point, as a fraction of total 2d line length.
 
     see https://postgis.net/docs/ST_LineLocatePoint.html
@@ -2586,7 +2840,8 @@ class ST_LineLocatePoint(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_LineSubstring(GenericFunction):
-    """Return a linestring being a substring of the input one starting and ending at the given fractions of
+    """
+    Return a linestring being a substring of the input one starting and ending at the given fractions of
     total 2d length. Second and third arguments are float8 values between 0 and 1.
 
     see https://postgis.net/docs/ST_LineSubstring.html
@@ -2597,7 +2852,8 @@ class ST_LineSubstring(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LocateAlong(GenericFunction):
-    """Return a derived geometry collection value with elements that match the specified measure. Polygonal
+    """
+    Return a derived geometry collection value with elements that match the specified measure. Polygonal
     elements are not supported.
 
     see https://postgis.net/docs/ST_LocateAlong.html
@@ -2608,7 +2864,8 @@ class ST_LocateAlong(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LocateBetween(GenericFunction):
-    """Return a derived geometry collection value with elements that match the specified range of measures
+    """
+    Return a derived geometry collection value with elements that match the specified range of measures
     inclusively.
 
     see https://postgis.net/docs/ST_LocateBetween.html
@@ -2619,7 +2876,8 @@ class ST_LocateBetween(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_LocateBetweenElevations(GenericFunction):
-    """Return a derived geometry (collection) value with elements that intersect the specified range of
+    """
+    Return a derived geometry (collection) value with elements that intersect the specified range of
     elevations inclusively.
 
     see https://postgis.net/docs/ST_LocateBetweenElevations.html
@@ -2630,7 +2888,8 @@ class ST_LocateBetweenElevations(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_InterpolatePoint(GenericFunction):
-    """Return the value of the measure dimension of a geometry at the point closed to the provided point.
+    """
+    Return the value of the measure dimension of a geometry at the point closed to the provided point.
 
     see https://postgis.net/docs/ST_InterpolatePoint.html
 
@@ -2640,7 +2899,8 @@ class ST_InterpolatePoint(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_AddMeasure(GenericFunction):
-    """Return a derived geometry with measure elements linearly interpolated between the start and end
+    """
+    Return a derived geometry with measure elements linearly interpolated between the start and end
     points.
 
     see https://postgis.net/docs/ST_AddMeasure.html
@@ -2651,7 +2911,8 @@ class ST_AddMeasure(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_IsValidTrajectory(GenericFunction):
-    """Returns true if the geometry is a valid trajectory.
+    """
+    Returns true if the geometry is a valid trajectory.
 
     see https://postgis.net/docs/ST_IsValidTrajectory.html
 
@@ -2661,7 +2922,8 @@ class ST_IsValidTrajectory(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_ClosestPointOfApproach(GenericFunction):
-    """Returns the measure at which points interpolated along two trajectories are closest.
+    """
+    Returns the measure at which points interpolated along two trajectories are closest.
 
     see https://postgis.net/docs/ST_ClosestPointOfApproach.html
 
@@ -2671,7 +2933,8 @@ class ST_ClosestPointOfApproach(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_DistanceCPA(GenericFunction):
-    """Returns the distance between the closest point of approach of two trajectories.
+    """
+    Returns the distance between the closest point of approach of two trajectories.
 
     see https://postgis.net/docs/ST_DistanceCPA.html
 
@@ -2681,7 +2944,8 @@ class ST_DistanceCPA(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_CPAWithin(GenericFunction):
-    """Returns true if the closest point of approach of two trajectories is within the specified distance.
+    """
+    Returns true if the closest point of approach of two trajectories is within the specified distance.
 
     see https://postgis.net/docs/ST_CPAWithin.html
 
@@ -2691,7 +2955,8 @@ class ST_CPAWithin(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class postgis_sfcgal_version(GenericFunction):
-    """Returns the version of SFCGAL in use
+    """
+    Returns the version of SFCGAL in use
 
     see https://postgis.net/docs/postgis_sfcgal_version.html
 
@@ -2701,7 +2966,8 @@ class postgis_sfcgal_version(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_Extrude(GenericFunction):
-    """Extrude a surface to a related volume
+    """
+    Extrude a surface to a related volume
 
     see https://postgis.net/docs/ST_Extrude.html
 
@@ -2711,7 +2977,8 @@ class ST_Extrude(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_StraightSkeleton(GenericFunction):
-    """Compute a straight skeleton from a geometry
+    """
+    Compute a straight skeleton from a geometry
 
     see https://postgis.net/docs/ST_StraightSkeleton.html
 
@@ -2721,7 +2988,8 @@ class ST_StraightSkeleton(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ApproximateMedialAxis(GenericFunction):
-    """Compute the approximate medial axis of an areal geometry.
+    """
+    Compute the approximate medial axis of an areal geometry.
 
     see https://postgis.net/docs/ST_ApproximateMedialAxis.html
 
@@ -2731,7 +2999,8 @@ class ST_ApproximateMedialAxis(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_IsPlanar(GenericFunction):
-    """Check if a surface is or not planar
+    """
+    Check if a surface is or not planar
 
     see https://postgis.net/docs/ST_IsPlanar.html
 
@@ -2741,7 +3010,8 @@ class ST_IsPlanar(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_Orientation(GenericFunction):
-    """Determine surface orientation
+    """
+    Determine surface orientation
 
     see https://postgis.net/docs/ST_Orientation.html
 
@@ -2751,7 +3021,8 @@ class ST_Orientation(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class CG_Orientation(GenericFunction):
-    """Determine surface orientation
+    """
+    Determine surface orientation
 
     see https://postgis.net/docs/CG_Orientation.html
 
@@ -2761,7 +3032,8 @@ class CG_Orientation(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_ForceLHR(GenericFunction):
-    """Force LHR orientation
+    """
+    Force LHR orientation
 
     see https://postgis.net/docs/ST_ForceLHR.html
 
@@ -2771,7 +3043,8 @@ class ST_ForceLHR(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_MinkowskiSum(GenericFunction):
-    """Performs Minkowski sum
+    """
+    Performs Minkowski sum
 
     see https://postgis.net/docs/ST_MinkowskiSum.html
 
@@ -2781,7 +3054,8 @@ class ST_MinkowskiSum(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_ConstrainedDelaunayTriangles(GenericFunction):
-    """Return a constrained Delaunay triangulation around the given input geometry.
+    """
+    Return a constrained Delaunay triangulation around the given input geometry.
 
     see https://postgis.net/docs/ST_ConstrainedDelaunayTriangles.html
 
@@ -2791,7 +3065,8 @@ class ST_ConstrainedDelaunayTriangles(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_3DIntersection(GenericFunction):
-    """Perform 3D intersection
+    """
+    Perform 3D intersection
 
     see https://postgis.net/docs/ST_3DIntersection.html
 
@@ -2801,7 +3076,8 @@ class ST_3DIntersection(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_3DDifference(GenericFunction):
-    """Perform 3D difference
+    """
+    Perform 3D difference
 
     see https://postgis.net/docs/ST_3DDifference.html
 
@@ -2811,7 +3087,8 @@ class ST_3DDifference(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_3DUnion(GenericFunction):
-    """Perform 3D union
+    """
+    Perform 3D union
 
     see https://postgis.net/docs/ST_3DUnion.html
 
@@ -2821,7 +3098,8 @@ class ST_3DUnion(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_3DArea(GenericFunction):
-    """Computes area of 3D surface geometries. Will return 0 for solids.
+    """
+    Computes area of 3D surface geometries. Will return 0 for solids.
 
     see https://postgis.net/docs/ST_3DArea.html
 
@@ -2831,7 +3109,8 @@ class ST_3DArea(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class CG_3DArea(GenericFunction):
-    """Computes area of 3D surface geometries. Will return 0 for solids.
+    """
+    Computes area of 3D surface geometries. Will return 0 for solids.
 
     see https://postgis.net/docs/CG_3DArea.html
 
@@ -2841,7 +3120,8 @@ class CG_3DArea(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Tesselate(GenericFunction):
-    """Perform surface Tessellation of a polygon or polyhedralsurface and returns as a TIN or collection of
+    """
+    Perform surface Tessellation of a polygon or polyhedralsurface and returns as a TIN or collection of
     TINS
 
     see https://postgis.net/docs/ST_Tesselate.html
@@ -2852,7 +3132,8 @@ class ST_Tesselate(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_Volume(GenericFunction):
-    """Computes the volume of a 3D solid. If applied to surface (even closed) geometries will return 0.
+    """
+    Computes the volume of a 3D solid. If applied to surface (even closed) geometries will return 0.
 
     see https://postgis.net/docs/ST_Volume.html
 
@@ -2862,7 +3143,8 @@ class ST_Volume(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_MakeSolid(GenericFunction):
-    """Cast the geometry into a solid. No check is performed. To obtain a valid solid, the input geometry
+    """
+    Cast the geometry into a solid. No check is performed. To obtain a valid solid, the input geometry
     must be a closed Polyhedral Surface or a closed TIN.
 
     see https://postgis.net/docs/ST_MakeSolid.html
@@ -2873,7 +3155,8 @@ class ST_MakeSolid(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_IsSolid(GenericFunction):
-    """Test if the geometry is a solid. No validity check is performed.
+    """
+    Test if the geometry is a solid. No validity check is performed.
 
     see https://postgis.net/docs/ST_IsSolid.html
 
@@ -2883,7 +3166,8 @@ class ST_IsSolid(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class CG_IsSolid(GenericFunction):
-    """Test if the geometry is a solid. No validity check is performed.
+    """
+    Test if the geometry is a solid. No validity check is performed.
 
     see https://postgis.net/docs/CG_IsSolid.html
 
@@ -2893,7 +3177,8 @@ class CG_IsSolid(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class AddAuth(GenericFunction):
-    """Adds an authorization token to be used in the current transaction.
+    """
+    Adds an authorization token to be used in the current transaction.
 
     see https://postgis.net/docs/AddAuth.html
 
@@ -2903,7 +3188,8 @@ class AddAuth(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class CheckAuth(GenericFunction):
-    """Creates a trigger on a table to prevent/allow updates and deletes of rows based on authorization
+    """
+    Creates a trigger on a table to prevent/allow updates and deletes of rows based on authorization
     token.
 
     see https://postgis.net/docs/CheckAuth.html
@@ -2914,7 +3200,8 @@ class CheckAuth(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class DisableLongTransactions(GenericFunction):
-    """Disables long transaction support.
+    """
+    Disables long transaction support.
 
     see https://postgis.net/docs/DisableLongTransactions.html
 
@@ -2924,7 +3211,8 @@ class DisableLongTransactions(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class EnableLongTransactions(GenericFunction):
-    """Enables long transaction support.
+    """
+    Enables long transaction support.
 
     see https://postgis.net/docs/EnableLongTransactions.html
 
@@ -2934,7 +3222,8 @@ class EnableLongTransactions(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class LockRow(GenericFunction):
-    """Sets lock/authorization for a row in a table.
+    """
+    Sets lock/authorization for a row in a table.
 
     see https://postgis.net/docs/LockRow.html
 
@@ -2944,7 +3233,8 @@ class LockRow(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class UnlockRows(GenericFunction):
-    """Removes all locks held by an authorization token.
+    """
+    Removes all locks held by an authorization token.
 
     see https://postgis.net/docs/UnlockRows.html
 
@@ -2954,7 +3244,8 @@ class UnlockRows(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class PostGIS_Extensions_Upgrade(GenericFunction):
-    """Packages and upgrades postgis extensions (e.g. postgis_raster, postgis_topology, postgis_sfcgal) to
+    """
+    Packages and upgrades postgis extensions (e.g. postgis_raster, postgis_topology, postgis_sfcgal) to
     latest available version.
 
     see https://postgis.net/docs/PostGIS_Extensions_Upgrade.html
@@ -2965,7 +3256,8 @@ class PostGIS_Extensions_Upgrade(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Full_Version(GenericFunction):
-    """Reports full postgis version and build configuration infos.
+    """
+    Reports full postgis version and build configuration infos.
 
     see https://postgis.net/docs/PostGIS_Full_Version.html
 
@@ -2975,7 +3267,8 @@ class PostGIS_Full_Version(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_GEOS_Version(GenericFunction):
-    """Returns the version number of the GEOS library.
+    """
+    Returns the version number of the GEOS library.
 
     see https://postgis.net/docs/PostGIS_GEOS_Version.html
 
@@ -2985,7 +3278,8 @@ class PostGIS_GEOS_Version(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Liblwgeom_Version(GenericFunction):
-    """Returns the version number of the liblwgeom library. This should match the version of PostGIS.
+    """
+    Returns the version number of the liblwgeom library. This should match the version of PostGIS.
 
     see https://postgis.net/docs/PostGIS_Liblwgeom_Version.html
 
@@ -2995,7 +3289,8 @@ class PostGIS_Liblwgeom_Version(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_LibXML_Version(GenericFunction):
-    """Returns the version number of the libxml2 library.
+    """
+    Returns the version number of the libxml2 library.
 
     see https://postgis.net/docs/PostGIS_LibXML_Version.html
 
@@ -3005,7 +3300,8 @@ class PostGIS_LibXML_Version(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Lib_Build_Date(GenericFunction):
-    """Returns build date of the PostGIS library.
+    """
+    Returns build date of the PostGIS library.
 
     see https://postgis.net/docs/PostGIS_Lib_Build_Date.html
 
@@ -3015,7 +3311,8 @@ class PostGIS_Lib_Build_Date(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Lib_Version(GenericFunction):
-    """Returns the version number of the PostGIS library.
+    """
+    Returns the version number of the PostGIS library.
 
     see https://postgis.net/docs/PostGIS_Lib_Version.html
 
@@ -3025,7 +3322,8 @@ class PostGIS_Lib_Version(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_PROJ_Version(GenericFunction):
-    """Returns the version number of the PROJ4 library.
+    """
+    Returns the version number of the PROJ4 library.
 
     see https://postgis.net/docs/PostGIS_PROJ_Version.html
 
@@ -3035,7 +3333,8 @@ class PostGIS_PROJ_Version(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Wagyu_Version(GenericFunction):
-    """Returns the version number of the internal Wagyu library.
+    """
+    Returns the version number of the internal Wagyu library.
 
     see https://postgis.net/docs/PostGIS_Wagyu_Version.html
 
@@ -3045,7 +3344,8 @@ class PostGIS_Wagyu_Version(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Scripts_Build_Date(GenericFunction):
-    """Returns build date of the PostGIS scripts.
+    """
+    Returns build date of the PostGIS scripts.
 
     see https://postgis.net/docs/PostGIS_Scripts_Build_Date.html
 
@@ -3055,7 +3355,8 @@ class PostGIS_Scripts_Build_Date(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Scripts_Installed(GenericFunction):
-    """Returns version of the postgis scripts installed in this database.
+    """
+    Returns version of the postgis scripts installed in this database.
 
     see https://postgis.net/docs/PostGIS_Scripts_Installed.html
 
@@ -3065,7 +3366,8 @@ class PostGIS_Scripts_Installed(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Scripts_Released(GenericFunction):
-    """Returns the version number of the postgis.sql script released with the installed postgis lib.
+    """
+    Returns the version number of the postgis.sql script released with the installed postgis lib.
 
     see https://postgis.net/docs/PostGIS_Scripts_Released.html
 
@@ -3075,7 +3377,8 @@ class PostGIS_Scripts_Released(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_Version(GenericFunction):
-    """Returns PostGIS version number and compile-time options.
+    """
+    Returns PostGIS version number and compile-time options.
 
     see https://postgis.net/docs/PostGIS_Version.html
 
@@ -3085,7 +3388,8 @@ class PostGIS_Version(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class PostGIS_AddBBox(GenericFunction):
-    """Add bounding box to the geometry.
+    """
+    Add bounding box to the geometry.
 
     see https://postgis.net/docs/PostGIS_AddBBox.html
 
@@ -3095,7 +3399,8 @@ class PostGIS_AddBBox(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class PostGIS_DropBBox(GenericFunction):
-    """Drop the bounding box cache from the geometry.
+    """
+    Drop the bounding box cache from the geometry.
 
     see https://postgis.net/docs/PostGIS_DropBBox.html
 
@@ -3105,7 +3410,8 @@ class PostGIS_DropBBox(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class PostGIS_HasBBox(GenericFunction):
-    """Returns TRUE if the bbox of this geometry is cached, FALSE otherwise.
+    """
+    Returns TRUE if the bbox of this geometry is cached, FALSE otherwise.
 
     see https://postgis.net/docs/PostGIS_HasBBox.html
 
@@ -3115,7 +3421,8 @@ class PostGIS_HasBBox(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_AddBand(GenericFunction):
-    """Returns a raster with the new band(s) of given type added with given initial value in the given
+    """
+    Returns a raster with the new band(s) of given type added with given initial value in the given
     index location. If no index is specified, the band is added to the end.
 
     see https://postgis.net/docs/RT_ST_AddBand.html
@@ -3126,7 +3433,8 @@ class ST_AddBand(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_AsRaster(GenericFunction):
-    """Converts a PostGIS geometry to a PostGIS raster.
+    """
+    Converts a PostGIS geometry to a PostGIS raster.
 
     see https://postgis.net/docs/RT_ST_AsRaster.html
 
@@ -3136,7 +3444,8 @@ class ST_AsRaster(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Band(GenericFunction):
-    """Returns one or more bands of an existing raster as a new raster. Useful for building new rasters
+    """
+    Returns one or more bands of an existing raster as a new raster. Useful for building new rasters
     from existing rasters.
 
     see https://postgis.net/docs/RT_ST_Band.html
@@ -3147,7 +3456,8 @@ class ST_Band(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_MakeEmptyCoverage(GenericFunction):
-    """Cover georeferenced area with a grid of empty raster tiles.
+    """
+    Cover georeferenced area with a grid of empty raster tiles.
 
     see https://postgis.net/docs/RT_ST_MakeEmptyCoverage.html
 
@@ -3157,7 +3467,8 @@ class ST_MakeEmptyCoverage(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_MakeEmptyRaster(GenericFunction):
-    """Returns an empty raster (having no bands) of given dimensions (width & height), upperleft X and Y,
+    """
+    Returns an empty raster (having no bands) of given dimensions (width & height), upperleft X and Y,
     pixel size and rotation (scalex, scaley, skewx & skewy) and reference system (srid). If a raster is
     passed in, returns a new raster with the same size, alignment and SRID. If srid is left out, the
     spatial ref is set to unknown (0).
@@ -3170,7 +3481,8 @@ class ST_MakeEmptyRaster(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Tile(GenericFunction):
-    """Returns a set of rasters resulting from the split of the input raster based upon the desired
+    """
+    Returns a set of rasters resulting from the split of the input raster based upon the desired
     dimensions of the output rasters.
 
     see https://postgis.net/docs/RT_ST_Tile.html
@@ -3181,7 +3493,8 @@ class ST_Tile(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Retile(GenericFunction):
-    """Return a set of configured tiles from an arbitrarily tiled raster coverage.
+    """
+    Return a set of configured tiles from an arbitrarily tiled raster coverage.
 
     see https://postgis.net/docs/RT_ST_Retile.html
 
@@ -3191,7 +3504,8 @@ class ST_Retile(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_FromGDALRaster(GenericFunction):
-    """Returns a raster from a supported GDAL raster file.
+    """
+    Returns a raster from a supported GDAL raster file.
 
     see https://postgis.net/docs/RT_ST_FromGDALRaster.html
 
@@ -3201,7 +3515,8 @@ class ST_FromGDALRaster(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_GeoReference(GenericFunction):
-    """Returns the georeference meta data in GDAL or ESRI format as commonly seen in a world file. Default
+    """
+    Returns the georeference meta data in GDAL or ESRI format as commonly seen in a world file. Default
     is GDAL.
 
     see https://postgis.net/docs/RT_ST_GeoReference.html
@@ -3212,7 +3527,8 @@ class ST_GeoReference(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_Height(GenericFunction):
-    """Returns the height of the raster in pixels.
+    """
+    Returns the height of the raster in pixels.
 
     see https://postgis.net/docs/RT_ST_Height.html
 
@@ -3222,14 +3538,16 @@ class ST_Height(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_MetaData(GenericFunction):
-    """Returns basic meta data about a raster object such as pixel size, rotation (skew), upper, lower
+    """
+    Returns basic meta data about a raster object such as pixel size, rotation (skew), upper, lower
     left, etc.
 
     see https://postgis.net/docs/RT_ST_MetaData.html
     """
 
 class ST_NumBands(GenericFunction):
-    """Returns the number of bands in the raster object.
+    """
+    Returns the number of bands in the raster object.
 
     see https://postgis.net/docs/RT_ST_NumBands.html
 
@@ -3239,7 +3557,8 @@ class ST_NumBands(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_PixelHeight(GenericFunction):
-    """Returns the pixel height in geometric units of the spatial reference system.
+    """
+    Returns the pixel height in geometric units of the spatial reference system.
 
     see https://postgis.net/docs/RT_ST_PixelHeight.html
 
@@ -3249,7 +3568,8 @@ class ST_PixelHeight(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Double()
 
 class ST_PixelWidth(GenericFunction):
-    """Returns the pixel width in geometric units of the spatial reference system.
+    """
+    Returns the pixel width in geometric units of the spatial reference system.
 
     see https://postgis.net/docs/RT_ST_PixelWidth.html
 
@@ -3259,7 +3579,8 @@ class ST_PixelWidth(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Double()
 
 class ST_ScaleX(GenericFunction):
-    """Returns the X component of the pixel width in units of coordinate reference system.
+    """
+    Returns the X component of the pixel width in units of coordinate reference system.
 
     see https://postgis.net/docs/RT_ST_ScaleX.html
 
@@ -3269,7 +3590,8 @@ class ST_ScaleX(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_ScaleY(GenericFunction):
-    """Returns the Y component of the pixel height in units of coordinate reference system.
+    """
+    Returns the Y component of the pixel height in units of coordinate reference system.
 
     see https://postgis.net/docs/RT_ST_ScaleY.html
 
@@ -3279,14 +3601,16 @@ class ST_ScaleY(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_RasterToWorldCoord(GenericFunction):
-    """Returns the raster's upper left corner as geometric X and Y (longitude and latitude) given a column
+    """
+    Returns the raster's upper left corner as geometric X and Y (longitude and latitude) given a column
     and row. Column and row starts at 1.
 
     see https://postgis.net/docs/RT_ST_RasterToWorldCoord.html
     """
 
 class ST_RasterToWorldCoordX(GenericFunction):
-    """Returns the geometric X coordinate upper left of a raster, column and row. Numbering of columns and
+    """
+    Returns the geometric X coordinate upper left of a raster, column and row. Numbering of columns and
     rows starts at 1.
 
     see https://postgis.net/docs/RT_ST_RasterToWorldCoordX.html
@@ -3297,7 +3621,8 @@ class ST_RasterToWorldCoordX(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_RasterToWorldCoordY(GenericFunction):
-    """Returns the geometric Y coordinate upper left corner of a raster, column and row. Numbering of
+    """
+    Returns the geometric Y coordinate upper left corner of a raster, column and row. Numbering of
     columns and rows starts at 1.
 
     see https://postgis.net/docs/RT_ST_RasterToWorldCoordY.html
@@ -3308,7 +3633,8 @@ class ST_RasterToWorldCoordY(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Rotation(GenericFunction):
-    """Returns the rotation of the raster in radian.
+    """
+    Returns the rotation of the raster in radian.
 
     see https://postgis.net/docs/RT_ST_Rotation.html
 
@@ -3318,7 +3644,8 @@ class ST_Rotation(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_SkewX(GenericFunction):
-    """Returns the georeference X skew (or rotation parameter).
+    """
+    Returns the georeference X skew (or rotation parameter).
 
     see https://postgis.net/docs/RT_ST_SkewX.html
 
@@ -3328,7 +3655,8 @@ class ST_SkewX(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_SkewY(GenericFunction):
-    """Returns the georeference Y skew (or rotation parameter).
+    """
+    Returns the georeference Y skew (or rotation parameter).
 
     see https://postgis.net/docs/RT_ST_SkewY.html
 
@@ -3338,7 +3666,8 @@ class ST_SkewY(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_UpperLeftX(GenericFunction):
-    """Returns the upper left X coordinate of raster in projected spatial ref.
+    """
+    Returns the upper left X coordinate of raster in projected spatial ref.
 
     see https://postgis.net/docs/RT_ST_UpperLeftX.html
 
@@ -3348,7 +3677,8 @@ class ST_UpperLeftX(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_UpperLeftY(GenericFunction):
-    """Returns the upper left Y coordinate of raster in projected spatial ref.
+    """
+    Returns the upper left Y coordinate of raster in projected spatial ref.
 
     see https://postgis.net/docs/RT_ST_UpperLeftY.html
 
@@ -3358,7 +3688,8 @@ class ST_UpperLeftY(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Float()
 
 class ST_Width(GenericFunction):
-    """Returns the width of the raster in pixels.
+    """
+    Returns the width of the raster in pixels.
 
     see https://postgis.net/docs/RT_ST_Width.html
 
@@ -3368,14 +3699,16 @@ class ST_Width(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_WorldToRasterCoord(GenericFunction):
-    """Returns the upper left corner as column and row given geometric X and Y (longitude and latitude) or
+    """
+    Returns the upper left corner as column and row given geometric X and Y (longitude and latitude) or
     a point geometry expressed in the spatial reference coordinate system of the raster.
 
     see https://postgis.net/docs/RT_ST_WorldToRasterCoord.html
     """
 
 class ST_WorldToRasterCoordX(GenericFunction):
-    """Returns the column in the raster of the point geometry (pt) or a X and Y world coordinate (xw, yw)
+    """
+    Returns the column in the raster of the point geometry (pt) or a X and Y world coordinate (xw, yw)
     represented in world spatial reference system of raster.
 
     see https://postgis.net/docs/RT_ST_WorldToRasterCoordX.html
@@ -3386,7 +3719,8 @@ class ST_WorldToRasterCoordX(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_WorldToRasterCoordY(GenericFunction):
-    """Returns the row in the raster of the point geometry (pt) or a X and Y world coordinate (xw, yw)
+    """
+    Returns the row in the raster of the point geometry (pt) or a X and Y world coordinate (xw, yw)
     represented in world spatial reference system of raster.
 
     see https://postgis.net/docs/RT_ST_WorldToRasterCoordY.html
@@ -3397,13 +3731,15 @@ class ST_WorldToRasterCoordY(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_BandMetaData(GenericFunction):
-    """Returns basic meta data for a specific raster band. band num 1 is assumed if none-specified.
+    """
+    Returns basic meta data for a specific raster band. band num 1 is assumed if none-specified.
 
     see https://postgis.net/docs/RT_ST_BandMetaData.html
     """
 
 class ST_BandNoDataValue(GenericFunction):
-    """Returns the value in a given band that represents no data. If no band num 1 is assumed.
+    """
+    Returns the value in a given band that represents no data. If no band num 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_BandNoDataValue.html
 
@@ -3413,7 +3749,8 @@ class ST_BandNoDataValue(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Double()
 
 class ST_BandIsNoData(GenericFunction):
-    """Returns true if the band is filled with only nodata values.
+    """
+    Returns true if the band is filled with only nodata values.
 
     see https://postgis.net/docs/RT_ST_BandIsNoData.html
 
@@ -3423,7 +3760,8 @@ class ST_BandIsNoData(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_BandPath(GenericFunction):
-    """Returns system file path to a band stored in file system. If no bandnum specified, 1 is assumed.
+    """
+    Returns system file path to a band stored in file system. If no bandnum specified, 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_BandPath.html
 
@@ -3433,7 +3771,8 @@ class ST_BandPath(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_BandFileSize(GenericFunction):
-    """Returns the file size of a band stored in file system. If no bandnum specified, 1 is assumed.
+    """
+    Returns the file size of a band stored in file system. If no bandnum specified, 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_BandFileSize.html
 
@@ -3443,7 +3782,8 @@ class ST_BandFileSize(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_BandFileTimestamp(GenericFunction):
-    """Returns the file timestamp of a band stored in file system. If no bandnum specified, 1 is assumed.
+    """
+    Returns the file timestamp of a band stored in file system. If no bandnum specified, 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_BandFileTimestamp.html
 
@@ -3453,7 +3793,8 @@ class ST_BandFileTimestamp(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_BandPixelType(GenericFunction):
-    """Returns the type of pixel for given band. If no bandnum specified, 1 is assumed.
+    """
+    Returns the type of pixel for given band. If no bandnum specified, 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_BandPixelType.html
 
@@ -3463,7 +3804,8 @@ class ST_BandPixelType(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_MinPossibleValue(GenericFunction):
-    """Returns the minimum value this pixeltype can store.
+    """
+    Returns the minimum value this pixeltype can store.
 
     see https://postgis.net/docs/ST_MinPossibleValue.html
 
@@ -3473,7 +3815,8 @@ class ST_MinPossibleValue(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_HasNoBand(GenericFunction):
-    """Returns true if there is no band with given band number. If no band number is specified, then band
+    """
+    Returns true if there is no band with given band number. If no band number is specified, then band
     number 1 is assumed.
 
     see https://postgis.net/docs/RT_ST_HasNoBand.html
@@ -3484,7 +3827,8 @@ class ST_HasNoBand(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_PixelAsPolygon(GenericFunction):
-    """Returns the polygon geometry that bounds the pixel for a particular row and column.
+    """
+    Returns the polygon geometry that bounds the pixel for a particular row and column.
 
     see https://postgis.net/docs/RT_ST_PixelAsPolygon.html
 
@@ -3494,14 +3838,16 @@ class ST_PixelAsPolygon(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_PixelAsPolygons(GenericFunction):
-    """Returns the polygon geometry that bounds every pixel of a raster band along with the value, the X
+    """
+    Returns the polygon geometry that bounds every pixel of a raster band along with the value, the X
     and the Y raster coordinates of each pixel.
 
     see https://postgis.net/docs/RT_ST_PixelAsPolygons.html
     """
 
 class ST_PixelAsPoint(GenericFunction):
-    """Returns a point geometry of the pixel's upper-left corner.
+    """
+    Returns a point geometry of the pixel's upper-left corner.
 
     see https://postgis.net/docs/RT_ST_PixelAsPoint.html
 
@@ -3511,7 +3857,8 @@ class ST_PixelAsPoint(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_PixelAsPoints(GenericFunction):
-    """Returns a point geometry for each pixel of a raster band along with the value, the X and the Y
+    """
+    Returns a point geometry for each pixel of a raster band along with the value, the X and the Y
     raster coordinates of each pixel. The coordinates of the point geometry are of the pixel's upper-
     left corner.
 
@@ -3519,7 +3866,8 @@ class ST_PixelAsPoints(GenericFunction):
     """
 
 class ST_PixelAsCentroid(GenericFunction):
-    """Returns the centroid (point geometry) of the area represented by a pixel.
+    """
+    Returns the centroid (point geometry) of the area represented by a pixel.
 
     see https://postgis.net/docs/RT_ST_PixelAsCentroid.html
 
@@ -3529,7 +3877,8 @@ class ST_PixelAsCentroid(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_PixelAsCentroids(GenericFunction):
-    """Returns the centroid (point geometry) for each pixel of a raster band along with the value, the X
+    """
+    Returns the centroid (point geometry) for each pixel of a raster band along with the value, the X
     and the Y raster coordinates of each pixel. The point geometry is the centroid of the area
     represented by a pixel.
 
@@ -3537,7 +3886,8 @@ class ST_PixelAsCentroids(GenericFunction):
     """
 
 class ST_Value(GenericFunction):
-    """Returns the value of a given band in a given columnx, rowy pixel or at a particular geometric point.
+    """
+    Returns the value of a given band in a given columnx, rowy pixel or at a particular geometric point.
     Band numbers start at 1 and assumed to be 1 if not specified. If exclude_nodata_value is set to
     false, then all pixels include nodata pixels are considered to intersect and return value. If
     exclude_nodata_value is not passed in then reads it from metadata of raster.
@@ -3550,7 +3900,8 @@ class ST_Value(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Double()
 
 class ST_NearestValue(GenericFunction):
-    """Returns the nearest non-NODATA value of a given band's pixel specified by a columnx and rowy or a
+    """
+    Returns the nearest non-NODATA value of a given band's pixel specified by a columnx and rowy or a
     geometric point expressed in the same spatial reference coordinate system as the raster.
 
     see https://postgis.net/docs/RT_ST_NearestValue.html
@@ -3561,7 +3912,8 @@ class ST_NearestValue(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Double()
 
 class ST_Neighborhood(GenericFunction):
-    """Returns a 2-D double precision array of the non-NODATA values around a given band's pixel specified
+    """
+    Returns a 2-D double precision array of the non-NODATA values around a given band's pixel specified
     by either a columnX and rowY or a geometric point expressed in the same spatial reference coordinate
     system as the raster.
 
@@ -3569,7 +3921,8 @@ class ST_Neighborhood(GenericFunction):
     """
 
 class ST_SetValue(GenericFunction):
-    """Returns modified raster resulting from setting the value of a given band in a given columnx, rowy
+    """
+    Returns modified raster resulting from setting the value of a given band in a given columnx, rowy
     pixel or the pixels that intersect a particular geometry. Band numbers start at 1 and assumed to be
     1 if not specified.
 
@@ -3581,7 +3934,8 @@ class ST_SetValue(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_SetValues(GenericFunction):
-    """Returns modified raster resulting from setting the values of a given band.
+    """
+    Returns modified raster resulting from setting the values of a given band.
 
     see https://postgis.net/docs/RT_ST_SetValues.html
 
@@ -3591,19 +3945,22 @@ class ST_SetValues(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_DumpValues(GenericFunction):
-    """Get the values of the specified band as a 2-dimension array.
+    """
+    Get the values of the specified band as a 2-dimension array.
 
     see https://postgis.net/docs/RT_ST_DumpValues.html
     """
 
 class ST_PixelOfValue(GenericFunction):
-    """Get the columnx, rowy coordinates of the pixel whose value equals the search value.
+    """
+    Get the columnx, rowy coordinates of the pixel whose value equals the search value.
 
     see https://postgis.net/docs/RT_ST_PixelOfValue.html
     """
 
 class ST_SetGeoReference(GenericFunction):
-    """Set Georeference 6 georeference parameters in a single call. Numbers should be separated by white
+    """
+    Set Georeference 6 georeference parameters in a single call. Numbers should be separated by white
     space. Accepts inputs in GDAL or ESRI format. Default is GDAL.
 
     see https://postgis.net/docs/RT_ST_SetGeoReference.html
@@ -3614,7 +3971,8 @@ class ST_SetGeoReference(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_SetRotation(GenericFunction):
-    """Set the rotation of the raster in radian.
+    """
+    Set the rotation of the raster in radian.
 
     see https://postgis.net/docs/RT_ST_SetRotation.html
 
@@ -3624,7 +3982,8 @@ class ST_SetRotation(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_SetScale(GenericFunction):
-    """Sets the X and Y size of pixels in units of coordinate reference system. Number units/pixel
+    """
+    Sets the X and Y size of pixels in units of coordinate reference system. Number units/pixel
     width/height.
 
     see https://postgis.net/docs/RT_ST_SetScale.html
@@ -3635,7 +3994,8 @@ class ST_SetScale(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_SetSkew(GenericFunction):
-    """Sets the georeference X and Y skew (or rotation parameter). If only one is passed in, sets X and Y
+    """
+    Sets the georeference X and Y skew (or rotation parameter). If only one is passed in, sets X and Y
     to the same value.
 
     see https://postgis.net/docs/RT_ST_SetSkew.html
@@ -3646,7 +4006,8 @@ class ST_SetSkew(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_SetUpperLeft(GenericFunction):
-    """Sets the value of the upper left corner of the pixel of the raster to projected X and Y coordinates.
+    """
+    Sets the value of the upper left corner of the pixel of the raster to projected X and Y coordinates.
 
     see https://postgis.net/docs/RT_ST_SetUpperLeft.html
 
@@ -3656,7 +4017,8 @@ class ST_SetUpperLeft(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Resample(GenericFunction):
-    """Resample a raster using a specified resampling algorithm, new dimensions, an arbitrary grid corner
+    """
+    Resample a raster using a specified resampling algorithm, new dimensions, an arbitrary grid corner
     and a set of raster georeferencing attributes defined or borrowed from another raster.
 
     see https://postgis.net/docs/RT_ST_Resample.html
@@ -3667,7 +4029,8 @@ class ST_Resample(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Rescale(GenericFunction):
-    """Resample a raster by adjusting only its scale (or pixel size). New pixel values are computed using
+    """
+    Resample a raster by adjusting only its scale (or pixel size). New pixel values are computed using
     the NearestNeighbor (english or american spelling), Bilinear, Cubic, CubicSpline or Lanczos
     resampling algorithm. Default is NearestNeighbor.
 
@@ -3679,7 +4042,8 @@ class ST_Rescale(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Reskew(GenericFunction):
-    """Resample a raster by adjusting only its skew (or rotation parameters). New pixel values are computed
+    """
+    Resample a raster by adjusting only its skew (or rotation parameters). New pixel values are computed
     using the NearestNeighbor (english or american spelling), Bilinear, Cubic, CubicSpline or Lanczos
     resampling algorithm. Default is NearestNeighbor.
 
@@ -3691,7 +4055,8 @@ class ST_Reskew(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Resize(GenericFunction):
-    """Resize a raster to a new width/height
+    """
+    Resize a raster to a new width/height
 
     see https://postgis.net/docs/RT_ST_Resize.html
 
@@ -3701,7 +4066,8 @@ class ST_Resize(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_SetBandNoDataValue(GenericFunction):
-    """Sets the value for the given band that represents no data. Band 1 is assumed if no band is
+    """
+    Sets the value for the given band that represents no data. Band 1 is assumed if no band is
     specified. To mark a band as having no nodata value, set the nodata value = NULL.
 
     see https://postgis.net/docs/RT_ST_SetBandNoDataValue.html
@@ -3712,7 +4078,8 @@ class ST_SetBandNoDataValue(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_SetBandIsNoData(GenericFunction):
-    """Sets the isnodata flag of the band to TRUE.
+    """
+    Sets the isnodata flag of the band to TRUE.
 
     see https://postgis.net/docs/RT_ST_SetBandIsNoData.html
 
@@ -3722,7 +4089,8 @@ class ST_SetBandIsNoData(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_SetBandPath(GenericFunction):
-    """Update the external path and band number of an out-db band
+    """
+    Update the external path and band number of an out-db band
 
     see https://postgis.net/docs/RT_ST_SetBandPath.html
 
@@ -3732,7 +4100,8 @@ class ST_SetBandPath(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_SetBandIndex(GenericFunction):
-    """Update the external band number of an out-db band
+    """
+    Update the external band number of an out-db band
 
     see https://postgis.net/docs/RT_ST_SetBandIndex.html
 
@@ -3742,7 +4111,8 @@ class ST_SetBandIndex(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Count(GenericFunction):
-    """Returns the number of pixels in a given band of a raster or raster coverage. If no band is specified
+    """
+    Returns the number of pixels in a given band of a raster or raster coverage. If no band is specified
     defaults to band 1. If exclude_nodata_value is set to true, will only count pixels that are not
     equal to the nodata value.
 
@@ -3754,7 +4124,8 @@ class ST_Count(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_CountAgg(GenericFunction):
-    """Aggregate. Returns the number of pixels in a given band of a set of rasters. If no band is specified
+    """
+    Aggregate. Returns the number of pixels in a given band of a set of rasters. If no band is specified
     defaults to band 1. If exclude_nodata_value is set to true, will only count pixels that are not
     equal to the NODATA value.
 
@@ -3766,28 +4137,32 @@ class ST_CountAgg(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Integer()
 
 class ST_Histogram(GenericFunction):
-    """Returns a set of record summarizing a raster or raster coverage data distribution separate bin
+    """
+    Returns a set of record summarizing a raster or raster coverage data distribution separate bin
     ranges. Number of bins are autocomputed if not specified.
 
     see https://postgis.net/docs/RT_ST_Histogram.html
     """
 
 class ST_Quantile(GenericFunction):
-    """Compute quantiles for a raster or raster table coverage in the context of the sample or population.
+    """
+    Compute quantiles for a raster or raster table coverage in the context of the sample or population.
     Thus, a value could be examined to be at the raster's 25%, 50%, 75% percentile.
 
     see https://postgis.net/docs/RT_ST_Quantile.html
     """
 
 class ST_SummaryStats(GenericFunction):
-    """Returns summarystats consisting of count, sum, mean, stddev, min, max for a given raster band of a
+    """
+    Returns summarystats consisting of count, sum, mean, stddev, min, max for a given raster band of a
     raster or raster coverage. Band 1 is assumed is no band is specified.
 
     see https://postgis.net/docs/RT_ST_SummaryStats.html
     """
 
 class ST_SummaryStatsAgg(GenericFunction):
-    """Aggregate. Returns summarystats consisting of count, sum, mean, stddev, min, max for a given raster
+    """
+    Aggregate. Returns summarystats consisting of count, sum, mean, stddev, min, max for a given raster
     band of a set of raster. Band 1 is assumed is no band is specified.
 
     see https://postgis.net/docs/RT_ST_SummaryStatsAgg.html
@@ -3798,7 +4173,8 @@ class ST_SummaryStatsAgg(GenericFunction):
     type = geoalchemy2.types.SummaryStats()
 
 class ST_ValueCount(GenericFunction):
-    """Returns a set of records containing a pixel band value and count of the number of pixels in a given
+    """
+    Returns a set of records containing a pixel band value and count of the number of pixels in a given
     band of a raster (or a raster coverage) that have a given set of values. If no band is specified
     defaults to band 1. By default nodata value pixels are not counted. and all other values in the
     pixel are output and pixel band values are rounded to the nearest integer.
@@ -3807,7 +4183,8 @@ class ST_ValueCount(GenericFunction):
     """
 
 class ST_RastFromWKB(GenericFunction):
-    """Return a raster value from a Well-Known Binary (WKB) raster.
+    """
+    Return a raster value from a Well-Known Binary (WKB) raster.
 
     see https://postgis.net/docs/RT_ST_RastFromWKB.html
 
@@ -3817,7 +4194,8 @@ class ST_RastFromWKB(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_RastFromHexWKB(GenericFunction):
-    """Return a raster value from a Hex representation of Well-Known Binary (WKB) raster.
+    """
+    Return a raster value from a Hex representation of Well-Known Binary (WKB) raster.
 
     see https://postgis.net/docs/RT_ST_RastFromHexWKB.html
 
@@ -3827,7 +4205,8 @@ class ST_RastFromHexWKB(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_AsWKB(GenericFunction):
-    """Return the Well-Known Binary (WKB) representation of the raster.
+    """
+    Return the Well-Known Binary (WKB) representation of the raster.
 
     see https://postgis.net/docs/RT_ST_AsBinary.html
 
@@ -3837,7 +4216,8 @@ class ST_AsWKB(GenericFunction):
     type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_AsHexWKB(GenericFunction):
-    """Return the Well-Known Binary (WKB) in Hex representation of the raster.
+    """
+    Return the Well-Known Binary (WKB) in Hex representation of the raster.
 
     see https://postgis.net/docs/RT_ST_AsHexWKB.html
 
@@ -3847,7 +4227,8 @@ class ST_AsHexWKB(GenericFunction):
     type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_AsGDALRaster(GenericFunction):
-    """Return the raster tile in the designated GDAL Raster format. Raster formats are one of those
+    """
+    Return the raster tile in the designated GDAL Raster format. Raster formats are one of those
     supported by your compiled library. Use ST_GDALDrivers() to get a list of formats supported by your
     library.
 
@@ -3859,7 +4240,8 @@ class ST_AsGDALRaster(GenericFunction):
     type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_AsJPEG(GenericFunction):
-    """Return the raster tile selected bands as a single Joint Photographic Exports Group (JPEG) image
+    """
+    Return the raster tile selected bands as a single Joint Photographic Exports Group (JPEG) image
     (byte array). If no band is specified and 1 or more than 3 bands, then only the first band is used.
     If only 3 bands then all 3 bands are used and mapped to RGB.
 
@@ -3871,7 +4253,8 @@ class ST_AsJPEG(GenericFunction):
     type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_AsPNG(GenericFunction):
-    """Return the raster tile selected bands as a single portable network graphics (PNG) image (byte
+    """
+    Return the raster tile selected bands as a single portable network graphics (PNG) image (byte
     array). If 1, 3, or 4 bands in raster and no bands are specified, then all bands are used. If more 2
     or more than 4 bands and no bands specified, then only band 1 is used. Bands are mapped to RGB or
     RGBA space.
@@ -3884,7 +4267,8 @@ class ST_AsPNG(GenericFunction):
     type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_AsTIFF(GenericFunction):
-    """Return the raster selected bands as a single TIFF image (byte array). If no band is specified or any
+    """
+    Return the raster selected bands as a single TIFF image (byte array). If no band is specified or any
     of specified bands does not exist in the raster, then will try to use all bands.
 
     see https://postgis.net/docs/RT_ST_AsTIFF.html
@@ -3895,7 +4279,8 @@ class ST_AsTIFF(GenericFunction):
     type = sqlalchemy.sql.sqltypes.LargeBinary()
 
 class ST_Clip(GenericFunction):
-    """Returns the raster clipped by the input geometry. If band number not is specified, all bands are
+    """
+    Returns the raster clipped by the input geometry. If band number not is specified, all bands are
     processed. If crop is not specified or TRUE, the output raster is cropped.
 
     see https://postgis.net/docs/RT_ST_Clip.html
@@ -3906,7 +4291,8 @@ class ST_Clip(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_ColorMap(GenericFunction):
-    """Creates a new raster of up to four 8BUI bands (grayscale, RGB, RGBA) from the source raster and a
+    """
+    Creates a new raster of up to four 8BUI bands (grayscale, RGB, RGBA) from the source raster and a
     specified band. Band 1 is assumed if not specified.
 
     see https://postgis.net/docs/RT_ST_ColorMap.html
@@ -3917,7 +4303,8 @@ class ST_ColorMap(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Grayscale(GenericFunction):
-    """Creates a new one-8BUI band raster from the source raster and specified bands representing Red,
+    """
+    Creates a new one-8BUI band raster from the source raster and specified bands representing Red,
     Green and Blue
 
     see https://postgis.net/docs/RT_ST_Grayscale.html
@@ -3928,7 +4315,8 @@ class ST_Grayscale(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_MapAlgebra(GenericFunction):
-    """[raster] Callback function version - Returns a one-band raster given one or more input rasters, band
+    """
+    [raster] Callback function version - Returns a one-band raster given one or more input rasters, band
     indexes and one user-specified callback function.
     OR
     [raster] Expression version - Returns a one-band raster given one or two input rasters, band indexes
@@ -3942,7 +4330,8 @@ class ST_MapAlgebra(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_MapAlgebraExpr(GenericFunction):
-    """[raster] 1 raster band version: Creates a new one band raster formed by applying a valid PostgreSQL
+    """
+    [raster] 1 raster band version: Creates a new one band raster formed by applying a valid PostgreSQL
     algebraic operation on the input raster band and of pixeltype provided. Band 1 is assumed if no band
     is specified.
     OR
@@ -3960,7 +4349,8 @@ class ST_MapAlgebraExpr(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_MapAlgebraFct(GenericFunction):
-    """[raster] 1 band version - Creates a new one band raster formed by applying a valid PostgreSQL
+    """
+    [raster] 1 band version - Creates a new one band raster formed by applying a valid PostgreSQL
     function on the input raster band and of pixeltype provided. Band 1 is assumed if no band is
     specified.
     OR
@@ -3976,7 +4366,8 @@ class ST_MapAlgebraFct(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_MapAlgebraFctNgb(GenericFunction):
-    """1-band version: Map Algebra Nearest Neighbor using user-defined PostgreSQL function. Return a raster
+    """
+    1-band version: Map Algebra Nearest Neighbor using user-defined PostgreSQL function. Return a raster
     which values are the result of a PLPGSQL user function involving a neighborhood of values from the
     input raster band.
 
@@ -3988,7 +4379,8 @@ class ST_MapAlgebraFctNgb(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Reclass(GenericFunction):
-    """Creates a new raster composed of band types reclassified from original. The nband is the band to be
+    """
+    Creates a new raster composed of band types reclassified from original. The nband is the band to be
     changed. If nband is not specified assumed to be 1. All other bands are returned unchanged. Use
     case: convert a 16BUI band to a 8BUI and so forth for simpler rendering as viewable formats.
 
@@ -4000,62 +4392,72 @@ class ST_Reclass(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Distinct4ma(GenericFunction):
-    """Raster processing function that calculates the number of unique pixel values in a neighborhood.
+    """
+    Raster processing function that calculates the number of unique pixel values in a neighborhood.
 
     see https://postgis.net/docs/RT_ST_Distinct4ma.html
     """
 
 class ST_InvDistWeight4ma(GenericFunction):
-    """Raster processing function that interpolates a pixel's value from the pixel's neighborhood.
+    """
+    Raster processing function that interpolates a pixel's value from the pixel's neighborhood.
 
     see https://postgis.net/docs/RT_ST_InvDistWeight4ma.html
     """
 
 class ST_Max4ma(GenericFunction):
-    """Raster processing function that calculates the maximum pixel value in a neighborhood.
+    """
+    Raster processing function that calculates the maximum pixel value in a neighborhood.
 
     see https://postgis.net/docs/RT_ST_Max4ma.html
     """
 
 class ST_Mean4ma(GenericFunction):
-    """Raster processing function that calculates the mean pixel value in a neighborhood.
+    """
+    Raster processing function that calculates the mean pixel value in a neighborhood.
 
     see https://postgis.net/docs/RT_ST_Mean4ma.html
     """
 
 class ST_Min4ma(GenericFunction):
-    """Raster processing function that calculates the minimum pixel value in a neighborhood.
+    """
+    Raster processing function that calculates the minimum pixel value in a neighborhood.
 
     see https://postgis.net/docs/RT_ST_Min4ma.html
     """
 
 class ST_MinDist4ma(GenericFunction):
-    """Raster processing function that returns the minimum distance (in number of pixels) between the pixel
+    """
+    Raster processing function that returns the minimum distance (in number of pixels) between the pixel
     of interest and a neighboring pixel with value.
 
     see https://postgis.net/docs/RT_ST_MinDist4ma.html
     """
 
 class ST_Range4ma(GenericFunction):
-    """Raster processing function that calculates the range of pixel values in a neighborhood.
+    """
+    Raster processing function that calculates the range of pixel values in a neighborhood.
 
     see https://postgis.net/docs/RT_ST_Range4ma.html
     """
 
 class ST_StdDev4ma(GenericFunction):
-    """Raster processing function that calculates the standard deviation of pixel values in a neighborhood.
+    """
+    Raster processing function that calculates the standard deviation of pixel values in a neighborhood.
 
     see https://postgis.net/docs/RT_ST_StdDev4ma.html
     """
 
 class ST_Sum4ma(GenericFunction):
-    """Raster processing function that calculates the sum of all pixel values in a neighborhood.
+    """
+    Raster processing function that calculates the sum of all pixel values in a neighborhood.
 
     see https://postgis.net/docs/RT_ST_Sum4ma.html
     """
 
 class ST_Aspect(GenericFunction):
-    """Returns the aspect (in degrees by default) of an elevation raster band. Useful for analyzing
+    """
+    Returns the aspect (in degrees by default) of an elevation raster band. Useful for analyzing
     terrain.
 
     see https://postgis.net/docs/RT_ST_Aspect.html
@@ -4066,7 +4468,8 @@ class ST_Aspect(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_HillShade(GenericFunction):
-    """Returns the hypothetical illumination of an elevation raster band using provided azimuth, altitude,
+    """
+    Returns the hypothetical illumination of an elevation raster band using provided azimuth, altitude,
     brightness and scale inputs.
 
     see https://postgis.net/docs/RT_ST_HillShade.html
@@ -4077,7 +4480,8 @@ class ST_HillShade(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Roughness(GenericFunction):
-    """Returns a raster with the calculated "roughness" of a DEM.
+    """
+    Returns a raster with the calculated "roughness" of a DEM.
 
     see https://postgis.net/docs/RT_ST_Roughness.html
 
@@ -4087,7 +4491,8 @@ class ST_Roughness(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_Slope(GenericFunction):
-    """Returns the slope (in degrees by default) of an elevation raster band. Useful for analyzing terrain.
+    """
+    Returns the slope (in degrees by default) of an elevation raster band. Useful for analyzing terrain.
 
     see https://postgis.net/docs/RT_ST_Slope.html
 
@@ -4097,7 +4502,8 @@ class ST_Slope(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_TPI(GenericFunction):
-    """Returns a raster with the calculated Topographic Position Index.
+    """
+    Returns a raster with the calculated Topographic Position Index.
 
     see https://postgis.net/docs/RT_ST_TPI.html
 
@@ -4107,7 +4513,8 @@ class ST_TPI(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_TRI(GenericFunction):
-    """Returns a raster with the calculated Terrain Ruggedness Index.
+    """
+    Returns a raster with the calculated Terrain Ruggedness Index.
 
     see https://postgis.net/docs/RT_ST_TRI.html
 
@@ -4117,14 +4524,16 @@ class ST_TRI(GenericFunction):
     type = geoalchemy2.types.Raster()
 
 class ST_DumpAsPolygons(GenericFunction):
-    """Returns a set of geomval (geom,val) rows, from a given raster band. If no band number is specified,
+    """
+    Returns a set of geomval (geom,val) rows, from a given raster band. If no band number is specified,
     band num defaults to 1.
 
     see https://postgis.net/docs/RT_ST_DumpAsPolygons.html
     """
 
 class ST_MinConvexHull(GenericFunction):
-    """Return the convex hull geometry of the raster excluding NODATA pixels.
+    """
+    Return the convex hull geometry of the raster excluding NODATA pixels.
 
     see https://postgis.net/docs/RT_ST_MinConvexHull.html
 
@@ -4134,7 +4543,8 @@ class ST_MinConvexHull(GenericFunction):
     type = geoalchemy2.types.Geometry()
 
 class ST_SameAlignment(GenericFunction):
-    """Returns true if rasters have same skew, scale, spatial ref, and offset (pixels can be put on same
+    """
+    Returns true if rasters have same skew, scale, spatial ref, and offset (pixels can be put on same
     grid without cutting into pixels) and false if they don't with notice detailing issue.
 
     see https://postgis.net/docs/RT_ST_SameAlignment.html
@@ -4145,7 +4555,8 @@ class ST_SameAlignment(GenericFunction):
     type = sqlalchemy.sql.sqltypes.Boolean()
 
 class ST_NotSameAlignmentReason(GenericFunction):
-    """Returns text stating if rasters are aligned and if not aligned, a reason why.
+    """
+    Returns text stating if rasters are aligned and if not aligned, a reason why.
 
     see https://postgis.net/docs/RT_ST_NotSameAlignmentReason.html
 
@@ -4155,7 +4566,8 @@ class ST_NotSameAlignmentReason(GenericFunction):
     type = sqlalchemy.sql.sqltypes.String()
 
 class ST_Distance_Sphere(GenericFunction):
-    """Returns minimum distance in meters between two lon/lat geometries. Uses a spherical earth and radius
+    """
+    Returns minimum distance in meters between two lon/lat geometries. Uses a spherical earth and radius
     of 6370986 meters. Faster than ``ST_Distance_Spheroid``, but less accurate. PostGIS versions prior
     to 1.5 only implemented for points.
 
