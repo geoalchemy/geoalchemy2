@@ -187,29 +187,23 @@ def check_indexes(conn, dialect_name, expected, table_name):
     """Check that actual indexes are equal to the expected ones."""
     index_query = {
         "postgresql": text(
-            """SELECT indexname, indexdef
+            f"""SELECT indexname, indexdef
             FROM pg_indexes
             WHERE
-                tablename = '{}'
-            ORDER BY indexname;""".format(
-                table_name
-            )
+                tablename = '{table_name}'
+            ORDER BY indexname;"""
         ),
         "sqlite": text(
-            """SELECT *
+            f"""SELECT *
             FROM geometry_columns
-            WHERE f_table_name = '{}'
-            ORDER BY f_table_name, f_geometry_column;""".format(
-                table_name
-            )
+            WHERE f_table_name = '{table_name}'
+            ORDER BY f_table_name, f_geometry_column;"""
         ),
         "geopackage": text(
-            """SELECT table_name, column_name, extension_name
+            f"""SELECT table_name, column_name, extension_name
             FROM gpkg_extensions
-            WHERE table_name = '{}' and extension_name = 'gpkg_rtree_index'
-            """.format(
-                table_name
-            )
+            WHERE table_name = '{table_name}' and extension_name = 'gpkg_rtree_index'
+            """
         ),
     }
 

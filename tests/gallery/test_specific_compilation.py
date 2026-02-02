@@ -1,5 +1,4 @@
-"""
-Function translation for specific dialect
+"""Function translation for specific dialect
 =========================================
 
 Some functions have different names depending on the dialect. But sometimes one function in one
@@ -81,7 +80,7 @@ def _compile_buffer_sqlite(element, compiler, **kw):
         element.identifier = "Buffer"
 
     # If there is no side parameter or if the side value is 'both', we use the default function
-    return "{}({})".format(element.identifier, compiled)
+    return f"{element.identifier}({compiled})"
 
 
 # Register the specific compilation rules

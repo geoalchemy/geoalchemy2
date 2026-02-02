@@ -1,5 +1,4 @@
-"""
-Decipher Raster
+"""Decipher Raster
 ===============
 
 The `RasterElement` objects store the Raster data in WKB form. When using rasters it is
@@ -113,7 +112,6 @@ _ENDIANNESS = {
 
 def wkbImage(raster_data, use_numpy=False):
     """Function to decipher the WKB raster data"""
-
     # Get binary data
     raw = binascii.unhexlify(raster_data)
 
@@ -125,7 +123,7 @@ def wkbImage(raster_data, use_numpy=False):
     offset = 61  # header raw length in bytes
     band_size = h["width"] * h["height"]  # number of pixels in each band
 
-    for i in range(h["nbands"]):
+    for _ in range(h["nbands"]):
         # Determine pixtype for this band
         pixtype = struct.unpack(_format_e(e, "b"), raw[offset : offset + 1])[0] - 64
 

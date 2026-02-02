@@ -14,7 +14,7 @@ _SQLALCHEMY_VERSION_BEFORE_14 = version.parse(sqlalchemy.__version__) < version.
 
 
 def _spatial_idx_name(table_name, column_name):
-    return "idx_{}_{}".format(table_name, column_name)
+    return f"idx_{table_name}_{column_name}"
 
 
 def _format_select_args(*args):
@@ -30,10 +30,7 @@ def check_management(*args):
 
 
 def _get_gis_cols(table, spatial_types, dialect, check_col_management=None):
-    if check_col_management is not None:
-        func = check_col_management
-    else:
-        func = check_management
+    func = check_col_management if check_col_management is not None else check_management
     return [
         col
         for col in table.columns

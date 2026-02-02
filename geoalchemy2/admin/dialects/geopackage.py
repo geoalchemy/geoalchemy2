@@ -48,6 +48,7 @@ def load_geopackage_driver(dbapi_conn, *args):
 
     Args:
         dbapi_conn: The DBAPI connection.
+        *args: Additional arguments passed to the underlying loader.
     """
     load_spatialite_driver(dbapi_conn, *args)
 
@@ -60,6 +61,7 @@ def init_geopackage(dbapi_conn, *args):
 
     Args:
         dbapi_conn: The DBAPI connection.
+        *args: Additional arguments (unused).
 
     .. Warning::
         No EPSG SRID is loaded in the `gpkg_spatial_ref_sys` table after initialization but
@@ -141,15 +143,7 @@ def create_spatial_index(bind, table, col):
 def disable_spatial_index(bind, table, col):
     """Disable spatial indexes if present."""
     for i in ["", "_node", "_parent", "_rowid"]:
-        bind.execute(
-            text(
-                "DROP TABLE IF EXISTS rtree_{}_{}{};".format(
-                    table.name,
-                    col.name,
-                    i,
-                )
-            )
-        )
+        bind.execute(text(f"DROP TABLE IF EXISTS rtree_{table.name}_{col.name}{i};"))
     bind.execute(
         text(
             """DELETE FROM gpkg_extensions
@@ -341,7 +335,7 @@ def after_drop(table, bind, **kw):
 
 def _compiles_gpkg(cls, fn):
     def _compile_gpkg(element, compiler, **kw):
-        return "{}({})".format(fn, compiler.process(element.clauses, **kw))
+        return f"{fn}({compiler.process(element.clauses, **kw)})"
 
     compiles(getattr(functions, cls), "geopackage")(_compile_gpkg)
 
@@ -406,9 +400,9 @@ def _compile_GeomFromWKB_gpkg(element, compiler, *, identifier, **kw):
     compiled = compiler.process(wkb_clause, **kw)
 
     if srid > 0:
-        return "{}({}{}{}, {})".format(identifier, prefix, compiled, suffix, srid)
+        return f"{identifier}({prefix}{compiled}{suffix}, {srid})"
     else:
-        return "{}({}{}{})".format(identifier, prefix, compiled, suffix)
+        return f"{identifier}({prefix}{compiled}{suffix})"
 
 
 @compiles(functions.ST_GeomFromWKB, "geopackage")  # type: ignore

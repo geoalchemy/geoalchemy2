@@ -1,5 +1,4 @@
-"""
-Compute length on insert
+"""Compute length on insert
 ========================
 
 It is possible to insert a geometry and ask PostgreSQL to compute its length at the same

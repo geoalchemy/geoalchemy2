@@ -5,8 +5,8 @@ Spatial operators very often apply to the bounding boxes of geometries. For
 example, ``geom1 && geom2`` indicates if geom1's bounding box intersects
 geom2's.
 
-Examples
---------
+Examples:
+---------
 Select the objects whose bounding boxes are to the left of the
 bounding box of ``POLYGON((-5 45,5 45,5 -45,-5 -45,-5 45))``::
 

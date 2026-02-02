@@ -1,5 +1,4 @@
-"""
-Disable wrapping in select
+"""Disable wrapping in select
 ==========================
 
 If the application wants to build queries with GeoAlchemy 2 and gets them as strings,

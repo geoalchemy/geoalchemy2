@@ -1,7 +1,6 @@
 """This module defines specific functions for SQLite dialect."""
 
 import os
-from typing import Optional
 
 from sqlalchemy import text
 from sqlalchemy.dialects.sqlite.base import ischema_names as _sqlite_ischema_names
@@ -43,6 +42,7 @@ def load_spatialite_driver(dbapi_conn, *args):
 
     Args:
         dbapi_conn: The DBAPI connection.
+        *args: Additional arguments (unused).
     """
     if "SPATIALITE_LIBRARY_PATH" not in os.environ:
         raise RuntimeError("The SPATIALITE_LIBRARY_PATH environment variable is not set.")
@@ -59,13 +59,14 @@ def init_spatialite(
     dbapi_conn,
     *args,
     transaction: bool = False,
-    init_mode: Optional[str] = None,
-    journal_mode: Optional[str] = None,
+    init_mode: str | None = None,
+    journal_mode: str | None = None,
 ):
     """Initialize internal SpatiaLite tables.
 
     Args:
         dbapi_conn: The DBAPI connection.
+        *args: Additional arguments (unused).
         transaction: If set to `True` the whole operation will be handled as a single Transaction
             (faster). The default value is `False` (slower, but safer).
         init_mode: Can be `None` to load all EPSG SRIDs, `'WGS84'` to load only the ones related
@@ -108,7 +109,7 @@ def init_spatialite(
     func_args = []
 
     # Check the value of the 'transaction' parameter
-    if not isinstance(transaction, (bool, int)):
+    if not isinstance(transaction, bool | int):
         raise ValueError("The 'transaction' argument must be True or False.")
     else:
         func_args.append(str(transaction))
@@ -119,27 +120,24 @@ def init_spatialite(
         init_mode = init_mode.upper()
     if init_mode is not None:
         if init_mode not in init_mode_values:
-            raise ValueError("The 'init_mode' argument must be one of {}.".format(init_mode_values))
+            raise ValueError(f"The 'init_mode' argument must be one of {init_mode_values}.")
         func_args.append(f"'{init_mode}'")
 
     # Check the value of the 'journal_mode' parameter
     if isinstance(journal_mode, str):
         journal_mode = journal_mode.upper()
-    if journal_mode is not None:
-        if journal_mode not in _JOURNAL_MODE_VALUES:
-            raise ValueError(
-                "The 'journal_mode' argument must be one of {}.".format(_JOURNAL_MODE_VALUES)
-            )
+    if journal_mode is not None and journal_mode not in _JOURNAL_MODE_VALUES:
+        raise ValueError(f"The 'journal_mode' argument must be one of {_JOURNAL_MODE_VALUES}.")
 
     if dbapi_conn.execute("SELECT CheckSpatialMetaData();").fetchone()[0] < 1:
         if journal_mode is not None:
             current_journal_mode = dbapi_conn.execute("PRAGMA journal_mode").fetchone()[0]
-            dbapi_conn.execute("PRAGMA journal_mode = {}".format(journal_mode))
+            dbapi_conn.execute(f"PRAGMA journal_mode = {journal_mode}")
 
         dbapi_conn.execute("SELECT InitSpatialMetaData({});".format(", ".join(func_args)))
 
         if journal_mode is not None:
-            dbapi_conn.execute("PRAGMA journal_mode = {}".format(current_journal_mode))
+            dbapi_conn.execute(f"PRAGMA journal_mode = {current_journal_mode}")
 
 
 def load_spatialite(dbapi_conn, *args, **kwargs):
@@ -189,10 +187,7 @@ def get_col_dim(col):
     elif col.type.dimension == 2 or col.type.geometry_type is None:
         dimension = "XY"
     else:
-        if col.type.geometry_type.endswith("M"):
-            dimension = "XYM"
-        else:
-            dimension = "XYZ"
+        dimension = "XYM" if col.type.geometry_type.endswith("M") else "XYZ"
     return dimension
 
 
@@ -381,7 +376,7 @@ _SQLITE_FUNCTIONS = {
 
 def _compiles_sqlite(cls, fn):
     def _compile_sqlite(element, compiler, **kw):
-        return "{}({})".format(fn, compiler.process(element.clauses, **kw))
+        return f"{fn}({compiler.process(element.clauses, **kw)})"
 
     compiles(getattr(functions, cls), "sqlite")(_compile_sqlite)
 
@@ -428,9 +423,9 @@ def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, **kw):
     compiled = compiler.process(wkb_clause, **kw)
 
     if srid > 0:
-        return "{}({}{}{}, {})".format(identifier, prefix, compiled, suffix, srid)
+        return f"{identifier}({prefix}{compiled}{suffix}, {srid})"
     else:
-        return "{}({}{}{})".format(identifier, prefix, compiled, suffix)
+        return f"{identifier}({prefix}{compiled}{suffix})"
 
 
 @compiles(functions.ST_GeomFromWKB, "sqlite")  # type: ignore

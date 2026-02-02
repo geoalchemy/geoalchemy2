@@ -193,7 +193,7 @@ finally:
 
 """.format(
                 str(test_script_path),
-                True if engine.dialect.name == "sqlite" else False,
+                engine.dialect.name == "sqlite",
             )
         )
     with test_script_path.open(mode="w", encoding="utf8") as f:
@@ -243,9 +243,7 @@ keys = generic
 format = %%(levelname)-5.5s [%%(name)s] %%(message)s
 datefmt = %%H:%%M:%%S
 
-""".format(
-                alembic_dir, str(engine.url).replace("***", engine.url.password or "")
-            )
+""".format(alembic_dir, str(engine.url).replace("***", engine.url.password or ""))
         )
     return cfg
 
@@ -364,7 +362,7 @@ new_table = Table(
     from_text = "GeomFromEWKT" if conn.dialect.name == "sqlite" else "ST_GeomFromEWKT"
     conn.execute(
         text(
-            """INSERT INTO new_spatial_table (
+            f"""INSERT INTO new_spatial_table (
             geom_with_idx,
             geom_without_idx,
             geom_without_idx_2
@@ -373,9 +371,7 @@ new_table = Table(
             {from_text}('SRID=4326;LINESTRING(0 0, 1 1)'),
             {from_text}('SRID=4326;LINESTRING(0 0, 1 1)')
         )
-        """.format(
-                from_text=from_text
-            )
+        """
         )
     )
     conn.execute(text("COMMIT"))

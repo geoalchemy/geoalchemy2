@@ -7,9 +7,6 @@
 """
 
 from contextlib import contextmanager
-from typing import List
-from typing import Optional
-from typing import Union
 
 try:
     import shapely.wkb
@@ -37,7 +34,7 @@ def check_shapely():
 
 
 @check_shapely()
-def to_shape(element: Union[WKBElement, WKTElement]):
+def to_shape(element: WKBElement | WKTElement):
     """Function to convert a :class:`geoalchemy2.types.SpatialElement` to a Shapely geometry.
 
     Args:
@@ -63,7 +60,7 @@ def to_shape(element: Union[WKBElement, WKTElement]):
 
 
 @check_shapely()
-def from_shape(shape, srid: int = -1, extended: Optional[bool] = False) -> WKBElement:
+def from_shape(shape, srid: int = -1, extended: bool | None = False) -> WKBElement:
     """Function to convert a Shapely geometry to a :class:`geoalchemy2.types.WKBElement`.
 
     Args:
@@ -86,11 +83,11 @@ def from_shape(shape, srid: int = -1, extended: Optional[bool] = False) -> WKBEl
     )
 
 
-__all__: List[str] = [
+__all__: list[str] = [
     "from_shape",
     "to_shape",
 ]
 
 
-def __dir__() -> List[str]:
+def __dir__() -> list[str]:
     return __all__

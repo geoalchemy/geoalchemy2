@@ -68,8 +68,6 @@ Reference
 """
 
 import re
-from typing import List
-from typing import Type
 
 from sqlalchemy import inspect
 from sqlalchemy.ext.compiler import compiles
@@ -82,8 +80,8 @@ from geoalchemy2 import elements
 from geoalchemy2._functions import _FUNCTIONS
 from geoalchemy2._functions_helpers import _get_docstring
 
-_GeoFunctionBase: Type[functions.GenericFunction]
-_GeoFunctionParent: Type[functions.GenericFunction]
+_GeoFunctionBase: type[functions.GenericFunction]
+_GeoFunctionParent: type[functions.GenericFunction]
 try:
     # SQLAlchemy < 2
 
@@ -102,7 +100,7 @@ try:
             # Register the function
             elements.function_registry.add(clsname.lower())
 
-            super(_GeoGenericMeta, cls).__init__(clsname, bases, clsdict)
+            super().__init__(clsname, bases, clsdict)
 
     _GeoFunctionBase = with_metaclass(_GeoGenericMeta, functions.GenericFunction)
     _GeoFunctionParent = functions.GenericFunction
@@ -139,7 +137,7 @@ class TableRowElement(ColumnElement):
         self.selectable = selectable
 
     @property
-    def _from_objects(self) -> List[FromClause]:
+    def _from_objects(self) -> list[FromClause]:
         return [self.selectable]
 
 
@@ -202,7 +200,7 @@ def _compile_table_row_thing(element, compiler, **kw):
     # can get it w/ correct quoting
     schema = getattr(element.selectable, "schema", "")
     name = element.selectable.name
-    pattern = r"(.?%s.?\.)?(.?%s.?)\." % (schema, name)
+    pattern = rf"(.?{schema}.?\.)?(.?{name}.)\."
     m = re.match(pattern, compiled)
     if m:
         return m.group(2)
@@ -285,5 +283,5 @@ def _create_dynamic_functions() -> None:
 _create_dynamic_functions()
 
 
-def __dir__() -> List[str]:
+def __dir__() -> list[str]:
     return __all__
