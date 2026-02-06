@@ -87,7 +87,7 @@ jobs:
     steps:
 
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     # Setup Python
     - name: Set up Python ${{ matrix.python-version }}
@@ -190,7 +190,7 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v6
