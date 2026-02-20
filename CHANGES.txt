@@ -1,11 +1,18 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.18.2
+------
+
+* Build: Fix package discovery (#581) - Adrien Berchet
+* Chore: Add more type hints in from_shape module (#580) - Adrien Berchet
+* Build: Upgrade packaging and formatting tools (#576)
+
 0.18.1
 ------
 
-- Fix: Allow scientific notation within WKT string - @autermann (#573)
-- Fix (mysql): Fix failing test for MySQL dialect - @adrien-berchet (#567)
+* Fix: Allow scientific notation within WKT string - @autermann (#573)
+* Fix (mysql): Fix failing test for MySQL dialect - @adrien-berchet (#567)
 
 0.18.0
 ------
