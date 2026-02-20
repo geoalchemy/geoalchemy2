@@ -7,6 +7,7 @@
 """
 
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
 try:
     import shapely.wkb
@@ -17,9 +18,10 @@ try:
     HAS_SHAPELY = True
     _shapely_exc = None
 except ImportError as exc:
+    if not TYPE_CHECKING:
 
-    class ShapelyGeometry:  # type: ignore[no-redef]
-        """Requires shapely. Install with: pip install geoalchemy2[shapely]."""
+        class ShapelyGeometry:
+            """Requires shapely. Install with: pip install geoalchemy2[shapely]."""
 
     HAS_SHAPELY = False
     _shapely_exc = exc
