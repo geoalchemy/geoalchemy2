@@ -9,14 +9,18 @@
 from contextlib import contextmanager
 
 try:
-    import shapely
     import shapely.wkb
     import shapely.wkt
+    from shapely import Geometry as ShapelyGeometry
     from shapely.wkb import dumps
 
     HAS_SHAPELY = True
     _shapely_exc = None
 except ImportError as exc:
+
+    class ShapelyGeometry:  # type: ignore[no-redef]
+        """Requires shapely. Install with: pip install geoalchemy2[shapely]."""
+
     HAS_SHAPELY = False
     _shapely_exc = exc
 
@@ -35,7 +39,7 @@ def check_shapely():
 
 
 @check_shapely()
-def to_shape(element: WKBElement | WKTElement) -> shapely.Geometry:
+def to_shape(element: WKBElement | WKTElement) -> ShapelyGeometry:
     """Function to convert a :class:`geoalchemy2.types.SpatialElement` to a Shapely geometry.
 
     Args:
@@ -61,9 +65,7 @@ def to_shape(element: WKBElement | WKTElement) -> shapely.Geometry:
 
 
 @check_shapely()
-def from_shape(
-    shape: shapely.Geometry, srid: int = -1, extended: bool | None = False
-) -> WKBElement:
+def from_shape(shape: ShapelyGeometry, srid: int = -1, extended: bool | None = False) -> WKBElement:
     """Function to convert a Shapely geometry to a :class:`geoalchemy2.types.WKBElement`.
 
     Args:
