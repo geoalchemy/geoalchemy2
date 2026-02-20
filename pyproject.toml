@@ -15,6 +15,7 @@ license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
     {name = "Eric Lemoine", email = "eric.lemoine@gmail.com"},
+    {name = "Adrien Berchet", email = "adrien.berchet@gmail.com"},
 ]
 keywords = ["geo", "gis", "sqlalchemy", "orm"]
 classifiers = [
@@ -47,20 +48,20 @@ Source = "https://github.com/geoalchemy/geoalchemy2"
 geoalchemy2 = "geoalchemy2.admin.plugin:GeoEngine"
 
 [tool.setuptools]
-packages = ["geoalchemy2", "geoalchemy2.admin", "geoalchemy2.admin.dialects", "geoalchemy2.types", "geoalchemy2.types.dialects"]
 include-package-data = true
 zip-safe = false
 
+[tool.setuptools.packages.find]
+include = ["geoalchemy2*"]
+
 [tool.setuptools_scm]
 
-# RUFF - Modern Python linter and formatter (replaces black, isort, flake8, pydocstyle)
 [tool.ruff]
 target-version = "py310"
 line-length = 100
 exclude = ["geoalchemy2/functions.pyi"]  # Auto-generated file
 
 [tool.ruff.lint]
-# Select rules to enable (E = pycodestyle, F = Pyflakes, I = isort, W = pycodestyle warnings, D = pydocstyle)
 select = [
     "E",    # pycodestyle errors
     "F",    # Pyflakes
