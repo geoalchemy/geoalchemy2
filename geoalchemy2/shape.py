@@ -9,6 +9,7 @@
 from contextlib import contextmanager
 
 try:
+    import shapely
     import shapely.wkb
     import shapely.wkt
     from shapely.wkb import dumps
@@ -34,7 +35,7 @@ def check_shapely():
 
 
 @check_shapely()
-def to_shape(element: WKBElement | WKTElement):
+def to_shape(element: WKBElement | WKTElement) -> shapely.Geometry:
     """Function to convert a :class:`geoalchemy2.types.SpatialElement` to a Shapely geometry.
 
     Args:
@@ -60,7 +61,9 @@ def to_shape(element: WKBElement | WKTElement):
 
 
 @check_shapely()
-def from_shape(shape, srid: int = -1, extended: bool | None = False) -> WKBElement:
+def from_shape(
+    shape: shapely.Geometry, srid: int = -1, extended: bool | None = False
+) -> WKBElement:
     """Function to convert a Shapely geometry to a :class:`geoalchemy2.types.WKBElement`.
 
     Args:
