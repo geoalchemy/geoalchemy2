@@ -1,3 +1,6 @@
+import importlib
+import sys
+
 import pytest
 import shapely.wkb
 from shapely.geometry import Point
@@ -7,6 +10,44 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
 from geoalchemy2.shape import to_shape
+
+
+def test_import_without_shapely(monkeypatch):
+    """Ensure geoalchemy2.shape can be imported when Shapely is not installed."""
+    # Save the current shapely entries in sys.modules
+
+    shapely_modules = {
+        k: v for k, v in sys.modules.items() if k == "shapely" or k.startswith("shapely.")
+    }
+    CHECK_COMPLETE = 0
+    with monkeypatch.context() as m:
+        try:
+            for k in shapely_modules:
+                m.setitem(sys.modules, k, None)
+
+            # Now import the module - must not raise ImportError
+
+            importlib.reload(geoalchemy2.shape)
+
+            assert not geoalchemy2.shape.HAS_SHAPELY
+            with pytest.raises(
+                ImportError,
+                match="This feature needs the optional Shapely dependency",
+            ):
+                to_shape(WKTElement("SRID=3857;POINT(1 2)"))
+            CHECK_COMPLETE += 1
+        finally:
+            # Restore shapely modules and reload to return to normal state
+
+            for k, v in shapely_modules.items():
+                sys.modules[k] = v
+
+            importlib.reload(geoalchemy2.shape)
+            to_shape(WKTElement("SRID=3857;POINT(1 2)"))  # Should not raise ImportError
+            CHECK_COMPLETE += 1
+
+    assert geoalchemy2.shape.HAS_SHAPELY
+    assert CHECK_COMPLETE == 2
 
 
 def test_check_shapely(monkeypatch):
