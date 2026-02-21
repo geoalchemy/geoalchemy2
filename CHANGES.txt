@@ -1,12 +1,17 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.18.3
+------
+
+* Fix: Fix Shapely import - @adrien-berchet (#584)
+
 0.18.2
 ------
 
-* Build: Fix package discovery (#581) - Adrien Berchet
-* Chore: Add more type hints in from_shape module (#580) - Adrien Berchet
-* Build: Upgrade packaging and formatting tools (#576)
+* Build: Fix package discovery - @adrien-berchet (#581)
+* Chore: Add more type hints in from_shape module - @adrien-berchet (#580)
+* Build: Upgrade packaging and formatting tools - @adrien-berchet (#576)
 
 0.18.1
 ------
