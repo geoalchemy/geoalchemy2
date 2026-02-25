@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 try:
     import shapely.wkb
     import shapely.wkt
-    from shapely import Geometry as ShapelyGeometry
+    from shapely.geometry.base import BaseGeometry as ShapelyGeometry
     from shapely.wkb import dumps
 
     HAS_SHAPELY = True
