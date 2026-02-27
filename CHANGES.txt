@@ -1,6 +1,13 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.18.4
+------
+
+* CI: Make Coveralls optional since the service is down at the moment - @adrien-berchet (#590)
+* Fix: fix setuptools deprecation warning - @pjonsson (#589)
+* Fix: Fix shapely import - @pjonsson (#588)
+
 0.18.3
 ------
 
