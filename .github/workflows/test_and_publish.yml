@@ -165,6 +165,7 @@ jobs:
     # Export coverage to Coveralls
     - name: Coveralls
       uses: AndreMiras/coveralls-python-action@v20201129
+      continue-on-error: true
       with:
         parallel: true
         flag-name: run-${{ matrix.python-version.flag }}
@@ -178,6 +179,7 @@ jobs:
 
     - name: Coveralls Finished
       uses: AndreMiras/coveralls-python-action@v20201129
+      continue-on-error: true
       with:
         parallel-finished: true
         github-token: ${{ secrets.github_token }}
