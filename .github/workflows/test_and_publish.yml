@@ -26,6 +26,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Update the carryforward value in "Coveralls Finished" when updating
+        # this table.
         python-version: [
           {"pkg_name": "python==3.10.*", "flag": "3.10"},
           {"pkg_name": "python==3.11.*", "flag": "3.11"},
@@ -163,26 +165,29 @@ jobs:
         tox -vv
 
     # Export coverage to Coveralls
-    - name: Coveralls
-      uses: AndreMiras/coveralls-python-action@v20201129
-      continue-on-error: true
+    - name: Coveralls Parallel
+      uses: coverallsapp/github-action@v2
       with:
+        format: cobertura
+        files: reports/coverage-*.xml
         parallel: true
+        fail-on-error: false
         flag-name: run-${{ matrix.python-version.flag }}
 
 
   # This workflow aggregates coverages from all jobs and export it to Coveralls
   coveralls:
     needs: tests
+    if: ${{ always() }}
     runs-on: ubuntu-22.04
     steps:
 
     - name: Coveralls Finished
-      uses: AndreMiras/coveralls-python-action@v20201129
-      continue-on-error: true
+      uses: coverallsapp/github-action@v2
       with:
+        fail-on-error: false
         parallel-finished: true
-        github-token: ${{ secrets.github_token }}
+        carryforward: "run-3.10,run-3.11,run-3.12,run-3.13,run-pypy3.10"
 
   # This workflow deploys the package
   deploy:
