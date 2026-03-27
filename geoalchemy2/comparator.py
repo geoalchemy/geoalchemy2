@@ -162,9 +162,9 @@ class Comparator(BaseComparator):
     def __rshift__(self, other: _COMPARATOR_INPUT_TYPE) -> ColumnElement:
         """The ``>>`` operator.
 
-        A's BBOX is strictly to the left of B's.
+        A's BBOX is strictly to the right of B's.
 
-        Same as `to_`right``, so::
+        Same as ``to_right``, so::
 
             table.c.geom >> 'POINT(1 2)'
 
