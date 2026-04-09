@@ -11,6 +11,7 @@ are projected in the DB. To avoid having to always tweak the query with a
 import re
 from typing import Any
 
+import shapely
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
@@ -23,6 +24,7 @@ from geoalchemy2 import Geometry
 from geoalchemy2 import shape
 
 # Tests imports
+from geoalchemy2.elements import WKTElement
 from tests import test_only_with_dialects
 
 metadata = MetaData()
@@ -77,13 +79,41 @@ class ThreeDGeometry(TypeDecorator):
         This is not needed in this example but it is needed if one wants to override other methods
         of the TypeDecorator class, like ``process_result_value()`` for example.
         """
-        return getattr(func, self.impl.as_binary)(col, type_=self)
+        return getattr(func, self.impl.as_binary)(col, type_=self.impl)
 
     def bind_expression(self, bindvalue):
         return func.ST_Force3D(
             self.impl.bind_expression(bindvalue),
             type=self,
         )
+
+
+class ShapelyGeometry(TypeDecorator):
+    """Custom type that should return Shapely objects from ORM reads."""
+    impl = Geometry
+
+    cache_ok = True
+
+    # def column_expression(self, col):
+    #     """Return the column expression with the correct type.
+
+    #     This is not needed in this example but it is needed if one wants to override other methods
+    #     of the TypeDecorator class, like ``process_result_value()`` for example.
+    #     """
+    #     print("Col type in ShapelyGeometry:", col.type)
+    #     return getattr(func, self.impl.as_binary)(col, type_=self)
+
+    def process_bind_param(self, value, dialect):
+        print(f"Processing bind param in ShapelyGeometry: {value}")
+        if value is None:
+            return None
+        return shape.from_shape(value, srid=self.impl.srid)
+
+    def process_result_value(self, value, dialect):
+        print(f"Processing result value in ShapelyGeometry: {value}")
+        if value is None:
+            return None
+        return shape.to_shape(value)
 
 
 class Point(Base):  # type: ignore
@@ -94,6 +124,7 @@ class Point(Base):  # type: ignore
         TransformedGeometry(db_srid=2154, app_srid=4326, geometry_type="POINT")
     )
     three_d_geom: Column = Column(ThreeDGeometry(srid=4326, geometry_type="POINTZ", dimension=3))
+    shapely_geom: Column = Column(ShapelyGeometry(srid=4326, geometry_type="POINT"))
 
 
 def check_wkb(wkb, x, y):
@@ -110,9 +141,11 @@ class TestTypeDecorator:
 
         # Create new point instance
         p = Point()
-        p.raw_geom = "SRID=4326;POINT(5 45)"
-        p.geom = "SRID=4326;POINT(5 45)"
-        p.three_d_geom = "SRID=4326;POINT(5 45)"  # Insert 2D geometry into 3D column
+        wkt = "SRID=4326;POINT(5 45)"
+        p.raw_geom = wkt
+        p.geom = wkt
+        p.three_d_geom = wkt  # Insert 2D geometry into 3D column
+        p.shapely_geom = shape.to_shape(WKTElement(wkt))  # Insert Shapely geometry into ShapelyGeometry column
 
         # Insert point
         session.add(p)
@@ -173,3 +206,15 @@ class TestTypeDecorator:
         assert pt.three_d_geom.desc.lower() == (
             "01010000a0e6100000000000000000144000000000008046400000000000000000"
         )
+
+    def test_shapely(self, session, conn):
+        self._create_one_point(session, conn)
+
+        # Query the point and check the result
+        pt = session.query(Point).one()
+
+        assert pt.id == 1
+        assert isinstance(pt.shapely_geom, shapely.Point)
+        assert pt.shapely_geom.geom_type == "Point"
+        assert round(pt.shapely_geom.x, 5) == 5
+        assert round(pt.shapely_geom.y, 5) == 45

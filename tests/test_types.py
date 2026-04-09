@@ -6,7 +6,9 @@ from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy.sql import func
 from sqlalchemy.sql import insert
+from sqlalchemy.sql import literal_column
 from sqlalchemy.sql import text
+from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2.exc import ArgumentError
 from geoalchemy2.types import Geography
@@ -88,6 +90,31 @@ class TestGeometry:
     def test_column_expression(self, geometry_table):
         s = select([geometry_table.c.geom])
         eq_sql(s, 'SELECT ST_AsEWKB("table".geom) AS geom FROM "table"')
+
+    def test_column_expression_with_type_decorator_uses_impl_type(self):
+        """When column_expression is called on a TypeDecorator subclass of Geometry,
+        the result type should be the underlying Geometry, not the TypeDecorator itself.
+
+        This ensures result processors further up the chain can receive the correct type.
+        Fails with the old implementation that always passed type_=self.
+        """
+
+        class TransformingGeometry(Geometry, TypeDecorator):
+            impl = Geometry
+            cache_ok = True
+
+        geom_type = TransformingGeometry(srid=4326)
+        col = literal_column("geom")
+
+        result = geom_type.column_expression(col)
+
+        # Old code: type_=self → result.type is the TypeDecorator instance itself
+        # New code: type_=self.type → result.type is the underlying Geometry impl
+        assert not isinstance(result.type, TypeDecorator), (
+            "column_expression should not pass the TypeDecorator as type_; "
+            "it should use the underlying GIS type"
+        )
+        assert isinstance(result.type, Geometry)
 
     def test_select_bind_expression(self, geometry_table):
         s = select([text("foo")]).where(geometry_table.c.geom == "POINT(1 2)")
