@@ -150,9 +150,7 @@ class _GISType(UserDefinedType):
     def column_expression(self, col):
         """Specific column_expression that automatically adds a conversion function."""
         col_type = getattr(col, "type", None)
-        if isinstance(col_type, TypeDecorator) and isinstance(
-            getattr(col_type, "impl_instance", None), _GISType
-        ):
+        if isinstance(col_type, TypeDecorator):
             return getattr(func, self.as_binary)(col, type_=col_type)
         else:
             return getattr(func, self.as_binary)(col, type_=self)
