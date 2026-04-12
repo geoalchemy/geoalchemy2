@@ -1,6 +1,15 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.19.0
+------
+
+* Fix: Ensure _GISType.column_expression is compatible with TypeDecorator - @adrien-berchet (#598)
+* Fix: Improve WKT parsing and fix comparator doc typo - @adrien-berchet (#594)
+* CI: Fix Too many connections errors in MySQL and MariaDB - @adrien-berchet (#597)
+* CI: Fix triggers after default branch was renamed main - @adrien-berchet (#593)
+
+
 0.18.4
 ------
 
