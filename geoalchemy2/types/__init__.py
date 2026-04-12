@@ -15,6 +15,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
 from sqlalchemy.types import Float
 from sqlalchemy.types import Integer
+from sqlalchemy.types import TypeDecorator
 from sqlalchemy.types import UserDefinedType
 
 try:
@@ -148,7 +149,11 @@ class _GISType(UserDefinedType):
 
     def column_expression(self, col):
         """Specific column_expression that automatically adds a conversion function."""
-        return getattr(func, self.as_binary)(col, type_=self)
+        col_type = getattr(col, "type", None)
+        if isinstance(col_type, TypeDecorator):
+            return getattr(func, self.as_binary)(col, type_=col_type)
+        else:
+            return getattr(func, self.as_binary)(col, type_=self)
 
     def result_processor(self, dialect, coltype):
         """Specific result_processor that automatically process spatial elements."""
