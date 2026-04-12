@@ -7,7 +7,6 @@ from geoalchemy2.shape import to_shape
 
 
 def bind_processor_process(spatial_type, bindvalue):
-    print(f"Processing bind value for PostGIS: {bindvalue}")
     if isinstance(bindvalue, WKTElement):
         if bindvalue.extended:
             return f"{bindvalue.data}"

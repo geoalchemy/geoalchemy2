@@ -73,14 +73,6 @@ class ThreeDGeometry(TypeDecorator):
 
     cache_ok = True
 
-    def column_expression(self, col):
-        """Return the column expression with the correct type.
-
-        This is not needed in this example but it is needed if one wants to override other methods
-        of the TypeDecorator class, like ``process_result_value()`` for example.
-        """
-        return getattr(func, self.impl.as_binary)(col, type_=self.impl)
-
     def bind_expression(self, bindvalue):
         return func.ST_Force3D(
             self.impl.bind_expression(bindvalue),
@@ -90,27 +82,17 @@ class ThreeDGeometry(TypeDecorator):
 
 class ShapelyGeometry(TypeDecorator):
     """Custom type that should return Shapely objects from ORM reads."""
+
     impl = Geometry
 
     cache_ok = True
 
-    # def column_expression(self, col):
-    #     """Return the column expression with the correct type.
-
-    #     This is not needed in this example but it is needed if one wants to override other methods
-    #     of the TypeDecorator class, like ``process_result_value()`` for example.
-    #     """
-    #     print("Col type in ShapelyGeometry:", col.type)
-    #     return getattr(func, self.impl.as_binary)(col, type_=self)
-
     def process_bind_param(self, value, dialect):
-        print(f"Processing bind param in ShapelyGeometry: {value}")
         if value is None:
             return None
         return shape.from_shape(value, srid=self.impl.srid)
 
     def process_result_value(self, value, dialect):
-        print(f"Processing result value in ShapelyGeometry: {value}")
         if value is None:
             return None
         return shape.to_shape(value)
@@ -145,7 +127,9 @@ class TestTypeDecorator:
         p.raw_geom = wkt
         p.geom = wkt
         p.three_d_geom = wkt  # Insert 2D geometry into 3D column
-        p.shapely_geom = shape.to_shape(WKTElement(wkt))  # Insert Shapely geometry into ShapelyGeometry column
+        p.shapely_geom = shape.to_shape(
+            WKTElement(wkt)
+        )  # Insert Shapely geometry into ShapelyGeometry column
 
         # Insert point
         session.add(p)

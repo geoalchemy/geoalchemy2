@@ -149,34 +149,18 @@ class _GISType(UserDefinedType):
 
     def column_expression(self, col):
         """Specific column_expression that automatically adds a conversion function."""
-        # ##################### #
-        # import pdb
-        # pdb.set_trace()
-        # ##################### #
-        print("Self type in _GISType.column_expression:", self)
-        print("Col type in _GISType:", col.type)
-
-        # return getattr(func, self.as_binary)(col, type_=self)
-        # self_type = self.type if isinstance(self, TypeDecorator) else self
-        if isinstance(self, TypeDecorator):
-            print(f"Using impl_instance for column_expression: {self.impl_instance}")
-            self_type = self.impl_instance
-            return getattr(func, self.impl.as_binary)(col, type_=self_type)
+        col_type = getattr(col, "type", None)
+        if isinstance(col_type, TypeDecorator) and isinstance(
+            getattr(col_type, "impl_instance", None), _GISType
+        ):
+            return getattr(func, self.as_binary)(col, type_=col_type)
         else:
-            print(f"Using self for column_expression: {self}")
-            self_type = self
-            return getattr(func, self.as_binary)(col, type_=self_type)
-        # self_type = self
-
-        print("=======================", self_type)
-        return getattr(func, self.as_binary)(col, type_=self_type)
+            return getattr(func, self.as_binary)(col, type_=self)
 
     def result_processor(self, dialect, coltype):
         """Specific result_processor that automatically process spatial elements."""
-        print("Self type in _GISType.result_processor:", self)
 
         def process(value):
-            print(f"Processing result value in _GISType for {self.name}: {value}")
             if value is not None:
                 kwargs = {}
                 if self.srid > 0:
@@ -189,21 +173,10 @@ class _GISType(UserDefinedType):
 
     def bind_expression(self, bindvalue):
         """Specific bind_expression that automatically adds a conversion function."""
-        # return getattr(func, self.from_text)(bindvalue, type_=self)
-        # self_type = self.type if isinstance(self, TypeDecorator) else self
-        self_type = self
-
-        # ##################### #
-        # import pdb
-        # pdb.set_trace()
-        # ##################### #
-        print("Self type in _GISType.bind_expression:", self)
-
-        return getattr(func, self.from_text)(bindvalue, type_=self_type)
+        return getattr(func, self.from_text)(bindvalue, type_=self)
 
     def bind_processor(self, dialect):
         """Specific bind_processor that automatically process spatial elements."""
-        print("Self type in _GISType.bind_processor:", self)
 
         def process(bindvalue):
             return select_dialect(dialect.name).bind_processor_process(self, bindvalue)
