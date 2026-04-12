@@ -4,7 +4,6 @@ from pathlib import Path
 import pytest
 from sqlalchemy import MetaData
 from sqlalchemy import create_engine
-from sqlalchemy import text
 from sqlalchemy.dialects.mysql.base import MySQLDialect
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.exc import InvalidRequestError
@@ -126,6 +125,28 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("db_url", dialects, indirect=True)
 
 
+def _skip_or_fail(_require_all_dialects, message):
+    if _require_all_dialects:
+        pytest.fail("All dialects are required. " + message)
+    else:
+        pytest.skip(reason=message)
+
+
+def _create_regular_engine(db_url, _engine_echo):
+    pool_kwargs = {}
+    if db_url.startswith("mysql://") or db_url.startswith("mariadb://"):
+        pool_kwargs["poolclass"] = NullPool
+
+    current_engine = create_engine(
+        db_url,
+        echo=_engine_echo,
+        plugins=["geoalchemy2"],
+        **pool_kwargs,
+    )
+    current_engine.update_execution_options(search_path=["gis", "public"])
+    return current_engine
+
+
 @pytest.fixture(scope="session")
 def db_url_postgresql(request):
     return (
@@ -217,14 +238,50 @@ def _require_all_dialects(request):
     return _require_all_dialects
 
 
+@pytest.fixture(scope="session")
+def _validated_mysql_dialect(db_url, _engine_echo, _require_all_dialects):
+    if not (db_url.startswith("mysql://") or db_url.startswith("mariadb://")):
+        return None
+
+    current_engine = _create_regular_engine(db_url, _engine_echo)
+    try:
+        try:
+            with current_engine.connect() as connection:
+                actual_dialect_name = (
+                    "mariadb" if getattr(connection.dialect, "is_mariadb", False) else "mysql"
+                )
+                requested_dialect_name = current_engine.dialect.name
+                if requested_dialect_name != actual_dialect_name:
+                    _skip_or_fail(
+                        _require_all_dialects,
+                        "Requested the "
+                        f"'{requested_dialect_name}' dialect for {db_url}, "
+                        f"but the connected server is '{actual_dialect_name}'.",
+                    )
+
+                print_versions(get_versions(connection))
+                return actual_dialect_name
+        except InvalidRequestError:
+            if current_engine.dialect.name == "mariadb":
+                _skip_or_fail(
+                    _require_all_dialects,
+                    f"Requested the 'mariadb' dialect for {db_url}, "
+                    "but the connected server is not MariaDB.",
+                )
+            raise
+        except Exception as exc:
+            _skip_or_fail(
+                _require_all_dialects,
+                f"Could not validate engine for this URL: {db_url}\nThe exception was: {exc}",
+            )
+    finally:
+        current_engine.dispose()
+
+
 @pytest.fixture
-def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
+def engine(tmpdir, db_url, _engine_echo, _require_all_dialects, _validated_mysql_dialect):
     """Provide an engine to test database."""
     try:
-        if db_url.startswith("mysql://") or db_url.startswith("mariadb://"):
-            pool_kwargs = {"poolclass": NullPool}
-        else:
-            pool_kwargs = {}
         if db_url.startswith("sqlite:///"):
             # Copy the input SQLite DB to a temporary file and return an engine to it
             input_url = str(db_url)[10:]
@@ -241,45 +298,15 @@ def engine(tmpdir, db_url, _engine_echo, _require_all_dialects):
             )
         else:
             # For other dialects the engine is directly returned
-            current_engine = create_engine(
-                db_url,
-                echo=_engine_echo,
-                plugins=["geoalchemy2"],
-                **pool_kwargs,
-            )
-            current_engine.update_execution_options(search_path=["gis", "public"])
+            current_engine = _create_regular_engine(db_url, _engine_echo)
     except Exception as exc:
         msg = f"Could not create engine for this URL: {db_url}\nThe exception was: {exc}"
-        if _require_all_dialects:
-            pytest.fail("All dialects are required. " + msg)
-        else:
-            pytest.skip(reason=msg)
+        _skip_or_fail(_require_all_dialects, msg)
 
-    # Disambiguate MySQL and MariaDB
-    if current_engine.dialect.name in ["mysql", "mariadb"]:
-        try:
-            with current_engine.connect() as connection:
-                mysql_type = (
-                    "MariaDB"
-                    if "mariadb" in connection.execute(text("SELECT VERSION();")).scalar().lower()
-                    else "MySQL"
-                )
-            if current_engine.dialect.name.lower() != mysql_type.lower():
-                msg = f"Can not execute {mysql_type} queries on {db_url}"
-                if _require_all_dialects:
-                    pytest.fail("All dialects are required. " + msg)
-                else:
-                    pytest.skip(reason=msg)
-        except InvalidRequestError:
-            msg = f"Can not execute MariaDB queries on {db_url}"
-            if _require_all_dialects:
-                pytest.fail("All dialects are required. " + msg)
-            else:
-                pytest.skip(reason=msg)
-
-    with current_engine.connect() as connection:
-        versions = get_versions(connection)
-    print_versions(versions)
+    if current_engine.dialect.name not in ["mysql", "mariadb"]:
+        with current_engine.connect() as connection:
+            versions = get_versions(connection)
+        print_versions(versions)
     try:
         yield current_engine
     finally:
