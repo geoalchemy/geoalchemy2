@@ -123,7 +123,7 @@ def pytest_generate_tests(metafunc):
             dialects = metafunc.cls.tested_dialects
 
         if dialects is None:
-            dialects = ["mysql", "mariadb", "postgresql"] + sqlite_dialects
+            dialects = ["mysql", "mariadb", "mssql", "postgresql"] + sqlite_dialects
 
         if "sqlite" in dialects:
             # Order dialects

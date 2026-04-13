@@ -1,10 +1,22 @@
 """This module defines specific functions for MSSQL dialect."""
 
+import re
+
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
 from geoalchemy2.exc import ArgumentError
 from geoalchemy2.shape import to_shape
+
+
+_WKT_DIMENSION_SUFFIX = re.compile(
+    r"^([A-Z]+?)\s*(ZM|Z|M)(\s*\(.*)$",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _normalize_wkt_for_mssql(wkt):
+    return _WKT_DIMENSION_SUFFIX.sub(r"\1\3", wkt)
 
 
 def bind_processor_process(spatial_type, bindvalue):
@@ -24,7 +36,7 @@ def bind_processor_process(spatial_type, bindvalue):
                 f"The SRID ({srid}) of the supplied value is different "
                 f"from the one of the column ({spatial_type.srid})"
             )
-        return wkt_match.group(3)
+        return _normalize_wkt_for_mssql(wkt_match.group(3))
 
     if (
         isinstance(bindvalue, _SpatialElement)
@@ -40,7 +52,7 @@ def bind_processor_process(spatial_type, bindvalue):
         bindvalue = bindvalue.as_wkt()
         if bindvalue.srid <= 0:
             bindvalue.srid = spatial_type.srid
-        return bindvalue.data
+        return _normalize_wkt_for_mssql(bindvalue.data)
     elif isinstance(bindvalue, WKBElement):
         return to_shape(bindvalue).wkt
     return bindvalue

@@ -13,6 +13,7 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
+from geoalchemy2.types.dialects.mssql import _normalize_wkt_for_mssql
 
 _mssql_ischema_names["geometry"] = Geometry
 _mssql_ischema_names["geography"] = Geography
@@ -114,6 +115,8 @@ def _coerce_wkt_bind_clause(wkt_clause, strip_srid=False):
     if isinstance(value, str) and strip_srid:
         wkt_match = WKTElement._REMOVE_SRID.match(value)
         value = wkt_match.group(3)
+    if isinstance(value, str):
+        value = _normalize_wkt_for_mssql(value)
 
     return expression.bindparam(
         key=wkt_clause.key,
@@ -143,6 +146,16 @@ def _coerce_wkb_bind_clause(wkb_clause, extended=False):
     )
 
 
+def _should_coerce_wkt_bind_clause(wkt_clause):
+    return hasattr(wkt_clause, "value") and isinstance(wkt_clause.value, str | WKTElement)
+
+
+def _should_coerce_wkb_bind_clause(wkb_clause):
+    return hasattr(wkb_clause, "value") and isinstance(
+        wkb_clause.value, WKBElement | bytes | bytearray | memoryview
+    )
+
+
 def _compile_mssql_method(element, compiler, method_name, property_=False, **kw):
     clauses = list(element.clauses)
     target = compiler.process(clauses[0], **kw)
@@ -153,16 +166,27 @@ def _compile_mssql_method(element, compiler, method_name, property_=False, **kw)
     return f"{target}.{method_name}({compiled_args})"
 
 
+def _compile_mssql_srid_clause(clause, compiler, default_srid, **kw):
+    if hasattr(clause, "value"):
+        value = clause.value
+        try:
+            if value is not None and int(value) < 0:
+                return "0"
+        except (TypeError, ValueError):  # pragma: no cover
+            pass
+    return compiler.process(clause, **kw) if clause is not None else str(default_srid)
+
+
 def _compile_mssql_geom_from_text(element, compiler, strip_srid=False, **kw):
     clauses = list(element.clauses)
     original_wkt_clause = clauses[0]
     wkt_clause = original_wkt_clause
-    if kw.get("literal_binds", False):
+    if kw.get("literal_binds", False) or _should_coerce_wkt_bind_clause(original_wkt_clause):
         wkt_clause = _coerce_wkt_bind_clause(original_wkt_clause, strip_srid=strip_srid)
     compiled_wkt = compiler.process(wkt_clause, **kw)
 
     if len(clauses) > 1:
-        compiled_srid = compiler.process(clauses[1], **kw)
+        compiled_srid = _compile_mssql_srid_clause(clauses[1], compiler, 0, **kw)
     else:
         srid = element.type.srid if element.type.srid >= 0 else 0
         if strip_srid and hasattr(original_wkt_clause, "value"):
@@ -182,7 +206,7 @@ def _compile_mssql_geom_from_text(element, compiler, strip_srid=False, **kw):
 def _compile_mssql_geom_from_wkb(element, compiler, extended=False, **kw):
     clauses = list(element.clauses)
     wkb_clause = clauses[0]
-    if kw.get("literal_binds", False):
+    if kw.get("literal_binds", False) or _should_coerce_wkb_bind_clause(clauses[0]):
         wkb_clause = _coerce_wkb_bind_clause(clauses[0], extended=extended)
 
     if kw.get("literal_binds", False) and hasattr(wkb_clause, "value"):
@@ -191,7 +215,7 @@ def _compile_mssql_geom_from_wkb(element, compiler, extended=False, **kw):
         compiled_wkb = compiler.process(wkb_clause, **kw)
 
     if len(clauses) > 1:
-        compiled_srid = compiler.process(clauses[1], **kw)
+        compiled_srid = _compile_mssql_srid_clause(clauses[1], compiler, 0, **kw)
     else:
         compiled_srid = str(element.type.srid if element.type.srid >= 0 else 0)
 
@@ -225,12 +249,12 @@ def _MSSQL_ST_AsBinary(element, compiler, **kw):
 
 @compiles(functions.ST_AsEWKB, "mssql")  # type: ignore
 def _MSSQL_ST_AsEWKB(element, compiler, **kw):
-    return _compile_mssql_method(element, compiler, "STAsBinary", **kw)
+    return _compile_mssql_method(element, compiler, "AsBinaryZM", **kw)
 
 
 @compiles(functions.ST_AsText, "mssql")  # type: ignore
 def _MSSQL_ST_AsText(element, compiler, **kw):
-    return _compile_mssql_method(element, compiler, "STAsText", **kw)
+    return _compile_mssql_method(element, compiler, "AsTextZM", **kw)
 
 
 @compiles(functions.ST_GeometryType, "mssql")  # type: ignore

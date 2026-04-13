@@ -1,5 +1,6 @@
 import pytest
 from shapely.geometry import LineString
+from shapely.geometry import Point
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
@@ -7,6 +8,7 @@ from sqlalchemy import Table
 from sqlalchemy.exc import StatementError
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
+from sqlalchemy.sql import text
 
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKBElement
@@ -62,6 +64,7 @@ class TestInsertionCore:
             {"geom": "SRID=4326;LINESTRING(0 0,1 1)"},
             {"geom": "LINESTRING(0 0,1 1)"},
             {"geom": WKTElement("LINESTRING(0 0,2 2)", srid=4326)},
+            {"geom": WKTElement("SRID=4326;LINESTRING(0 0,3 3)", extended=True)},
             {"geom": from_shape(LineString([[0, 0], [3, 3]]), srid=4326)},
         ]
 
@@ -77,6 +80,7 @@ class TestInsertionCore:
         _assert_linestring(conn, rows[1][1], "LINESTRING (0 0, 1 1)")
         _assert_linestring(conn, rows[2][1], "LINESTRING (0 0, 2 2)")
         _assert_linestring(conn, rows[3][1], "LINESTRING (0 0, 3 3)")
+        _assert_linestring(conn, rows[4][1], "LINESTRING (0 0, 3 3)")
 
         for row in rows:
             conn.execute(Lake.__table__.insert().values(geom=row[1]))
@@ -138,6 +142,42 @@ class TestCallFunction:
         row = session.query(Lake).filter(Lake.geom.ST_GeometryType() == "LineString").one()
         assert row.id == lake_id
 
+    def test_st_buffer(self, session, Lake, setup_one_lake):
+        lake_id = setup_one_lake
+
+        stmt = select(func.ST_Buffer(Lake.__table__.c.geom, 2))
+        r1 = session.execute(stmt).scalar()
+        assert isinstance(r1, WKBElement)
+        assert to_shape(r1).geom_type == "Polygon"
+
+        lake = session.query(Lake).get(lake_id)
+        r2 = session.execute(lake.geom.ST_Buffer(2)).scalar()
+        assert isinstance(r2, WKBElement)
+        assert to_shape(r2).geom_type == "Polygon"
+
+        r3 = session.query(Lake.geom.ST_Buffer(2)).scalar()
+        assert isinstance(r3, WKBElement)
+        assert to_shape(r3).geom_type == "Polygon"
+
+        assert r1.data == r2.data == r3.data
+
+
+@test_only_with_dialects("mssql")
+class TestSpatialElementExecution:
+    def test_execute_wkt_and_wkb_elements(self, conn):
+        wkt_elem = WKTElement("POINT(1 2)", srid=4326)
+        wkb_elem = from_shape(Point(1, 2), srid=4326)
+        ewkb_elem = from_shape(Point(1, 2), srid=4326, extended=True)
+
+        assert conn.execute(select(func.ST_AsText(wkt_elem))).scalar() == "POINT (1 2)"
+        assert conn.execute(select(func.ST_SRID(wkt_elem))).scalar() == 4326
+
+        assert conn.execute(select(func.ST_AsText(wkb_elem))).scalar() == "POINT (1 2)"
+        assert conn.execute(select(func.ST_SRID(wkb_elem))).scalar() == 4326
+
+        assert conn.execute(select(func.ST_AsText(ewkb_elem))).scalar() == "POINT (1 2)"
+        assert conn.execute(select(func.ST_SRID(ewkb_elem))).scalar() == 4326
+
 
 @test_only_with_dialects("mssql")
 class TestReflection:
@@ -167,3 +207,52 @@ class TestReflection:
         assert type_.srid == -1
         assert type_.dimension == 2
         assert type_.spatial_index is False
+
+    def test_reflection_with_manual_spatial_index(self, conn):
+        metadata = MetaData()
+        table = Table(
+            "reflection_indexed_lake",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=False),
+            ),
+        )
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+
+        conn.execute(
+            text(
+                """CREATE SPATIAL INDEX idx_reflection_indexed_lake_geom
+                ON reflection_indexed_lake(geom)
+                WITH (BOUNDING_BOX = (0, 0, 500, 200))"""
+            )
+        )
+
+        reflected = Table("reflection_indexed_lake", MetaData(), autoload_with=conn)
+        type_ = reflected.c.geom.type
+
+        assert isinstance(type_, Geometry)
+        assert type_.spatial_index is True
+
+        metadata.drop_all(conn, checkfirst=True)
+
+
+@test_only_with_dialects("mssql")
+class TestCompileQuery:
+    def test_compile_query(self, conn):
+        wkb = b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@"
+        elem = WKBElement(wkb)
+        query = select(func.ST_AsText(elem))
+        compiled_with_literal = str(query.compile(conn, compile_kwargs={"literal_binds": True}))
+        res_text = conn.execute(text(compiled_with_literal)).scalar()
+        assert res_text == "POINT (1 2)"
+
+        compiled_without_literal = str(query.compile(conn, compile_kwargs={"literal_binds": False}))
+        res_query = conn.execute(query).scalar()
+        assert res_query == "POINT (1 2)"
+
+        assert "geometry::STGeomFromWKB(0x0101000000000000000000f03f0000000000000040" in compiled_with_literal
+        assert ".AsTextZM()" in compiled_with_literal
+        assert "0101000000000000000000f03f0000000000000040" not in compiled_without_literal

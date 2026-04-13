@@ -13,8 +13,10 @@ from geoalchemy2.admin import select_dialect as select_admin_dialect
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.exc import ArgumentError
+from geoalchemy2.shape import from_shape
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import select_dialect as select_type_dialect
+from shapely.geometry import Point
 
 from . import select
 
@@ -53,7 +55,7 @@ class TestMSSQLCompilation:
     def test_column_expression_uses_stasbinary(self, geometry_table):
         stmt = select([geometry_table.c.geom])
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
-        assert ".STAsBinary()" in compiled
+        assert ".AsBinaryZM()" in compiled
         assert "ST_AsEWKB" not in compiled
 
     def test_insert_bind_expression_uses_stgeomfromtext(self, geometry_table):
@@ -75,7 +77,7 @@ class TestMSSQLCompilation:
         assert ".STBuffer(" in compiled
         assert ".STGeometryType()" in compiled
         assert ".STSrid" in compiled
-        assert ".STAsText()" in compiled
+        assert ".AsTextZM()" in compiled
 
     def test_extended_wkt_element_method_call_strips_srid_prefix(self):
         stmt = select([WKTElement("SRID=4326;POINT(1 2)", extended=True).ST_AsText()])
@@ -90,7 +92,24 @@ class TestMSSQLCompilation:
         stmt = select([WKBElement(wkb, srid=4326).ST_AsText()])
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
         assert "geometry::STGeomFromWKB" in compiled
-        assert ".STAsText()" in compiled
+        assert ".AsTextZM()" in compiled
+
+    def test_as_ewkb_compiles_to_stasbinary(self, geometry_table):
+        stmt = select([geometry_table.c.geom.ST_AsEWKB()])
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+        assert ".AsBinaryZM()" in compiled
+        assert "ST_AsEWKB" not in compiled
+
+    def test_extended_wkb_literal_uses_plain_wkb_hex(self):
+        elem = from_shape(Point(1, 2), srid=4326, extended=True)
+        stmt = select([elem.ST_AsText()])
+        compiled = normalize_sql(
+            stmt.compile(dialect=self.dialect, compile_kwargs={"literal_binds": True})
+        )
+        assert elem.desc not in compiled
+        assert elem.as_wkb().desc in compiled
+        assert "geometry::STGeomFromWKB" in compiled
+        assert ".AsTextZM()" in compiled
 
 
 class TestMSSQLBindAndResultProcessing:
@@ -101,6 +120,10 @@ class TestMSSQLBindAndResultProcessing:
         bind_processor = geom.bind_processor(self.dialect)
 
         assert bind_processor("SRID=4326;LINESTRING(0 0,1 1)") == "LINESTRING(0 0,1 1)"
+        assert (
+            bind_processor("SRID=4326;LINESTRING ZM (0 0 1 2,1 1 3 4)")
+            == "LINESTRING (0 0 1 2,1 1 3 4)"
+        )
 
     def test_bind_processor_validates_srid(self):
         geom = Geometry(geometry_type="LINESTRING", srid=4326)
@@ -129,6 +152,20 @@ class TestMSSQLBindAndResultProcessing:
         result_processor = geom.result_processor(self.dialect, None)
         wkb = bytes.fromhex(
             "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"
+        )
+
+        result = result_processor(wkb)
+        assert isinstance(result, WKBElement)
+        assert result.srid == 4326
+        assert result.extended is False
+
+    def test_result_processor_accepts_memoryview(self):
+        geom = Geometry(geometry_type="LINESTRING", srid=4326)
+        result_processor = geom.result_processor(self.dialect, None)
+        wkb = memoryview(
+            bytes.fromhex(
+                "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"
+            )
         )
 
         result = result_processor(wkb)

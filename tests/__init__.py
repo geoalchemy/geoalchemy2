@@ -32,6 +32,8 @@ class test_only_with_dialects:
 
 
 def get_postgis_major_version(bind):
+    if bind.dialect.name == "mssql":
+        return parse_version("0").major
     try:
         return parse_version(bind.execute(func.postgis_lib_version()).scalar()).major
     except OperationalError:
@@ -98,7 +100,7 @@ def select(args):
 
 
 def format_wkt(wkt):
-    return wkt.replace(", ", ",")
+    return wkt.replace(", ", ",").replace(" (", "(")
 
 
 def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo, dialect):
