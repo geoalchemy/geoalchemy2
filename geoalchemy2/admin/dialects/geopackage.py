@@ -227,6 +227,28 @@ def before_create(table, bind, **kw):
 def after_create(table, bind, **kw):
     """Handle spatial indexes during the after_create event."""
     dialect = bind.dialect
+    is_spatial = any(_check_spatial_type(col.type, Geometry, dialect) for col in table.columns)
+
+    if not is_spatial:
+        bind.execute(
+            text(
+                """INSERT INTO gpkg_contents
+                VALUES (
+                    :table_name,
+                    'attributes',
+                    :table_name,
+                    "",
+                    strftime('%Y-%m-%dT%H:%M:%fZ', CURRENT_TIMESTAMP),
+                    NULL,
+                    NULL,
+                    NULL,
+                    NULL,
+                    0
+                );"""
+            ).bindparams(
+                table_name=table.name,
+            )
+        )
 
     for col in table.columns:
         # Add the managed Geometry columns with gpkgAddGeometryColumn()
@@ -291,6 +313,14 @@ def after_create(table, bind, **kw):
 def before_drop(table, bind, **kw):
     """Handle spatial indexes during the before_drop event."""
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
+
+    if len(gis_cols) == 0:
+        bind.execute(
+            text(
+                """DELETE FROM gpkg_contents
+                WHERE LOWER(table_name) = LOWER(:table_name);"""
+            ).bindparams(table_name=table.name)
+        )
 
     for col in gis_cols:
         # Disable spatial indexes if present
