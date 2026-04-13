@@ -23,19 +23,16 @@ packages=(
     python3.13-venv
     tox
 
-    # PostgreSQL and PostGIS
-    postgresql-16
-    postgresql-16-postgis-3
-    postgresql-16-postgis-3-scripts
+    # PostgreSQL client and build deps
+    postgresql-client-16
     libpq-dev
     libgeos-dev
 
     # SpatiaLite
     libsqlite3-mod-spatialite
 
-    # MySQL
+    # MySQL / MariaDB client and build deps
     mysql-client
-    mysql-server
 
     # mysqlclient requirements
     # https://github.com/PyMySQL/mysqlclient#linux

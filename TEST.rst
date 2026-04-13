@@ -6,8 +6,15 @@ Test Container
 ==============
 
 Instead of installing the necessary requirements onto your host machine, the `test_container/` directory contains
-instructions for building a docker image with all the necessary requirements for running the tests across all
-supported python versions. When you are finished the container and associated data can be removed.
+instructions for building a Docker Compose test environment.
+
+The architecture is split into:
+
+* a `runner` container that contains the code, Python tooling, tox, and database client tools,
+* one database service per backend (`postgres`, `mysql`, `mariadb`, `geoalchemy2-mssql`),
+* the local SQLite / GeoPackage test assets mounted directly in the runner container.
+
+When you are finished the containers and associated data can be removed.
 
 Install and run the container::
 
@@ -29,14 +36,8 @@ Python 3.10, 3.11 or 3.12 with SQLAlchemy 1.4 or 2.*.
 Remove the container and associated data::
 
     $ sudo rm -rf test_container/output
-    $ docker image rm geoalchemy2
+    $ cd test_container && docker compose down --volumes --rmi local --remove-orphans
     $ docker system prune
-
-If you want to run the tests for MariaDB, you should use the specific MariaDB image
-instead of the default image::
-
-    $ ./test_container/build_mariadb.sh
-    $ ./test_container/run_mariadb.sh
 
 
 Host System
