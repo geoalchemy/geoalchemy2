@@ -135,6 +135,11 @@ def get_versions(conn):
         geos_version = "PostGIS_GEOS_Version()"
         proj_version = "PostGIS_PROJ_Version()"
         proj_path = ""
+    elif dialect_name == "mssql":
+        db_version = "CAST(SERVERPROPERTY('ProductVersion') AS NVARCHAR(128))"
+        geos_version = ""
+        proj_version = ""
+        proj_path = ""
     elif dialect_name in ["mysql", "mariadb"]:
         db_version = "VERSION()"
         geos_version = ""

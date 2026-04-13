@@ -54,6 +54,11 @@ def pytest_addoption(parser):
         help="MariaDB DB URL used for tests (`mariadb://user:password@host:port/dbname`).",
     )
     parser.addoption(
+        "--mssql_dburl",
+        action="store",
+        help="MSSQL DB URL used for tests (`mssql+pyodbc://user:password@host:port/dbname?...`).",
+    )
+    parser.addoption(
         "--engine-echo",
         action="store_true",
         default=False,
@@ -107,6 +112,8 @@ def pytest_generate_tests(metafunc):
             dialects = sqlite_dialects
         elif metafunc.module.__name__ == "tests.test_functional_mysql":
             dialects = ["mysql", "mariadb"]
+        elif metafunc.module.__name__ == "tests.test_functional_mssql":
+            dialects = ["mssql"]
         elif metafunc.module.__name__ == "tests.test_functional_geopackage":
             dialects = ["geopackage"]
 
@@ -175,6 +182,15 @@ def db_url_mariadb(request, tmpdir_factory):
 
 
 @pytest.fixture(scope="session")
+def db_url_mssql(request):
+    return (
+        request.config.getoption("--mssql_dburl")
+        or os.getenv("PYTEST_MSSQL_DB_URL")
+        or "mssql+pyodbc://gis:gis@localhost:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
+    )
+
+
+@pytest.fixture(scope="session")
 def db_url_sqlite_spatialite3(request, tmpdir_factory):
     return (
         request.config.getoption("--sqlite_spatialite3_dburl")
@@ -210,6 +226,7 @@ def db_url(
     db_url_geopackage,
     db_url_mysql,
     db_url_mariadb,
+    db_url_mssql,
 ):
     if request.param == "postgresql":
         return db_url_postgresql
@@ -217,6 +234,8 @@ def db_url(
         return db_url_mysql
     if request.param == "mariadb":
         return db_url_mariadb
+    if request.param == "mssql":
+        return db_url_mssql
     if request.param == "sqlite-spatialite3":
         return db_url_sqlite_spatialite3
     if request.param == "sqlite-spatialite4":
