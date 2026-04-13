@@ -314,7 +314,7 @@ def before_drop(table, bind, **kw):
     """Handle spatial indexes during the before_drop event."""
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
 
-    if len(gis_cols) == 0:
+    if not gis_cols:
         bind.execute(
             text(
                 """DELETE FROM gpkg_contents
