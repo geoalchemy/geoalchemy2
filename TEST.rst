@@ -21,12 +21,20 @@ Install and run the container::
     $ ./test_container/build.sh
     $ ./test_container/run.sh
 
+Or run a command directly in the runner container::
+
+    $ ./test_container/run.sh tox --workdir /output -v run
+
 Run the tests inside the container::
 
     # tox --workdir /output -v run
 
 It is also possible to run the tests for a specific Python version.
 For example, to run the tests for Python 3.10 with the latest version of SQLAlchemy::
+
+    $ ./test_container/run.sh tox --workdir /output -v run -e py310-sqlalatest
+
+or inside an interactive shell::
 
     # tox --workdir /output -v run -e py310-sqlalatest
 

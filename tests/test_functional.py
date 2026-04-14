@@ -1070,7 +1070,7 @@ class TestCallFunction:
 
     def test_unknown_function_column(self, session, Lake, setup_one_lake, dialect_name):
         s = select([func.ST_UnknownFunction(Lake.__table__.c.geom, 2)])
-        exc = ProgrammingError if dialect_name == "postgresql" else OperationalError
+        exc = ProgrammingError if dialect_name in ["postgresql", "mssql"] else OperationalError
         with pytest.raises(exc, match="ST_UnknownFunction"):
             session.execute(s)
 
@@ -1079,11 +1079,12 @@ class TestCallFunction:
         lake = session.query(Lake).get(lake_id)
 
         s = select([func.ST_UnknownFunction(lake.geom, 2)])
-        exc = ProgrammingError if dialect_name == "postgresql" else OperationalError
+        exc = ProgrammingError if dialect_name in ["postgresql", "mssql"] else OperationalError
         with pytest.raises(exc):
             # TODO: here the query fails because of a
             # "(psycopg2.ProgrammingError) can't adapt type 'WKBElement'"
-            # It would be better if it could fail because of a "UndefinedFunction" error
+            # or a "(pyodbc.ProgrammingError) Invalid parameter type. param-type=WKBElement"
+            # It would be better if it could fail because of an "UndefinedFunction" error
             session.execute(s)
 
     def test_unknown_function_element_ORM(self, session, Lake, setup_one_lake):
@@ -1490,7 +1491,8 @@ class TestCompileQuery:
         if conn.dialect.name == "mssql":
             assert "geometry::STGeomFromWKB(" in compiled_with_literal
             assert ".AsTextZM()" in compiled_with_literal
-            assert "geometry::STGeomFromWKB(" not in compiled_without_literal
+            assert "geometry::STGeomFromWKB(" in compiled_without_literal
+            assert ".AsTextZM()" in compiled_without_literal
         else:
             assert compiled_with_literal.startswith("SELECT ST_AsText(")
             assert compiled_without_literal.startswith("SELECT ST_AsText(")

@@ -71,4 +71,8 @@ export MYPY_CACHE_DIR=/output/.mypy_cache
 
 ###############################
 
+if [ "$#" -gt 0 ]; then
+    exec "$@"
+fi
+
 exec bash

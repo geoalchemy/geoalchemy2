@@ -147,10 +147,30 @@ def _coerce_wkb_bind_clause(wkb_clause, extended=False):
 
 
 def _should_coerce_wkt_bind_clause(wkt_clause):
-    return hasattr(wkt_clause, "value") and isinstance(wkt_clause.value, str | WKTElement)
+    clause_type = getattr(wkt_clause, "type", None)
+    if isinstance(clause_type, Geometry | Geography):
+        return False
+    if not hasattr(wkt_clause, "value") or not isinstance(wkt_clause.value, str | WKTElement):
+        return False
+    value = wkt_clause.value.data if isinstance(wkt_clause.value, WKTElement) else wkt_clause.value
+    return _normalize_wkt_for_mssql(value) != value
+
+
+def _should_coerce_wkt_bind_clause_for_text(wkt_clause, strip_srid=False):
+    if not _should_coerce_wkt_bind_clause(wkt_clause):
+        if not strip_srid or not hasattr(wkt_clause, "value"):
+            return False
+        value = wkt_clause.value
+        if isinstance(value, WKTElement):
+            value = value.data
+        return isinstance(value, str) and value.startswith("SRID=")
+    return True
 
 
 def _should_coerce_wkb_bind_clause(wkb_clause):
+    clause_type = getattr(wkb_clause, "type", None)
+    if isinstance(clause_type, Geometry | Geography):
+        return False
     return hasattr(wkb_clause, "value") and isinstance(
         wkb_clause.value, WKBElement | bytes | bytearray | memoryview
     )
@@ -164,6 +184,13 @@ def _compile_mssql_method(element, compiler, method_name, property_=False, **kw)
 
     compiled_args = ", ".join(compiler.process(arg, **kw) for arg in clauses[1:])
     return f"{target}.{method_name}({compiled_args})"
+
+
+def _compile_mssql_binary_method(element, compiler, method_name, **kw):
+    clauses = list(element.clauses)
+    target = compiler.process(clauses[0], **kw)
+    other = compiler.process(clauses[1], **kw)
+    return f"{target}.{method_name}({other})"
 
 
 def _compile_mssql_srid_clause(clause, compiler, default_srid, **kw):
@@ -181,7 +208,9 @@ def _compile_mssql_geom_from_text(element, compiler, strip_srid=False, **kw):
     clauses = list(element.clauses)
     original_wkt_clause = clauses[0]
     wkt_clause = original_wkt_clause
-    if kw.get("literal_binds", False) or _should_coerce_wkt_bind_clause(original_wkt_clause):
+    if kw.get("literal_binds", False) or _should_coerce_wkt_bind_clause_for_text(
+        original_wkt_clause, strip_srid=strip_srid
+    ):
         wkt_clause = _coerce_wkt_bind_clause(original_wkt_clause, strip_srid=strip_srid)
     compiled_wkt = compiler.process(wkt_clause, **kw)
 
@@ -270,3 +299,43 @@ def _MSSQL_ST_SRID(element, compiler, **kw):
 @compiles(functions.ST_Buffer, "mssql")  # type: ignore
 def _MSSQL_ST_Buffer(element, compiler, **kw):
     return _compile_mssql_method(element, compiler, "STBuffer", **kw)
+
+
+@compiles(functions.ST_Within, "mssql")  # type: ignore
+def _MSSQL_ST_Within(element, compiler, **kw):
+    return _compile_mssql_binary_method(element, compiler, "STWithin", **kw)
+
+
+@compiles(functions.ST_Equals, "mssql")  # type: ignore
+def _MSSQL_ST_Equals(element, compiler, **kw):
+    return _compile_mssql_binary_method(element, compiler, "STEquals", **kw)
+
+
+@compiles(functions.ST_Contains, "mssql")  # type: ignore
+def _MSSQL_ST_Contains(element, compiler, **kw):
+    return _compile_mssql_binary_method(element, compiler, "STContains", **kw)
+
+
+@compiles(functions.ST_Intersects, "mssql")  # type: ignore
+def _MSSQL_ST_Intersects(element, compiler, **kw):
+    return _compile_mssql_binary_method(element, compiler, "STIntersects", **kw)
+
+
+@compiles(functions.ST_Disjoint, "mssql")  # type: ignore
+def _MSSQL_ST_Disjoint(element, compiler, **kw):
+    return _compile_mssql_binary_method(element, compiler, "STDisjoint", **kw)
+
+
+@compiles(functions.ST_Touches, "mssql")  # type: ignore
+def _MSSQL_ST_Touches(element, compiler, **kw):
+    return _compile_mssql_binary_method(element, compiler, "STTouches", **kw)
+
+
+@compiles(functions.ST_Overlaps, "mssql")  # type: ignore
+def _MSSQL_ST_Overlaps(element, compiler, **kw):
+    return _compile_mssql_binary_method(element, compiler, "STOverlaps", **kw)
+
+
+@compiles(functions.ST_Crosses, "mssql")  # type: ignore
+def _MSSQL_ST_Crosses(element, compiler, **kw):
+    return _compile_mssql_binary_method(element, compiler, "STCrosses", **kw)

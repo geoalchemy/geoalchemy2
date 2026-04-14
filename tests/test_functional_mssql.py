@@ -255,4 +255,6 @@ class TestCompileQuery:
 
         assert "geometry::STGeomFromWKB(0x0101000000000000000000f03f0000000000000040" in compiled_with_literal
         assert ".AsTextZM()" in compiled_with_literal
+        assert "geometry::STGeomFromWKB(" in compiled_without_literal
+        assert ".AsTextZM()" in compiled_without_literal
         assert "0101000000000000000000f03f0000000000000040" not in compiled_without_literal

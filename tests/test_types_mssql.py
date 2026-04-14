@@ -98,7 +98,20 @@ class TestMSSQLCompilation:
         stmt = select([geometry_table.c.geom.ST_AsEWKB()])
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
         assert ".AsBinaryZM()" in compiled
-        assert "ST_AsEWKB" not in compiled
+        assert "ST_AsEWKB(" not in compiled
+
+    def test_binary_predicates_compile_to_mssql_methods(self, geometry_table):
+        stmt = select(
+            [
+                geometry_table.c.geom.ST_Equals(WKTElement("LINESTRING(0 0,1 1)", srid=4326)),
+                geometry_table.c.geom.ST_Within(WKTElement("POLYGON((0 0,2 0,2 2,0 0))", srid=4326)),
+            ]
+        )
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+        assert ".STEquals(" in compiled
+        assert ".STWithin(" in compiled
+        assert "ST_Equals(" not in compiled
+        assert "ST_Within(" not in compiled
 
     def test_extended_wkb_literal_uses_plain_wkb_hex(self):
         elem = from_shape(Point(1, 2), srid=4326, extended=True)
