@@ -1,6 +1,7 @@
 import re
 
 import pytest
+from sqlalchemy import bindparam
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
@@ -16,6 +17,7 @@ from geoalchemy2.exc import ArgumentError
 from geoalchemy2.shape import from_shape
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import select_dialect as select_type_dialect
+from shapely.geometry import LineString
 from shapely.geometry import Point
 
 from . import select
@@ -100,6 +102,12 @@ class TestMSSQLCompilation:
         assert ".AsBinaryZM()" in compiled
         assert "ST_AsEWKB(" not in compiled
 
+    def test_as_ewkt_compiles_to_astextzm(self, geometry_table):
+        stmt = select([geometry_table.c.geom.ST_AsEWKT()])
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+        assert ".AsTextZM()" in compiled
+        assert "ST_AsEWKT(" not in compiled
+
     def test_binary_predicates_compile_to_mssql_methods(self, geometry_table):
         stmt = select(
             [
@@ -113,6 +121,12 @@ class TestMSSQLCompilation:
         assert "ST_Equals(" not in compiled
         assert "ST_Within(" not in compiled
 
+    def test_geometry_equality_compiles_to_stequals_predicate(self, geometry_table):
+        stmt = select([geometry_table.c.id]).where(geometry_table.c.geom == bindparam("geom"))
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+        assert ".STEquals(" in compiled
+        assert "= geometry::STGeomFromText" not in compiled
+
     def test_extended_wkb_literal_uses_plain_wkb_hex(self):
         elem = from_shape(Point(1, 2), srid=4326, extended=True)
         stmt = select([elem.ST_AsText()])
@@ -123,6 +137,28 @@ class TestMSSQLCompilation:
         assert elem.as_wkb().desc in compiled
         assert "geometry::STGeomFromWKB" in compiled
         assert ".AsTextZM()" in compiled
+
+    def test_extended_wkb_method_call_keeps_srid_without_literal_binds(self):
+        elem = from_shape(Point(1, 2), srid=4326, extended=True)
+        stmt = select([elem.ST_SRID()])
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+        assert "geometry::STGeomFromWKB(" in compiled
+        assert ", 4326).STSrid" in compiled
+
+    def test_insert_coerces_spatial_elements_to_dbapi_friendly_values(self, geometry_table):
+        stmt_wkt = insert(geometry_table).values(
+            geom=WKTElement("LINESTRING(0 0,2 2)", srid=4326)
+        )
+        compiled_wkt = stmt_wkt.compile(dialect=self.dialect)
+        processor_wkt = next(iter(compiled_wkt._bind_processors.values()))
+        assert processor_wkt(next(iter(compiled_wkt.params.values()))) == "LINESTRING(0 0,2 2)"
+
+        stmt_wkb = insert(geometry_table).values(
+            geom=from_shape(LineString([[0, 0], [3, 3]]), srid=4326)
+        )
+        compiled_wkb = stmt_wkb.compile(dialect=self.dialect)
+        processor_wkb = next(iter(compiled_wkb._bind_processors.values()))
+        assert processor_wkb(next(iter(compiled_wkb.params.values()))) == "LINESTRING (0 0, 3 3)"
 
 
 class TestMSSQLBindAndResultProcessing:
@@ -159,6 +195,14 @@ class TestMSSQLBindAndResultProcessing:
             "LINESTRING(0 0,1 1)"
         )
         assert bind_processor(WKBElement(wkb, srid=4326)) == "LINESTRING (0 0, 1 1)"
+
+    def test_bind_processor_normalizes_z_dimension_wkb_inputs(self):
+        geom = Geometry(geometry_type="POINTZ", srid=4326)
+        bind_processor = geom.bind_processor(self.dialect)
+        wkbelement = from_shape(Point(1, 2, 3), srid=4326)
+
+        assert bind_processor(wkbelement) == "POINT (1 2 3)"
+        assert bind_processor(wkbelement.data) == "POINT (1 2 3)"
 
     def test_result_processor_marks_values_as_non_extended_wkb(self):
         geom = Geometry(geometry_type="LINESTRING", srid=4326)

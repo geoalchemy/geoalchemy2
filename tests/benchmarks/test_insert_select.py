@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import text
+from sqlalchemy.sql import func
 from sqlalchemy.exc import OperationalError
 
 from geoalchemy2 import Geometry
@@ -278,11 +279,11 @@ def test_insert(
         )
 
         assert (
-            len(
-                conn.execute(
-                    text(f"SELECT * FROM {GeomTable.__table__.name} WHERE geom IS NOT NULL")
-                ).fetchall()
-            )
+            conn.execute(
+                select([func.count()])
+                .select_from(GeomTable.__table__)
+                .where(GeomTable.__table__.c.geom.is_not(None))
+            ).scalar()
             == N * N * ROUNDS
         )
 
@@ -367,7 +368,10 @@ def _actual_test_insert_select(
     assert len(all_points) == N * N * ROUNDS
 
     res = conn.execute(select([GeomTable.__table__.c.geom])).fetchone()
-    assert res[0].extended == is_extended_output
+    expected_extended_output = is_extended_output
+    if conn.dialect.name == "mssql":
+        expected_extended_output = False
+    assert res[0].extended == expected_extended_output
     if output_representation == "WKB":
         assert isinstance(res[0], WKBElement)
     elif output_representation == "WKT":

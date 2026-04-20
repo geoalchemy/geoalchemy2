@@ -19,6 +19,10 @@ def _normalize_wkt_for_mssql(wkt):
     return _WKT_DIMENSION_SUFFIX.sub(r"\1\3", wkt)
 
 
+def _to_mssql_wkt(value):
+    return _normalize_wkt_for_mssql(to_shape(value).wkt)
+
+
 def bind_processor_process(spatial_type, bindvalue):
     if isinstance(bindvalue, str):
         wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
@@ -54,5 +58,7 @@ def bind_processor_process(spatial_type, bindvalue):
             bindvalue.srid = spatial_type.srid
         return _normalize_wkt_for_mssql(bindvalue.data)
     elif isinstance(bindvalue, WKBElement):
-        return to_shape(bindvalue).wkt
+        return _to_mssql_wkt(bindvalue)
+    elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
+        return _to_mssql_wkt(WKBElement(bindvalue))
     return bindvalue

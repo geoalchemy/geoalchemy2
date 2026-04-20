@@ -39,6 +39,7 @@ class TestAutogenerate:
                 Geometry(
                     geometry_type="LINESTRING",
                     srid=4326,
+                    spatial_index=True,
                     nullable=dialect_name not in ["mysql", "mariadb"],
                 ),
             ),
@@ -248,7 +249,7 @@ datefmt = %%H:%%M:%%S
     return cfg
 
 
-@test_only_with_dialects("postgresql", "sqlite-spatialite4")
+@test_only_with_dialects("postgresql", "sqlite-spatialite4", "mssql")
 def test_migration_revision(
     conn,
     metadata,
@@ -354,12 +355,20 @@ new_table = Table(
                 ("new_spatial_table", "geom_without_idx", 2, 2, 4326, 0),
                 ("new_spatial_table", "geom_without_idx_2", 2, 2, 4326, 0),
             ],
+            "mssql": [
+                ("idx_new_spatial_table_geom_with_idx", "geom_with_idx"),
+            ],
         },
         table_name="new_spatial_table",
     )
 
     # Insert data in new table to check that everything works when Alembic copies the tables
-    from_text = "GeomFromEWKT" if conn.dialect.name == "sqlite" else "ST_GeomFromEWKT"
+    if conn.dialect.name == "sqlite":
+        geom_expr = "GeomFromEWKT('SRID=4326;LINESTRING(0 0, 1 1)')"
+    elif conn.dialect.name == "mssql":
+        geom_expr = "geometry::STGeomFromText('LINESTRING(0 0, 1 1)', 4326)"
+    else:
+        geom_expr = "ST_GeomFromEWKT('SRID=4326;LINESTRING(0 0, 1 1)')"
     conn.execute(
         text(
             f"""INSERT INTO new_spatial_table (
@@ -367,9 +376,9 @@ new_table = Table(
             geom_without_idx,
             geom_without_idx_2
         ) VALUES (
-            {from_text}('SRID=4326;LINESTRING(0 0, 1 1)'),
-            {from_text}('SRID=4326;LINESTRING(0 0, 1 1)'),
-            {from_text}('SRID=4326;LINESTRING(0 0, 1 1)')
+            {geom_expr},
+            {geom_expr},
+            {geom_expr}
         )
         """
         )
@@ -478,6 +487,10 @@ new_table = Table(
                 ("new_spatial_table", "new_geom_with_idx", 2, 2, 4326, 1),
                 ("new_spatial_table", "new_geom_without_idx", 2, 2, 4326, 0),
             ],
+            "mssql": [
+                ("idx_new_spatial_table_geom_with_idx", "geom_with_idx"),
+                ("idx_new_spatial_table_new_geom_with_idx", "new_geom_with_idx"),
+            ],
         },
         table_name="new_spatial_table",
     )
@@ -508,6 +521,9 @@ new_table = Table(
                 ("new_spatial_table", "geom_without_idx", 2, 2, 4326, 0),
                 ("new_spatial_table", "geom_without_idx_2", 2, 2, 4326, 0),
             ],
+            "mssql": [
+                ("idx_new_spatial_table_geom_with_idx", "geom_with_idx"),
+            ],
         },
         table_name="new_spatial_table",
     )
@@ -521,6 +537,7 @@ new_table = Table(
         {
             "postgresql": [],
             "sqlite": [],
+            "mssql": [],
         },
         table_name="new_spatial_table",
     )

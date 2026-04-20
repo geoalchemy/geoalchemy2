@@ -10,7 +10,9 @@ import warnings
 from typing import Any
 
 from sqlalchemy import Computed
+from sqlalchemy import text
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.mssql.base import MSDDLCompiler as _MSDDLCompiler
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
 from sqlalchemy.types import Float
@@ -244,6 +246,69 @@ def get_col_spec_computed_mysql(self, compiler, *args, **kwargs):
     pattern = re.compile("st_", re.IGNORECASE)
     spec = f"AS ({re.sub(pattern, '', spec)})"
     return spec
+
+
+@compiles(Computed, "mssql")
+def get_col_spec_computed_mssql(self, compiler, *args, **kwargs):
+    spec = self.sqltext.compile(compiler, **kwargs).string
+    type_expression = kwargs.get("type_expression")
+    spatial_type = getattr(type_expression, "type", None)
+
+    spec = _rewrite_mssql_computed_spec(spec, spatial_type)
+
+    persisted = " PERSISTED" if self.persisted else ""
+    return f"AS ({spec}){persisted}"
+
+
+def _rewrite_mssql_computed_spec(spec, spatial_type):
+    if not isinstance(spatial_type, Geometry | Geography):
+        return spec
+
+    match = re.fullmatch(r"\s*ST_POINT\s*\((.*),(.*)\)\s*", spec, flags=re.IGNORECASE)
+    if not match:
+        return spec
+
+    srid = spatial_type.srid if spatial_type.srid >= 0 else 0
+    x_expr = match.group(1).strip()
+    y_expr = match.group(2).strip()
+    return f"{spatial_type.name}::Point({x_expr}, {y_expr}, {srid})"
+
+
+_ORIGINAL_MSSQL_VISIT_COMPUTED_COLUMN = _MSDDLCompiler.visit_computed_column
+_ORIGINAL_MSSQL_GET_COLUMN_SPECIFICATION = _MSDDLCompiler.get_column_specification
+
+
+def _mssql_visit_computed_column(self, generated, **kw):
+    spec = self.sql_compiler.process(generated.sqltext, include_table=False, literal_binds=True)
+    spatial_type = getattr(getattr(generated, "column", None), "type", None)
+    spec = _rewrite_mssql_computed_spec(spec, spatial_type)
+    text = f"AS ({spec})"
+    if generated.persisted is True:
+        text += " PERSISTED"
+    return text
+
+
+_MSDDLCompiler.visit_computed_column = _mssql_visit_computed_column
+
+
+def _mssql_get_column_specification(self, column, **kwargs):
+    if column.computed is not None:
+        original_spec = self.sql_compiler.process(
+            column.computed.sqltext, include_table=False, literal_binds=True
+        )
+        rewritten_spec = _rewrite_mssql_computed_spec(original_spec, column.type)
+        if rewritten_spec != original_spec:
+            original_sqltext = column.computed.sqltext
+            column.computed.sqltext = text(rewritten_spec)
+            try:
+                return _ORIGINAL_MSSQL_GET_COLUMN_SPECIFICATION(self, column, **kwargs)
+            finally:
+                column.computed.sqltext = original_sqltext
+
+    return _ORIGINAL_MSSQL_GET_COLUMN_SPECIFICATION(self, column, **kwargs)
+
+
+_MSDDLCompiler.get_column_specification = _mssql_get_column_specification
 
 
 class Geometry(_GISType):

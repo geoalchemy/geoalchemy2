@@ -55,6 +55,40 @@ class TestAdmin:
         metadata.create_all(conn)
         metadata.drop_all(conn, checkfirst=True)
 
+    def test_auto_spatial_index_created(self, conn):
+        metadata = MetaData()
+        Table(
+            "auto_indexed_lake",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry(geometry_type="LINESTRING", srid=4326)),
+        )
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+
+        indexes = conn.execute(
+            text(
+                """SELECT i.name, c.name
+                FROM sys.indexes AS i
+                JOIN sys.index_columns AS ic
+                    ON i.object_id = ic.object_id
+                    AND i.index_id = ic.index_id
+                JOIN sys.columns AS c
+                    ON ic.object_id = c.object_id
+                    AND ic.column_id = c.column_id
+                WHERE
+                    i.object_id = OBJECT_ID('auto_indexed_lake')
+                    AND i.type_desc = 'SPATIAL'
+                ORDER BY i.name"""
+            )
+        ).fetchall()
+        assert indexes == [("idx_auto_indexed_lake_geom", "geom")]
+
+        reflected = Table("auto_indexed_lake", MetaData(), autoload_with=conn)
+        assert reflected.c.geom.type.spatial_index is True
+
+        metadata.drop_all(conn, checkfirst=True)
+
 
 @test_only_with_dialects("mssql")
 class TestInsertionCore:

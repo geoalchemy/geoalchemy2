@@ -919,7 +919,7 @@ class TestUpdateORM:
         lake.geom = 1
 
         # Update in DB
-        if dialect_name == "postgresql":
+        if dialect_name in ["postgresql", "mssql"]:
             with pytest.raises(ProgrammingError):
                 # Call __eq__() operator of _SpatialElement with 'other' argument equal to 1
                 # so the lake instance is detected as different and is thus updated but with
