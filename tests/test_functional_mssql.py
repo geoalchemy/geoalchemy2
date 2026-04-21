@@ -310,14 +310,63 @@ class TestReflection:
         type_ = table.c.geom.type
 
         assert isinstance(type_, Geometry)
-        assert type_.geometry_type == "GEOMETRY"
-        assert type_.srid == -1
+        assert type_.geometry_type == "LINESTRING"
+        assert type_.srid == 4326
         assert type_.dimension == 2
         assert type_.spatial_index is False
 
+    def test_geography_reflection_uses_schema_constraints(self, conn):
+        metadata = MetaData()
+        Table(
+            "reflection_place",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geog",
+                Geography(geometry_type="POINT", srid=4326, spatial_index=False),
+            ),
+        )
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+
+        reflected = Table("reflection_place", MetaData(), autoload_with=conn)
+        type_ = reflected.c.geog.type
+
+        assert isinstance(type_, Geography)
+        assert type_.geometry_type == "POINT"
+        assert type_.srid == 4326
+        assert type_.dimension == 2
+        assert type_.spatial_index is False
+
+        metadata.drop_all(conn, checkfirst=True)
+
+    def test_bare_spatial_columns_reflect_as_generic(self, conn):
+        conn.execute(text("DROP TABLE IF EXISTS bare_spatial_lake"))
+        conn.execute(
+            text(
+                """CREATE TABLE bare_spatial_lake (
+                id INT PRIMARY KEY,
+                geom geometry NULL,
+                geog geography NULL
+            )"""
+            )
+        )
+
+        try:
+            reflected = Table("bare_spatial_lake", MetaData(), autoload_with=conn)
+
+            assert isinstance(reflected.c.geom.type, Geometry)
+            assert reflected.c.geom.type.geometry_type == "GEOMETRY"
+            assert reflected.c.geom.type.srid == -1
+            assert isinstance(reflected.c.geog.type, Geography)
+            assert reflected.c.geog.type.geometry_type == "GEOMETRY"
+            assert reflected.c.geog.type.srid == -1
+        finally:
+            conn.execute(text("DROP TABLE bare_spatial_lake"))
+
     def test_reflection_with_manual_spatial_index(self, conn):
         metadata = MetaData()
-        table = Table(
+        Table(
             "reflection_indexed_lake",
             metadata,
             Column("id", Integer, primary_key=True),
@@ -360,7 +409,10 @@ class TestCompileQuery:
         res_query = conn.execute(query).scalar()
         assert res_query == "POINT (1 2)"
 
-        assert "geometry::STGeomFromWKB(0x0101000000000000000000f03f0000000000000040" in compiled_with_literal
+        assert (
+            "geometry::STGeomFromWKB(0x0101000000000000000000f03f0000000000000040"
+            in compiled_with_literal
+        )
         assert ".AsTextZM()" in compiled_with_literal
         assert "geometry::STGeomFromWKB(" in compiled_without_literal
         assert ".AsTextZM()" in compiled_without_literal

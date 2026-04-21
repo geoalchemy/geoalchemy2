@@ -358,6 +358,15 @@ def add_geospatial_column(operations, operation):
             operation.column,
             schema=operation.schema,
         )
+        from geoalchemy2.admin.dialects.mssql import create_spatial_constraints
+
+        create_spatial_constraints(
+            operations.get_bind(),
+            table_name,
+            column_name,
+            operation.column.type,
+            schema=operation.schema,
+        )
 
 
 @Operations.implementation_for(DropGeospatialColumnOp)
@@ -376,10 +385,17 @@ def drop_geospatial_column(operations, operation):
 
     if dialect.name == "sqlite":
         _SPATIAL_TABLES.add(table_name)
-    elif dialect.name == "mssql" and getattr(column.type, "spatial_index", False):
+    elif dialect.name == "mssql":
         from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_indexes
+        from geoalchemy2.admin.dialects.mssql import drop_spatial_constraints
         from geoalchemy2.admin.dialects.mssql import drop_spatial_index as drop_mssql_spatial_index
 
+        drop_spatial_constraints(
+            operations.get_bind(),
+            table_name,
+            column.name,
+            schema=operation.schema,
+        )
         for spatial_index in _get_mssql_spatial_indexes(
             operations.get_bind(),
             table_name,
@@ -798,7 +814,9 @@ def create_geospatial_index(operations, operation):
         assert len(operation.columns) == 1, "A spatial index must be set on one column only"
         operations.execute(func.CreateSpatialIndex(operation.table_name, operation.columns[0]))
     elif dialect.name == "mssql":
-        from geoalchemy2.admin.dialects.mssql import create_spatial_index as create_mssql_spatial_index
+        from geoalchemy2.admin.dialects.mssql import (
+            create_spatial_index as create_mssql_spatial_index,
+        )
 
         idx = operation.to_index(operations.migration_context)
         assert len(idx.columns) == 1, "A spatial index must be set on one column only"

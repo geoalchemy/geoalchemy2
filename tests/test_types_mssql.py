@@ -2,18 +2,23 @@ import re
 import struct
 
 import pytest
-from sqlalchemy import bindparam
+from shapely.geometry import LineString
+from shapely.geometry import Point
 from sqlalchemy import Column
 from sqlalchemy import Computed
 from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
+from sqlalchemy import bindparam
 from sqlalchemy.dialects import mssql
 from sqlalchemy.schema import CreateTable
+from sqlalchemy.sql import func
 from sqlalchemy.sql import insert
+from sqlalchemy.sql.sqltypes import NullType
 
 from geoalchemy2.admin import select_dialect as select_admin_dialect
+from geoalchemy2.admin.dialects import mssql as mssql_admin
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.exc import ArgumentError
@@ -21,8 +26,6 @@ from geoalchemy2.shape import from_shape
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import select_dialect as select_type_dialect
-from shapely.geometry import LineString
-from shapely.geometry import Point
 
 from . import select
 
@@ -115,6 +118,11 @@ class TestMSSQLCompilation:
         stmt = select(
             [
                 geometry_table.c.geom.ST_Buffer(2),
+                geometry_table.c.geom.ST_Area(),
+                geometry_table.c.geom.ST_Length(),
+                geometry_table.c.geom.ST_Intersects(
+                    WKTElement("LINESTRING(0 0,1 1)", srid=4326)
+                ),
                 geometry_table.c.geom.ST_GeometryType(),
                 geometry_table.c.geom.ST_SRID(),
                 geometry_table.c.geom.ST_AsText(),
@@ -122,9 +130,55 @@ class TestMSSQLCompilation:
         )
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
         assert ".STBuffer(" in compiled
+        assert ".STArea()" in compiled
+        assert ".STLength()" in compiled
+        assert ".STIntersects(" in compiled
         assert ".STGeometryType()" in compiled
         assert ".STSrid" in compiled
         assert ".AsTextZM()" in compiled
+
+    def test_func_area_and_intersects_compile_to_mssql_methods(self, geometry_table):
+        stmt = select(
+            [
+                func.ST_Area(geometry_table.c.geom),
+                func.ST_Length(geometry_table.c.geom),
+                func.ST_Intersects(
+                    geometry_table.c.geom,
+                    WKTElement("LINESTRING(0 0,1 1)", srid=4326),
+                ),
+            ]
+        )
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert ".STArea()" in compiled
+        assert ".STLength()" in compiled
+        assert ".STIntersects(" in compiled
+        assert "ST_Area(" not in compiled
+        assert "ST_Length(" not in compiled
+        assert "ST_Intersects(" not in compiled
+
+    def test_non_spatial_function_arguments_keep_function_syntax(self):
+        table = Table(
+            "numbers",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("value", Integer),
+        )
+        stmt = select(
+            [
+                func.ST_Area(table.c.value),
+                func.ST_Length(table.c.value),
+                func.ST_Intersects(table.c.value, table.c.id),
+            ]
+        )
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert "ST_Area(" in compiled
+        assert "ST_Length(" in compiled
+        assert "ST_Intersects(" in compiled
+        assert ".STArea(" not in compiled
+        assert ".STLength(" not in compiled
+        assert ".STIntersects(" not in compiled
 
     def test_extended_wkt_element_method_call_strips_srid_prefix(self):
         stmt = select([WKTElement("SRID=4326;POINT(1 2)", extended=True).ST_AsText()])
@@ -157,7 +211,9 @@ class TestMSSQLCompilation:
         stmt = select(
             [
                 geometry_table.c.geom.ST_Equals(WKTElement("LINESTRING(0 0,1 1)", srid=4326)),
-                geometry_table.c.geom.ST_Within(WKTElement("POLYGON((0 0,2 0,2 2,0 0))", srid=4326)),
+                geometry_table.c.geom.ST_Within(
+                    WKTElement("POLYGON((0 0,2 0,2 2,0 0))", srid=4326)
+                ),
             ]
         )
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
@@ -238,6 +294,28 @@ class TestMSSQLCompilation:
         )
         assert idx.kwargs["mssql_using"] == "GEOMETRY_GRID"
         assert idx.kwargs["mssql_cells_per_object"] == 16
+
+
+class TestMSSQLReflectionHelpers:
+    def test_nulltype_non_spatial_columns_are_not_rewritten(self):
+        class Result:
+            def one(self):
+                return "not_a_spatial_type", True
+
+        class Bind:
+            def execute(self, *args, **kwargs):
+                return Result()
+
+        class Inspector:
+            bind = Bind()
+            default_schema_name = "dbo"
+
+        table = Table("not_spatial", MetaData())
+        column_info = {"name": "payload", "type": NullType()}
+
+        mssql_admin.reflect_geometry_column(Inspector(), table, column_info)
+
+        assert isinstance(column_info["type"], NullType)
 
 
 class TestMSSQLBindAndResultProcessing:

@@ -1,12 +1,14 @@
 """This module defines specific functions for MSSQL dialect."""
 
+import re
+
 from sqlalchemy import Index
 from sqlalchemy import text
 from sqlalchemy.dialects.mssql.base import MSSQLCompiler as _MSSQLCompiler
 from sqlalchemy.dialects.mssql.base import ischema_names as _mssql_ischema_names
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.sql import operators
 from sqlalchemy.sql import expression
+from sqlalchemy.sql import operators
 from sqlalchemy.sql.sqltypes import NullType
 from sqlalchemy.types import LargeBinary
 from sqlalchemy.types import TypeDecorator
@@ -31,10 +33,27 @@ for _dialect_kwarg in ("bounding_box", "cells_per_object", "grids", "using", "wi
 
 _MSSQL_WORLD_BOUNDING_BOX = (-180.0, -90.0, 180.0, 90.0)
 _MSSQL_DEFAULT_BOUNDING_BOX = (-1000000000.0, -1000000000.0, 1000000000.0, 1000000000.0)
+_MSSQL_GEOMETRY_TYPE_NAMES = {
+    "POINT": "Point",
+    "LINESTRING": "LineString",
+    "POLYGON": "Polygon",
+    "MULTIPOINT": "MultiPoint",
+    "MULTILINESTRING": "MultiLineString",
+    "MULTIPOLYGON": "MultiPolygon",
+    "GEOMETRYCOLLECTION": "GeometryCollection",
+}
+_MSSQL_GEOMETRY_TYPE_LOOKUP = {
+    value.upper(): key for key, value in _MSSQL_GEOMETRY_TYPE_NAMES.items()
+}
 
 
 def _quote_mssql_identifier(name):
     return f"[{name.replace(']', ']]')}]"
+
+
+def _quote_mssql_string(value):
+    escaped_value = value.replace("'", "''")
+    return f"N'{escaped_value}'"
 
 
 def _quote_mssql_table_name(table_name, schema=None):
@@ -64,6 +83,41 @@ def _format_mssql_bounding_box(bounding_box):
     return ", ".join(_format_mssql_number(value) for value in (xmin, ymin, xmax, ymax))
 
 
+def _base_mssql_geometry_type(geometry_type):
+    if geometry_type is None:
+        return None
+    geometry_type = geometry_type.upper()
+    if geometry_type.endswith("ZM"):
+        return geometry_type[:-2]
+    if geometry_type.endswith(("Z", "M")):
+        return geometry_type[:-1]
+    return geometry_type
+
+
+def _mssql_geometry_type_constraint_value(geometry_type):
+    base_geometry_type = _base_mssql_geometry_type(geometry_type)
+    if base_geometry_type in (None, "GEOMETRY"):
+        return None
+    return _MSSQL_GEOMETRY_TYPE_NAMES.get(base_geometry_type)
+
+
+def _mssql_geometry_type_constraint_prefix(geometry_type):
+    base_geometry_type = _base_mssql_geometry_type(geometry_type)
+    if base_geometry_type in (None, "GEOMETRY"):
+        return None
+    return base_geometry_type if base_geometry_type in _MSSQL_GEOMETRY_TYPE_NAMES else None
+
+
+def _mssql_spatial_constraint_name(table_name, column_name, constraint_type):
+    return f"ck_{table_name}_{column_name}_{constraint_type}"
+
+
+def _column_regex(column_name):
+    quoted_column = re.escape(column_name.replace("]", "]]"))
+    unquoted_column = re.escape(column_name)
+    return rf"(?:\[{quoted_column}\]|{unquoted_column})"
+
+
 def _default_mssql_bounding_box(col_type, is_geography=False):
     if is_geography:
         return None
@@ -85,6 +139,57 @@ def _get_mssql_column_type_name(bind, table_name, column_name, schema=None):
         type_query,
         {"full_table_name": full_table_name, "column_name": column_name},
     ).scalar()
+
+
+def _get_mssql_spatial_column_constraints(bind, table_name, column_name, schema=None):
+    full_table_name = _get_mssql_full_table_name(table_name, schema=schema)
+    constraints_query = text(
+        """SELECT definition
+        FROM sys.check_constraints
+        WHERE parent_object_id = OBJECT_ID(:full_table_name)"""
+    )
+    column_pattern = _column_regex(column_name)
+    srid_pattern = re.compile(
+        rf"{column_pattern}\s*\.\s*(?:\[STSrid\]|STSrid)\s*=\s*\(?\s*(-?\d+)\s*\)?",
+        re.IGNORECASE,
+    )
+    geometry_type_pattern = re.compile(
+        rf"{column_pattern}\s*\.\s*(?:\[STGeometryType\]|STGeometryType)\s*"
+        rf"\(\s*\)\s*=\s*\(?\s*N?'([^']+)'",
+        re.IGNORECASE,
+    )
+    geometry_type_prefix_pattern = re.compile(
+        rf"{column_pattern}\s*\.\s*(?:\[AsTextZM\]|AsTextZM)\s*\(\s*\)\s*\)*\s+"
+        rf"LIKE\s+\(?\s*N?'([^'%]+)%",
+        re.IGNORECASE,
+    )
+
+    srid = -1
+    geometry_type = "GEOMETRY"
+    for definition in bind.execute(
+        constraints_query,
+        {"full_table_name": full_table_name},
+    ).scalars():
+        srid_match = srid_pattern.search(definition)
+        if srid_match:
+            srid = int(srid_match.group(1))
+
+        geometry_type_match = geometry_type_pattern.search(definition)
+        if geometry_type_match:
+            geometry_type = _MSSQL_GEOMETRY_TYPE_LOOKUP.get(
+                geometry_type_match.group(1).upper(),
+                geometry_type,
+            )
+            continue
+
+        geometry_type_prefix_match = geometry_type_prefix_pattern.search(definition)
+        if geometry_type_prefix_match:
+            geometry_type = _MSSQL_GEOMETRY_TYPE_LOOKUP.get(
+                geometry_type_prefix_match.group(1).upper(),
+                geometry_type,
+            )
+
+    return geometry_type, srid
 
 
 def _get_mssql_spatial_indexes(bind, table_name, schema=None, column_name=None):
@@ -180,7 +285,10 @@ def _get_mssql_spatial_index_with_clauses(col_type, idx_kwargs, is_geography=Fal
     grids = idx_kwargs.get("mssql_grids")
     if grids:
         if isinstance(grids, str):
-            grids_clause = grids if grids.lstrip().upper().startswith("GRIDS") else f"GRIDS = ({grids})"
+            if grids.lstrip().upper().startswith("GRIDS"):
+                grids_clause = grids
+            else:
+                grids_clause = f"GRIDS = ({grids})"
         else:
             grids_clause = f"GRIDS = ({', '.join(str(level) for level in grids)})"
         with_clauses.append(grids_clause)
@@ -199,7 +307,10 @@ def _get_mssql_spatial_index_with_clauses(col_type, idx_kwargs, is_geography=Fal
                 is_geography=is_geography,
             )
             if bounding_box is not None:
-                with_clauses.insert(0, f"BOUNDING_BOX = ({_format_mssql_bounding_box(bounding_box)})")
+                with_clauses.insert(
+                    0,
+                    f"BOUNDING_BOX = ({_format_mssql_bounding_box(bounding_box)})",
+                )
 
     return with_clauses
 
@@ -236,6 +347,90 @@ def create_spatial_index(
     bind.execute(text(" ".join(ddl)))
 
 
+def create_spatial_constraints(bind, table_name, column_name, col_type, schema=None):
+    table_ref = _quote_mssql_table_name(table_name, schema=schema)
+    column_ref = _quote_mssql_identifier(column_name)
+
+    if getattr(col_type, "srid", -1) >= 0:
+        constraint_name = _mssql_spatial_constraint_name(table_name, column_name, "srid")
+        bind.execute(
+            text(
+                f"ALTER TABLE {table_ref} ADD CONSTRAINT "
+                f"{_quote_mssql_identifier(constraint_name)} CHECK "
+                f"({column_ref} IS NULL OR {column_ref}.STSrid = {int(col_type.srid)})"
+            )
+        )
+
+    geometry_type_prefix = _mssql_geometry_type_constraint_prefix(
+        getattr(col_type, "geometry_type", None)
+    )
+    if geometry_type_prefix is not None:
+        constraint_name = _mssql_spatial_constraint_name(table_name, column_name, "geometry_type")
+        bind.execute(
+            text(
+                f"ALTER TABLE {table_ref} ADD CONSTRAINT "
+                f"{_quote_mssql_identifier(constraint_name)} CHECK "
+                f"({column_ref} IS NULL OR UPPER({column_ref}.AsTextZM()) LIKE "
+                f"{_quote_mssql_string(f'{geometry_type_prefix}%')})"
+            )
+        )
+
+
+def drop_spatial_constraints(bind, table_name, column_name, schema=None):
+    full_table_name = _get_mssql_full_table_name(table_name, schema=schema)
+    table_ref = _quote_mssql_table_name(table_name, schema=schema)
+    srid_constraint_name = _mssql_spatial_constraint_name(table_name, column_name, "srid")
+    geometry_type_constraint_name = _mssql_spatial_constraint_name(
+        table_name,
+        column_name,
+        "geometry_type",
+    )
+    quoted_column_token = _quote_mssql_identifier(column_name)
+
+    constraints_query = text(
+        """SELECT DISTINCT cc.name
+        FROM sys.check_constraints AS cc
+        LEFT JOIN sys.sql_expression_dependencies AS sed
+            ON sed.referencing_id = cc.object_id
+        LEFT JOIN sys.columns AS c
+            ON c.object_id = cc.parent_object_id
+            AND c.column_id = sed.referenced_minor_id
+        WHERE cc.parent_object_id = OBJECT_ID(:full_table_name)
+            AND (
+                c.name = :column_name
+                OR cc.name IN (:srid_constraint_name, :geometry_type_constraint_name)
+                OR (
+                    CHARINDEX(:quoted_column_token, cc.definition) > 0
+                    AND (
+                        CHARINDEX('STSrid', cc.definition) > 0
+                        OR CHARINDEX('STGeometryType', cc.definition) > 0
+                        OR CHARINDEX('AsTextZM', cc.definition) > 0
+                    )
+                )
+            )"""
+    )
+    constraint_names = list(
+        bind.execute(
+            constraints_query,
+            {
+                "full_table_name": full_table_name,
+                "column_name": column_name,
+                "srid_constraint_name": srid_constraint_name,
+                "geometry_type_constraint_name": geometry_type_constraint_name,
+                "quoted_column_token": quoted_column_token,
+            },
+        ).scalars()
+    )
+
+    for constraint_name in constraint_names:
+        bind.execute(
+            text(
+                f"ALTER TABLE {table_ref} DROP CONSTRAINT "
+                f"{_quote_mssql_identifier(constraint_name)}"
+            )
+        )
+
+
 def drop_spatial_index(bind, table_name, index_name, schema=None):
     table_ref = _quote_mssql_table_name(table_name, schema=schema)
     bind.execute(
@@ -264,6 +459,9 @@ def reflect_geometry_column(inspector, table, column_info):
         type_query,
         {"full_table_name": full_table_name, "column_name": column_name},
     ).one()
+    type_name = type_name.lower()
+    if type_name not in ("geometry", "geography"):
+        return
 
     spatial_index = bool(
         _get_mssql_spatial_indexes(
@@ -274,10 +472,17 @@ def reflect_geometry_column(inspector, table, column_info):
         )
     )
 
-    spatial_type = Geography if type_name.lower() == "geography" else Geometry
+    geometry_type, srid = _get_mssql_spatial_column_constraints(
+        inspector.bind,
+        table.name,
+        column_name,
+        schema=schema,
+    )
+
+    spatial_type = Geography if type_name == "geography" else Geometry
     column_info["type"] = spatial_type(
-        geometry_type="GEOMETRY",
-        srid=-1,
+        geometry_type=geometry_type,
+        srid=srid,
         spatial_index=spatial_index,
         nullable=bool(is_nullable),
         _spatial_index_reflected=True,
@@ -313,14 +518,20 @@ def before_create(table, bind, **kw):
 def after_create(table, bind, **kw):
     dialect = bind.dialect
     after_create_indexes = table.info.pop("_after_create_indexes", [])
-    delayed_spatial_index_cols = {
-        next(iter(idx.columns.values())).name
-        for idx in after_create_indexes
-        if len(idx.columns) == 1
-        and _check_spatial_type(next(iter(idx.columns.values())).type, (Geometry, Geography), dialect)
-    }
+    delayed_spatial_index_cols = set()
+    for idx in after_create_indexes:
+        columns = list(idx.columns.values())
+        if len(columns) == 1 and _check_spatial_type(
+            columns[0].type,
+            (Geometry, Geography),
+            dialect,
+        ):
+            delayed_spatial_index_cols.add(columns[0].name)
 
     for col in table.columns:
+        if _check_spatial_type(col.type, (Geometry, Geography), dialect):
+            create_spatial_constraints(bind, table.name, col.name, col.type, schema=table.schema)
+
         if (
             _check_spatial_type(col.type, (Geometry, Geography), dialect)
             and getattr(col.type, "spatial_index", False)
@@ -331,7 +542,11 @@ def after_create(table, bind, **kw):
     for idx in after_create_indexes:
         table.indexes.add(idx)
         columns = list(idx.columns.values())
-        if len(columns) == 1 and _check_spatial_type(columns[0].type, (Geometry, Geography), dialect):
+        if len(columns) == 1 and _check_spatial_type(
+            columns[0].type,
+            (Geometry, Geography),
+            dialect,
+        ):
             create_spatial_index(
                 bind,
                 table.name,
@@ -354,9 +569,7 @@ def after_drop(table, bind, **kw):
 def _process_wkt_value(value, strip_srid=False):
     if isinstance(value, WKTElement):
         value = value.data
-    elif isinstance(value, WKBElement):
-        value = _to_mssql_wkt(value)
-    elif isinstance(value, (bytes, bytearray, memoryview)):
+    elif isinstance(value, (WKBElement, bytes, bytearray, memoryview)):
         value = _to_mssql_wkt(value)
     if isinstance(value, str) and strip_srid:
         wkt_match = WKTElement._REMOVE_SRID.match(value)
@@ -481,8 +694,22 @@ def _is_spatial_clause(clause):
     return isinstance(getattr(clause, "type", None), Geometry | Geography)
 
 
+def _is_spatial_function_target(clause):
+    return _is_spatial_clause(clause) or isinstance(
+        getattr(clause, "value", None),
+        WKTElement | WKBElement,
+    )
+
+
+def _compile_mssql_function_fallback(element, compiler, **kw):
+    return compiler.visit_function(element, **kw)
+
+
 def _compile_mssql_method(element, compiler, method_name, property_=False, **kw):
     clauses = list(element.clauses)
+    if not clauses or not _is_spatial_function_target(clauses[0]):
+        return _compile_mssql_function_fallback(element, compiler, **kw)
+
     target = compiler.process(clauses[0], **kw)
     if property_:
         return f"{target}.{method_name}"
@@ -493,6 +720,9 @@ def _compile_mssql_method(element, compiler, method_name, property_=False, **kw)
 
 def _compile_mssql_binary_method(element, compiler, method_name, **kw):
     clauses = list(element.clauses)
+    if len(clauses) < 2 or not _is_spatial_function_target(clauses[0]):
+        return _compile_mssql_function_fallback(element, compiler, **kw)
+
     target = compiler.process(clauses[0], **kw)
     other = compiler.process(clauses[1], **kw)
     return f"{target}.{method_name}({other})"
@@ -631,6 +861,16 @@ def _MSSQL_ST_Buffer(element, compiler, **kw):
     return _compile_mssql_method(element, compiler, "STBuffer", **kw)
 
 
+@compiles(functions.ST_Area, "mssql")  # type: ignore
+def _MSSQL_ST_Area(element, compiler, **kw):
+    return _compile_mssql_method(element, compiler, "STArea", **kw)
+
+
+@compiles(functions.ST_Length, "mssql")  # type: ignore
+def _MSSQL_ST_Length(element, compiler, **kw):
+    return _compile_mssql_method(element, compiler, "STLength", **kw)
+
+
 @compiles(functions.ST_Within, "mssql")  # type: ignore
 def _MSSQL_ST_Within(element, compiler, **kw):
     return _compile_mssql_binary_method(element, compiler, "STWithin", **kw)
@@ -698,4 +938,4 @@ def _mssql_visit_binary(self, binary, override_operator=None, **kw):
     return _ORIGINAL_MSSQL_VISIT_BINARY(self, binary, override_operator=override_operator, **kw)
 
 
-setattr(_MSSQLCompiler, "visit_binary", _mssql_visit_binary)
+_MSSQLCompiler.visit_binary = _mssql_visit_binary  # type: ignore[method-assign]
