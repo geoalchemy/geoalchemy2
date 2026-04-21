@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-mysql \
-    -h "${MARIADB_HOST}" \
-    -u root \
-    --password="${MARIADB_ROOT_PASSWORD}" <<'SQL'
+mysql_args=(
+    -h "${MARIADB_HOST}"
+    -u root
+    --password="${MARIADB_ROOT_PASSWORD}"
+)
+
+if [ -n "${MARIADB_PORT:-}" ]; then
+    mysql_args+=(-P "${MARIADB_PORT}")
+fi
+
+mysql "${mysql_args[@]}" <<'SQL'
 CREATE DATABASE IF NOT EXISTS gis;
 CREATE USER IF NOT EXISTS 'gis'@'%' IDENTIFIED BY 'gis';
 ALTER USER 'gis'@'%' IDENTIFIED BY 'gis';

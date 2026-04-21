@@ -11,7 +11,7 @@ instructions for building a Docker Compose test environment.
 The architecture is split into:
 
 * a `runner` container that contains the code, Python tooling, tox, and database client tools,
-* one database service per backend (`postgres`, `mysql`, `mariadb`, `geoalchemy2-mssql`),
+* one database service per backend (`postgres`, `mysql`, `mariadb`, `mssql`),
 * the local SQLite / GeoPackage test assets mounted directly in the runner container.
 
 When you are finished the containers and associated data can be removed.

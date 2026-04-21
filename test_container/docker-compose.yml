@@ -10,7 +10,7 @@ services:
         condition: service_healthy
       mariadb:
         condition: service_healthy
-      geoalchemy2-mssql:
+      mssql:
         condition: service_healthy
     environment:
       POSTGRES_HOST: postgres
@@ -21,7 +21,7 @@ services:
       MYSQL_ROOT_PASSWORD: gis
       MARIADB_HOST: mariadb
       MARIADB_ROOT_PASSWORD: gis
-      MSSQL_HOST: geoalchemy2-mssql
+      MSSQL_HOST: mssql
       MSSQL_SA_PASSWORD: "GeoAlchemy2!Sql2025"
       MSSQL_TEST_DB: gis
       MSSQL_TEST_LOGIN: gis
@@ -29,7 +29,7 @@ services:
       PYTEST_POSTGRESQL_DB_URL: "postgresql://gis:gis@postgres/gis"
       PYTEST_MYSQL_DB_URL: "mysql://gis:gis@mysql/gis"
       PYTEST_MARIADB_DB_URL: "mariadb://gis:gis@mariadb/gis"
-      PYTEST_MSSQL_DB_URL: "mssql+pyodbc://gis:gis@geoalchemy2-mssql:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
+      PYTEST_MSSQL_DB_URL: "mssql+pyodbc://gis:gis@mssql:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
       SPATIALITE_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/mod_spatialite.so
     stdin_open: true
     tty: true
@@ -38,7 +38,7 @@ services:
       - ./output:/output
 
   postgres:
-    image: postgis/postgis:18-3.6-alpine
+    image: postgis/postgis:18-master
     environment:
       POSTGRES_USER: gis
       POSTGRES_PASSWORD: gis
@@ -51,7 +51,7 @@ services:
       start_period: 5s
 
   mysql:
-    image: mysql:8.4
+    image: mysql:9
     environment:
       MYSQL_ROOT_PASSWORD: gis
     healthcheck:
@@ -62,7 +62,7 @@ services:
       start_period: 10s
 
   mariadb:
-    image: mariadb:11.4
+    image: mariadb:12
     environment:
       MARIADB_ROOT_PASSWORD: gis
     healthcheck:
@@ -72,8 +72,11 @@ services:
       retries: 20
       start_period: 10s
 
-  geoalchemy2-mssql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    # SQL Server 2025 can assert on heterogeneous host CPU topology unless the
+    # container sees a constrained CPU set.
+    cpuset: "0"
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "GeoAlchemy2!Sql2025"

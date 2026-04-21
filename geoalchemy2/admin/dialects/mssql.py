@@ -491,8 +491,10 @@ def before_create(table, bind, **kw):
     if schema and schema != bind.dialect.default_schema_name:
         quoted_schema = _quote_mssql_identifier(schema)
         schema_literal = schema.replace("'", "''")
+        quoted_schema_literal = quoted_schema.replace("'", "''")
         bind.exec_driver_sql(
-            f"IF SCHEMA_ID(N'{schema_literal}') IS NULL EXEC(N'CREATE SCHEMA {quoted_schema}')"
+            f"IF SCHEMA_ID(N'{schema_literal}') IS NULL "
+            f"EXEC(N'CREATE SCHEMA {quoted_schema_literal}')"
         )
 
     table.info["_after_create_indexes"] = []
