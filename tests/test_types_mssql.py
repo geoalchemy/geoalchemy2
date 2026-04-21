@@ -16,6 +16,7 @@ from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql import func
 from sqlalchemy.sql import insert
 from sqlalchemy.sql.sqltypes import NullType
+from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2.admin import select_dialect as select_admin_dialect
 from geoalchemy2.admin.dialects import mssql as mssql_admin
@@ -77,6 +78,16 @@ def geography_table():
         Column("id", Integer, primary_key=True),
         Column("geog", Geography(geometry_type="POINT", srid=4326)),
     )
+
+
+class WrappedGeometry(TypeDecorator):
+    impl = Geometry
+    cache_ok = True
+
+
+class WrappedInteger(TypeDecorator):
+    impl = Integer
+    cache_ok = True
 
 
 class TestMSSQLDialectRegistration:
@@ -155,6 +166,19 @@ class TestMSSQLCompilation:
         assert "ST_Length(" not in compiled
         assert "ST_Intersects(" not in compiled
 
+    def test_typedecorator_geometry_functions_compile_to_mssql_methods(self):
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("geom", WrappedGeometry(geometry_type="LINESTRING", srid=4326)),
+        )
+        stmt = select([func.ST_Area(table.c.geom)])
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert ".STArea()" in compiled
+        assert "ST_Area(" not in compiled
+
     def test_non_spatial_function_arguments_keep_function_syntax(self):
         table = Table(
             "numbers",
@@ -177,6 +201,19 @@ class TestMSSQLCompilation:
         assert ".STArea(" not in compiled
         assert ".STLength(" not in compiled
         assert ".STIntersects(" not in compiled
+
+    def test_non_spatial_typedecorator_function_arguments_keep_function_syntax(self):
+        table = Table(
+            "numbers",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("value", WrappedInteger()),
+        )
+        stmt = select([func.ST_Area(table.c.value)])
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert "ST_Area(" in compiled
+        assert ".STArea(" not in compiled
 
     def test_extended_wkt_element_method_call_strips_srid_prefix(self):
         stmt = select([WKTElement("SRID=4326;POINT(1 2)", extended=True).ST_AsText()])
@@ -231,6 +268,32 @@ class TestMSSQLCompilation:
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
         assert ".STEquals(" in compiled
         assert "= geography::STGeomFromText" not in compiled
+
+    def test_typedecorator_geometry_equality_compiles_to_stequals_predicate(self):
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("geom", WrappedGeometry(geometry_type="LINESTRING", srid=4326)),
+        )
+        stmt = select([table.c.id]).where(table.c.geom == bindparam("geom"))
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert ".STEquals(" in compiled
+        assert "= geometry::STGeomFromText" not in compiled
+
+    def test_typedecorator_geometry_inequality_compiles_to_stequals_predicate(self):
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("geom", WrappedGeometry(geometry_type="LINESTRING", srid=4326)),
+        )
+        stmt = select([table.c.id]).where(table.c.geom != bindparam("geom"))
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert ".STEquals(" in compiled
+        assert "= 0" in compiled
 
     def test_extended_wkb_literal_uses_plain_wkb_hex(self):
         elem = from_shape(Point(1, 2), srid=4326, extended=True)

@@ -689,12 +689,12 @@ def _infer_srid_from_wkb_clause(wkb_clause, default_srid, extended=False):
     return default_srid
 
 
-def _is_spatial_clause(clause):
-    return isinstance(getattr(clause, "type", None), Geometry | Geography)
+def _is_spatial_clause(clause, dialect=None):
+    return _check_spatial_type(getattr(clause, "type", None), (Geometry, Geography), dialect)
 
 
-def _is_spatial_function_target(clause):
-    return _is_spatial_clause(clause) or isinstance(
+def _is_spatial_function_target(clause, dialect=None):
+    return _is_spatial_clause(clause, dialect) or isinstance(
         getattr(clause, "value", None),
         WKTElement | WKBElement,
     )
@@ -706,7 +706,7 @@ def _compile_mssql_function_fallback(element, compiler, **kw):
 
 def _compile_mssql_method(element, compiler, method_name, property_=False, **kw):
     clauses = list(element.clauses)
-    if not clauses or not _is_spatial_function_target(clauses[0]):
+    if not clauses or not _is_spatial_function_target(clauses[0], compiler.dialect):
         return _compile_mssql_function_fallback(element, compiler, **kw)
 
     target = compiler.process(clauses[0], **kw)
@@ -719,7 +719,7 @@ def _compile_mssql_method(element, compiler, method_name, property_=False, **kw)
 
 def _compile_mssql_binary_method(element, compiler, method_name, **kw):
     clauses = list(element.clauses)
-    if len(clauses) < 2 or not _is_spatial_function_target(clauses[0]):
+    if len(clauses) < 2 or not _is_spatial_function_target(clauses[0], compiler.dialect):
         return _compile_mssql_function_fallback(element, compiler, **kw)
 
     target = compiler.process(clauses[0], **kw)
@@ -916,17 +916,17 @@ _ORIGINAL_MSSQL_VISIT_BINARY = _MSSQLCompiler.visit_binary
 def _mssql_visit_binary(self, binary, override_operator=None, **kw):
     operator = override_operator or binary.operator
     if operator in (operators.eq, operators.ne):
-        if _is_spatial_clause(binary.left):
+        if _is_spatial_clause(binary.left, self.dialect):
             target_clause = binary.left
             other_clause = binary.right
-        elif _is_spatial_clause(binary.right):
+        elif _is_spatial_clause(binary.right, self.dialect):
             target_clause = binary.right
             other_clause = binary.left
         else:
             target_clause = None
 
         if target_clause is not None:
-            if not _is_spatial_clause(other_clause):
+            if not _is_spatial_clause(other_clause, self.dialect):
                 other_clause = expression.type_coerce(other_clause, target_clause.type)
 
             target = self.process(target_clause, **kw)

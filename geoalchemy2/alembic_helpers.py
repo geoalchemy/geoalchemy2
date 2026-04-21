@@ -313,6 +313,29 @@ class DropGeospatialColumnOp(ops.DropColumnOp):
         return operations.invoke(op)
 
 
+@Operations.register_operation("create_geospatial_constraints")
+class CreateGeospatialConstraintsOp(ops.AddColumnOp):
+    """Create spatial metadata constraints for a geospatial column."""
+
+    @classmethod
+    def create_geospatial_constraints(cls, operations, table_name, column, schema=None):
+        op = cls(table_name, column, schema=schema)
+        return operations.invoke(op)
+
+    def reverse(self):
+        return DropGeospatialConstraintsOp(self.table_name, self.column.name, schema=self.schema)
+
+
+@Operations.register_operation("drop_geospatial_constraints")
+class DropGeospatialConstraintsOp(ops.DropColumnOp):
+    """Drop spatial metadata constraints for a geospatial column."""
+
+    @classmethod
+    def drop_geospatial_constraints(cls, operations, table_name, column_name, schema=None):
+        op = cls(table_name, column_name, schema=schema)
+        return operations.invoke(op)
+
+
 @Operations.implementation_for(AddGeospatialColumnOp)
 def add_geospatial_column(operations, operation):
     """Handle the actual column addition according to the dialect backend.
@@ -411,6 +434,37 @@ def drop_geospatial_column(operations, operation):
     operations.impl.drop_column(table_name, column, schema=operation.schema, **operation.kw)
 
 
+@Operations.implementation_for(CreateGeospatialConstraintsOp)
+def create_geospatial_constraints(operations, operation):
+    """Create backend-specific spatial metadata constraints for a column."""
+    bind = operations.get_bind()
+    if bind.dialect.name == "mssql":
+        from geoalchemy2.admin.dialects.mssql import create_spatial_constraints
+
+        create_spatial_constraints(
+            bind,
+            operation.table_name,
+            operation.column.name,
+            operation.column.type,
+            schema=operation.schema,
+        )
+
+
+@Operations.implementation_for(DropGeospatialConstraintsOp)
+def drop_geospatial_constraints(operations, operation):
+    """Drop backend-specific spatial metadata constraints for a column."""
+    bind = operations.get_bind()
+    if bind.dialect.name == "mssql":
+        from geoalchemy2.admin.dialects.mssql import drop_spatial_constraints
+
+        drop_spatial_constraints(
+            bind,
+            operation.table_name,
+            operation.column_name,
+            schema=operation.schema,
+        )
+
+
 @compiles(RenameTable, "sqlite")
 def visit_rename_geospatial_table(element, compiler, **kw):
     """Specific compilation rule to rename spatial tables with SQLite dialect."""
@@ -455,6 +509,20 @@ def render_drop_geo_column(autogen_context, op):
     return col_render.replace(".drop_column(", ".drop_geospatial_column(")
 
 
+@renderers.dispatch_for(CreateGeospatialConstraintsOp)
+def render_create_geo_constraints(autogen_context, op):
+    """Render the create_geospatial_constraints operation in migration script."""
+    col_render = _add_column(autogen_context, op)
+    return col_render.replace(".add_column(", ".create_geospatial_constraints(")
+
+
+@renderers.dispatch_for(DropGeospatialConstraintsOp)
+def render_drop_geo_constraints(autogen_context, op):
+    """Render the drop_geospatial_constraints operation in migration script."""
+    col_render = _drop_column(autogen_context, op)
+    return col_render.replace(".drop_column(", ".drop_geospatial_constraints(")
+
+
 @writer.rewrites(ops.AddColumnOp)
 def add_geo_column(context, revision, op):
     """Replace the default AddColumnOp by a geospatial-specific one."""
@@ -487,7 +555,7 @@ def drop_geo_column(context, revision, op):
 
 @writer.rewrites(ops.AlterColumnOp)
 def alter_geo_column(context, revision, op):
-    """Rewrite MSSQL spatial column alterations to drop and recreate the index."""
+    """Rewrite MSSQL spatial column alterations to refresh constraints and indexes."""
     dialect = context.bind.dialect
     if dialect.name != "mssql":
         return op
@@ -513,9 +581,6 @@ def alter_geo_column(context, revision, op):
         schema=op.schema,
         column_name=op.column_name,
     )
-    if not spatial_indexes:
-        return op
-
     rewritten_ops = [
         DropGeospatialIndexOp(
             spatial_index["name"],
@@ -525,7 +590,21 @@ def alter_geo_column(context, revision, op):
         )
         for spatial_index in spatial_indexes
     ]
+    rewritten_ops.append(
+        DropGeospatialConstraintsOp(
+            op.table_name,
+            op.column_name,
+            schema=op.schema,
+        )
+    )
     rewritten_ops.append(op)
+    rewritten_ops.append(
+        CreateGeospatialConstraintsOp(
+            op.table_name,
+            Column(op.column_name, col_type),
+            schema=op.schema,
+        )
+    )
     rewritten_ops.extend(
         [
             CreateGeospatialIndexOp(

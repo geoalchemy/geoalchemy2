@@ -7,11 +7,14 @@ from alembic import script
 from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
+from alembic.operations import Operations
+from alembic.operations import ops
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import text
+from sqlalchemy.dialects import mssql
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import alembic_helpers
@@ -117,6 +120,120 @@ class TestAutogenerate:
         assert add_new_geom_col[3].type.geometry_type == "LINESTRING"
         assert add_new_geom_col[3].type.name == "geometry"
         assert add_new_geom_col[3].type.dimension == 2
+
+
+class TestMSSQLAlterColumnRewrite:
+    def test_spatial_alter_column_wraps_constraints_and_indexes(self, monkeypatch):
+        from geoalchemy2.admin.dialects import mssql as mssql_admin
+
+        def get_spatial_indexes(*args, **kwargs):
+            return [{"name": "idx_lake_geom", "dialect_options": {}}]
+
+        monkeypatch.setattr(mssql_admin, "_get_mssql_spatial_indexes", get_spatial_indexes)
+
+        class Bind:
+            dialect = mssql.dialect()
+
+        class Context:
+            bind = Bind()
+
+        alter_op = ops.AlterColumnOp(
+            "lake",
+            "geom",
+            modify_type=Geometry(geometry_type="LINESTRING", srid=3857),
+            existing_type=Geometry(geometry_type="POINT", srid=4326),
+            existing_nullable=True,
+        )
+
+        rewritten_ops = alembic_helpers.alter_geo_column(Context(), None, alter_op)
+
+        assert [type(rewritten_op) for rewritten_op in rewritten_ops] == [
+            alembic_helpers.DropGeospatialIndexOp,
+            alembic_helpers.DropGeospatialConstraintsOp,
+            ops.AlterColumnOp,
+            alembic_helpers.CreateGeospatialConstraintsOp,
+            alembic_helpers.CreateGeospatialIndexOp,
+        ]
+        assert rewritten_ops[3].column.type.geometry_type == "LINESTRING"
+        assert rewritten_ops[3].column.type.srid == 3857
+
+    def test_spatial_alter_column_wraps_constraints_without_indexes(self, monkeypatch):
+        from geoalchemy2.admin.dialects import mssql as mssql_admin
+
+        monkeypatch.setattr(mssql_admin, "_get_mssql_spatial_indexes", lambda *args, **kwargs: [])
+
+        class Bind:
+            dialect = mssql.dialect()
+
+        class Context:
+            bind = Bind()
+
+        alter_op = ops.AlterColumnOp(
+            "lake",
+            "geom",
+            modify_type=Geometry(geometry_type="LINESTRING", srid=3857),
+            existing_type=Geometry(geometry_type="POINT", srid=4326),
+            existing_nullable=True,
+        )
+
+        rewritten_ops = alembic_helpers.alter_geo_column(Context(), None, alter_op)
+
+        assert [type(rewritten_op) for rewritten_op in rewritten_ops] == [
+            alembic_helpers.DropGeospatialConstraintsOp,
+            ops.AlterColumnOp,
+            alembic_helpers.CreateGeospatialConstraintsOp,
+        ]
+
+    @test_only_with_dialects("mssql")
+    def test_spatial_alter_column_recreates_constraints(self, conn, metadata):
+        from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_column_constraints
+
+        table_name = "mssql_alter_constraints"
+        table = Table(
+            table_name,
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(geometry_type="POINT", srid=4326, spatial_index=False),
+            ),
+        )
+
+        metadata.drop_all(bind=conn, checkfirst=True)
+        try:
+            metadata.create_all(bind=conn)
+            assert _get_mssql_spatial_column_constraints(conn, table_name, "geom") == (
+                "POINT",
+                4326,
+            )
+
+            context = MigrationContext.configure(conn)
+            operations = Operations(context)
+            alter_op = ops.AlterColumnOp(
+                table_name,
+                "geom",
+                modify_type=Geometry(
+                    geometry_type="LINESTRING",
+                    srid=3857,
+                    spatial_index=False,
+                ),
+                existing_type=Geometry(
+                    geometry_type="POINT",
+                    srid=4326,
+                    spatial_index=False,
+                ),
+                existing_nullable=True,
+            )
+
+            for rewritten_op in alembic_helpers.alter_geo_column(context, None, alter_op):
+                operations.invoke(rewritten_op)
+
+            assert _get_mssql_spatial_column_constraints(conn, table_name, "geom") == (
+                "LINESTRING",
+                3857,
+            )
+        finally:
+            table.drop(bind=conn, checkfirst=True)
 
 
 @pytest.fixture
