@@ -8,27 +8,26 @@ title: "[Feature request] "
 body:
   - type: markdown
     attributes:
-      value: "
-Thanks for taking the time to fill out this feature request!
+      value: |
+        Thanks for taking the time to fill out this feature request!
 
 
-Before submitting, make sure the feature does not already exist in the [documentation](https://geoalchemy-2.readthedocs.io) and that you searched in the [issue list](https://github.com/geoalchemy/geoalchemy2/issues) that a similar feature request has not already been reported.
-If it is not the case, please read the following guidelines.
+        Before submitting, make sure the feature does not already exist in the [documentation](https://geoalchemy-2.readthedocs.io) and that you searched in the [issue list](https://github.com/geoalchemy/geoalchemy2/issues) that a similar feature request has not already been reported.
+        If it is not the case, please read the following guidelines.
 
-### GUIDELINES FOR REQUESTING HELP
+        ### GUIDELINES FOR REQUESTING HELP
 
-Feature requests that are not properly formulated and formatted or without enough details can be very hard for us to understand.
-In order to ensure we can help you, please follow these guidelines.
+        Feature requests that are not properly formulated and formatted or without enough details can be very hard for us to understand.
+        In order to ensure we can help you, please follow these guidelines.
 
 
-Your requests must include the following features:
+        Your requests must include the following features:
 
-1. **succinct description** of the feature - typically a line or two at most to describe what the new feature would do.
+        1. **succinct description** of the feature - typically a line or two at most to describe what the new feature would do.
 
-2. **succinct, dependency-free code** which shows how you would like to use this feature, otherwise known as a [Minimal, Complete, and Verifiable](https://stackoverflow.com/help/mcve) example.
+        2. **succinct, dependency-free code** which shows how you would like to use this feature, otherwise known as a [Minimal, Complete, and Verifiable](https://stackoverflow.com/help/mcve) example.
 
-3. Why do you need this feature? What would be the use cases?
-"
+        3. Why do you need this feature? What would be the use cases?
 
   - type: textarea
     attributes:
