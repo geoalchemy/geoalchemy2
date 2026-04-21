@@ -27,6 +27,7 @@ from geoalchemy2.shape import from_shape
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import select_dialect as select_type_dialect
+from geoalchemy2.types.dialects import mssql as mssql_type
 
 from . import select
 
@@ -50,6 +51,13 @@ def _pack_polygon(rings):
         payload.extend(struct.pack("<I", len(ring)))
         for point in ring:
             payload.extend(_pack_coords(*point))
+    return bytes(payload)
+
+
+def _pack_collection(*geometries):
+    payload = bytearray(struct.pack("<I", len(geometries)))
+    for geometry in geometries:
+        payload.extend(geometry)
     return bytes(payload)
 
 
@@ -257,6 +265,58 @@ class TestMSSQLCompilation:
         assert "ST_Equals(" not in compiled
         assert "ST_Within(" not in compiled
 
+    def test_common_binary_predicates_compile_to_mssql_methods(self, geometry_table):
+        other = WKTElement("LINESTRING(0 0,1 1)", srid=4326)
+        stmt = select(
+            [
+                geometry_table.c.geom.ST_Contains(other),
+                geometry_table.c.geom.ST_Disjoint(other),
+                geometry_table.c.geom.ST_Touches(other),
+                geometry_table.c.geom.ST_Overlaps(other),
+                geometry_table.c.geom.ST_Crosses(other),
+            ]
+        )
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert ".STContains(" in compiled
+        assert ".STDisjoint(" in compiled
+        assert ".STTouches(" in compiled
+        assert ".STOverlaps(" in compiled
+        assert ".STCrosses(" in compiled
+        assert "ST_Contains(" not in compiled
+        assert "ST_Disjoint(" not in compiled
+        assert "ST_Touches(" not in compiled
+        assert "ST_Overlaps(" not in compiled
+        assert "ST_Crosses(" not in compiled
+
+    def test_geography_from_wkb_compiles_to_stgeomfromwkb(self):
+        wkb = bytes.fromhex("0101000000000000000000f03f0000000000000040")
+        stmt = select([func.ST_GeogFromWKB(WKBElement(wkb, srid=4326))])
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert "geography::STGeomFromWKB" in compiled
+
+    def test_negative_srid_literal_compiles_as_zero(self):
+        stmt = select([func.ST_GeomFromText("POINT(1 2)", -1)])
+        compiled = normalize_sql(
+            stmt.compile(dialect=self.dialect, compile_kwargs={"literal_binds": True})
+        )
+
+        assert "geometry::STGeomFromText(N'POINT(1 2)', 0)" in compiled
+
+    def test_column_srid_argument_is_kept_when_compiling_from_text(self):
+        table = Table(
+            "raw_wkt",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("wkt", Integer),
+            Column("srid", Integer),
+        )
+        stmt = select([func.ST_GeomFromText(table.c.wkt, table.c.srid)])
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert "geometry::STGeomFromText(raw_wkt.wkt, raw_wkt.srid)" in compiled
+
     def test_geometry_equality_compiles_to_stequals_predicate(self, geometry_table):
         stmt = select([geometry_table.c.id]).where(geometry_table.c.geom == bindparam("geom"))
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
@@ -294,6 +354,26 @@ class TestMSSQLCompilation:
 
         assert ".STEquals(" in compiled
         assert "= 0" in compiled
+
+    def test_geometry_equality_handles_spatial_expression_on_right(self, geometry_table):
+        stmt = select([geometry_table.c.id]).where(bindparam("geom") == geometry_table.c.geom)
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert "lake.geom.STEquals(" in compiled
+        assert "= 1" in compiled
+
+    def test_geometry_equality_between_two_spatial_columns_does_not_type_coerce(self):
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("geom1", Geometry(geometry_type="LINESTRING", srid=4326)),
+            Column("geom2", Geometry(geometry_type="LINESTRING", srid=4326)),
+        )
+        stmt = select([table.c.id]).where(table.c.geom1 == table.c.geom2)
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert "lake.geom1.STEquals(lake.geom2) = 1" in compiled
 
     def test_extended_wkb_literal_uses_plain_wkb_hex(self):
         elem = from_shape(Point(1, 2), srid=4326, extended=True)
@@ -356,6 +436,201 @@ class TestMSSQLCompilation:
 
 
 class TestMSSQLReflectionHelpers:
+    def test_helper_formats_identifiers_geometry_types_and_index_clauses(self):
+        geom_4326 = Geometry(geometry_type="LINESTRING", srid=4326)
+        geom_3857 = Geometry(geometry_type="LINESTRING", srid=3857)
+
+        assert mssql_admin._quote_mssql_identifier("schema]name") == "[schema]]name]"
+        assert mssql_admin._quote_mssql_string("O'Brien") == "N'O''Brien'"
+        assert mssql_admin._quote_mssql_table_name("lake", schema="gis") == "[gis].[lake]"
+        assert mssql_admin._get_mssql_full_table_name("lake", schema="gis") == "gis.lake"
+        assert mssql_admin._base_mssql_geometry_type(None) is None
+        assert mssql_admin._base_mssql_geometry_type("POINTZM") == "POINT"
+        assert mssql_admin._mssql_geometry_type_constraint_value(None) is None
+        assert mssql_admin._mssql_geometry_type_constraint_value("GEOMETRY") is None
+        assert mssql_admin._mssql_geometry_type_constraint_value("LINESTRING") == "LineString"
+        assert mssql_admin._mssql_geometry_type_constraint_prefix("GEOMETRY") is None
+        assert mssql_admin._mssql_geometry_type_constraint_prefix("LINESTRINGM") == "LINESTRING"
+        assert mssql_admin._format_mssql_bounding_box("BOUNDING_BOX = (0, 0, 1, 1)") == (
+            "BOUNDING_BOX = (0, 0, 1, 1)"
+        )
+        assert mssql_admin._default_mssql_bounding_box(geom_4326) == (
+            -180.0,
+            -90.0,
+            180.0,
+            90.0,
+        )
+        assert mssql_admin._default_mssql_bounding_box(geom_3857) == (
+            -1000000000.0,
+            -1000000000.0,
+            1000000000.0,
+            1000000000.0,
+        )
+        assert mssql_admin._default_mssql_bounding_box(geom_4326, is_geography=True) is None
+
+        clauses = mssql_admin._get_mssql_spatial_index_with_clauses(
+            geom_3857,
+            {
+                "mssql_with": ["PAD_INDEX = OFF"],
+                "mssql_grids": "HIGH, MEDIUM, LOW, LOW",
+                "mssql_cells_per_object": 16,
+                "mssql_bounding_box": "1, 2, 3, 4",
+            },
+        )
+        assert clauses == [
+            "BOUNDING_BOX = (1, 2, 3, 4)",
+            "PAD_INDEX = OFF",
+            "GRIDS = (HIGH, MEDIUM, LOW, LOW)",
+            "CELLS_PER_OBJECT = 16",
+        ]
+
+        clauses = mssql_admin._get_mssql_spatial_index_with_clauses(
+            geom_3857,
+            {
+                "mssql_with": "BOUNDING_BOX = (0, 0, 1, 1)",
+                "mssql_grids": "GRIDS = (LOW, LOW, LOW, LOW)",
+            },
+        )
+        assert clauses == [
+            "BOUNDING_BOX = (0, 0, 1, 1)",
+            "GRIDS = (LOW, LOW, LOW, LOW)",
+        ]
+
+    def test_get_mssql_spatial_column_constraints_parses_known_constraint_shapes(self):
+        class Result:
+            def scalars(self):
+                return iter(
+                    [
+                        "([geom].[STSrid]=(3857))",
+                        "([geom].[STGeometryType]()=N'LineString')",
+                        "(UPPER([other].[AsTextZM]()) LIKE N'POINT%')",
+                    ]
+                )
+
+        class Bind:
+            def execute(self, *args, **kwargs):
+                return Result()
+
+        assert mssql_admin._get_mssql_spatial_column_constraints(Bind(), "lake", "geom") == (
+            "LINESTRING",
+            3857,
+        )
+
+    def test_get_mssql_spatial_column_constraints_parses_astextzm_prefix(self):
+        class Result:
+            def scalars(self):
+                return iter(["(UPPER([geom].[AsTextZM]()) LIKE N'MULTIPOLYGON%')"])
+
+        class Bind:
+            def execute(self, *args, **kwargs):
+                return Result()
+
+        assert mssql_admin._get_mssql_spatial_column_constraints(Bind(), "lake", "geom") == (
+            "MULTIPOLYGON",
+            -1,
+        )
+
+    def test_get_mssql_spatial_indexes_maps_reflected_options(self):
+        class Result:
+            def mappings(self):
+                return iter(
+                    [
+                        {
+                            "index_name": "idx_lake_geom",
+                            "column_name": "geom",
+                            "tessellation_scheme": "GEOMETRY_GRID",
+                            "cells_per_object": 16,
+                            "bounding_box_xmin": 0.0,
+                            "bounding_box_ymin": 1.0,
+                            "bounding_box_xmax": 2.0,
+                            "bounding_box_ymax": 3.0,
+                            "level_1_grid_desc": "HIGH",
+                            "level_2_grid_desc": "MEDIUM",
+                            "level_3_grid_desc": "LOW",
+                            "level_4_grid_desc": "LOW",
+                        }
+                    ]
+                )
+
+        class Bind:
+            def execute(self, statement, params):
+                assert params == {"full_table_name": "gis.lake"}
+                return Result()
+
+        assert mssql_admin._get_mssql_spatial_indexes(Bind(), "lake", schema="gis") == [
+            {
+                "name": "idx_lake_geom",
+                "column_name": "geom",
+                "dialect_options": {
+                    "mssql_using": "GEOMETRY_GRID",
+                    "mssql_cells_per_object": 16,
+                    "mssql_bounding_box": (0.0, 1.0, 2.0, 3.0),
+                    "mssql_grids": ("HIGH", "MEDIUM", "LOW", "LOW"),
+                },
+            }
+        ]
+
+    def test_create_spatial_index_uses_reflected_type_for_unknown_column_type(self):
+        class TypeResult:
+            def scalar(self):
+                return "geography"
+
+        class Bind:
+            dialect = mssql.dialect()
+
+            def __init__(self):
+                self.statements = []
+
+            def execute(self, statement, params=None):
+                if params is not None:
+                    return TypeResult()
+                self.statements.append(str(statement))
+                return None
+
+        bind = Bind()
+        mssql_admin.create_spatial_index(
+            bind,
+            "place",
+            "geog",
+            Integer(),
+            index_name="idx_place_geog",
+            mssql_using=None,
+        )
+
+        assert bind.statements == ["CREATE SPATIAL INDEX [idx_place_geog] ON [place] ([geog])"]
+
+    def test_create_spatial_constraints_skips_generic_metadata(self):
+        class Bind:
+            def __init__(self):
+                self.statements = []
+
+            def execute(self, statement):
+                self.statements.append(str(statement))
+
+        bind = Bind()
+        mssql_admin.create_spatial_constraints(
+            bind,
+            "lake",
+            "geom",
+            Geometry(geometry_type=None, srid=-1),
+        )
+
+        assert bind.statements == []
+
+    def test_reflect_geometry_column_ignores_non_spatial_column_type(self):
+        class Inspector:
+            default_schema_name = "dbo"
+
+        column_info = {"name": "payload", "type": Integer()}
+
+        mssql_admin.reflect_geometry_column(
+            Inspector(),
+            Table("not_spatial", MetaData()),
+            column_info,
+        )
+
+        assert isinstance(column_info["type"], Integer)
+
     def test_nulltype_non_spatial_columns_are_not_rewritten(self):
         class Result:
             def one(self):
@@ -410,7 +685,60 @@ class TestMSSQLBindAndResultProcessing:
         assert bind_processor(WKTElement("SRID=4326;LINESTRING(0 0,1 1)", extended=True)) == (
             "LINESTRING(0 0,1 1)"
         )
+        assert bind_processor(WKTElement("LINESTRING Z (0 0 1,1 1 2)", srid=-1)) == (
+            "LINESTRING (0 0 1,1 1 2)"
+        )
         assert bind_processor(WKBElement(wkb, srid=4326)) == "LINESTRING (0 0, 1 1)"
+
+    def test_wkb_parser_handles_hex_empty_and_geometrycollection_inputs(self):
+        empty_linestring_z = _pack_iso_wkb(2, struct.pack("<I", 0), has_z=True)
+        empty_linestring_m = _pack_iso_wkb(2, struct.pack("<I", 0), has_m=True)
+        empty_polygon = _pack_iso_wkb(3, struct.pack("<I", 0))
+        empty_collection = _pack_iso_wkb(7, struct.pack("<I", 0))
+        point = _pack_iso_wkb(1, _pack_coords(1, 2))
+        collection = _pack_iso_wkb(7, _pack_collection(point))
+
+        assert mssql_type._wkb_to_mssql_wkt(empty_linestring_z) == "LINESTRING EMPTY"
+        assert mssql_type._wkb_to_mssql_wkt(empty_linestring_m.hex()) == "LINESTRING EMPTY"
+        assert mssql_type._wkb_to_mssql_wkt(bytearray(empty_polygon)) == "POLYGON EMPTY"
+        assert mssql_type._wkb_to_mssql_wkt(empty_collection) == "GEOMETRYCOLLECTION EMPTY"
+        assert mssql_type._wkb_to_mssql_wkt(collection) == "GEOMETRYCOLLECTION (POINT (1 2))"
+
+    def test_wkb_parser_rejects_unsupported_values(self):
+        unsupported_wkb = b"\x01" + struct.pack("<I", 999)
+
+        with pytest.raises(ValueError, match="Unsupported WKB geometry type"):
+            mssql_type._wkb_to_mssql_wkt(unsupported_wkb)
+        with pytest.raises(TypeError, match="Unsupported WKB value type"):
+            mssql_type._wkb_to_mssql_wkt(object())
+
+    def test_to_mssql_wkt_falls_back_to_shape_conversion(self):
+        assert mssql_type._to_mssql_wkt(WKTElement("POINT Z (1 2 3)", srid=4326)) == (
+            "POINT (1 2 3)"
+        )
+
+    def test_bind_coercion_helpers_keep_non_bind_clauses(self):
+        table = Table("raw_values", MetaData(), Column("value", Integer))
+
+        assert mssql_admin._coerce_wkt_bind_clause(table.c.value) is table.c.value
+        assert mssql_admin._coerce_wkb_bind_clause(table.c.value) is table.c.value
+        assert mssql_admin._should_coerce_wkt_bind_clause(table.c.value) is False
+        assert mssql_admin._should_coerce_wkt_bind_clause(bindparam("value", 1)) is False
+        assert (
+            mssql_admin._should_coerce_wkt_bind_clause_for_text(
+                bindparam("value", "SRID=4326;POINT(1 2)"),
+                strip_srid=True,
+            )
+            is True
+        )
+        assert mssql_admin._should_coerce_wkb_bind_clause(table.c.value) is False
+        assert mssql_admin._infer_srid_from_wkb_clause(table.c.value, 4326, extended=True) == 4326
+
+    def test_bind_processor_passes_through_non_spatial_values(self):
+        geom = Geometry(geometry_type="LINESTRING", srid=4326)
+        bind_processor = geom.bind_processor(self.dialect)
+
+        assert bind_processor(None) is None
 
     def test_bind_processor_normalizes_z_dimension_wkb_inputs(self):
         geom = Geometry(geometry_type="POINTZ", srid=4326)
