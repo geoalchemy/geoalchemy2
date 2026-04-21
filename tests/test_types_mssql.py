@@ -120,9 +120,7 @@ class TestMSSQLCompilation:
                 geometry_table.c.geom.ST_Buffer(2),
                 geometry_table.c.geom.ST_Area(),
                 geometry_table.c.geom.ST_Length(),
-                geometry_table.c.geom.ST_Intersects(
-                    WKTElement("LINESTRING(0 0,1 1)", srid=4326)
-                ),
+                geometry_table.c.geom.ST_Intersects(WKTElement("LINESTRING(0 0,1 1)", srid=4326)),
                 geometry_table.c.geom.ST_GeometryType(),
                 geometry_table.c.geom.ST_SRID(),
                 geometry_table.c.geom.ST_AsText(),
@@ -253,9 +251,7 @@ class TestMSSQLCompilation:
         assert ", 4326).STSrid" in compiled
 
     def test_insert_coerces_spatial_elements_to_dbapi_friendly_values(self, geometry_table):
-        stmt_wkt = insert(geometry_table).values(
-            geom=WKTElement("LINESTRING(0 0,2 2)", srid=4326)
-        )
+        stmt_wkt = insert(geometry_table).values(geom=WKTElement("LINESTRING(0 0,2 2)", srid=4326))
         compiled_wkt = stmt_wkt.compile(dialect=self.dialect)
         processor_wkt = next(iter(compiled_wkt._bind_processors.values()))
         assert processor_wkt(next(iter(compiled_wkt.params.values()))) == "LINESTRING(0 0,2 2)"

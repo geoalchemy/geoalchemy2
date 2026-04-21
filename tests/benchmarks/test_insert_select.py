@@ -1,9 +1,8 @@
 import pytest
 from sqlalchemy import Column
 from sqlalchemy import Integer
-from sqlalchemy import text
-from sqlalchemy.sql import func
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.sql import func
 
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKBElement

@@ -10,7 +10,6 @@ from geoalchemy2.elements import _SpatialElement
 from geoalchemy2.exc import ArgumentError
 from geoalchemy2.shape import to_shape
 
-
 _WKT_DIMENSION_SUFFIX = re.compile(
     r"^([A-Z]+?)\s*(ZM|Z|M)(\s*\(.*)$",
     re.IGNORECASE | re.DOTALL,
@@ -186,8 +185,6 @@ def bind_processor_process(spatial_type, bindvalue):
         if bindvalue.srid <= 0:
             bindvalue.srid = spatial_type.srid
         return _normalize_wkt_for_mssql(bindvalue.data)
-    elif isinstance(bindvalue, WKBElement):
-        return _to_mssql_wkt(bindvalue)
-    elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
+    elif isinstance(bindvalue, (bytes, bytearray, memoryview, WKBElement)):
         return _to_mssql_wkt(bindvalue)
     return bindvalue

@@ -291,7 +291,7 @@ def _mssql_visit_computed_column(self, generated, **kw):
     return text
 
 
-setattr(_MSDDLCompiler, "visit_computed_column", _mssql_visit_computed_column)
+_MSDDLCompiler.visit_computed_column = _mssql_visit_computed_column
 
 
 def _mssql_get_column_specification(self, column, **kwargs):
@@ -311,7 +311,7 @@ def _mssql_get_column_specification(self, column, **kwargs):
     return _ORIGINAL_MSSQL_GET_COLUMN_SPECIFICATION(self, column, **kwargs)
 
 
-setattr(_MSDDLCompiler, "get_column_specification", _mssql_get_column_specification)
+_MSDDLCompiler.get_column_specification = _mssql_get_column_specification
 
 
 class Geometry(_GISType):

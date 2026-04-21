@@ -228,7 +228,7 @@ def _get_mssql_spatial_indexes(bind, table_name, schema=None, column_name=None):
         LEFT JOIN sys.spatial_index_tessellations AS sit
             ON i.object_id = sit.object_id
             AND i.index_id = sit.index_id
-        WHERE {' AND '.join(where_clauses)}
+        WHERE {" AND ".join(where_clauses)}
         ORDER BY i.name"""
     )
 
@@ -433,11 +433,7 @@ def drop_spatial_constraints(bind, table_name, column_name, schema=None):
 
 def drop_spatial_index(bind, table_name, index_name, schema=None):
     table_ref = _quote_mssql_table_name(table_name, schema=schema)
-    bind.execute(
-        text(
-            f"DROP INDEX {_quote_mssql_identifier(index_name)} ON {table_ref}"
-        )
-    )
+    bind.execute(text(f"DROP INDEX {_quote_mssql_identifier(index_name)} ON {table_ref}"))
 
 
 def reflect_geometry_column(inspector, table, column_info):
@@ -504,9 +500,10 @@ def before_create(table, bind, **kw):
 
     for idx in current_indexes:
         for col in table.columns:
-            if _check_spatial_type(
-                col.type, (Geometry, Geography), bind.dialect
-            ) and col in idx.columns.values():
+            if (
+                _check_spatial_type(col.type, (Geometry, Geography), bind.dialect)
+                and col in idx.columns.values()
+            ):
                 table.indexes.remove(idx)
                 if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
                     col.type, "spatial_index", False
