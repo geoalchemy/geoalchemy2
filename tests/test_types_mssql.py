@@ -1,8 +1,11 @@
 import re
+import struct
 
 import pytest
 from sqlalchemy import bindparam
 from sqlalchemy import Column
+from sqlalchemy import Computed
+from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
@@ -15,6 +18,7 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.exc import ArgumentError
 from geoalchemy2.shape import from_shape
+from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import select_dialect as select_type_dialect
 from shapely.geometry import LineString
@@ -27,6 +31,31 @@ def normalize_sql(sql):
     return re.sub(r"\s+", " ", str(sql)).strip()
 
 
+def _pack_iso_wkb(type_code, payload, *, has_z=False, has_m=False):
+    dimension_code = 3000 if has_z and has_m else 2000 if has_m else 1000 if has_z else 0
+    return b"\x01" + struct.pack("<I", type_code + dimension_code) + payload
+
+
+def _pack_coords(*coords):
+    return struct.pack(f"<{'d' * len(coords)}", *coords)
+
+
+def _pack_polygon(rings):
+    payload = bytearray(struct.pack("<I", len(rings)))
+    for ring in rings:
+        payload.extend(struct.pack("<I", len(ring)))
+        for point in ring:
+            payload.extend(_pack_coords(*point))
+    return bytes(payload)
+
+
+def _pack_multipolygon(polygons, *, has_z=False, has_m=False):
+    payload = bytearray(struct.pack("<I", len(polygons)))
+    for polygon in polygons:
+        payload.extend(_pack_iso_wkb(3, _pack_polygon(polygon), has_z=has_z, has_m=has_m))
+    return _pack_iso_wkb(6, bytes(payload), has_z=has_z, has_m=has_m)
+
+
 @pytest.fixture
 def geometry_table():
     return Table(
@@ -34,6 +63,16 @@ def geometry_table():
         MetaData(),
         Column("id", Integer, primary_key=True),
         Column("geom", Geometry(geometry_type="LINESTRING", srid=4326)),
+    )
+
+
+@pytest.fixture
+def geography_table():
+    return Table(
+        "place",
+        MetaData(),
+        Column("id", Integer, primary_key=True),
+        Column("geog", Geography(geometry_type="POINT", srid=4326)),
     )
 
 
@@ -65,6 +104,12 @@ class TestMSSQLCompilation:
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
         assert "geometry::STGeomFromText" in compiled
         assert "ST_GeomFromEWKT" not in compiled
+
+    def test_geography_insert_bind_expression_uses_stgeomfromtext(self, geography_table):
+        stmt = insert(geography_table).values(geog="POINT(1 2)")
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+        assert "geography::STGeomFromText" in compiled
+        assert "ST_GeogFromText" not in compiled
 
     def test_functions_compile_to_mssql_methods(self, geometry_table):
         stmt = select(
@@ -127,6 +172,12 @@ class TestMSSQLCompilation:
         assert ".STEquals(" in compiled
         assert "= geometry::STGeomFromText" not in compiled
 
+    def test_geography_equality_compiles_to_stequals_predicate(self, geography_table):
+        stmt = select([geography_table.c.id]).where(geography_table.c.geog == bindparam("geog"))
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+        assert ".STEquals(" in compiled
+        assert "= geography::STGeomFromText" not in compiled
+
     def test_extended_wkb_literal_uses_plain_wkb_hex(self):
         elem = from_shape(Point(1, 2), srid=4326, extended=True)
         stmt = select([elem.ST_AsText()])
@@ -159,6 +210,34 @@ class TestMSSQLCompilation:
         compiled_wkb = stmt_wkb.compile(dialect=self.dialect)
         processor_wkb = next(iter(compiled_wkb._bind_processors.values()))
         assert processor_wkb(next(iter(compiled_wkb.params.values()))) == "LINESTRING (0 0, 3 3)"
+
+    def test_computed_geography_point_rewrites_argument_order(self):
+        table = Table(
+            "computed_place",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("longitude", Integer),
+            Column("latitude", Integer),
+            Column(
+                "geog",
+                Geography(geometry_type="POINT", srid=4326),
+                Computed("ST_POINT(longitude, latitude)", persisted=True),
+            ),
+        )
+        compiled = normalize_sql(CreateTable(table).compile(dialect=self.dialect))
+        assert "geography::Point(latitude, longitude, 4326)" in compiled
+
+    def test_mssql_spatial_index_kwargs_are_accepted(self, geometry_table):
+        idx = Index(
+            "custom_spatial_idx",
+            geometry_table.c.geom,
+            mssql_using="GEOMETRY_GRID",
+            mssql_grids=("HIGH", "HIGH", "HIGH", "HIGH"),
+            mssql_cells_per_object=16,
+            mssql_bounding_box=(0, 0, 10, 10),
+        )
+        assert idx.kwargs["mssql_using"] == "GEOMETRY_GRID"
+        assert idx.kwargs["mssql_cells_per_object"] == 16
 
 
 class TestMSSQLBindAndResultProcessing:
@@ -203,6 +282,36 @@ class TestMSSQLBindAndResultProcessing:
 
         assert bind_processor(wkbelement) == "POINT (1 2 3)"
         assert bind_processor(wkbelement.data) == "POINT (1 2 3)"
+
+    def test_bind_processor_preserves_zm_dimension_for_iso_wkb_inputs(self):
+        geom = Geometry(geometry_type="POINTZM", srid=4326)
+        bind_processor = geom.bind_processor(self.dialect)
+        wkb = _pack_iso_wkb(1, _pack_coords(1, 2, 3, 4), has_z=True, has_m=True)
+
+        assert bind_processor(WKBElement(wkb, srid=4326)) == "POINT (1 2 3 4)"
+        assert bind_processor(wkb) == "POINT (1 2 3 4)"
+        assert bind_processor(WKBElement(wkb, srid=4326).as_ewkb()) == "POINT (1 2 3 4)"
+
+    def test_bind_processor_preserves_zm_dimension_for_nested_iso_wkb_inputs(self):
+        geom = Geometry(geometry_type="MULTIPOLYGONZM", srid=4326)
+        bind_processor = geom.bind_processor(self.dialect)
+        wkb = _pack_multipolygon(
+            [
+                [[(1, 2, 3, 4), (5, 6, 7, 8), (9, 10, 11, 12), (1, 2, 3, 4)]],
+                [[(10, 20, 30, 40), (50, 60, 70, 80), (90, 100, 110, 120), (10, 20, 30, 40)]],
+            ],
+            has_z=True,
+            has_m=True,
+        )
+
+        assert bind_processor(WKBElement(wkb, srid=4326)) == (
+            "MULTIPOLYGON (((1 2 3 4, 5 6 7 8, 9 10 11 12, 1 2 3 4)), "
+            "((10 20 30 40, 50 60 70 80, 90 100 110 120, 10 20 30 40)))"
+        )
+        assert bind_processor(WKBElement(wkb, srid=4326).as_ewkb()) == (
+            "MULTIPOLYGON (((1 2 3 4, 5 6 7 8, 9 10 11 12, 1 2 3 4)), "
+            "((10 20 30 40, 50 60 70 80, 90 100 110 120, 10 20 30 40)))"
+        )
 
     def test_result_processor_marks_values_as_non_extended_wkb(self):
         geom = Geometry(geometry_type="LINESTRING", srid=4326)

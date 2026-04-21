@@ -42,5 +42,8 @@ ENV PYTEST_MARIADB_DB_URL="mariadb://gis:gis@mariadb/gis"
 ENV PYTEST_MSSQL_DB_URL="mssql+pyodbc://gis:gis@geoalchemy2-mssql:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
 
 COPY ./helpers/init_mssql.sh /
+COPY ./helpers/configure_postgres.sh /
+COPY ./helpers/configure_mysql.sh /
+COPY ./helpers/configure_mariadb.sh /
 COPY ./helpers/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]

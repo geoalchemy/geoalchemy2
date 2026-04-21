@@ -271,6 +271,9 @@ def _rewrite_mssql_computed_spec(spec, spatial_type):
     srid = spatial_type.srid if spatial_type.srid >= 0 else 0
     x_expr = match.group(1).strip()
     y_expr = match.group(2).strip()
+    if isinstance(spatial_type, Geography):
+        # geography::Point expects (Lat, Long, SRID), which is the reverse of WKT/ST_POINT.
+        x_expr, y_expr = y_expr, x_expr
     return f"{spatial_type.name}::Point({x_expr}, {y_expr}, {srid})"
 
 
@@ -288,7 +291,7 @@ def _mssql_visit_computed_column(self, generated, **kw):
     return text
 
 
-_MSDDLCompiler.visit_computed_column = _mssql_visit_computed_column
+setattr(_MSDDLCompiler, "visit_computed_column", _mssql_visit_computed_column)
 
 
 def _mssql_get_column_specification(self, column, **kwargs):
@@ -308,7 +311,7 @@ def _mssql_get_column_specification(self, column, **kwargs):
     return _ORIGINAL_MSSQL_GET_COLUMN_SPECIFICATION(self, column, **kwargs)
 
 
-_MSDDLCompiler.get_column_specification = _mssql_get_column_specification
+setattr(_MSDDLCompiler, "get_column_specification", _mssql_get_column_specification)
 
 
 class Geometry(_GISType):

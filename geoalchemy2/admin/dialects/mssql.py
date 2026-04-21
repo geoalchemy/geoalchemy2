@@ -1,5 +1,6 @@
 """This module defines specific functions for MSSQL dialect."""
 
+from sqlalchemy import Index
 from sqlalchemy import text
 from sqlalchemy.dialects.mssql.base import MSSQLCompiler as _MSSQLCompiler
 from sqlalchemy.dialects.mssql.base import ischema_names as _mssql_ischema_names
@@ -16,13 +17,17 @@ from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
-from geoalchemy2.shape import to_shape
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types.dialects.mssql import _normalize_wkt_for_mssql
+from geoalchemy2.types.dialects.mssql import _to_mssql_wkt
 
 _mssql_ischema_names["geometry"] = Geometry
 _mssql_ischema_names["geography"] = Geography
+
+# Register GeoAlchemy's spatial index kwargs so SQLAlchemy accepts them on Index(...).
+for _dialect_kwarg in ("bounding_box", "cells_per_object", "grids", "using", "with"):
+    Index.argument_for("mssql", _dialect_kwarg, None)
 
 _MSSQL_WORLD_BOUNDING_BOX = (-180.0, -90.0, 180.0, 90.0)
 _MSSQL_DEFAULT_BOUNDING_BOX = (-1000000000.0, -1000000000.0, 1000000000.0, 1000000000.0)
@@ -36,6 +41,12 @@ def _quote_mssql_table_name(table_name, schema=None):
     if schema:
         return f"{_quote_mssql_identifier(schema)}.{_quote_mssql_identifier(table_name)}"
     return _quote_mssql_identifier(table_name)
+
+
+def _get_mssql_full_table_name(table_name, schema=None):
+    if schema:
+        return f"{schema}.{table_name}"
+    return table_name
 
 
 def _format_mssql_number(value):
@@ -62,7 +73,7 @@ def _default_mssql_bounding_box(col_type, is_geography=False):
 
 
 def _get_mssql_column_type_name(bind, table_name, column_name, schema=None):
-    full_table_name = f"{schema}.{table_name}" if schema else table_name
+    full_table_name = _get_mssql_full_table_name(table_name, schema=schema)
     type_query = text(
         """SELECT t.name
         FROM sys.columns AS c
@@ -74,6 +85,86 @@ def _get_mssql_column_type_name(bind, table_name, column_name, schema=None):
         type_query,
         {"full_table_name": full_table_name, "column_name": column_name},
     ).scalar()
+
+
+def _get_mssql_spatial_indexes(bind, table_name, schema=None, column_name=None):
+    full_table_name = _get_mssql_full_table_name(table_name, schema=schema)
+    where_clauses = ["i.object_id = OBJECT_ID(:full_table_name)", "i.type_desc = 'SPATIAL'"]
+    params = {"full_table_name": full_table_name}
+
+    if column_name is not None:
+        where_clauses.append("c.name = :column_name")
+        params["column_name"] = column_name
+
+    spatial_index_query = text(
+        f"""SELECT
+            i.name AS index_name,
+            c.name AS column_name,
+            si.tessellation_scheme,
+            sit.cells_per_object,
+            sit.bounding_box_xmin,
+            sit.bounding_box_ymin,
+            sit.bounding_box_xmax,
+            sit.bounding_box_ymax,
+            sit.level_1_grid_desc,
+            sit.level_2_grid_desc,
+            sit.level_3_grid_desc,
+            sit.level_4_grid_desc
+        FROM sys.indexes AS i
+        JOIN sys.index_columns AS ic
+            ON i.object_id = ic.object_id
+            AND i.index_id = ic.index_id
+        JOIN sys.columns AS c
+            ON ic.object_id = c.object_id
+            AND ic.column_id = c.column_id
+        LEFT JOIN sys.spatial_indexes AS si
+            ON i.object_id = si.object_id
+            AND i.index_id = si.index_id
+        LEFT JOIN sys.spatial_index_tessellations AS sit
+            ON i.object_id = sit.object_id
+            AND i.index_id = sit.index_id
+        WHERE {' AND '.join(where_clauses)}
+        ORDER BY i.name"""
+    )
+
+    spatial_indexes = []
+    for row in bind.execute(spatial_index_query, params).mappings():
+        dialect_options = {}
+
+        if row["tessellation_scheme"] is not None:
+            dialect_options["mssql_using"] = row["tessellation_scheme"]
+        if row["cells_per_object"] is not None:
+            dialect_options["mssql_cells_per_object"] = int(row["cells_per_object"])
+        if row["bounding_box_xmin"] is not None:
+            dialect_options["mssql_bounding_box"] = (
+                row["bounding_box_xmin"],
+                row["bounding_box_ymin"],
+                row["bounding_box_xmax"],
+                row["bounding_box_ymax"],
+            )
+
+        grids = tuple(
+            level
+            for level in (
+                row["level_1_grid_desc"],
+                row["level_2_grid_desc"],
+                row["level_3_grid_desc"],
+                row["level_4_grid_desc"],
+            )
+            if level is not None
+        )
+        if len(grids) == 4:
+            dialect_options["mssql_grids"] = grids
+
+        spatial_indexes.append(
+            {
+                "name": row["index_name"],
+                "column_name": row["column_name"],
+                "dialect_options": dialect_options,
+            }
+        )
+
+    return spatial_indexes
 
 
 def _get_mssql_spatial_index_with_clauses(col_type, idx_kwargs, is_geography=False):
@@ -161,7 +252,7 @@ def reflect_geometry_column(inspector, table, column_info):
 
     column_name = column_info["name"]
     schema = table.schema or inspector.default_schema_name
-    full_table_name = f"{schema}.{table.name}" if schema else table.name
+    full_table_name = _get_mssql_full_table_name(table.name, schema=schema)
 
     type_query = text(
         """SELECT t.name, c.is_nullable
@@ -174,25 +265,13 @@ def reflect_geometry_column(inspector, table, column_info):
         {"full_table_name": full_table_name, "column_name": column_name},
     ).one()
 
-    index_query = text(
-        """SELECT COUNT(1)
-        FROM sys.indexes AS i
-        JOIN sys.index_columns AS ic
-            ON i.object_id = ic.object_id
-            AND i.index_id = ic.index_id
-        JOIN sys.columns AS c
-            ON ic.object_id = c.object_id
-            AND ic.column_id = c.column_id
-        WHERE
-            i.object_id = OBJECT_ID(:full_table_name)
-            AND c.name = :column_name
-            AND i.type_desc = 'SPATIAL'"""
-    )
     spatial_index = bool(
-        inspector.bind.execute(
-            index_query,
-            {"full_table_name": full_table_name, "column_name": column_name},
-        ).scalar()
+        _get_mssql_spatial_indexes(
+            inspector.bind,
+            table.name,
+            schema=schema,
+            column_name=column_name,
+        )
     )
 
     spatial_type = Geography if type_name.lower() == "geography" else Geometry
@@ -276,9 +355,9 @@ def _process_wkt_value(value, strip_srid=False):
     if isinstance(value, WKTElement):
         value = value.data
     elif isinstance(value, WKBElement):
-        value = to_shape(value).wkt
+        value = _to_mssql_wkt(value)
     elif isinstance(value, (bytes, bytearray, memoryview)):
-        value = to_shape(WKBElement(value)).wkt
+        value = _to_mssql_wkt(value)
     if isinstance(value, str) and strip_srid:
         wkt_match = WKTElement._REMOVE_SRID.match(value)
         value = wkt_match.group(3)
@@ -492,6 +571,11 @@ def _MSSQL_ST_GeomFromText(element, compiler, **kw):
     return _compile_mssql_geom_from_text(element, compiler, **kw)
 
 
+@compiles(functions.ST_GeogFromText, "mssql")  # type: ignore
+def _MSSQL_ST_GeogFromText(element, compiler, **kw):
+    return _compile_mssql_geom_from_text(element, compiler, **kw)
+
+
 @compiles(functions.ST_GeomFromEWKT, "mssql")  # type: ignore
 def _MSSQL_ST_GeomFromEWKT(element, compiler, **kw):
     return _compile_mssql_geom_from_text(element, compiler, strip_srid=True, **kw)
@@ -499,6 +583,11 @@ def _MSSQL_ST_GeomFromEWKT(element, compiler, **kw):
 
 @compiles(functions.ST_GeomFromWKB, "mssql")  # type: ignore
 def _MSSQL_ST_GeomFromWKB(element, compiler, **kw):
+    return _compile_mssql_geom_from_wkb(element, compiler, **kw)
+
+
+@compiles(functions.ST_GeogFromWKB, "mssql")  # type: ignore
+def _MSSQL_ST_GeogFromWKB(element, compiler, **kw):
     return _compile_mssql_geom_from_wkb(element, compiler, **kw)
 
 
@@ -609,4 +698,4 @@ def _mssql_visit_binary(self, binary, override_operator=None, **kw):
     return _ORIGINAL_MSSQL_VISIT_BINARY(self, binary, override_operator=override_operator, **kw)
 
 
-_MSSQLCompiler.visit_binary = _mssql_visit_binary
+setattr(_MSSQLCompiler, "visit_binary", _mssql_visit_binary)

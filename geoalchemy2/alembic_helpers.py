@@ -168,44 +168,31 @@ def _monkey_patch_get_indexes_for_mssql():
     normal_behavior = MSDialect.get_indexes
 
     def spatial_behavior(self, connection, table_name, schema=None, **kw):
-        indexes = self._get_indexes_normal_behavior(connection, table_name, schema=schema, **kw)
+        from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_indexes
 
+        indexes = self._get_indexes_normal_behavior(connection, table_name, schema=schema, **kw)
         schema_name = schema or connection.dialect.default_schema_name
-        full_table_name = f"{schema_name}.{table_name}" if schema_name else table_name
-        spatial_index_query = text(
-            """SELECT c.name
-            FROM sys.indexes AS i
-            JOIN sys.index_columns AS ic
-                ON i.object_id = ic.object_id
-                AND i.index_id = ic.index_id
-            JOIN sys.columns AS c
-                ON ic.object_id = c.object_id
-                AND ic.column_id = c.column_id
-            WHERE
-                i.object_id = OBJECT_ID(:full_table_name)
-                AND i.type_desc = 'SPATIAL'"""
-        )
-        spatial_indexes = connection.execute(
-            spatial_index_query,
-            {"full_table_name": full_table_name},
-        ).fetchall()
+        spatial_indexes = _get_mssql_spatial_indexes(connection, table_name, schema=schema_name)
 
         if spatial_indexes:
-            reflected_names = {i["name"] for i in indexes}
+            reflected_indexes = {i["name"]: i for i in indexes}
             for idx in spatial_indexes:
-                idx_col = idx[0]
-                idx_name = _spatial_idx_name(table_name, idx_col)
-                if idx_name in reflected_names:
+                idx_name = idx["name"]
+                dialect_options = idx["dialect_options"].copy()
+                if idx_name in reflected_indexes:
+                    reflected_indexes[idx_name].setdefault("dialect_options", {}).update(
+                        dialect_options
+                    )
                     continue
+                dialect_options["_column_flag"] = True
                 indexes.append(
                     {
                         "name": idx_name,
-                        "column_names": [idx_col],
+                        "column_names": [idx["column_name"]],
                         "unique": 0,
-                        "dialect_options": {"_column_flag": True},
+                        "dialect_options": dialect_options,
                     }
                 )
-                reflected_names.add(idx_name)
 
         return indexes
 
@@ -390,14 +377,21 @@ def drop_geospatial_column(operations, operation):
     if dialect.name == "sqlite":
         _SPATIAL_TABLES.add(table_name)
     elif dialect.name == "mssql" and getattr(column.type, "spatial_index", False):
+        from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_indexes
         from geoalchemy2.admin.dialects.mssql import drop_spatial_index as drop_mssql_spatial_index
 
-        drop_mssql_spatial_index(
+        for spatial_index in _get_mssql_spatial_indexes(
             operations.get_bind(),
             table_name,
-            _spatial_idx_name(table_name, column.name),
             schema=operation.schema,
-        )
+            column_name=column.name,
+        ):
+            drop_mssql_spatial_index(
+                operations.get_bind(),
+                table_name,
+                spatial_index["name"],
+                schema=operation.schema,
+            )
     operations.impl.drop_column(table_name, column, schema=operation.schema, **operation.kw)
 
 
@@ -492,25 +486,43 @@ def alter_geo_column(context, revision, op):
 
     if not _check_spatial_type(col_type, (Geometry, Geography), dialect):
         return op
-    if not getattr(existing_type, "spatial_index", False):
+    if not _check_spatial_type(existing_type, (Geometry, Geography), dialect):
         return op
 
-    index_name = _spatial_idx_name(op.table_name, op.column_name)
-    return [
+    from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_indexes
+
+    spatial_indexes = _get_mssql_spatial_indexes(
+        context.bind,
+        op.table_name,
+        schema=op.schema,
+        column_name=op.column_name,
+    )
+    if not spatial_indexes:
+        return op
+
+    rewritten_ops = [
         DropGeospatialIndexOp(
-            index_name,
+            spatial_index["name"],
             table_name=op.table_name,
             column_name=op.column_name,
             schema=op.schema,
-        ),
-        op,
-        CreateGeospatialIndexOp(
-            index_name,
-            op.table_name,
-            [Column(op.column_name, col_type)],
-            schema=op.schema,
-        ),
+        )
+        for spatial_index in spatial_indexes
     ]
+    rewritten_ops.append(op)
+    rewritten_ops.extend(
+        [
+            CreateGeospatialIndexOp(
+                spatial_index["name"],
+                op.table_name,
+                [Column(op.column_name, col_type)],
+                schema=op.schema,
+                **spatial_index["dialect_options"],
+            )
+            for spatial_index in spatial_indexes
+        ]
+    )
+    return rewritten_ops
 
 
 @Operations.register_operation("create_geospatial_table")

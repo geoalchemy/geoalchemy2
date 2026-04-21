@@ -72,3 +72,15 @@ echo "Create or update the '${MSSQL_TEST_LOGIN}' login"
     -b \
     -d "${MSSQL_TEST_DB}" \
     -Q "IF IS_ROLEMEMBER('db_owner', '${MSSQL_TEST_LOGIN}') <> 1 ALTER ROLE db_owner ADD MEMBER [${MSSQL_TEST_LOGIN}];"
+
+echo "Waiting for the '${MSSQL_TEST_LOGIN}' login to connect to '${MSSQL_TEST_DB}'"
+until /opt/mssql-tools18/bin/sqlcmd \
+    -S "${MSSQL_HOST}" \
+    -U "${MSSQL_TEST_LOGIN}" \
+    -P "${MSSQL_TEST_PASSWORD}" \
+    -C \
+    -b \
+    -d "${MSSQL_TEST_DB}" \
+    -Q "SELECT 1" >/dev/null 2>&1; do
+    sleep 1
+done

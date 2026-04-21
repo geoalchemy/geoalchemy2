@@ -2,14 +2,17 @@ import pytest
 from shapely.geometry import LineString
 from shapely.geometry import Point
 from sqlalchemy import Column
+from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
+from sqlalchemy import inspect
 from sqlalchemy.exc import StatementError
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
 from sqlalchemy.sql import text
 
+from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
@@ -86,6 +89,49 @@ class TestAdmin:
 
         reflected = Table("auto_indexed_lake", MetaData(), autoload_with=conn)
         assert reflected.c.geom.type.spatial_index is True
+
+        metadata.drop_all(conn, checkfirst=True)
+
+    def test_custom_spatial_index_options_are_reflected_without_duplicates(self, conn):
+        metadata = MetaData()
+        table = Table(
+            "custom_indexed_lake",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=False),
+            ),
+        )
+        Index(
+            "custom_spatial_idx",
+            table.c.geom,
+            mssql_using="GEOMETRY_GRID",
+            mssql_grids=("HIGH", "HIGH", "HIGH", "HIGH"),
+            mssql_cells_per_object=16,
+            mssql_bounding_box=(0, 0, 10, 10),
+        )
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+
+        indexes = inspect(conn).get_indexes("custom_indexed_lake")
+        spatial_indexes = [idx for idx in indexes if idx["column_names"] == ["geom"]]
+
+        assert [idx["name"] for idx in spatial_indexes] == ["custom_spatial_idx"]
+        assert spatial_indexes[0]["dialect_options"]["mssql_using"] == "GEOMETRY_GRID"
+        assert spatial_indexes[0]["dialect_options"]["mssql_grids"] == (
+            "HIGH",
+            "HIGH",
+            "HIGH",
+            "HIGH",
+        )
+        assert spatial_indexes[0]["dialect_options"]["mssql_cells_per_object"] == 16
+        assert spatial_indexes[0]["dialect_options"]["mssql_bounding_box"] == (
+            0.0,
+            0.0,
+            10.0,
+            10.0,
+        )
 
         metadata.drop_all(conn, checkfirst=True)
 
@@ -211,6 +257,33 @@ class TestSpatialElementExecution:
 
         assert conn.execute(select(func.ST_AsText(ewkb_elem))).scalar() == "POINT (1 2)"
         assert conn.execute(select(func.ST_SRID(ewkb_elem))).scalar() == 4326
+
+
+@test_only_with_dialects("mssql")
+class TestGeography:
+    def test_insert_and_select_geography(self, conn):
+        metadata = MetaData()
+        place = Table(
+            "place",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("geog", Geography(geometry_type="POINT", srid=4326)),
+        )
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+
+        conn.execute(place.insert().values(geog="POINT(1 2)"))
+
+        result = conn.execute(select(place.c.geog)).scalar_one()
+        assert isinstance(result, WKBElement)
+        assert result.extended is False
+        assert result.srid == 4326
+        assert to_shape(result).wkt == "POINT (1 2)"
+
+        assert conn.execute(select(func.ST_AsText(place.c.geog))).scalar_one() == "POINT (1 2)"
+        assert conn.execute(select(func.ST_SRID(place.c.geog))).scalar_one() == 4326
+
+        metadata.drop_all(conn, checkfirst=True)
 
 
 @test_only_with_dialects("mssql")

@@ -71,5 +71,8 @@ dmypy.json
 *.csv
 *.sh
 *.txt
+!test_container/helpers/configure_postgres.sh
+!test_container/helpers/configure_mysql.sh
+!test_container/helpers/configure_mariadb.sh
 issues
 mylocal_db/
