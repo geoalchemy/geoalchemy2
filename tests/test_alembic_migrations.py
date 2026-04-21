@@ -9,6 +9,7 @@ from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from alembic.operations import ops
+from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
@@ -197,6 +198,10 @@ class TestMSSQLAlterColumnRewrite:
                 "geom",
                 Geometry(geometry_type="POINT", srid=4326, spatial_index=False),
             ),
+            CheckConstraint(
+                "[geom] IS NULL OR [geom].STIsValid() = 1",
+                name="ck_mssql_alter_constraints_geom_valid",
+            ),
         )
 
         metadata.drop_all(bind=conn, checkfirst=True)
@@ -231,6 +236,21 @@ class TestMSSQLAlterColumnRewrite:
             assert _get_mssql_spatial_column_constraints(conn, table_name, "geom") == (
                 "LINESTRING",
                 3857,
+            )
+            assert (
+                conn.execute(
+                    text(
+                        """SELECT COUNT(*)
+                        FROM sys.check_constraints
+                        WHERE parent_object_id = OBJECT_ID(:table_name)
+                            AND name = :constraint_name"""
+                    ),
+                    {
+                        "table_name": table_name,
+                        "constraint_name": "ck_mssql_alter_constraints_geom_valid",
+                    },
+                ).scalar()
+                == 1
             )
         finally:
             table.drop(bind=conn, checkfirst=True)

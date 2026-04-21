@@ -29,6 +29,68 @@ def _normalize_wkt_for_mssql(wkt):
     return _WKT_DIMENSION_SUFFIX.sub(r"\1\3", wkt)
 
 
+def _parse_mssql_st_point_args(spec):
+    """Return the two top-level ST_POINT arguments for MSSQL computed columns.
+
+    MSSQL geometry/geography constructors require an explicit SRID argument, and
+    geography::Point expects latitude before longitude. We therefore need the
+    two ST_POINT arguments separately instead of forwarding the full inner SQL.
+    This is intentionally not a full SQL parser; it only finds the comma that
+    separates the two outer ST_POINT arguments while ignoring commas inside
+    nested calls such as COALESCE(latitude, 0).
+    """
+    spec = spec.strip()
+    match = re.match(r"ST_POINT\s*\(", spec, flags=re.IGNORECASE)
+    if not match:
+        return None
+
+    args_start = match.end()
+    depth = 1
+    comma_index = None
+    quote_end = None
+    index = args_start
+    while index < len(spec):
+        char = spec[index]
+        if quote_end is not None:
+            if char == quote_end:
+                if (
+                    quote_end in ("'", '"', "]")
+                    and index + 1 < len(spec)
+                    and spec[index + 1] == char
+                ):
+                    index += 2
+                    continue
+                quote_end = None
+            index += 1
+            continue
+
+        if char in ("'", '"'):
+            quote_end = char
+        elif char == "[":
+            quote_end = "]"
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                if spec[index + 1 :].strip() or comma_index is None:
+                    return None
+                x_expr = spec[args_start:comma_index].strip()
+                y_expr = spec[comma_index + 1 : index].strip()
+                if not x_expr or not y_expr:
+                    return None
+                return x_expr, y_expr
+            if depth < 0:
+                return None
+        elif char == "," and depth == 1:
+            if comma_index is not None:
+                return None
+            comma_index = index
+        index += 1
+
+    return None
+
+
 def _format_wkb_number(value):
     if value == 0:
         value = 0.0

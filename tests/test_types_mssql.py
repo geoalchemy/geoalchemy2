@@ -422,6 +422,22 @@ class TestMSSQLCompilation:
         compiled = normalize_sql(CreateTable(table).compile(dialect=self.dialect))
         assert "geography::Point(latitude, longitude, 4326)" in compiled
 
+    def test_computed_geography_point_rewrites_nested_comma_argument(self):
+        table = Table(
+            "computed_place",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("longitude", Integer),
+            Column("latitude", Integer),
+            Column(
+                "geog",
+                Geography(geometry_type="POINT", srid=4326),
+                Computed("ST_POINT(longitude, COALESCE(latitude, 0))", persisted=True),
+            ),
+        )
+        compiled = normalize_sql(CreateTable(table).compile(dialect=self.dialect))
+        assert "geography::Point(COALESCE(latitude, 0), longitude, 4326)" in compiled
+
     def test_mssql_spatial_index_kwargs_are_accepted(self, geometry_table):
         idx = Index(
             "custom_spatial_idx",
@@ -451,9 +467,7 @@ class TestMSSQLReflectionHelpers:
         assert mssql_admin._mssql_geometry_type_constraint_value("LINESTRING") == "LineString"
         assert mssql_admin._mssql_geometry_type_constraint_prefix("GEOMETRY") is None
         assert mssql_admin._mssql_geometry_type_constraint_prefix("LINESTRINGM") == "LINESTRING"
-        assert mssql_admin._format_mssql_bounding_box("BOUNDING_BOX = (0, 0, 1, 1)") == (
-            "BOUNDING_BOX = (0, 0, 1, 1)"
-        )
+        assert mssql_admin._format_mssql_bounding_box([0, 0, 1, 1]) == "0, 0, 1, 1"
         assert mssql_admin._default_mssql_bounding_box(geom_4326) == (
             -180.0,
             -90.0,
@@ -495,6 +509,24 @@ class TestMSSQLReflectionHelpers:
             "BOUNDING_BOX = (0, 0, 1, 1)",
             "GRIDS = (LOW, LOW, LOW, LOW)",
         ]
+
+        expected_bounding_box_error = "xmin, ymin, xmax, ymax"
+
+        with pytest.raises(ArgumentError, match=expected_bounding_box_error):
+            mssql_admin._get_mssql_spatial_index_with_clauses(
+                geom_3857,
+                {"mssql_bounding_box": "BOUNDING_BOX = (0, 0, 1, 1)"},
+            )
+        with pytest.raises(ArgumentError, match=expected_bounding_box_error):
+            mssql_admin._get_mssql_spatial_index_with_clauses(
+                geom_3857,
+                {"mssql_bounding_box": "0, 0, 1"},
+            )
+        with pytest.raises(ArgumentError, match=expected_bounding_box_error):
+            mssql_admin._get_mssql_spatial_index_with_clauses(
+                geom_3857,
+                {"mssql_bounding_box": "0, 0, east, 1"},
+            )
 
     def test_get_mssql_spatial_column_constraints_parses_known_constraint_shapes(self):
         class Result:

@@ -1,5 +1,6 @@
 """This module defines specific functions for MSSQL dialect."""
 
+import math
 import re
 
 from sqlalchemy import Index
@@ -19,6 +20,7 @@ from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
+from geoalchemy2.exc import ArgumentError
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types.dialects.mssql import _normalize_wkt_for_mssql
@@ -45,6 +47,10 @@ _MSSQL_GEOMETRY_TYPE_NAMES = {
 _MSSQL_GEOMETRY_TYPE_LOOKUP = {
     value.upper(): key for key, value in _MSSQL_GEOMETRY_TYPE_NAMES.items()
 }
+_MSSQL_BOUNDING_BOX_ERROR = (
+    "mssql_bounding_box must be a 4-value tuple/list or comma-separated string "
+    "formatted as finite numeric coordinates: xmin, ymin, xmax, ymax"
+)
 
 
 def _quote_mssql_identifier(name):
@@ -77,10 +83,21 @@ def _format_mssql_number(value):
 
 def _format_mssql_bounding_box(bounding_box):
     if isinstance(bounding_box, str):
-        return bounding_box
+        bounding_box = [value.strip() for value in bounding_box.split(",")]
 
-    xmin, ymin, xmax, ymax = bounding_box
-    return ", ".join(_format_mssql_number(value) for value in (xmin, ymin, xmax, ymax))
+    if not isinstance(bounding_box, (tuple, list)):
+        raise ArgumentError(_MSSQL_BOUNDING_BOX_ERROR)
+    try:
+        xmin, ymin, xmax, ymax = bounding_box
+    except ValueError as exc:
+        raise ArgumentError(_MSSQL_BOUNDING_BOX_ERROR) from exc
+    try:
+        values = [float(value) for value in (xmin, ymin, xmax, ymax)]
+    except (TypeError, ValueError) as exc:
+        raise ArgumentError(_MSSQL_BOUNDING_BOX_ERROR) from exc
+    if not all(math.isfinite(value) for value in values):
+        raise ArgumentError(_MSSQL_BOUNDING_BOX_ERROR)
+    return ", ".join(_format_mssql_number(value) for value in values)
 
 
 def _base_mssql_geometry_type(geometry_type):
@@ -386,26 +403,26 @@ def drop_spatial_constraints(bind, table_name, column_name, schema=None):
         "geometry_type",
     )
     quoted_column_token = _quote_mssql_identifier(column_name)
+    srid_method_token = f"{quoted_column_token}.[STSrid]"
+    srid_method_token_plain = f"{quoted_column_token}.STSrid"
+    geometry_type_method_token = f"{quoted_column_token}.[STGeometryType]"
+    geometry_type_method_token_plain = f"{quoted_column_token}.STGeometryType"
+    astextzm_method_token = f"{quoted_column_token}.[AsTextZM]"
+    astextzm_method_token_plain = f"{quoted_column_token}.AsTextZM"
 
     constraints_query = text(
         """SELECT DISTINCT cc.name
         FROM sys.check_constraints AS cc
-        LEFT JOIN sys.sql_expression_dependencies AS sed
-            ON sed.referencing_id = cc.object_id
-        LEFT JOIN sys.columns AS c
-            ON c.object_id = cc.parent_object_id
-            AND c.column_id = sed.referenced_minor_id
         WHERE cc.parent_object_id = OBJECT_ID(:full_table_name)
             AND (
-                c.name = :column_name
-                OR cc.name IN (:srid_constraint_name, :geometry_type_constraint_name)
+                cc.name IN (:srid_constraint_name, :geometry_type_constraint_name)
                 OR (
-                    CHARINDEX(:quoted_column_token, cc.definition) > 0
-                    AND (
-                        CHARINDEX('STSrid', cc.definition) > 0
-                        OR CHARINDEX('STGeometryType', cc.definition) > 0
-                        OR CHARINDEX('AsTextZM', cc.definition) > 0
-                    )
+                    CHARINDEX(:srid_method_token, cc.definition) > 0
+                    OR CHARINDEX(:srid_method_token_plain, cc.definition) > 0
+                    OR CHARINDEX(:geometry_type_method_token, cc.definition) > 0
+                    OR CHARINDEX(:geometry_type_method_token_plain, cc.definition) > 0
+                    OR CHARINDEX(:astextzm_method_token, cc.definition) > 0
+                    OR CHARINDEX(:astextzm_method_token_plain, cc.definition) > 0
                 )
             )"""
     )
@@ -414,10 +431,14 @@ def drop_spatial_constraints(bind, table_name, column_name, schema=None):
             constraints_query,
             {
                 "full_table_name": full_table_name,
-                "column_name": column_name,
                 "srid_constraint_name": srid_constraint_name,
                 "geometry_type_constraint_name": geometry_type_constraint_name,
-                "quoted_column_token": quoted_column_token,
+                "srid_method_token": srid_method_token,
+                "srid_method_token_plain": srid_method_token_plain,
+                "geometry_type_method_token": geometry_type_method_token,
+                "geometry_type_method_token_plain": geometry_type_method_token_plain,
+                "astextzm_method_token": astextzm_method_token,
+                "astextzm_method_token_plain": astextzm_method_token_plain,
             },
         ).scalars()
     )
