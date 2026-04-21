@@ -8,32 +8,31 @@ title: "[How to use] "
 body:
   - type: markdown
     attributes:
-      value: "
-Thanks for using this package and taking the time to fill out this help request!
+      value: |
+        Thanks for using this package and taking the time to fill out this help request!
 
 
-Before submitting, make sure you read the [documentation](https://geoalchemy-2.readthedocs.io) carefully.
-If you still have a question, you should search in the [issue list](https://github.com/geoalchemy/geoalchemy2/issues) that a similar issue has not already been reported, you might find your answer there.
-If it is not the case, please read the following guidelines.
+        Before submitting, make sure you read the [documentation](https://geoalchemy-2.readthedocs.io) carefully.
+        If you still have a question, you should search in the [issue list](https://github.com/geoalchemy/geoalchemy2/issues) that a similar issue has not already been reported, you might find your answer there.
+        If it is not the case, please read the following guidelines.
 
-### GUIDELINES FOR REQUESTING HELP
+        ### GUIDELINES FOR REQUESTING HELP
 
-Questions that are not properly formulated and formatted or without enough details can be very hard for us to understand.
-In order to ensure we can help you, please follow these guidelines.
+        Questions that are not properly formulated and formatted or without enough details can be very hard for us to understand.
+        In order to ensure we can help you, please follow these guidelines.
 
 
-Your requests must include the following features:
+        Your requests must include the following features:
 
-1. **succinct description** of the problem - typically a line or two at most to describe what you want to achieve.
+        1. **succinct description** of the problem - typically a line or two at most to describe what you want to achieve.
 
-2. **succinct, dependency-free code** which shows what you tried to do, otherwise known as a [Minimal, Complete, and Verifiable Example](https://stackoverflow.com/help/mcve).
+        2. **succinct, dependency-free code** which shows what you tried to do, otherwise known as a [Minimal, Complete, and Verifiable Example](https://stackoverflow.com/help/mcve).
 
-3. **expected results**
+        3. **expected results**
 
-4. **complete stack traces for all errors** if you have any - please avoid screenshots, use formatted text inside issues.
+        4. **complete stack traces for all errors** if you have any - please avoid screenshots, use formatted text inside issues.
 
-5. other relevant things: **dependencies**, **operating system**, **comparative performance timings** for performance issues.
-"
+        5. other relevant things: **dependencies**, **operating system**, **comparative performance timings** for performance issues.
 
   - type: textarea
     attributes:
@@ -45,8 +44,7 @@ Your requests must include the following features:
   - type: textarea
     attributes:
       label: Show what you tried to do.
-      description: "
-Provide your [Minimal, Complete, and Verifiable Example](https://stackoverflow.com/help/mcve) here."
+      description: "Provide your [Minimal, Complete, and Verifiable Example](https://stackoverflow.com/help/mcve) here."
       placeholder: "# Insert code here (text area already python formatted)"
       render: Python
     validations:
@@ -62,10 +60,9 @@ Provide your [Minimal, Complete, and Verifiable Example](https://stackoverflow.c
   - type: textarea
     attributes:
       label: Error
-      description: "
-If you are facing an arror, provide the complete text of any errors received **including the complete stack trace**.
-If the message is a warning, run your program with the ``-Werror`` flag: ``python -Werror myprogram.py``
-"
+      description: |
+        If you are facing an arror, provide the complete text of any errors received **including the complete stack trace**.
+        If the message is a warning, run your program with the ``-Werror`` flag: ``python -Werror myprogram.py``
       placeholder: "# Copy the complete stack trace and error message here (text area already formatted for Python backtrace)"
       render: Python traceback
     validations:
