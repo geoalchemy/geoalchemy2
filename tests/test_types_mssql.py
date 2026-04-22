@@ -93,6 +93,14 @@ class WrappedGeometry(TypeDecorator):
     cache_ok = True
 
 
+class WrappedGeography(TypeDecorator):
+    impl = Geography
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        return Geography(geometry_type="POINT", srid=4326)
+
+
 class WrappedInteger(TypeDecorator):
     impl = Integer
     cache_ok = True
@@ -437,6 +445,22 @@ class TestMSSQLCompilation:
         )
         compiled = normalize_sql(CreateTable(table).compile(dialect=self.dialect))
         assert "geography::Point(COALESCE(latitude, 0), longitude, 4326)" in compiled
+
+    def test_computed_point_rewrites_typedecorator_wrapped_geography(self):
+        table = Table(
+            "computed_place",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("longitude", Integer),
+            Column("latitude", Integer),
+            Column(
+                "geog",
+                WrappedGeography(),
+                Computed("ST_POINT(longitude, latitude)", persisted=True),
+            ),
+        )
+        compiled = normalize_sql(CreateTable(table).compile(dialect=self.dialect))
+        assert "geography::Point(latitude, longitude, 4326)" in compiled
 
     def test_mssql_spatial_index_kwargs_are_accepted(self, geometry_table):
         idx = Index(

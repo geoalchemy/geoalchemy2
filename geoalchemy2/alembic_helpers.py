@@ -581,6 +581,9 @@ def alter_geo_column(context, revision, op):
         schema=op.schema,
         column_name=op.column_name,
     )
+    recreated_column_name = (
+        getattr(op, "modify_name", None) or getattr(op, "new_column_name", None) or op.column_name
+    )
     rewritten_ops = [
         DropGeospatialIndexOp(
             spatial_index["name"],
@@ -601,7 +604,7 @@ def alter_geo_column(context, revision, op):
     rewritten_ops.append(
         CreateGeospatialConstraintsOp(
             op.table_name,
-            Column(op.column_name, col_type),
+            Column(recreated_column_name, col_type),
             schema=op.schema,
         )
     )
@@ -610,7 +613,7 @@ def alter_geo_column(context, revision, op):
             CreateGeospatialIndexOp(
                 spatial_index["name"],
                 op.table_name,
-                [Column(op.column_name, col_type)],
+                [Column(recreated_column_name, col_type)],
                 schema=op.schema,
                 **spatial_index["dialect_options"],
             )

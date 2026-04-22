@@ -255,13 +255,15 @@ def get_col_spec_computed_mssql(self, compiler, *args, **kwargs):
     type_expression = kwargs.get("type_expression")
     spatial_type = getattr(type_expression, "type", None)
 
-    spec = _rewrite_mssql_computed_spec(spec, spatial_type)
+    spec = _rewrite_mssql_computed_spec(spec, spatial_type, compiler.dialect)
 
     persisted = " PERSISTED" if self.persisted else ""
     return f"AS ({spec}){persisted}"
 
 
-def _rewrite_mssql_computed_spec(spec, spatial_type):
+def _rewrite_mssql_computed_spec(spec, spatial_type, dialect=None):
+    if isinstance(spatial_type, TypeDecorator) and dialect is not None:
+        spatial_type = spatial_type.load_dialect_impl(dialect)
     if not isinstance(spatial_type, Geometry | Geography):
         return spec
 
@@ -284,7 +286,7 @@ _ORIGINAL_MSSQL_GET_COLUMN_SPECIFICATION = _MSDDLCompiler.get_column_specificati
 def _mssql_visit_computed_column(self, generated, **kw):
     spec = self.sql_compiler.process(generated.sqltext, include_table=False, literal_binds=True)
     spatial_type = getattr(getattr(generated, "column", None), "type", None)
-    spec = _rewrite_mssql_computed_spec(spec, spatial_type)
+    spec = _rewrite_mssql_computed_spec(spec, spatial_type, self.dialect)
     text = f"AS ({spec})"
     if generated.persisted is True:
         text += " PERSISTED"
@@ -299,7 +301,7 @@ def _mssql_get_column_specification(self, column, **kwargs):
         original_spec = self.sql_compiler.process(
             column.computed.sqltext, include_table=False, literal_binds=True
         )
-        rewritten_spec = _rewrite_mssql_computed_spec(original_spec, column.type)
+        rewritten_spec = _rewrite_mssql_computed_spec(original_spec, column.type, self.dialect)
         if rewritten_spec != original_spec:
             original_sqltext = column.computed.sqltext
             column.computed.sqltext = text(rewritten_spec)
