@@ -10,4 +10,5 @@ differences but sometimes manual tweaks are needed.
    :maxdepth: 1
 
    mysql_mariadb_dialect
+   mssql_dialect
    spatialite_dialect

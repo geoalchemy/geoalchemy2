@@ -29,15 +29,17 @@ def _normalize_wkt_for_mssql(wkt):
     return _WKT_DIMENSION_SUFFIX.sub(r"\1\3", wkt)
 
 
-def _parse_mssql_st_point_args(spec):
-    """Return the two top-level ST_POINT arguments for MSSQL computed columns.
+def _split_mssql_st_point_args(spec):
+    """Split the two top-level args of GeoAlchemy's MSSQL computed-column ST_POINT.
 
     MSSQL geometry/geography constructors require an explicit SRID argument, and
     geography::Point expects latitude before longitude. We therefore need the
     two ST_POINT arguments separately instead of forwarding the full inner SQL.
-    This is intentionally not a full SQL parser; it only finds the comma that
-    separates the two outer ST_POINT arguments while ignoring commas inside
-    nested calls such as COALESCE(latitude, 0).
+
+    This helper is intentionally just a block-aware argument splitter, not a SQL
+    parser. It finds the comma that separates the two outer ST_POINT arguments
+    while treating nested calls, quoted strings, and bracketed identifiers as
+    opaque blocks, e.g. COALESCE(latitude, 0) stays one argument.
     """
     spec = spec.strip()
     match = re.match(r"ST_POINT\s*\(", spec, flags=re.IGNORECASE)

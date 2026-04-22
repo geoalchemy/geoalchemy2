@@ -34,7 +34,7 @@ from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.exc import ArgumentError
 from geoalchemy2.types import dialects
-from geoalchemy2.types.dialects.mssql import _parse_mssql_st_point_args
+from geoalchemy2.types.dialects.mssql import _split_mssql_st_point_args
 
 
 def select_dialect(dialect_name):
@@ -265,14 +265,14 @@ def _rewrite_mssql_computed_spec(spec, spatial_type):
     if not isinstance(spatial_type, Geometry | Geography):
         return spec
 
-    parsed_args = _parse_mssql_st_point_args(spec)
+    parsed_args = _split_mssql_st_point_args(spec)
     if parsed_args is None:
         return spec
 
     srid = spatial_type.srid if spatial_type.srid >= 0 else 0
     x_expr, y_expr = parsed_args
     if isinstance(spatial_type, Geography):
-        # geography::Point expects (Lat, Long, SRID), which is the reverse of WKT/ST_POINT.
+        # geography::Point expects (Lat, Long, SRID), the reverse of ST_POINT(x, y).
         x_expr, y_expr = y_expr, x_expr
     return f"{spatial_type.name}::Point({x_expr}, {y_expr}, {srid})"
 
