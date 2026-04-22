@@ -7,7 +7,7 @@ from geoalchemy2.exc import ArgumentError
 from geoalchemy2.shape import to_shape
 
 
-def bind_processor_process(spatial_type, bindvalue):
+def bind_processor_process(spatial_type, bindvalue, dialect=None):
     if isinstance(bindvalue, str):
         wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
         srid = wkt_match.group(2)

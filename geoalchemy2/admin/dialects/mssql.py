@@ -365,6 +365,7 @@ def create_spatial_index(
 
 
 def create_spatial_constraints(bind, table_name, column_name, col_type, schema=None):
+    col_type = _resolve_mssql_spatial_type(col_type, bind.dialect)
     table_ref = _quote_mssql_table_name(table_name, schema=schema)
     column_ref = _quote_mssql_identifier(column_name)
 

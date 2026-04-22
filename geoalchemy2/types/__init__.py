@@ -181,7 +181,7 @@ class _GISType(UserDefinedType):
         """Specific bind_processor that automatically process spatial elements."""
 
         def process(bindvalue):
-            return select_dialect(dialect.name).bind_processor_process(self, bindvalue)
+            return select_dialect(dialect.name).bind_processor_process(self, bindvalue, dialect)
 
         return process
 

@@ -671,6 +671,8 @@ class TestMSSQLReflectionHelpers:
 
     def test_create_spatial_constraints_skips_generic_metadata(self):
         class Bind:
+            dialect = mssql.dialect()
+
             def __init__(self):
                 self.statements = []
 
@@ -686,6 +688,31 @@ class TestMSSQLReflectionHelpers:
         )
 
         assert bind.statements == []
+
+    def test_create_spatial_constraints_resolves_typedecorator_metadata(self):
+        class Bind:
+            dialect = mssql.dialect()
+
+            def __init__(self):
+                self.statements = []
+
+            def execute(self, statement):
+                self.statements.append(str(statement))
+
+        bind = Bind()
+        mssql_admin.create_spatial_constraints(
+            bind,
+            "place",
+            "geog",
+            WrappedGeography(),
+        )
+
+        assert bind.statements == [
+            "ALTER TABLE [place] ADD CONSTRAINT [ck_place_geog_srid] CHECK "
+            "([geog] IS NULL OR [geog].STSrid = 4326)",
+            "ALTER TABLE [place] ADD CONSTRAINT [ck_place_geog_geometry_type] CHECK "
+            "([geog] IS NULL OR UPPER([geog].AsTextZM()) LIKE N'POINT%')",
+        ]
 
     def test_reflect_geometry_column_ignores_non_spatial_column_type(self):
         class Inspector:
@@ -744,6 +771,32 @@ class TestMSSQLBindAndResultProcessing:
 
         with pytest.raises(ArgumentError):
             bind_processor(WKTElement("LINESTRING(0 0,1 1)", srid=2154))
+
+    def test_bind_processor_resolves_typedecorator_metadata_for_srid_validation(self):
+        wrapped_geography = WrappedGeography()
+
+        assert (
+            mssql_type.bind_processor_process(
+                wrapped_geography,
+                "SRID=4326;POINT(1 2)",
+                self.dialect,
+            )
+            == "POINT(1 2)"
+        )
+        assert (
+            mssql_type.bind_processor_process(
+                wrapped_geography,
+                WKTElement("POINT(1 2)", srid=4326),
+                self.dialect,
+            )
+            == "POINT(1 2)"
+        )
+        with pytest.raises(ArgumentError, match=r"column \(4326\)"):
+            mssql_type.bind_processor_process(
+                wrapped_geography,
+                WKTElement("POINT(1 2)", srid=3857),
+                self.dialect,
+            )
 
     def test_bind_processor_normalizes_wkt_and_wkb_elements(self):
         geom = Geometry(geometry_type="LINESTRING", srid=4326)

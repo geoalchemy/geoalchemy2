@@ -5,6 +5,8 @@ import math
 import re
 import struct
 
+from sqlalchemy.types import TypeDecorator
+
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
@@ -223,7 +225,14 @@ def _to_mssql_wkt(value):
         return _normalize_wkt_for_mssql(to_shape(value).wkt)
 
 
-def bind_processor_process(spatial_type, bindvalue):
+def _resolve_mssql_spatial_type(spatial_type, dialect):
+    if isinstance(spatial_type, TypeDecorator) and dialect is not None:
+        return spatial_type.load_dialect_impl(dialect)
+    return spatial_type
+
+
+def bind_processor_process(spatial_type, bindvalue, dialect=None):
+    spatial_type = _resolve_mssql_spatial_type(spatial_type, dialect)
     if isinstance(bindvalue, str):
         wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
         srid = wkt_match.group(2)
