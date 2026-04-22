@@ -104,7 +104,7 @@ def _coerce_wkb_data(value):
         value = value.data
     if isinstance(value, memoryview):
         return value.tobytes()
-    if isinstance(value, (bytes, bytearray)):
+    if isinstance(value, bytes | bytearray):
         return bytes(value)
     if isinstance(value, str):
         return binascii.unhexlify(value)
@@ -249,6 +249,6 @@ def bind_processor_process(spatial_type, bindvalue):
         if bindvalue.srid <= 0:
             bindvalue.srid = spatial_type.srid
         return _normalize_wkt_for_mssql(bindvalue.data)
-    elif isinstance(bindvalue, (bytes, bytearray, memoryview, WKBElement)):
+    elif isinstance(bindvalue, bytes | bytearray | memoryview | WKBElement):
         return _to_mssql_wkt(bindvalue)
     return bindvalue
