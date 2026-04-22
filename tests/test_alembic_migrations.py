@@ -233,6 +233,10 @@ class TestMSSQLAlterColumnRewrite:
                 "[geom] IS NULL OR [geom].STIsValid() = 1",
                 name="ck_mssql_alter_constraints_geom_valid",
             ),
+            CheckConstraint(
+                "[geom] IS NULL OR [geom].STSrid IN (4326, 3857)",
+                name="ck_mssql_alter_constraints_geom_custom_srid",
+            ),
         )
 
         metadata.drop_all(bind=conn, checkfirst=True)
@@ -274,14 +278,15 @@ class TestMSSQLAlterColumnRewrite:
                         """SELECT COUNT(*)
                         FROM sys.check_constraints
                         WHERE parent_object_id = OBJECT_ID(:table_name)
-                            AND name = :constraint_name"""
+                            AND name IN (:valid_constraint_name, :srid_constraint_name)"""
                     ),
                     {
                         "table_name": table_name,
-                        "constraint_name": "ck_mssql_alter_constraints_geom_valid",
+                        "valid_constraint_name": "ck_mssql_alter_constraints_geom_valid",
+                        "srid_constraint_name": "ck_mssql_alter_constraints_geom_custom_srid",
                     },
                 ).scalar()
-                == 1
+                == 2
             )
         finally:
             table.drop(bind=conn, checkfirst=True)

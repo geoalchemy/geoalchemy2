@@ -402,29 +402,11 @@ def drop_spatial_constraints(bind, table_name, column_name, schema=None):
         column_name,
         "geometry_type",
     )
-    quoted_column_token = _quote_mssql_identifier(column_name)
-    srid_method_token = f"{quoted_column_token}.[STSrid]"
-    srid_method_token_plain = f"{quoted_column_token}.STSrid"
-    geometry_type_method_token = f"{quoted_column_token}.[STGeometryType]"
-    geometry_type_method_token_plain = f"{quoted_column_token}.STGeometryType"
-    astextzm_method_token = f"{quoted_column_token}.[AsTextZM]"
-    astextzm_method_token_plain = f"{quoted_column_token}.AsTextZM"
-
     constraints_query = text(
         """SELECT DISTINCT cc.name
         FROM sys.check_constraints AS cc
         WHERE cc.parent_object_id = OBJECT_ID(:full_table_name)
-            AND (
-                cc.name IN (:srid_constraint_name, :geometry_type_constraint_name)
-                OR (
-                    CHARINDEX(:srid_method_token, cc.definition) > 0
-                    OR CHARINDEX(:srid_method_token_plain, cc.definition) > 0
-                    OR CHARINDEX(:geometry_type_method_token, cc.definition) > 0
-                    OR CHARINDEX(:geometry_type_method_token_plain, cc.definition) > 0
-                    OR CHARINDEX(:astextzm_method_token, cc.definition) > 0
-                    OR CHARINDEX(:astextzm_method_token_plain, cc.definition) > 0
-                )
-            )"""
+            AND cc.name IN (:srid_constraint_name, :geometry_type_constraint_name)"""
     )
     constraint_names = list(
         bind.execute(
@@ -433,12 +415,6 @@ def drop_spatial_constraints(bind, table_name, column_name, schema=None):
                 "full_table_name": full_table_name,
                 "srid_constraint_name": srid_constraint_name,
                 "geometry_type_constraint_name": geometry_type_constraint_name,
-                "srid_method_token": srid_method_token,
-                "srid_method_token_plain": srid_method_token_plain,
-                "geometry_type_method_token": geometry_type_method_token,
-                "geometry_type_method_token_plain": geometry_type_method_token_plain,
-                "astextzm_method_token": astextzm_method_token,
-                "astextzm_method_token_plain": astextzm_method_token_plain,
             },
         ).scalars()
     )

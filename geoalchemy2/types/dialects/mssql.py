@@ -1,6 +1,7 @@
 """This module defines specific functions for MSSQL dialect."""
 
 import binascii
+import math
 import re
 import struct
 
@@ -143,13 +144,13 @@ def _read_uint32(data, offset, byte_order):
 def _read_coord(data, offset, byte_order, dimension):
     values = struct.unpack_from(f"{byte_order}{'d' * dimension}", data, offset)
     coord = " ".join(_format_wkb_number(value) for value in values)
-    return coord, offset + (8 * dimension)
+    return coord, values, offset + (8 * dimension)
 
 
 def _read_coords(data, offset, byte_order, dimension, count):
     coords = []
     for _ in range(count):
-        coord, offset = _read_coord(data, offset, byte_order, dimension)
+        coord, _, offset = _read_coord(data, offset, byte_order, dimension)
         coords.append(coord)
     return coords, offset
 
@@ -168,7 +169,9 @@ def _parse_wkb_geometry(data, offset=0):
         _, offset = _read_uint32(data, offset, byte_order)
 
     if type_name == "POINT":
-        coord, offset = _read_coord(data, offset, byte_order, dimension)
+        coord, values, offset = _read_coord(data, offset, byte_order, dimension)
+        if all(math.isnan(value) for value in values):
+            return type_name, " EMPTY", offset
         return type_name, f" ({coord})", offset
 
     if type_name == "LINESTRING":

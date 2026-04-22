@@ -1,3 +1,4 @@
+import math
 import re
 import struct
 
@@ -759,6 +760,10 @@ class TestMSSQLBindAndResultProcessing:
         assert mssql_type._wkb_to_mssql_wkt(bytearray(empty_polygon)) == "POLYGON EMPTY"
         assert mssql_type._wkb_to_mssql_wkt(empty_collection) == "GEOMETRYCOLLECTION EMPTY"
         assert mssql_type._wkb_to_mssql_wkt(collection) == "GEOMETRYCOLLECTION (POINT (1 2))"
+        assert (
+            mssql_type._wkb_to_mssql_wkt(_pack_iso_wkb(1, _pack_coords(math.nan, math.nan)))
+            == "POINT EMPTY"
+        )
 
     def test_wkb_parser_rejects_unsupported_values(self):
         unsupported_wkb = b"\x01" + struct.pack("<I", 999)
