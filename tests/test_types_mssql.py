@@ -741,13 +741,34 @@ class TestMSSQLBindAndResultProcessing:
 
         with pytest.raises(ValueError, match="Unsupported WKB geometry type"):
             mssql_type._wkb_to_mssql_wkt(unsupported_wkb)
+        with pytest.raises(ValueError, match="Invalid WKB byte order marker"):
+            mssql_type._wkb_to_mssql_wkt(b"\x02" + struct.pack("<I", 1) + _pack_coords(1, 2))
         with pytest.raises(TypeError, match="Unsupported WKB value type"):
             mssql_type._wkb_to_mssql_wkt(object())
 
-    def test_to_mssql_wkt_falls_back_to_shape_conversion(self):
+    def test_to_mssql_wkt_falls_back_to_shape_conversion(self, monkeypatch):
+        class Shape:
+            wkt = "POINT Z (1 2 3)"
+
+        shaped_values = []
+
+        def raise_parse_error(value):
+            raise ValueError("unsupported parser path")
+
+        def fake_to_shape(value):
+            shaped_values.append(value)
+            return Shape()
+
+        monkeypatch.setattr(mssql_type, "_wkb_to_mssql_wkt", raise_parse_error)
+        monkeypatch.setattr(mssql_type, "to_shape", fake_to_shape)
+
         assert mssql_type._to_mssql_wkt(WKTElement("POINT Z (1 2 3)", srid=4326)) == (
             "POINT (1 2 3)"
         )
+        assert isinstance(shaped_values[-1], WKTElement)
+
+        assert mssql_type._to_mssql_wkt(b"\x01") == "POINT (1 2 3)"
+        assert isinstance(shaped_values[-1], WKBElement)
 
     def test_bind_coercion_helpers_keep_non_bind_clauses(self):
         table = Table("raw_values", MetaData(), Column("value", Integer))

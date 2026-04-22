@@ -155,7 +155,10 @@ def _read_coords(data, offset, byte_order, dimension, count):
 
 
 def _parse_wkb_geometry(data, offset=0):
-    byte_order = "<" if data[offset] == 1 else ">"
+    byte_order_marker = data[offset]
+    if byte_order_marker not in (0, 1):
+        raise ValueError(f"Invalid WKB byte order marker: {byte_order_marker}")
+    byte_order = "<" if byte_order_marker == 1 else ">"
     offset += 1
 
     raw_type, offset = _read_uint32(data, offset, byte_order)
@@ -211,7 +214,9 @@ def _wkb_to_mssql_wkt(value):
 def _to_mssql_wkt(value):
     try:
         return _wkb_to_mssql_wkt(value)
-    except (TypeError, ValueError, struct.error, binascii.Error):
+    except (TypeError, ValueError, struct.error, binascii.Error, IndexError):
+        if isinstance(value, bytes | bytearray | memoryview):
+            value = WKBElement(value)
         return _normalize_wkt_for_mssql(to_shape(value).wkt)
 
 
