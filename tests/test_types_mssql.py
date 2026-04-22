@@ -183,6 +183,19 @@ class TestMSSQLCompilation:
         assert "ST_Length(" not in compiled
         assert "ST_Intersects(" not in compiled
 
+    def test_geography_binary_predicate_coerces_wkt_argument_to_geography(self, geography_table):
+        stmt = select(
+            [
+                geography_table.c.geog.ST_Intersects(
+                    WKTElement("POINT(1 2)", srid=4326),
+                ),
+            ]
+        )
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert ".STIntersects(geography::STGeomFromText" in compiled
+        assert "geometry::STGeomFromText" not in compiled
+
     def test_typedecorator_geometry_functions_compile_to_mssql_methods(self):
         table = Table(
             "lake",

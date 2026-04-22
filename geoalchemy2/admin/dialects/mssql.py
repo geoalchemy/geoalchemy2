@@ -697,6 +697,55 @@ def _is_spatial_function_target(clause, dialect=None):
     )
 
 
+def _resolve_mssql_spatial_type(spatial_type, dialect):
+    if isinstance(spatial_type, TypeDecorator):
+        return spatial_type.load_dialect_impl(dialect)
+    return spatial_type
+
+
+def _is_mssql_spatial_constructor(clause):
+    return isinstance(
+        clause,
+        functions.ST_GeomFromText
+        | functions.ST_GeogFromText
+        | functions.ST_GeomFromEWKT
+        | functions.ST_GeomFromWKB
+        | functions.ST_GeogFromWKB
+        | functions.ST_GeomFromEWKB,
+    )
+
+
+def _spatial_constructor_matches_target(constructor_type, target_type, dialect):
+    constructor_type = _resolve_mssql_spatial_type(constructor_type, dialect)
+    target_type = _resolve_mssql_spatial_type(target_type, dialect)
+
+    return (
+        _check_spatial_type(constructor_type, Geometry, dialect)
+        and _check_spatial_type(target_type, Geometry, dialect)
+    ) or (
+        _check_spatial_type(constructor_type, Geography, dialect)
+        and _check_spatial_type(target_type, Geography, dialect)
+    )
+
+
+def _coerce_mssql_spatial_method_argument(target_clause, other_clause, dialect):
+    target_type = _resolve_mssql_spatial_type(getattr(target_clause, "type", None), dialect)
+
+    if _is_mssql_spatial_constructor(other_clause) and not _spatial_constructor_matches_target(
+        getattr(other_clause, "type", None),
+        target_type,
+        dialect,
+    ):
+        other_clause = other_clause._clone()
+        other_clause.type = target_type
+        return other_clause
+
+    if not _is_spatial_clause(other_clause, dialect):
+        return expression.type_coerce(other_clause, target_type)
+
+    return other_clause
+
+
 def _compile_mssql_function_fallback(element, compiler, **kw):
     return compiler.visit_function(element, **kw)
 
@@ -719,8 +768,16 @@ def _compile_mssql_binary_method(element, compiler, method_name, **kw):
     if len(clauses) < 2 or not _is_spatial_function_target(clauses[0], compiler.dialect):
         return _compile_mssql_function_fallback(element, compiler, **kw)
 
-    target = compiler.process(clauses[0], **kw)
-    other = compiler.process(clauses[1], **kw)
+    target_clause = clauses[0]
+    other_clause = clauses[1]
+    other_clause = _coerce_mssql_spatial_method_argument(
+        target_clause,
+        other_clause,
+        compiler.dialect,
+    )
+
+    target = compiler.process(target_clause, **kw)
+    other = compiler.process(other_clause, **kw)
     return f"{target}.{method_name}({other})"
 
 
@@ -923,8 +980,11 @@ def _mssql_visit_binary(self, binary, override_operator=None, **kw):
             target_clause = None
 
         if target_clause is not None:
-            if not _is_spatial_clause(other_clause, self.dialect):
-                other_clause = expression.type_coerce(other_clause, target_clause.type)
+            other_clause = _coerce_mssql_spatial_method_argument(
+                target_clause,
+                other_clause,
+                self.dialect,
+            )
 
             target = self.process(target_clause, **kw)
             other = self.process(other_clause, **kw)

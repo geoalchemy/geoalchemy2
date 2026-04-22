@@ -570,36 +570,48 @@ def alter_geo_column(context, revision, op):
 
     if not _check_spatial_type(col_type, (Geometry, Geography), dialect):
         return op
-    if not _check_spatial_type(existing_type, (Geometry, Geography), dialect):
-        return op
 
-    from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_indexes
+    existing_type_is_spatial = _check_spatial_type(existing_type, (Geometry, Geography), dialect)
 
-    spatial_indexes = _get_mssql_spatial_indexes(
-        context.bind,
-        op.table_name,
-        schema=op.schema,
-        column_name=op.column_name,
-    )
     recreated_column_name = (
         getattr(op, "modify_name", None) or getattr(op, "new_column_name", None) or op.column_name
     )
-    rewritten_ops = [
-        DropGeospatialIndexOp(
-            spatial_index["name"],
-            table_name=op.table_name,
-            column_name=op.column_name,
-            schema=op.schema,
-        )
-        for spatial_index in spatial_indexes
-    ]
-    rewritten_ops.append(
-        DropGeospatialConstraintsOp(
+    spatial_indexes = []
+    if existing_type_is_spatial:
+        from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_indexes
+
+        spatial_indexes = _get_mssql_spatial_indexes(
+            context.bind,
             op.table_name,
-            op.column_name,
             schema=op.schema,
+            column_name=op.column_name,
         )
-    )
+        rewritten_ops = [
+            DropGeospatialIndexOp(
+                spatial_index["name"],
+                table_name=op.table_name,
+                column_name=op.column_name,
+                schema=op.schema,
+            )
+            for spatial_index in spatial_indexes
+        ]
+        rewritten_ops.append(
+            DropGeospatialConstraintsOp(
+                op.table_name,
+                op.column_name,
+                schema=op.schema,
+            )
+        )
+    else:
+        rewritten_ops = []
+        if getattr(col_type, "spatial_index", False):
+            spatial_indexes.append(
+                {
+                    "name": _spatial_idx_name(op.table_name, recreated_column_name),
+                    "dialect_options": {},
+                }
+            )
+
     rewritten_ops.append(op)
     rewritten_ops.append(
         CreateGeospatialConstraintsOp(

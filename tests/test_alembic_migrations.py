@@ -216,6 +216,56 @@ class TestMSSQLAlterColumnRewrite:
             alembic_helpers.CreateGeospatialConstraintsOp,
         ]
 
+    def test_non_spatial_alter_column_to_spatial_creates_metadata(self):
+        class Bind:
+            dialect = mssql.dialect()
+
+        class Context:
+            bind = Bind()
+
+        alter_op = ops.AlterColumnOp(
+            "lake",
+            "geom",
+            modify_type=Geometry(geometry_type="POINT", srid=4326),
+            existing_type=Integer(),
+            existing_nullable=True,
+        )
+
+        rewritten_ops = alembic_helpers.alter_geo_column(Context(), None, alter_op)
+
+        assert [type(rewritten_op) for rewritten_op in rewritten_ops] == [
+            ops.AlterColumnOp,
+            alembic_helpers.CreateGeospatialConstraintsOp,
+            alembic_helpers.CreateGeospatialIndexOp,
+        ]
+        assert rewritten_ops[1].column.name == "geom"
+        assert rewritten_ops[1].column.type.geometry_type == "POINT"
+        assert rewritten_ops[1].column.type.srid == 4326
+        assert rewritten_ops[2].index_name == "idx_lake_geom"
+        assert rewritten_ops[2].columns[0].name == "geom"
+
+    def test_non_spatial_alter_column_to_spatial_honors_spatial_index_flag(self):
+        class Bind:
+            dialect = mssql.dialect()
+
+        class Context:
+            bind = Bind()
+
+        alter_op = ops.AlterColumnOp(
+            "lake",
+            "geom",
+            modify_type=Geometry(geometry_type="POINT", srid=4326, spatial_index=False),
+            existing_type=Integer(),
+            existing_nullable=True,
+        )
+
+        rewritten_ops = alembic_helpers.alter_geo_column(Context(), None, alter_op)
+
+        assert [type(rewritten_op) for rewritten_op in rewritten_ops] == [
+            ops.AlterColumnOp,
+            alembic_helpers.CreateGeospatialConstraintsOp,
+        ]
+
     @test_only_with_dialects("mssql")
     def test_spatial_alter_column_recreates_constraints(self, conn, metadata):
         from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_column_constraints
