@@ -5,11 +5,11 @@ import re
 
 from sqlalchemy import Index
 from sqlalchemy import text
-from sqlalchemy.dialects.mssql.base import MSSQLCompiler as _MSSQLCompiler
 from sqlalchemy.dialects.mssql.base import ischema_names as _mssql_ischema_names
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import expression
 from sqlalchemy.sql import operators
+from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy.sql.sqltypes import NullType
 from sqlalchemy.types import LargeBinary
 from sqlalchemy.types import TypeDecorator
@@ -967,16 +967,14 @@ def _MSSQL_ST_Crosses(element, compiler, **kw):
     return _compile_mssql_binary_method(element, compiler, "STCrosses", **kw)
 
 
-_ORIGINAL_MSSQL_VISIT_BINARY = _MSSQLCompiler.visit_binary
-
-
-def _mssql_visit_binary(self, binary, override_operator=None, **kw):
+@compiles(BinaryExpression, "mssql")  # type: ignore
+def _MSSQL_binary_expression(binary, compiler, override_operator=None, **kw):
     operator = override_operator or binary.operator
     if operator in (operators.eq, operators.ne):
-        if _is_spatial_clause(binary.left, self.dialect):
+        if _is_spatial_clause(binary.left, compiler.dialect):
             target_clause = binary.left
             other_clause = binary.right
-        elif _is_spatial_clause(binary.right, self.dialect):
+        elif _is_spatial_clause(binary.right, compiler.dialect):
             target_clause = binary.right
             other_clause = binary.left
         else:
@@ -986,15 +984,12 @@ def _mssql_visit_binary(self, binary, override_operator=None, **kw):
             other_clause = _coerce_mssql_spatial_method_argument(
                 target_clause,
                 other_clause,
-                self.dialect,
+                compiler.dialect,
             )
 
-            target = self.process(target_clause, **kw)
-            other = self.process(other_clause, **kw)
+            target = compiler.process(target_clause, **kw)
+            other = compiler.process(other_clause, **kw)
             equals = f"{target}.STEquals({other})"
             return f"{equals} = {1 if operator is operators.eq else 0}"
 
-    return _ORIGINAL_MSSQL_VISIT_BINARY(self, binary, override_operator=override_operator, **kw)
-
-
-_MSSQLCompiler.visit_binary = _mssql_visit_binary  # type: ignore[method-assign]
+    return compiler.visit_binary(binary, override_operator=override_operator, **kw)
