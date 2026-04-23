@@ -12,6 +12,7 @@ from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import bindparam
+from sqlalchemy import null
 from sqlalchemy.dialects import mssql
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql import func
@@ -383,6 +384,34 @@ class TestMSSQLCompilation:
 
         assert "lake.geom.STEquals(" in compiled
         assert "= 1" in compiled
+
+    def test_geometry_null_equality_compiles_to_is_null(self, geometry_table):
+        stmt = select([geometry_table.c.id]).where(geometry_table.c.geom == null())
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert "lake.geom IS NULL" in compiled
+        assert ".STEquals(NULL)" not in compiled
+
+    def test_geometry_null_inequality_compiles_to_is_not_null(self, geometry_table):
+        stmt = select([geometry_table.c.id]).where(geometry_table.c.geom != null())
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert "lake.geom IS NOT NULL" in compiled
+        assert ".STEquals(NULL)" not in compiled
+
+    def test_geometry_reversed_null_equality_compiles_to_is_null(self, geometry_table):
+        stmt = select([geometry_table.c.id]).where(null() == geometry_table.c.geom)
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert "lake.geom IS NULL" in compiled
+        assert ".STEquals(NULL)" not in compiled
+
+    def test_geometry_reversed_null_inequality_compiles_to_is_not_null(self, geometry_table):
+        stmt = select([geometry_table.c.id]).where(null() != geometry_table.c.geom)
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert "lake.geom IS NOT NULL" in compiled
+        assert ".STEquals(NULL)" not in compiled
 
     def test_geometry_equality_between_two_spatial_columns_does_not_type_coerce(self):
         table = Table(

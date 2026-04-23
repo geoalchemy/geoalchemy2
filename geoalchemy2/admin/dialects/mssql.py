@@ -10,6 +10,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import expression
 from sqlalchemy.sql import operators
 from sqlalchemy.sql.elements import BinaryExpression
+from sqlalchemy.sql.elements import Null
 from sqlalchemy.sql.sqltypes import NullType
 from sqlalchemy.types import LargeBinary
 from sqlalchemy.types import TypeDecorator
@@ -979,6 +980,10 @@ def _MSSQL_binary_expression(binary, compiler, override_operator=None, **kw):
             other_clause = binary.left
         else:
             target_clause = None
+
+        if target_clause is not None and isinstance(other_clause, Null):
+            target = compiler.process(target_clause, **kw)
+            return f"{target} IS {'NOT ' if operator is operators.ne else ''}NULL"
 
         if target_clause is not None:
             other_clause = _coerce_mssql_spatial_method_argument(
