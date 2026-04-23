@@ -457,6 +457,24 @@ class TestMSSQLCompilation:
         processor_wkb = next(iter(compiled_wkb._bind_processors.values()))
         assert processor_wkb(next(iter(compiled_wkb.params.values()))) == "LINESTRING (0 0, 3 3)"
 
+    def test_insert_bind_processor_validates_wrong_srid_string(self, geometry_table):
+        stmt = insert(geometry_table).values(geom="SRID=2154;LINESTRING(0 0,1 1)")
+        compiled = stmt.compile(dialect=self.dialect)
+        processor = next(iter(compiled._bind_processors.values()))
+
+        with pytest.raises(ArgumentError, match=r"column \(4326\)"):
+            processor(next(iter(compiled.params.values())))
+
+    def test_insert_bind_processor_validates_wrong_srid_wkt_element(self, geometry_table):
+        stmt = insert(geometry_table).values(
+            geom=WKTElement("LINESTRING(0 0,1 1)", srid=2154),
+        )
+        compiled = stmt.compile(dialect=self.dialect)
+        processor = next(iter(compiled._bind_processors.values()))
+
+        with pytest.raises(ArgumentError, match=r"column \(4326\)"):
+            processor(next(iter(compiled.params.values())))
+
     def test_computed_geography_point_rewrites_argument_order(self):
         table = Table(
             "computed_place",
@@ -899,6 +917,8 @@ class TestMSSQLBindAndResultProcessing:
 
         assert mssql_admin._coerce_wkt_bind_clause(table.c.value) is table.c.value
         assert mssql_admin._coerce_wkb_bind_clause(table.c.value) is table.c.value
+        assert mssql_admin._is_bindparam_clause(table.c.value) is False
+        assert mssql_admin._is_bindparam_clause(bindparam("value")) is True
         assert mssql_admin._should_coerce_wkt_bind_clause(table.c.value) is False
         assert mssql_admin._should_coerce_wkt_bind_clause(bindparam("value", 1)) is False
         assert (
@@ -910,6 +930,20 @@ class TestMSSQLBindAndResultProcessing:
         )
         assert mssql_admin._should_coerce_wkb_bind_clause(table.c.value) is False
         assert mssql_admin._infer_srid_from_wkb_clause(table.c.value, 4326, extended=True) == 4326
+
+    def test_geom_from_ewkt_bindparam_uses_runtime_wkt_normalization(self):
+        stmt = select([func.ST_GeomFromEWKT(bindparam("wkt"))])
+        compiled = stmt.compile(dialect=self.dialect)
+        processor = compiled._bind_processors["wkt"]
+
+        assert processor("SRID=4326;POINT(1 2)") == "POINT(1 2)"
+
+    def test_geom_from_text_bindparam_uses_runtime_wkt_normalization(self):
+        stmt = select([func.ST_GeomFromText(bindparam("wkt"), 4326)])
+        compiled = stmt.compile(dialect=self.dialect)
+        processor = compiled._bind_processors["wkt"]
+
+        assert processor("POINT ZM (1 2 3 4)") == "POINT (1 2 3 4)"
 
     def test_bind_processor_passes_through_non_spatial_values(self):
         geom = Geometry(geometry_type="LINESTRING", srid=4326)

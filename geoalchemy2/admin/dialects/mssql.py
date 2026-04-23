@@ -26,6 +26,7 @@ from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types.dialects.mssql import _normalize_wkt_for_mssql
 from geoalchemy2.types.dialects.mssql import _to_mssql_wkt
+from geoalchemy2.types.dialects.mssql import bind_processor_process as _type_bind_processor_process
 
 _mssql_ischema_names["geometry"] = Geometry
 _mssql_ischema_names["geography"] = Geography
@@ -593,11 +594,14 @@ class _MSSQLWKTBindType(TypeDecorator):
     impl = UnicodeText
     cache_ok = True
 
-    def __init__(self, strip_srid=False):
+    def __init__(self, strip_srid=False, spatial_type=None):
         super().__init__()
         self.strip_srid = strip_srid
+        self.spatial_type = spatial_type
 
     def process_bind_param(self, value, dialect):
+        if self.spatial_type is not None:
+            return _type_bind_processor_process(self.spatial_type, value, dialect)
         return _process_wkt_value(value, strip_srid=self.strip_srid)
 
 
@@ -613,7 +617,7 @@ class _MSSQLWKBBindType(TypeDecorator):
         return _process_wkb_value(value, extended=self.extended)
 
 
-def _coerce_wkt_bind_clause(wkt_clause, strip_srid=False, literal=False):
+def _coerce_wkt_bind_clause(wkt_clause, strip_srid=False, literal=False, spatial_type=None):
     if not hasattr(wkt_clause, "value"):
         return wkt_clause
 
@@ -625,7 +629,10 @@ def _coerce_wkt_bind_clause(wkt_clause, strip_srid=False, literal=False):
             unique=True,
         )
 
-    return expression.type_coerce(wkt_clause, _MSSQLWKTBindType(strip_srid=strip_srid))
+    return expression.type_coerce(
+        wkt_clause,
+        _MSSQLWKTBindType(strip_srid=strip_srid, spatial_type=spatial_type),
+    )
 
 
 def _coerce_wkb_bind_clause(wkb_clause, extended=False, literal=False):
@@ -665,6 +672,10 @@ def _should_coerce_wkt_bind_clause_for_text(wkt_clause, strip_srid=False):
             value = value.data
         return isinstance(value, str) and value.startswith("SRID=")
     return True
+
+
+def _is_bindparam_clause(clause):
+    return getattr(clause, "__visit_name__", None) == "bindparam"
 
 
 def _should_coerce_wkb_bind_clause(wkb_clause):
@@ -800,13 +811,27 @@ def _compile_mssql_geom_from_text(element, compiler, strip_srid=False, **kw):
     clauses = list(element.clauses)
     original_wkt_clause = clauses[0]
     wkt_clause = original_wkt_clause
-    if kw.get("literal_binds", False) or _should_coerce_wkt_bind_clause_for_text(
-        original_wkt_clause, strip_srid=strip_srid
+    spatial_type = None
+    if strip_srid:
+        candidate_spatial_type = _resolve_mssql_spatial_type(element.type, compiler.dialect)
+        if (
+            _check_spatial_type(candidate_spatial_type, (Geometry, Geography), compiler.dialect)
+            and getattr(candidate_spatial_type, "srid", -1) >= 0
+        ):
+            spatial_type = candidate_spatial_type
+    if (
+        kw.get("literal_binds", False)
+        or _is_bindparam_clause(original_wkt_clause)
+        or _should_coerce_wkt_bind_clause_for_text(
+            original_wkt_clause,
+            strip_srid=strip_srid,
+        )
     ):
         wkt_clause = _coerce_wkt_bind_clause(
             original_wkt_clause,
             strip_srid=strip_srid,
             literal=kw.get("literal_binds", False),
+            spatial_type=spatial_type,
         )
     compiled_wkt = compiler.process(wkt_clause, **kw)
 
