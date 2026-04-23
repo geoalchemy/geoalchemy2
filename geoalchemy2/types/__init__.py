@@ -181,7 +181,10 @@ class _GISType(UserDefinedType):
         """Specific bind_processor that automatically process spatial elements."""
 
         def process(bindvalue):
-            return select_dialect(dialect.name).bind_processor_process(self, bindvalue, dialect)
+            dialect_module = select_dialect(dialect.name)
+            if dialect.name == "mssql":
+                return dialect_module.bind_processor_process(self, bindvalue, dialect)
+            return dialect_module.bind_processor_process(self, bindvalue)
 
         return process
 

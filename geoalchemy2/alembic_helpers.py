@@ -413,23 +413,24 @@ def drop_geospatial_column(operations, operation):
         from geoalchemy2.admin.dialects.mssql import drop_spatial_constraints
         from geoalchemy2.admin.dialects.mssql import drop_spatial_index as drop_mssql_spatial_index
 
+        schema_name = operation.schema or dialect.default_schema_name
         drop_spatial_constraints(
             operations.get_bind(),
             table_name,
             column.name,
-            schema=operation.schema,
+            schema=schema_name,
         )
         for spatial_index in _get_mssql_spatial_indexes(
             operations.get_bind(),
             table_name,
-            schema=operation.schema,
+            schema=schema_name,
             column_name=column.name,
         ):
             drop_mssql_spatial_index(
                 operations.get_bind(),
                 table_name,
                 spatial_index["name"],
-                schema=operation.schema,
+                schema=schema_name,
             )
     operations.impl.drop_column(table_name, column, schema=operation.schema, **operation.kw)
 
@@ -580,10 +581,11 @@ def alter_geo_column(context, revision, op):
     if existing_type_is_spatial:
         from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_indexes
 
+        schema_name = op.schema or dialect.default_schema_name
         spatial_indexes = _get_mssql_spatial_indexes(
             context.bind,
             op.table_name,
-            schema=op.schema,
+            schema=schema_name,
             column_name=op.column_name,
         )
         rewritten_ops = [
@@ -591,7 +593,7 @@ def alter_geo_column(context, revision, op):
                 spatial_index["name"],
                 table_name=op.table_name,
                 column_name=op.column_name,
-                schema=op.schema,
+                schema=schema_name,
             )
             for spatial_index in spatial_indexes
         ]
@@ -599,7 +601,7 @@ def alter_geo_column(context, revision, op):
             DropGeospatialConstraintsOp(
                 op.table_name,
                 op.column_name,
-                schema=op.schema,
+                schema=schema_name,
             )
         )
     else:

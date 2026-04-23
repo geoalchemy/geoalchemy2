@@ -128,12 +128,15 @@ class TestMSSQLAlterColumnRewrite:
         from geoalchemy2.admin.dialects import mssql as mssql_admin
 
         def get_spatial_indexes(*args, **kwargs):
+            assert kwargs["schema"] == "dbo"
             return [{"name": "idx_lake_geom", "dialect_options": {}}]
 
         monkeypatch.setattr(mssql_admin, "_get_mssql_spatial_indexes", get_spatial_indexes)
 
         class Bind:
             dialect = mssql.dialect()
+
+        Bind.dialect.default_schema_name = "dbo"
 
         class Context:
             bind = Bind()
@@ -155,8 +158,60 @@ class TestMSSQLAlterColumnRewrite:
             alembic_helpers.CreateGeospatialConstraintsOp,
             alembic_helpers.CreateGeospatialIndexOp,
         ]
+        assert rewritten_ops[0].schema == "dbo"
+        assert rewritten_ops[1].schema == "dbo"
+        assert rewritten_ops[3].schema is None
         assert rewritten_ops[3].column.type.geometry_type == "LINESTRING"
         assert rewritten_ops[3].column.type.srid == 3857
+
+    def test_drop_spatial_column_uses_default_schema_for_mssql_metadata(self, monkeypatch):
+        from geoalchemy2.admin.dialects import mssql as mssql_admin
+
+        calls = []
+
+        def drop_spatial_constraints(*args, **kwargs):
+            calls.append(("drop_constraints", kwargs["schema"]))
+
+        def get_spatial_indexes(*args, **kwargs):
+            calls.append(("get_indexes", kwargs["schema"]))
+            return [{"name": "idx_lake_geom"}]
+
+        def drop_spatial_index(*args, **kwargs):
+            calls.append(("drop_index", kwargs["schema"]))
+
+        monkeypatch.setattr(mssql_admin, "drop_spatial_constraints", drop_spatial_constraints)
+        monkeypatch.setattr(mssql_admin, "_get_mssql_spatial_indexes", get_spatial_indexes)
+        monkeypatch.setattr(mssql_admin, "drop_spatial_index", drop_spatial_index)
+
+        class Bind:
+            dialect = mssql.dialect()
+
+        Bind.dialect.default_schema_name = "dbo"
+
+        class Impl:
+            def __init__(self):
+                self.calls = []
+
+            def drop_column(self, table_name, column, schema=None, **kw):
+                self.calls.append((table_name, column.name, schema, kw))
+
+        class Operations:
+            migration_context = None
+
+            def __init__(self):
+                self.impl = Impl()
+
+            def get_bind(self):
+                return Bind()
+
+        operation = alembic_helpers.DropGeospatialColumnOp("lake", "geom", schema=None)
+        alembic_helpers.drop_geospatial_column(Operations(), operation)
+
+        assert calls == [
+            ("drop_constraints", "dbo"),
+            ("get_indexes", "dbo"),
+            ("drop_index", "dbo"),
+        ]
 
     def test_spatial_alter_column_recreates_metadata_with_renamed_column(self, monkeypatch):
         from geoalchemy2.admin.dialects import mssql as mssql_admin

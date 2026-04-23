@@ -33,7 +33,7 @@ def format_geom_type(wkt, default_srid=None):
         return f"{geom_type}{coords}"
 
 
-def bind_processor_process(spatial_type, bindvalue, dialect=None):
+def bind_processor_process(spatial_type, bindvalue):
     if isinstance(bindvalue, WKTElement):
         return format_geom_type(
             bindvalue.data,
