@@ -267,7 +267,7 @@ def get_col_spec_computed_mssql(self, compiler, *args, **kwargs):
 def _rewrite_mssql_computed_spec(spec, spatial_type, dialect=None):
     if isinstance(spatial_type, TypeDecorator) and dialect is not None:
         spatial_type = spatial_type.load_dialect_impl(dialect)
-    if not isinstance(spatial_type, Geometry | Geography):
+    if not isinstance(spatial_type, (Geometry, Geography)):
         return spec
 
     parsed_args = _split_mssql_st_point_args(spec)

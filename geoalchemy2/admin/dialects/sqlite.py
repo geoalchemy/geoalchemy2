@@ -109,7 +109,7 @@ def init_spatialite(
     func_args = []
 
     # Check the value of the 'transaction' parameter
-    if not isinstance(transaction, bool | int):
+    if not isinstance(transaction, (bool, int)):
         raise ValueError("The 'transaction' argument must be True or False.")
     else:
         func_args.append(str(transaction))

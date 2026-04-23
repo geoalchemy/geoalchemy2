@@ -206,7 +206,7 @@ _monkey_patch_get_indexes_for_mssql()
 
 def render_item(obj_type, obj, autogen_context):
     """Add proper imports for spatial types."""
-    if obj_type == "type" and isinstance(obj, Geometry | Geography | Raster):
+    if obj_type == "type" and isinstance(obj, (Geometry, Geography, Raster)):
         import_name = obj.__class__.__name__
         autogen_context.imports.add(f"from geoalchemy2 import {import_name}")
         return f"{obj!r}"
@@ -531,7 +531,7 @@ def add_geo_column(context, revision, op):
     if isinstance(col_type, TypeDecorator):
         dialect = context.bind.dialect
         col_type = col_type.load_dialect_impl(dialect)
-    if isinstance(col_type, Geometry | Geography | Raster):
+    if isinstance(col_type, (Geometry, Geography, Raster)):
         op.column.type.spatial_index = False
         op.column.type._spatial_index_reflected = None
         new_op = AddGeospatialColumnOp(op.table_name, op.column, schema=op.schema)
@@ -547,7 +547,7 @@ def drop_geo_column(context, revision, op):
     if isinstance(col_type, TypeDecorator):
         dialect = context.bind.dialect
         col_type = col_type.load_dialect_impl(dialect)
-    if isinstance(col_type, Geometry | Geography | Raster):
+    if isinstance(col_type, (Geometry, Geography, Raster)):
         new_op = DropGeospatialColumnOp(op.table_name, op.column_name, schema=op.schema)
     else:
         new_op = op

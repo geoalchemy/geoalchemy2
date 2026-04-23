@@ -107,7 +107,7 @@ def _coerce_wkb_data(value):
         value = value.data
     if isinstance(value, memoryview):
         return value.tobytes()
-    if isinstance(value, bytes | bytearray):
+    if isinstance(value, (bytes, bytearray)):
         return bytes(value)
     if isinstance(value, str):
         return binascii.unhexlify(value)
@@ -220,7 +220,7 @@ def _to_mssql_wkt(value):
     try:
         return _wkb_to_mssql_wkt(value)
     except (TypeError, ValueError, struct.error, binascii.Error, IndexError):
-        if isinstance(value, bytes | bytearray | memoryview):
+        if isinstance(value, (bytes, bytearray, memoryview)):
             value = WKBElement(value)
         return _normalize_wkt_for_mssql(to_shape(value).wkt)
 
@@ -266,6 +266,6 @@ def bind_processor_process(spatial_type, bindvalue, dialect=None):
         if bindvalue.srid <= 0:
             bindvalue.srid = spatial_type.srid
         return _normalize_wkt_for_mssql(bindvalue.data)
-    elif isinstance(bindvalue, bytes | bytearray | memoryview | WKBElement):
+    elif isinstance(bindvalue, (bytes, bytearray, memoryview, WKBElement)):
         return _to_mssql_wkt(bindvalue)
     return bindvalue

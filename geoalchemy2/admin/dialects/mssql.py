@@ -85,7 +85,7 @@ def _format_mssql_bounding_box(bounding_box):
     if isinstance(bounding_box, str):
         bounding_box = [value.strip() for value in bounding_box.split(",")]
 
-    if not isinstance(bounding_box, tuple | list):
+    if not isinstance(bounding_box, (tuple, list)):
         raise ArgumentError(_MSSQL_BOUNDING_BOX_ERROR)
     try:
         xmin, ymin, xmax, ymax = bounding_box
@@ -436,7 +436,7 @@ def drop_spatial_index(bind, table_name, index_name, schema=None):
 
 def reflect_geometry_column(inspector, table, column_info):
     """Reflect a geometry or geography column with the MSSQL dialect."""
-    if not isinstance(column_info.get("type"), Geometry | Geography | NullType):
+    if not isinstance(column_info.get("type"), (Geometry, Geography, NullType)):
         return
 
     column_name = column_info["name"]
@@ -566,7 +566,7 @@ def after_drop(table, bind, **kw):
 def _process_wkt_value(value, strip_srid=False):
     if isinstance(value, WKTElement):
         value = value.data
-    elif isinstance(value, WKBElement | bytes | bytearray | memoryview):
+    elif isinstance(value, (WKBElement, bytes, bytearray, memoryview)):
         value = _to_mssql_wkt(value)
     if isinstance(value, str) and strip_srid:
         wkt_match = WKTElement._REMOVE_SRID.match(value)
@@ -647,7 +647,7 @@ def _should_coerce_wkt_bind_clause(wkt_clause):
         return False
 
     value = wkt_clause.value
-    if isinstance(value, WKTElement | WKBElement | bytes | bytearray | memoryview):
+    if isinstance(value, (WKTElement, WKBElement, bytes, bytearray, memoryview)):
         return True
     if not isinstance(value, str):
         return False
@@ -680,7 +680,7 @@ def _infer_srid_from_wkb_clause(wkb_clause, default_srid, extended=False):
     if isinstance(value, WKBElement):
         return value.srid if value.srid >= 0 else default_srid
 
-    if extended and isinstance(value, bytes | bytearray | memoryview):
+    if extended and isinstance(value, (bytes, bytearray, memoryview)):
         srid = WKBElement(value, extended=True).srid
         return srid if srid >= 0 else default_srid
 
@@ -694,7 +694,7 @@ def _is_spatial_clause(clause, dialect=None):
 def _is_spatial_function_target(clause, dialect=None):
     return _is_spatial_clause(clause, dialect) or isinstance(
         getattr(clause, "value", None),
-        WKTElement | WKBElement,
+        (WKTElement, WKBElement),
     )
 
 
@@ -707,12 +707,14 @@ def _resolve_mssql_spatial_type(spatial_type, dialect):
 def _is_mssql_spatial_constructor(clause):
     return isinstance(
         clause,
-        functions.ST_GeomFromText
-        | functions.ST_GeogFromText
-        | functions.ST_GeomFromEWKT
-        | functions.ST_GeomFromWKB
-        | functions.ST_GeogFromWKB
-        | functions.ST_GeomFromEWKB,
+        (
+            functions.ST_GeomFromText,
+            functions.ST_GeogFromText,
+            functions.ST_GeomFromEWKT,
+            functions.ST_GeomFromWKB,
+            functions.ST_GeogFromWKB,
+            functions.ST_GeomFromEWKB,
+        ),
     )
 
 
