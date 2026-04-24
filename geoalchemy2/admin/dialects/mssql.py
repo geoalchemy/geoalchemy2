@@ -1,15 +1,20 @@
 """This module defines specific functions for MSSQL dialect."""
 
+import hashlib
 import math
 import re
+from collections.abc import Mapping
 
 from sqlalchemy import Index
+from sqlalchemy import Integer
 from sqlalchemy import text
 from sqlalchemy.dialects.mssql.base import ischema_names as _mssql_ischema_names
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import expression
 from sqlalchemy.sql import operators
+from sqlalchemy.sql import visitors
 from sqlalchemy.sql.elements import BinaryExpression
+from sqlalchemy.sql.elements import BindParameter
 from sqlalchemy.sql.elements import Null
 from sqlalchemy.sql.sqltypes import NullType
 from sqlalchemy.types import LargeBinary
@@ -53,6 +58,7 @@ _MSSQL_BOUNDING_BOX_ERROR = (
     "mssql_bounding_box must be a 4-value tuple/list or comma-separated string "
     "formatted as finite numeric coordinates: xmin, ymin, xmax, ymax"
 )
+_MSSQL_DYNAMIC_EWKT_KEY_PREFIX = "_geoalchemy2_mssql_ewkt"
 
 
 def _quote_mssql_identifier(name):
@@ -579,6 +585,30 @@ def _process_wkt_value(value, strip_srid=False):
     return value
 
 
+def _process_ewkt_srid_value(value, default_srid=0):
+    if value is None:
+        return default_srid
+
+    if isinstance(value, WKTElement):
+        if value.srid >= 0:
+            return value.srid
+        value = value.data
+    elif isinstance(value, WKBElement):
+        return value.srid if value.srid >= 0 else default_srid
+
+    if isinstance(value, str):
+        wkt_match = WKTElement._REMOVE_SRID.match(value)
+        srid = wkt_match.group(2)
+        try:
+            if srid is not None:
+                return int(srid)
+        except (ValueError, TypeError):  # pragma: no cover
+            raise ArgumentError(
+                f"The SRID ({srid}) of the supplied value can not be casted to integer"
+            ) from None
+    return default_srid
+
+
 def _process_wkb_value(value, extended=False):
     if isinstance(value, WKBElement):
         value = value.data
@@ -615,6 +645,26 @@ class _MSSQLWKBBindType(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         return _process_wkb_value(value, extended=self.extended)
+
+
+class _MSSQLDynamicEWKTTextBindType(TypeDecorator):
+    impl = UnicodeText
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        return _process_wkt_value(value, strip_srid=True)
+
+
+class _MSSQLDynamicEWKTSRIDBindType(TypeDecorator):
+    impl = Integer
+    cache_ok = True
+
+    def __init__(self, default_srid=0):
+        super().__init__()
+        self.default_srid = default_srid
+
+    def process_bind_param(self, value, dialect):
+        return _process_ewkt_srid_value(value, default_srid=self.default_srid)
 
 
 def _coerce_wkt_bind_clause(wkt_clause, strip_srid=False, literal=False, spatial_type=None):
@@ -675,7 +725,7 @@ def _should_coerce_wkt_bind_clause_for_text(wkt_clause, strip_srid=False):
 
 
 def _is_bindparam_clause(clause):
-    return getattr(clause, "__visit_name__", None) == "bindparam"
+    return isinstance(clause, BindParameter)
 
 
 def _should_coerce_wkb_bind_clause(wkb_clause):
@@ -807,6 +857,115 @@ def _compile_mssql_srid_clause(clause, compiler, default_srid, **kw):
     return compiler.process(clause, **kw) if clause is not None else str(default_srid)
 
 
+def _mssql_dynamic_ewkt_bind_keys(source_key):
+    source_key = str(source_key)
+    key_token = re.sub(r"[^0-9A-Za-z_]+", "_", source_key).strip("_") or "param"
+    key_digest = hashlib.sha1(source_key.encode("utf-8")).hexdigest()[:8]
+    key_base = f"{_MSSQL_DYNAMIC_EWKT_KEY_PREFIX}_{key_token}_{key_digest}"
+    return f"{key_base}_text", f"{key_base}_srid"
+
+
+def _make_mssql_dynamic_ewkt_bind_clauses(wkt_clause, default_srid=0):
+    text_key, srid_key = _mssql_dynamic_ewkt_bind_keys(wkt_clause.key)
+    value = getattr(wkt_clause, "value", None)
+    return (
+        expression.bindparam(
+            key=text_key,
+            value=value,
+            type_=_MSSQLDynamicEWKTTextBindType(),
+        ),
+        expression.bindparam(
+            key=srid_key,
+            value=value,
+            type_=_MSSQLDynamicEWKTSRIDBindType(default_srid=default_srid),
+        ),
+    )
+
+
+def _iter_mssql_dynamic_ewkt_bind_mappings(clauseelement, dialect):
+    if not hasattr(clauseelement, "get_children"):
+        return
+
+    seen_keys = set()
+    for element in visitors.iterate(clauseelement):
+        if not isinstance(element, functions.ST_GeomFromEWKT):
+            continue
+
+        clauses = list(element.clauses)
+        if len(clauses) != 1 or not _is_bindparam_clause(clauses[0]):
+            continue
+
+        candidate_spatial_type = _resolve_mssql_spatial_type(element.type, dialect)
+        if (
+            _check_spatial_type(candidate_spatial_type, (Geometry, Geography), dialect)
+            and getattr(candidate_spatial_type, "srid", -1) >= 0
+        ):
+            continue
+
+        source_key = clauses[0].key
+        if source_key in seen_keys:
+            continue
+        seen_keys.add(source_key)
+
+        text_key, srid_key = _mssql_dynamic_ewkt_bind_keys(source_key)
+        yield source_key, text_key, srid_key
+
+
+def _expand_mssql_dynamic_ewkt_param_mapping(parameters, dynamic_bind_mappings):
+    if not isinstance(parameters, Mapping):
+        return parameters, False
+
+    expanded_parameters = parameters
+    changed = False
+    for source_key, text_key, srid_key in dynamic_bind_mappings:
+        if source_key not in parameters:
+            continue
+
+        if text_key in parameters and srid_key in parameters:
+            continue
+
+        if expanded_parameters is parameters:
+            expanded_parameters = dict(parameters)
+
+        source_value = parameters[source_key]
+        expanded_parameters.setdefault(text_key, source_value)
+        expanded_parameters.setdefault(srid_key, source_value)
+        changed = True
+
+    return expanded_parameters, changed
+
+
+def before_execute(conn, clauseelement, multiparams, params, execution_options):
+    dynamic_bind_mappings = tuple(
+        _iter_mssql_dynamic_ewkt_bind_mappings(clauseelement, conn.dialect)
+    )
+    if not dynamic_bind_mappings:
+        return clauseelement, multiparams, params
+
+    multiparams_changed = False
+    expanded_multiparams = multiparams
+    if multiparams:
+        expanded_values = []
+        for value in multiparams:
+            expanded_value, value_changed = _expand_mssql_dynamic_ewkt_param_mapping(
+                value,
+                dynamic_bind_mappings,
+            )
+            expanded_values.append(expanded_value)
+            multiparams_changed = multiparams_changed or value_changed
+        if multiparams_changed:
+            expanded_multiparams = tuple(expanded_values)
+
+    expanded_params, params_changed = _expand_mssql_dynamic_ewkt_param_mapping(
+        params,
+        dynamic_bind_mappings,
+    )
+
+    if multiparams_changed or params_changed:
+        return clauseelement, expanded_multiparams, expanded_params
+    return clauseelement, multiparams, params
+
+
 def _compile_mssql_geom_from_text(element, compiler, strip_srid=False, **kw):
     clauses = list(element.clauses)
     original_wkt_clause = clauses[0]
@@ -819,6 +978,18 @@ def _compile_mssql_geom_from_text(element, compiler, strip_srid=False, **kw):
             and getattr(candidate_spatial_type, "srid", -1) >= 0
         ):
             spatial_type = candidate_spatial_type
+    if (
+        strip_srid
+        and spatial_type is None
+        and _is_bindparam_clause(original_wkt_clause)
+        and not kw.get("literal_binds", False)
+    ):
+        dynamic_text_clause, dynamic_srid_clause = _make_mssql_dynamic_ewkt_bind_clauses(
+            original_wkt_clause
+        )
+        compiled_wkt = compiler.process(dynamic_text_clause, **kw)
+        compiled_srid = compiler.process(dynamic_srid_clause, **kw)
+        return f"{element.type.name}::STGeomFromText({compiled_wkt}, {compiled_srid})"
     if (
         kw.get("literal_binds", False)
         or _is_bindparam_clause(original_wkt_clause)

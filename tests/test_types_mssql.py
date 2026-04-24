@@ -931,12 +931,48 @@ class TestMSSQLBindAndResultProcessing:
         assert mssql_admin._should_coerce_wkb_bind_clause(table.c.value) is False
         assert mssql_admin._infer_srid_from_wkb_clause(table.c.value, 4326, extended=True) == 4326
 
-    def test_geom_from_ewkt_bindparam_uses_runtime_wkt_normalization(self):
+    def test_geom_from_ewkt_bindparam_compiles_to_split_text_and_srid_binds(self):
         stmt = select([func.ST_GeomFromEWKT(bindparam("wkt"))])
+        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys("wkt")
+        compiled_sql = normalize_sql(stmt.compile(dialect=self.dialect))
         compiled = stmt.compile(dialect=self.dialect)
-        processor = compiled._bind_processors["wkt"]
+        text_processor = compiled._bind_processors[text_key]
+        srid_processor = compiled._bind_processors[srid_key]
 
-        assert processor("SRID=4326;POINT(1 2)") == "POINT(1 2)"
+        assert f"geometry::STGeomFromText(:{text_key}, :{srid_key})" in compiled_sql
+        assert text_processor("SRID=4326;POINT ZM (1 2 3 4)") == "POINT (1 2 3 4)"
+        assert srid_processor("SRID=4326;POINT ZM (1 2 3 4)") == 4326
+
+    def test_mssql_before_execute_expands_dynamic_ewkt_bindparams(self):
+        stmt = select([func.ST_GeomFromEWKT(bindparam("wkt"))])
+        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys("wkt")
+        clauseelement, multiparams, params = mssql_admin.before_execute(
+            type("Conn", (), {"dialect": self.dialect})(),
+            stmt,
+            (),
+            {"wkt": "SRID=4326;POINT(1 2)"},
+            {},
+        )
+
+        assert clauseelement is stmt
+        assert multiparams == ()
+        assert params == {
+            "wkt": "SRID=4326;POINT(1 2)",
+            text_key: "SRID=4326;POINT(1 2)",
+            srid_key: "SRID=4326;POINT(1 2)",
+        }
+
+    def test_geom_from_ewkt_bindparam_defaults_preserve_compile_time_value(self):
+        stmt = select([func.ST_GeomFromEWKT(bindparam("wkt", "SRID=3857;POINT(1 2)"))])
+        compiled = stmt.compile(dialect=self.dialect)
+        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys("wkt")
+        text_processor = compiled._bind_processors[text_key]
+        srid_processor = compiled._bind_processors[srid_key]
+
+        assert compiled.params[text_key] == "SRID=3857;POINT(1 2)"
+        assert compiled.params[srid_key] == "SRID=3857;POINT(1 2)"
+        assert text_processor(compiled.params[text_key]) == "POINT(1 2)"
+        assert srid_processor(compiled.params[srid_key]) == 3857
 
     def test_geom_from_text_bindparam_uses_runtime_wkt_normalization(self):
         stmt = select([func.ST_GeomFromText(bindparam("wkt"), 4326)])

@@ -6,6 +6,7 @@ from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
+from sqlalchemy import bindparam
 from sqlalchemy import inspect
 from sqlalchemy.exc import StatementError
 from sqlalchemy.sql import func
@@ -240,6 +241,17 @@ class TestCallFunction:
         assert to_shape(r3).geom_type == "Polygon"
 
         assert r1.data == r2.data == r3.data
+
+    def test_untyped_geom_from_ewkt_bindparam_preserves_runtime_srid(self, session):
+        stmt = select(func.ST_SRID(func.ST_GeomFromEWKT(bindparam("wkt"))))
+
+        assert (
+            session.execute(
+                stmt,
+                {"wkt": "SRID=4326;POINT(1 2)"},
+            ).scalar_one()
+            == 4326
+        )
 
 
 @test_only_with_dialects("mssql")
