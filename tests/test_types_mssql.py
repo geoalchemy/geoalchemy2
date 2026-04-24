@@ -119,6 +119,7 @@ class TestMSSQLDialectRegistration:
 
 class TestMSSQLCompilation:
     dialect = mssql.dialect()
+    qmark_dialect = mssql.pyodbc.dialect(paramstyle="qmark")
 
     def test_create_table_uses_bare_geometry_type(self, geometry_table):
         compiled = normalize_sql(CreateTable(geometry_table).compile(dialect=self.dialect))
@@ -328,6 +329,24 @@ class TestMSSQLCompilation:
         assert ".AsTextZM()" in compiled
         assert ".STSrid" in compiled
         assert "ST_AsEWKT(" not in compiled
+
+    def test_geometry_returning_buffer_ewkb_qmark_bind_positions_match_markers(
+        self, geometry_table
+    ):
+        stmt = select([geometry_table.c.geom.ST_Buffer(2)])
+        compiled = stmt.compile(dialect=self.qmark_dialect)
+        sql = str(compiled)
+
+        assert sql.count("?") == len(compiled.positiontup or [])
+        assert sql.count(".STBuffer(?)") == 1
+
+    def test_explicit_buffer_ewkt_qmark_bind_positions_match_markers(self, geometry_table):
+        stmt = select([func.ST_AsEWKT(geometry_table.c.geom.ST_Buffer(2))])
+        compiled = stmt.compile(dialect=self.qmark_dialect)
+        sql = str(compiled)
+
+        assert sql.count("?") == len(compiled.positiontup or [])
+        assert sql.count(".STBuffer(?)") == 1
 
     def test_binary_predicates_compile_to_mssql_methods(self, geometry_table):
         stmt = select(

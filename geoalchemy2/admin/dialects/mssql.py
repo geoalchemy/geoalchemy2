@@ -981,12 +981,17 @@ def _mssql_binary4_from_unsigned_int(unsigned_int_expr):
     return f"SUBSTRING(CONVERT(binary(8), CONVERT(bigint, ({unsigned_int_expr}))), 5, 4)"
 
 
-def _compile_mssql_as_ewkb(element, compiler, **kw):
-    clauses = list(element.clauses)
-    if not clauses or not _is_spatial_function_target(clauses[0], compiler.dialect):
-        return _compile_mssql_function_fallback(element, compiler, **kw)
+def _mssql_clause_has_bind_parameter(clause):
+    return any(isinstance(child, BindParameter) for child in visitors.iterate(clause))
 
-    target = compiler.process(clauses[0], **kw)
+
+def _compile_mssql_derived_geometry_target(target, body, alias_name):
+    alias = _quote_mssql_identifier(alias_name)
+    column = _quote_mssql_identifier("geom")
+    return f"(SELECT {body(alias + '.' + column)} FROM (SELECT {target} AS {column}) AS {alias})"
+
+
+def _compile_mssql_ewkb_body(target):
     wkb = f"{target}.AsBinaryZM()"
     little_endian_wkb_type = (
         f"CONVERT(int, SUBSTRING({wkb}, 5, 1) + SUBSTRING({wkb}, 4, 1) + "
@@ -1019,16 +1024,45 @@ def _compile_mssql_as_ewkb(element, compiler, **kw):
     )
 
 
+def _compile_mssql_as_ewkb(element, compiler, **kw):
+    clauses = list(element.clauses)
+    if not clauses or not _is_spatial_function_target(clauses[0], compiler.dialect):
+        return _compile_mssql_function_fallback(element, compiler, **kw)
+
+    target_clause = clauses[0]
+    target = compiler.process(target_clause, **kw)
+    if _mssql_clause_has_bind_parameter(target_clause):
+        return _compile_mssql_derived_geometry_target(
+            target,
+            _compile_mssql_ewkb_body,
+            "geoalchemy2_mssql_ewkb",
+        )
+
+    return _compile_mssql_ewkb_body(target)
+
+
+def _compile_mssql_ewkt_body(target):
+    return (
+        f"CASE WHEN {target} IS NULL THEN NULL "
+        f"ELSE CONCAT('SRID=', {target}.STSrid, ';', {target}.AsTextZM()) END"
+    )
+
+
 def _compile_mssql_as_ewkt(element, compiler, **kw):
     clauses = list(element.clauses)
     if not clauses or not _is_spatial_function_target(clauses[0], compiler.dialect):
         return _compile_mssql_function_fallback(element, compiler, **kw)
 
-    target = compiler.process(clauses[0], **kw)
-    return (
-        f"CASE WHEN {target} IS NULL THEN NULL "
-        f"ELSE CONCAT('SRID=', {target}.STSrid, ';', {target}.AsTextZM()) END"
-    )
+    target_clause = clauses[0]
+    target = compiler.process(target_clause, **kw)
+    if _mssql_clause_has_bind_parameter(target_clause):
+        return _compile_mssql_derived_geometry_target(
+            target,
+            _compile_mssql_ewkt_body,
+            "geoalchemy2_mssql_ewkt",
+        )
+
+    return _compile_mssql_ewkt_body(target)
 
 
 def _compile_mssql_srid_clause(clause, compiler, default_srid, **kw):
