@@ -1,4 +1,6 @@
 import pytest
+import shapely
+from packaging.version import parse as parse_version
 from shapely.geometry import LineString
 from shapely.geometry import Point
 from sqlalchemy import Column
@@ -22,6 +24,8 @@ from geoalchemy2.shape import to_shape
 
 from . import test_only_with_dialects
 
+SHAPELY_LT_21 = parse_version(shapely.__version__) < parse_version("2.1")
+
 
 def normalize_wkt(value):
     return value.replace(" (", "(").replace(", ", ",")
@@ -42,7 +46,7 @@ def Lake(base):
 
 def _assert_linestring(conn, element, expected_wkt):
     assert isinstance(element, WKBElement)
-    assert element.extended is False
+    assert element.extended is True
     assert to_shape(element).wkt == expected_wkt
 
     wkt = conn.execute(element.ST_AsText()).scalar()
@@ -168,6 +172,66 @@ class TestInsertionCore:
 
         conn.execute(Lake.__table__.insert(), [{"geom": row[1]} for row in rows])
 
+    def test_unknown_srid_column_preserves_runtime_srid(self, conn):
+        metadata = MetaData()
+        lake = Table(
+            "unknown_srid_lake",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry(spatial_index=False)),
+        )
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+
+        try:
+            conn.execute(lake.insert().values(geom="SRID=4326;POINT(1 2)"))
+
+            element, srid = conn.execute(select(lake.c.geom, func.ST_SRID(lake.c.geom))).one()
+
+            assert isinstance(element, WKBElement)
+            assert element.extended is True
+            assert element.srid == 4326
+            assert srid == 4326
+            assert to_shape(element).wkt == "POINT (1 2)"
+
+            conn.execute(lake.insert().values(geom=element))
+            persisted_srids = conn.execute(
+                select(func.ST_SRID(lake.c.geom)).order_by(lake.c.id)
+            ).fetchall()
+            assert persisted_srids == [(4326,), (4326,)]
+        finally:
+            metadata.drop_all(conn, checkfirst=True)
+
+    def test_zm_column_returns_valid_ewkb_type_flags(self, conn):
+        metadata = MetaData()
+        lake = Table(
+            "zm_lake",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(geometry_type="POINTZM", srid=4326, spatial_index=False),
+            ),
+        )
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+
+        try:
+            conn.execute(lake.insert().values(geom="POINT ZM (1 2 3 4)"))
+
+            element = conn.execute(select(lake.c.geom)).scalar_one()
+
+            assert isinstance(element, WKBElement)
+            assert element.extended is True
+            assert element.srid == 4326
+            assert element.desc.startswith("01010000e0e6100000")
+            if SHAPELY_LT_21:
+                assert to_shape(element).wkt == "POINT Z (1 2 3)"
+            else:
+                assert to_shape(element).wkt == "POINT ZM (1 2 3 4)"
+        finally:
+            metadata.drop_all(conn, checkfirst=True)
+
 
 @test_only_with_dialects("mssql")
 class TestInsertionORM:
@@ -241,6 +305,17 @@ class TestCallFunction:
         assert to_shape(r3).geom_type == "Polygon"
 
         assert r1.data == r2.data == r3.data
+
+    def test_st_distance_and_dwithin(self, session, Lake, setup_one_lake):
+        other = WKTElement("LINESTRING(0 1,1 2)", srid=4326)
+
+        distance = session.execute(select(func.ST_Distance(Lake.__table__.c.geom, other))).scalar()
+        assert distance == pytest.approx(2**-0.5)
+
+        assert session.execute(select(func.ST_DWithin(Lake.__table__.c.geom, other, 0.8))).scalar()
+        assert not session.execute(
+            select(func.ST_DWithin(Lake.__table__.c.geom, other, 0.5))
+        ).scalar()
 
     def test_untyped_geom_from_ewkt_bindparam_preserves_runtime_srid(self, session):
         stmt = select(func.ST_SRID(func.ST_GeomFromEWKT(bindparam("wkt"))))

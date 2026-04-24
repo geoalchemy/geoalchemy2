@@ -865,6 +865,92 @@ def _compile_mssql_binary_method(element, compiler, method_name, **kw):
     return f"{target}.{method_name}({other})"
 
 
+def _compile_mssql_dwithin(element, compiler, **kw):
+    clauses = list(element.clauses)
+    if len(clauses) < 3 or not _is_spatial_function_target(clauses[0], compiler.dialect):
+        return _compile_mssql_function_fallback(element, compiler, **kw)
+
+    target_clause = clauses[0]
+    other_clause = _coerce_mssql_spatial_method_argument(
+        target_clause,
+        clauses[1],
+        compiler.dialect,
+    )
+    distance_clause = clauses[2]
+
+    target = compiler.process(target_clause, **kw)
+    other = compiler.process(other_clause, **kw)
+    distance = compiler.process(distance_clause, **kw)
+    return f"CASE WHEN {target}.STDistance({other}) <= {distance} THEN 1 ELSE 0 END"
+
+
+def _mssql_little_endian_binary_from_big_endian(binary_expr):
+    return " + ".join(f"SUBSTRING({binary_expr}, {position}, 1)" for position in (4, 3, 2, 1))
+
+
+def _mssql_ewkb_type_from_iso_type(wkb_type):
+    dimension_type = f"({wkb_type} / 1000)"
+    return (
+        f"CONVERT(bigint, {wkb_type} % 1000) + 536870912 + "
+        f"CASE WHEN {dimension_type} IN (1, 3) THEN 2147483648 ELSE 0 END + "
+        f"CASE WHEN {dimension_type} IN (2, 3) THEN 1073741824 ELSE 0 END"
+    )
+
+
+def _mssql_binary4_from_unsigned_int(unsigned_int_expr):
+    return f"SUBSTRING(CONVERT(binary(8), CONVERT(bigint, ({unsigned_int_expr}))), 5, 4)"
+
+
+def _compile_mssql_as_ewkb(element, compiler, **kw):
+    clauses = list(element.clauses)
+    if not clauses or not _is_spatial_function_target(clauses[0], compiler.dialect):
+        return _compile_mssql_function_fallback(element, compiler, **kw)
+
+    target = compiler.process(clauses[0], **kw)
+    wkb = f"{target}.AsBinaryZM()"
+    little_endian_wkb_type = (
+        f"CONVERT(int, SUBSTRING({wkb}, 5, 1) + SUBSTRING({wkb}, 4, 1) + "
+        f"SUBSTRING({wkb}, 3, 1) + SUBSTRING({wkb}, 2, 1))"
+    )
+    big_endian_wkb_type = f"CONVERT(int, SUBSTRING({wkb}, 2, 4))"
+    little_endian_ewkb_type_word = _mssql_binary4_from_unsigned_int(
+        _mssql_ewkb_type_from_iso_type(little_endian_wkb_type)
+    )
+    big_endian_ewkb_type_word = _mssql_binary4_from_unsigned_int(
+        _mssql_ewkb_type_from_iso_type(big_endian_wkb_type)
+    )
+    little_endian_ewkb_type = _mssql_little_endian_binary_from_big_endian(
+        little_endian_ewkb_type_word
+    )
+    big_endian_ewkb_type = big_endian_ewkb_type_word
+    little_endian_srid = _mssql_little_endian_binary_from_big_endian(
+        f"CONVERT(binary(4), {target}.STSrid)"
+    )
+    big_endian_srid = f"CONVERT(binary(4), {target}.STSrid)"
+    payload = f"SUBSTRING({wkb}, 6, DATALENGTH({wkb}) - 5)"
+
+    return (
+        f"CASE WHEN {target} IS NULL THEN NULL "
+        f"WHEN SUBSTRING({wkb}, 1, 1) = 0x01 THEN "
+        f"CAST(0x01 AS varbinary(max)) + {little_endian_ewkb_type} + "
+        f"{little_endian_srid} + {payload} "
+        f"ELSE CAST(0x00 AS varbinary(max)) + {big_endian_ewkb_type} + "
+        f"{big_endian_srid} + {payload} END"
+    )
+
+
+def _compile_mssql_as_ewkt(element, compiler, **kw):
+    clauses = list(element.clauses)
+    if not clauses or not _is_spatial_function_target(clauses[0], compiler.dialect):
+        return _compile_mssql_function_fallback(element, compiler, **kw)
+
+    target = compiler.process(clauses[0], **kw)
+    return (
+        f"CASE WHEN {target} IS NULL THEN NULL "
+        f"ELSE CONCAT('SRID=', {target}.STSrid, ';', {target}.AsTextZM()) END"
+    )
+
+
 def _compile_mssql_srid_clause(clause, compiler, default_srid, **kw):
     if hasattr(clause, "value"):
         value = clause.value
@@ -1189,7 +1275,7 @@ def _MSSQL_ST_AsBinary(element, compiler, **kw):
 
 @compiles(functions.ST_AsEWKB, "mssql")  # type: ignore
 def _MSSQL_ST_AsEWKB(element, compiler, **kw):
-    return _compile_mssql_method(element, compiler, "AsBinaryZM", **kw)
+    return _compile_mssql_as_ewkb(element, compiler, **kw)
 
 
 @compiles(functions.ST_AsText, "mssql")  # type: ignore
@@ -1199,7 +1285,7 @@ def _MSSQL_ST_AsText(element, compiler, **kw):
 
 @compiles(functions.ST_AsEWKT, "mssql")  # type: ignore
 def _MSSQL_ST_AsEWKT(element, compiler, **kw):
-    return _compile_mssql_method(element, compiler, "AsTextZM", **kw)
+    return _compile_mssql_as_ewkt(element, compiler, **kw)
 
 
 @compiles(functions.ST_GeometryType, "mssql")  # type: ignore
@@ -1225,6 +1311,16 @@ def _MSSQL_ST_Area(element, compiler, **kw):
 @compiles(functions.ST_Length, "mssql")  # type: ignore
 def _MSSQL_ST_Length(element, compiler, **kw):
     return _compile_mssql_method(element, compiler, "STLength", **kw)
+
+
+@compiles(functions.ST_Distance, "mssql")  # type: ignore
+def _MSSQL_ST_Distance(element, compiler, **kw):
+    return _compile_mssql_binary_method(element, compiler, "STDistance", **kw)
+
+
+@compiles(functions.ST_DWithin, "mssql")  # type: ignore
+def _MSSQL_ST_DWithin(element, compiler, **kw):
+    return _compile_mssql_dwithin(element, compiler, **kw)
 
 
 @compiles(functions.ST_Within, "mssql")  # type: ignore

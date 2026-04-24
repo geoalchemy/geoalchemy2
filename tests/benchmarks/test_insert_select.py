@@ -341,6 +341,7 @@ def _actual_test_insert_select(
     is_extended_input,
     output_representation,
     is_extended_output,
+    is_default_geom_type,
 ):
     """Actual test for insert and select operations."""
     convert_wkb = input_representation == "WKB"
@@ -368,8 +369,8 @@ def _actual_test_insert_select(
 
     res = conn.execute(select([GeomTable.__table__.c.geom])).fetchone()
     expected_extended_output = is_extended_output
-    if conn.dialect.name == "mssql":
-        expected_extended_output = False
+    if conn.dialect.name == "mssql" and is_default_geom_type:
+        expected_extended_output = True
     assert res[0].extended == expected_extended_output
     if output_representation == "WKB":
         assert isinstance(res[0], WKBElement)
@@ -397,6 +398,7 @@ def test_insert_select(
     is_extended_input,
     output_representation,
     is_extended_output,
+    is_default_geom_type,
     _insert_select_fail_or_success_type,
 ):
     """Benchmark the insert operation."""
@@ -412,6 +414,7 @@ def test_insert_select(
             is_extended_input,
             output_representation,
             is_extended_output,
+            is_default_geom_type,
         )
     except SuccessfulTest:
         # Handle the successful test case

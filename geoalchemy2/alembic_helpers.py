@@ -569,10 +569,11 @@ def alter_geo_column(context, revision, op):
     if isinstance(existing_type, TypeDecorator):
         existing_type = existing_type.load_dialect_impl(dialect)
 
-    if not _check_spatial_type(col_type, (Geometry, Geography), dialect):
-        return op
-
+    col_type_is_spatial = _check_spatial_type(col_type, (Geometry, Geography), dialect)
     existing_type_is_spatial = _check_spatial_type(existing_type, (Geometry, Geography), dialect)
+
+    if not col_type_is_spatial and not existing_type_is_spatial:
+        return op
 
     recreated_column_name = (
         getattr(op, "modify_name", None) or getattr(op, "new_column_name", None) or op.column_name
@@ -606,7 +607,7 @@ def alter_geo_column(context, revision, op):
         )
     else:
         rewritten_ops = []
-        if getattr(col_type, "spatial_index", False):
+        if col_type_is_spatial and getattr(col_type, "spatial_index", False):
             spatial_indexes.append(
                 {
                     "name": _spatial_idx_name(op.table_name, recreated_column_name),
@@ -615,25 +616,26 @@ def alter_geo_column(context, revision, op):
             )
 
     rewritten_ops.append(op)
-    rewritten_ops.append(
-        CreateGeospatialConstraintsOp(
-            op.table_name,
-            Column(recreated_column_name, col_type),
-            schema=op.schema,
-        )
-    )
-    rewritten_ops.extend(
-        [
-            CreateGeospatialIndexOp(
-                spatial_index["name"],
+    if col_type_is_spatial:
+        rewritten_ops.append(
+            CreateGeospatialConstraintsOp(
                 op.table_name,
-                [Column(recreated_column_name, col_type)],
+                Column(recreated_column_name, col_type),
                 schema=op.schema,
-                **spatial_index["dialect_options"],
             )
-            for spatial_index in spatial_indexes
-        ]
-    )
+        )
+        rewritten_ops.extend(
+            [
+                CreateGeospatialIndexOp(
+                    spatial_index["name"],
+                    op.table_name,
+                    [Column(recreated_column_name, col_type)],
+                    schema=op.schema,
+                    **spatial_index["dialect_options"],
+                )
+                for spatial_index in spatial_indexes
+            ]
+        )
     return rewritten_ops
 
 

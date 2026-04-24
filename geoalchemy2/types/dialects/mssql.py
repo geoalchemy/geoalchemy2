@@ -99,7 +99,7 @@ def _split_mssql_st_point_args(spec):
 def _format_wkb_number(value):
     if value == 0:
         value = 0.0
-    return format(value, ".15g")
+    return format(value, ".17g")
 
 
 def _coerce_wkb_data(value):

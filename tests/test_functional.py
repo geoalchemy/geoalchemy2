@@ -648,7 +648,7 @@ class TestInsertionCore:
             assert format_wkt(wkt) == "POINT(-1 1)"
             srid = conn.execute(row[1].ST_SRID()).scalar()
             assert srid == 4326
-            extended = dialect_name not in ["mysql", "mariadb", "mssql"]
+            extended = dialect_name not in ["mysql", "mariadb"]
             assert row[1] == from_shape(Point(-1, 1), srid=4326, extended=extended)
 
 
@@ -690,7 +690,7 @@ class TestSelectBindParam:
         rows = results.fetchall()
         geom = rows[0][1]
         assert isinstance(geom, WKBElement)
-        if dialect_name in ["mysql", "mariadb", "mssql"]:
+        if dialect_name in ["mysql", "mariadb"]:
             assert geom.extended is False
         else:
             assert geom.extended is True
@@ -735,7 +735,7 @@ class TestInsertionORM:
         session.flush()
         session.expire(lake)
         assert isinstance(lake.geom, WKBElement)
-        if dialect_name in ["mysql", "mariadb", "mssql"]:
+        if dialect_name in ["mysql", "mariadb"]:
             # Not extended case
             assert str(lake.geom) == (
                 "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"
@@ -757,7 +757,7 @@ class TestInsertionORM:
         session.flush()
         session.expire(lake)
         assert isinstance(lake.geom, WKBElement)
-        if dialect_name in ["mysql", "mariadb", "mssql"]:
+        if dialect_name in ["mysql", "mariadb"]:
             # Not extended case
             assert str(lake.geom) == (
                 "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"

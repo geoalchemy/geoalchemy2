@@ -321,6 +321,40 @@ class TestMSSQLAlterColumnRewrite:
             alembic_helpers.CreateGeospatialConstraintsOp,
         ]
 
+    def test_spatial_alter_column_to_non_spatial_drops_metadata_only(self, monkeypatch):
+        from geoalchemy2.admin.dialects import mssql as mssql_admin
+
+        def get_spatial_indexes(*args, **kwargs):
+            assert kwargs["column_name"] == "geom"
+            return [{"name": "idx_lake_geom", "dialect_options": {}}]
+
+        monkeypatch.setattr(mssql_admin, "_get_mssql_spatial_indexes", get_spatial_indexes)
+
+        class Bind:
+            dialect = mssql.dialect()
+
+        class Context:
+            bind = Bind()
+
+        alter_op = ops.AlterColumnOp(
+            "lake",
+            "geom",
+            modify_type=Integer(),
+            existing_type=Geometry(geometry_type="POINT", srid=4326),
+            existing_nullable=True,
+        )
+
+        rewritten_ops = alembic_helpers.alter_geo_column(Context(), None, alter_op)
+
+        assert [type(rewritten_op) for rewritten_op in rewritten_ops] == [
+            alembic_helpers.DropGeospatialIndexOp,
+            alembic_helpers.DropGeospatialConstraintsOp,
+            ops.AlterColumnOp,
+        ]
+        assert rewritten_ops[0].index_name == "idx_lake_geom"
+        assert rewritten_ops[1].column_name == "geom"
+        assert rewritten_ops[2] is alter_op
+
     @test_only_with_dialects("mssql")
     def test_spatial_alter_column_recreates_constraints(self, conn, metadata):
         from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_column_constraints

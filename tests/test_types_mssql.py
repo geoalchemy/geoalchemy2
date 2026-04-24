@@ -262,16 +262,20 @@ class TestMSSQLCompilation:
         assert "geometry::STGeomFromWKB" in compiled
         assert ".AsTextZM()" in compiled
 
-    def test_as_ewkb_compiles_to_stasbinary(self, geometry_table):
+    def test_as_ewkb_compiles_to_ewkb_expression(self, geometry_table):
         stmt = select([geometry_table.c.geom.ST_AsEWKB()])
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
         assert ".AsBinaryZM()" in compiled
+        assert ".STSrid" in compiled
+        assert "536870912" in compiled
         assert "ST_AsEWKB(" not in compiled
 
-    def test_as_ewkt_compiles_to_astextzm(self, geometry_table):
+    def test_as_ewkt_compiles_to_srid_prefixed_astextzm(self, geometry_table):
         stmt = select([geometry_table.c.geom.ST_AsEWKT()])
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+        assert "CONCAT('SRID='" in compiled
         assert ".AsTextZM()" in compiled
+        assert ".STSrid" in compiled
         assert "ST_AsEWKT(" not in compiled
 
     def test_binary_predicates_compile_to_mssql_methods(self, geometry_table):
@@ -312,6 +316,22 @@ class TestMSSQLCompilation:
         assert "ST_Touches(" not in compiled
         assert "ST_Overlaps(" not in compiled
         assert "ST_Crosses(" not in compiled
+
+    def test_distance_functions_compile_to_mssql_methods(self, geometry_table):
+        other = WKTElement("LINESTRING(0 0,1 1)", srid=4326)
+        stmt = select(
+            [
+                geometry_table.c.geom.ST_Distance(other),
+                geometry_table.c.geom.ST_DWithin(other, 2),
+            ]
+        )
+        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+
+        assert ".STDistance(" in compiled
+        assert "CASE WHEN" in compiled
+        assert "<=" in compiled
+        assert "ST_Distance(" not in compiled
+        assert "ST_DWithin(" not in compiled
 
     def test_geography_from_wkb_compiles_to_stgeomfromwkb(self):
         wkb = bytes.fromhex("0101000000000000000000f03f0000000000000040")
@@ -861,6 +881,15 @@ class TestMSSQLBindAndResultProcessing:
         )
         assert bind_processor(WKBElement(wkb, srid=4326)) == "LINESTRING (0 0, 1 1)"
 
+    def test_bind_processor_preserves_wkb_coordinate_precision(self):
+        geom = Geometry(geometry_type="POINT", srid=4326)
+        bind_processor = geom.bind_processor(self.dialect)
+        wkb = _pack_iso_wkb(1, _pack_coords(0.12345678901234566, 123456789.12345679))
+
+        assert bind_processor(WKBElement(wkb, srid=4326)) == (
+            "POINT (0.12345678901234566 123456789.12345679)"
+        )
+
     def test_wkb_parser_handles_hex_empty_and_geometrycollection_inputs(self):
         empty_linestring_z = _pack_iso_wkb(2, struct.pack("<I", 0), has_z=True)
         empty_linestring_m = _pack_iso_wkb(2, struct.pack("<I", 0), has_m=True)
@@ -1187,3 +1216,16 @@ class TestMSSQLBindAndResultProcessing:
         assert isinstance(result, WKBElement)
         assert result.srid == 4326
         assert result.extended is False
+
+    def test_result_processor_recovers_srid_from_ewkb_for_unknown_srid_columns(self):
+        geom = Geometry(geometry_type="POINT")
+        result_processor = geom.result_processor(self.dialect, None)
+        ewkb = WKBElement(
+            bytes.fromhex("0101000000000000000000f03f0000000000000040"),
+            srid=4326,
+        ).as_ewkb()
+
+        result = result_processor(ewkb.data)
+        assert isinstance(result, WKBElement)
+        assert result.srid == 4326
+        assert result.extended is True
