@@ -96,6 +96,16 @@ class WrappedGeometry(TypeDecorator):
     cache_ok = True
 
 
+class DynamicDefaultSRIDGeometry(TypeDecorator):
+    impl = Geometry
+    cache_ok = True
+    name = "geometry"
+
+    def __init__(self, srid):
+        super().__init__()
+        self.srid = srid
+
+
 class WrappedGeography(TypeDecorator):
     impl = Geography
     cache_ok = True
@@ -1230,6 +1240,79 @@ class TestMSSQLBindAndResultProcessing:
         assert bytes(wkb_processor(compiled.params[wkb_key])) == bytes(ewkb.as_wkb().data)
         assert srid_processor(compiled.params[srid_key]) == 3857
 
+    def test_geom_from_ewkb_reused_bindparam_uses_distinct_default_srid_binds(self):
+        source_bind = bindparam("wkb")
+        stmt = select(
+            [
+                func.ST_GeomFromEWKB(
+                    source_bind,
+                    type_=DynamicDefaultSRIDGeometry(srid=4326),
+                ),
+                func.ST_GeomFromEWKB(
+                    source_bind,
+                    type_=DynamicDefaultSRIDGeometry(srid=3857),
+                ),
+            ]
+        )
+        compiled_sql = normalize_sql(stmt.compile(dialect=self.dialect))
+        compiled = stmt.compile(dialect=self.dialect)
+        wkb_key_4326, srid_key_4326 = mssql_admin._mssql_dynamic_ewkb_bind_keys(
+            source_bind,
+            default_srid=4326,
+        )
+        wkb_key_3857, srid_key_3857 = mssql_admin._mssql_dynamic_ewkb_bind_keys(
+            source_bind,
+            default_srid=3857,
+        )
+        plain_wkb = from_shape(Point(1, 2), extended=False).data
+
+        assert f"geometry::STGeomFromWKB(:{wkb_key_4326}, :{srid_key_4326})" in compiled_sql
+        assert f"geometry::STGeomFromWKB(:{wkb_key_3857}, :{srid_key_3857})" in compiled_sql
+        assert srid_key_4326 != srid_key_3857
+        assert bytes(compiled._bind_processors[wkb_key_4326](plain_wkb)) == bytes(plain_wkb)
+        assert bytes(compiled._bind_processors[wkb_key_3857](plain_wkb)) == bytes(plain_wkb)
+        assert compiled._bind_processors[srid_key_4326](plain_wkb) == 4326
+        assert compiled._bind_processors[srid_key_3857](plain_wkb) == 3857
+
+    def test_geom_from_ewkb_reused_callable_bind_uses_single_source_value(self):
+        calls = []
+        wkb = from_shape(Point(1, 2), extended=False).data
+
+        def get_wkb():
+            calls.append("called")
+            return wkb
+
+        source_bind = bindparam("wkb", callable_=get_wkb)
+        stmt = select(
+            [
+                func.ST_GeomFromEWKB(
+                    source_bind,
+                    type_=DynamicDefaultSRIDGeometry(srid=4326),
+                ),
+                func.ST_GeomFromEWKB(
+                    source_bind,
+                    type_=DynamicDefaultSRIDGeometry(srid=3857),
+                ),
+            ]
+        )
+        compiled = stmt.compile(dialect=self.dialect)
+        wkb_key_4326, srid_key_4326 = mssql_admin._mssql_dynamic_ewkb_bind_keys(
+            source_bind,
+            default_srid=4326,
+        )
+        wkb_key_3857, srid_key_3857 = mssql_admin._mssql_dynamic_ewkb_bind_keys(
+            source_bind,
+            default_srid=3857,
+        )
+
+        assert compiled.construct_params() == {
+            wkb_key_4326: wkb,
+            srid_key_4326: wkb,
+            wkb_key_3857: wkb,
+            srid_key_3857: wkb,
+        }
+        assert calls == ["called"]
+
     def test_mssql_before_execute_expands_dynamic_ewkt_bindparams(self):
         source_bind = bindparam("wkt")
         stmt = select([func.ST_GeomFromEWKT(source_bind)])
@@ -1269,6 +1352,46 @@ class TestMSSQLBindAndResultProcessing:
             "wkb": ewkb,
             wkb_key: ewkb,
             srid_key: ewkb,
+        }
+
+    def test_mssql_before_execute_expands_reused_ewkb_bind_for_each_default_srid(self):
+        source_bind = bindparam("wkb")
+        stmt = select(
+            [
+                func.ST_GeomFromEWKB(
+                    source_bind,
+                    type_=DynamicDefaultSRIDGeometry(srid=4326),
+                ),
+                func.ST_GeomFromEWKB(
+                    source_bind,
+                    type_=DynamicDefaultSRIDGeometry(srid=3857),
+                ),
+            ]
+        )
+        wkb_key_4326, srid_key_4326 = mssql_admin._mssql_dynamic_ewkb_bind_keys(
+            source_bind,
+            default_srid=4326,
+        )
+        wkb_key_3857, srid_key_3857 = mssql_admin._mssql_dynamic_ewkb_bind_keys(
+            source_bind,
+            default_srid=3857,
+        )
+        wkb = from_shape(Point(1, 2), extended=False).data
+
+        _, _, params = mssql_admin.before_execute(
+            type("Conn", (), {"dialect": self.dialect})(),
+            stmt,
+            (),
+            {"wkb": wkb},
+            {},
+        )
+
+        assert params == {
+            "wkb": wkb,
+            wkb_key_4326: wkb,
+            srid_key_4326: wkb,
+            wkb_key_3857: wkb,
+            srid_key_3857: wkb,
         }
 
     def test_mssql_before_execute_ignores_auto_ewkb_constructor_bindparams(self):

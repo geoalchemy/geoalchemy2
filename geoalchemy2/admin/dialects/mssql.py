@@ -627,7 +627,7 @@ def _process_wkb_value(value, extended=False):
     if isinstance(value, WKBElement):
         value = value.as_wkb().data if extended else value.data
     elif extended:
-        value = WKBElement(value, extended=True).as_wkb().data
+        value = WKBElement(value, extended=None).as_wkb().data
     if isinstance(value, memoryview):
         value = value.tobytes()
 
@@ -642,7 +642,7 @@ def _process_ewkb_srid_value(value, default_srid=0):
         return value.srid if value.srid >= 0 else default_srid
 
     if isinstance(value, (bytes, bytearray, memoryview, str)):
-        srid = WKBElement(value, extended=True).srid
+        srid = WKBElement(value, extended=None).srid
         return srid if srid >= 0 else default_srid
 
     return default_srid
@@ -710,13 +710,17 @@ class _MSSQLDynamicEWKBSRIDBindType(TypeDecorator):
 class _MSSQLDynamicEWKTCallable:
     def __init__(self, source_callable):
         self.source_callable = source_callable
+        self._consumer_count = 2
         self._pending = None
         self._remaining = 0
+
+    def add_consumers(self, count):
+        self._consumer_count += count
 
     def __call__(self):
         if self._remaining == 0:
             self._pending = self.source_callable()
-            self._remaining = 2
+            self._remaining = self._consumer_count
 
         self._remaining -= 1
         value = self._pending
@@ -809,7 +813,7 @@ def _infer_srid_from_wkb_clause(wkb_clause, default_srid, extended=False):
         return value.srid if value.srid >= 0 else default_srid
 
     if extended and isinstance(value, (bytes, bytearray, memoryview)):
-        srid = WKBElement(value, extended=True).srid
+        srid = WKBElement(value, extended=None).srid
         return srid if srid >= 0 else default_srid
 
     return default_srid
@@ -1130,23 +1134,25 @@ def _get_mssql_dynamic_ewkt_bind_clauses(wkt_clause, compiler, default_srid=0):
     return cache[source_identifier]
 
 
-def _mssql_dynamic_ewkb_bind_keys(source_bind):
+def _mssql_dynamic_ewkb_bind_keys(source_bind, default_srid=0):
     source_name = getattr(source_bind, "_orig_key", None) or source_bind.key
     source_name = str(source_name)
     source_key = str(source_bind.key)
     key_token = re.sub(r"[^0-9A-Za-z_]+", "_", source_name).strip("_") or "param"
-    key_digest = hashlib.sha1(source_key.encode("utf-8")).hexdigest()[:8]
-    key_base = f"{_MSSQL_DYNAMIC_EWKB_KEY_PREFIX}_{key_token}_{key_digest}"
+    srid_token = re.sub(r"[^0-9A-Za-z_]+", "_", str(default_srid)).strip("_") or "0"
+    key_digest = hashlib.sha1(f"{source_key}:{default_srid}".encode()).hexdigest()[:8]
+    key_base = f"{_MSSQL_DYNAMIC_EWKB_KEY_PREFIX}_{key_token}_srid_{srid_token}_{key_digest}"
     return f"{key_base}_wkb", f"{key_base}_srid"
 
 
-def _make_mssql_dynamic_ewkb_bind_clauses(wkb_clause, default_srid=0):
-    wkb_key, srid_key = _mssql_dynamic_ewkb_bind_keys(wkb_clause)
+def _make_mssql_dynamic_ewkb_bind_clauses(wkb_clause, default_srid=0, shared_callable=None):
+    wkb_key, srid_key = _mssql_dynamic_ewkb_bind_keys(wkb_clause, default_srid=default_srid)
     bind_kwargs = {
         "required": wkb_clause.required,
     }
     if getattr(wkb_clause, "callable", None) is not None:
-        shared_callable = _MSSQLDynamicEWKTCallable(wkb_clause.callable)
+        if shared_callable is None:
+            shared_callable = _MSSQLDynamicEWKTCallable(wkb_clause.callable)
         bind_kwargs["callable_"] = shared_callable
     elif not wkb_clause.required:
         bind_kwargs["value"] = getattr(wkb_clause, "value", None)
@@ -1171,13 +1177,33 @@ def _get_mssql_dynamic_ewkb_bind_clauses(wkb_clause, compiler, default_srid=0):
         cache = {}
         compiler._geoalchemy2_mssql_dynamic_ewkb_bind_cache = cache
 
-    source_identifier = _mssql_dynamic_ewkt_bind_identifier(wkb_clause)
-    if source_identifier not in cache:
-        cache[source_identifier] = _make_mssql_dynamic_ewkb_bind_clauses(
+    cache_key = (_mssql_dynamic_ewkt_bind_identifier(wkb_clause), default_srid)
+    if cache_key not in cache:
+        shared_callable = None
+        if getattr(wkb_clause, "callable", None) is not None:
+            callable_cache = getattr(
+                compiler,
+                "_geoalchemy2_mssql_dynamic_ewkb_callable_cache",
+                None,
+            )
+            if callable_cache is None:
+                callable_cache = {}
+                compiler._geoalchemy2_mssql_dynamic_ewkb_callable_cache = callable_cache
+
+            callable_key = _mssql_dynamic_ewkt_bind_identifier(wkb_clause)
+            shared_callable = callable_cache.get(callable_key)
+            if shared_callable is None:
+                shared_callable = _MSSQLDynamicEWKTCallable(wkb_clause.callable)
+                callable_cache[callable_key] = shared_callable
+            else:
+                shared_callable.add_consumers(2)
+
+        cache[cache_key] = _make_mssql_dynamic_ewkb_bind_clauses(
             wkb_clause,
             default_srid=default_srid,
+            shared_callable=shared_callable,
         )
-    return cache[source_identifier]
+    return cache[cache_key]
 
 
 def _collect_mssql_dynamic_ewkt_source_binds(clauseelement, dialect):
@@ -1215,7 +1241,7 @@ def _collect_mssql_dynamic_ewkb_source_binds(clauseelement, dialect):
         return ()
 
     source_binds = []
-    seen_source_identifiers = set()
+    seen_bind_keys = set()
     for element in visitors.iterate(clauseelement):
         if not isinstance(element, functions.ST_GeomFromEWKB):
             continue
@@ -1233,11 +1259,12 @@ def _collect_mssql_dynamic_ewkb_source_binds(clauseelement, dialect):
         ):
             continue
 
-        source_identifier = _mssql_dynamic_ewkt_bind_identifier(clauses[0])
-        if source_identifier in seen_source_identifiers:
+        default_srid = element.type.srid if element.type.srid >= 0 else 0
+        bind_key = (_mssql_dynamic_ewkt_bind_identifier(clauses[0]), default_srid)
+        if bind_key in seen_bind_keys:
             continue
-        seen_source_identifiers.add(source_identifier)
-        source_binds.append(clauses[0])
+        seen_bind_keys.add(bind_key)
+        source_binds.append((clauses[0], default_srid))
 
     return tuple(source_binds)
 
@@ -1292,7 +1319,7 @@ def _get_mssql_dynamic_ewkb_bind_mappings(clauseelement, dialect):
 
     statement_bind_name_map = _compile_mssql_statement_bind_name_map(clauseelement, dialect)
     dynamic_bind_mappings = []
-    for source_bind in source_binds:
+    for source_bind, default_srid in source_binds:
         source_identifier = _mssql_dynamic_ewkt_bind_identifier(source_bind)
         candidate_keys = []
         for candidate_key in (
@@ -1303,7 +1330,10 @@ def _get_mssql_dynamic_ewkb_bind_mappings(clauseelement, dialect):
             if candidate_key is not None and candidate_key not in candidate_keys:
                 candidate_keys.append(candidate_key)
 
-        wkb_key, srid_key = _mssql_dynamic_ewkb_bind_keys(source_bind)
+        wkb_key, srid_key = _mssql_dynamic_ewkb_bind_keys(
+            source_bind,
+            default_srid=default_srid,
+        )
         dynamic_bind_mappings.append((tuple(candidate_keys), wkb_key, srid_key))
 
     return tuple(dynamic_bind_mappings)
