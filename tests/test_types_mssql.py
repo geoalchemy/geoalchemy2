@@ -14,6 +14,7 @@ from sqlalchemy import Table
 from sqlalchemy import bindparam
 from sqlalchemy import null
 from sqlalchemy.dialects import mssql
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql import func
 from sqlalchemy.sql import insert
@@ -933,7 +934,7 @@ class TestMSSQLBindAndResultProcessing:
 
     def test_geom_from_ewkt_bindparam_compiles_to_split_text_and_srid_binds(self):
         stmt = select([func.ST_GeomFromEWKT(bindparam("wkt"))])
-        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys("wkt")
+        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys(bindparam("wkt"))
         compiled_sql = normalize_sql(stmt.compile(dialect=self.dialect))
         compiled = stmt.compile(dialect=self.dialect)
         text_processor = compiled._bind_processors[text_key]
@@ -944,8 +945,9 @@ class TestMSSQLBindAndResultProcessing:
         assert srid_processor("SRID=4326;POINT ZM (1 2 3 4)") == 4326
 
     def test_mssql_before_execute_expands_dynamic_ewkt_bindparams(self):
-        stmt = select([func.ST_GeomFromEWKT(bindparam("wkt"))])
-        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys("wkt")
+        source_bind = bindparam("wkt")
+        stmt = select([func.ST_GeomFromEWKT(source_bind)])
+        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys(source_bind)
         clauseelement, multiparams, params = mssql_admin.before_execute(
             type("Conn", (), {"dialect": self.dialect})(),
             stmt,
@@ -963,9 +965,10 @@ class TestMSSQLBindAndResultProcessing:
         }
 
     def test_geom_from_ewkt_bindparam_defaults_preserve_compile_time_value(self):
-        stmt = select([func.ST_GeomFromEWKT(bindparam("wkt", "SRID=3857;POINT(1 2)"))])
+        source_bind = bindparam("wkt", "SRID=3857;POINT(1 2)")
+        stmt = select([func.ST_GeomFromEWKT(source_bind)])
         compiled = stmt.compile(dialect=self.dialect)
-        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys("wkt")
+        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys(source_bind)
         text_processor = compiled._bind_processors[text_key]
         srid_processor = compiled._bind_processors[srid_key]
 
@@ -973,6 +976,140 @@ class TestMSSQLBindAndResultProcessing:
         assert compiled.params[srid_key] == "SRID=3857;POINT(1 2)"
         assert text_processor(compiled.params[text_key]) == "POINT(1 2)"
         assert srid_processor(compiled.params[srid_key]) == 3857
+
+    def test_geom_from_ewkt_bindparam_preserves_required_semantics(self):
+        stmt = select([func.ST_GeomFromEWKT(bindparam("wkt"))])
+        compiled = stmt.compile(dialect=self.dialect)
+
+        with pytest.raises(InvalidRequestError, match="bind parameter"):
+            compiled.construct_params()
+
+    def test_geom_from_ewkt_bindparam_preserves_callable_default(self):
+        calls = []
+
+        def get_ewkt():
+            calls.append("called")
+            return "SRID=4326;POINT(1 2)"
+
+        source_bind = bindparam("wkt", callable_=get_ewkt)
+        stmt = select([func.ST_GeomFromEWKT(source_bind)])
+        compiled = stmt.compile(dialect=self.dialect)
+        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys(source_bind)
+
+        assert compiled.construct_params() == {
+            text_key: "SRID=4326;POINT(1 2)",
+            srid_key: "SRID=4326;POINT(1 2)",
+        }
+        assert calls == ["called"]
+
+    def test_mssql_before_execute_expands_unique_bindparam_compiled_name(self):
+        source_bind = bindparam("wkt", unique=True)
+        stmt = select([func.ST_GeomFromEWKT(source_bind)])
+        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys(source_bind)
+        compiled_key = "wkt_1"
+
+        _, _, params = mssql_admin.before_execute(
+            type("Conn", (), {"dialect": self.dialect})(),
+            stmt,
+            (),
+            {compiled_key: "SRID=4326;POINT(1 2)"},
+            {},
+        )
+
+        assert params == {
+            compiled_key: "SRID=4326;POINT(1 2)",
+            text_key: "SRID=4326;POINT(1 2)",
+            srid_key: "SRID=4326;POINT(1 2)",
+        }
+
+    def test_mssql_before_execute_keeps_distinct_unique_bindparams_per_statement(self):
+        source_bind_1 = bindparam("wkt", unique=True)
+        source_bind_2 = bindparam("wkt", unique=True)
+        stmt = select(
+            [
+                func.ST_GeomFromEWKT(source_bind_1),
+                func.ST_GeomFromEWKT(source_bind_2),
+            ]
+        )
+        text_key_1, srid_key_1 = mssql_admin._mssql_dynamic_ewkt_bind_keys(source_bind_1)
+        text_key_2, srid_key_2 = mssql_admin._mssql_dynamic_ewkt_bind_keys(source_bind_2)
+
+        _, _, params = mssql_admin.before_execute(
+            type("Conn", (), {"dialect": self.dialect})(),
+            stmt,
+            (),
+            {
+                "wkt_1": "SRID=4326;POINT(1 2)",
+                "wkt_2": "SRID=3857;POINT(3 4)",
+            },
+            {},
+        )
+
+        assert params == {
+            "wkt_1": "SRID=4326;POINT(1 2)",
+            "wkt_2": "SRID=3857;POINT(3 4)",
+            text_key_1: "SRID=4326;POINT(1 2)",
+            srid_key_1: "SRID=4326;POINT(1 2)",
+            text_key_2: "SRID=3857;POINT(3 4)",
+            srid_key_2: "SRID=3857;POINT(3 4)",
+        }
+
+    def test_mssql_before_execute_reused_unique_bindparam_keeps_single_runtime_key(self):
+        source_bind = bindparam("wkt", unique=True)
+        stmt = select(
+            [
+                func.ST_GeomFromEWKT(source_bind),
+                func.ST_GeomFromEWKT(source_bind),
+            ]
+        )
+        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys(source_bind)
+
+        _, _, params = mssql_admin.before_execute(
+            type("Conn", (), {"dialect": self.dialect})(),
+            stmt,
+            (),
+            {"wkt_1": "SRID=4326;POINT(1 2)"},
+            {},
+        )
+
+        assert params == {
+            "wkt_1": "SRID=4326;POINT(1 2)",
+            text_key: "SRID=4326;POINT(1 2)",
+            srid_key: "SRID=4326;POINT(1 2)",
+        }
+
+    def test_geom_from_ewkt_reused_callable_bind_uses_single_generated_pair(self):
+        calls = []
+
+        def get_ewkt():
+            calls.append("called")
+            return "SRID=4326;POINT(1 2)"
+
+        source_bind = bindparam("wkt", callable_=get_ewkt)
+        stmt = select(
+            [
+                func.ST_GeomFromEWKT(source_bind),
+                func.ST_GeomFromEWKT(source_bind),
+            ]
+        )
+        compiled = stmt.compile(dialect=self.dialect)
+        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys(source_bind)
+
+        assert compiled.construct_params() == {
+            text_key: "SRID=4326;POINT(1 2)",
+            srid_key: "SRID=4326;POINT(1 2)",
+        }
+        assert calls == ["called"]
+
+    def test_geom_from_ewkt_with_explicit_srid_keeps_srid_bind_and_normalizes_wkt(self):
+        stmt = select([func.ST_GeomFromEWKT(bindparam("wkt"), bindparam("srid"))])
+        compiled_sql = normalize_sql(stmt.compile(dialect=self.dialect))
+        compiled = stmt.compile(dialect=self.dialect)
+        processor = compiled._bind_processors["wkt"]
+
+        assert "geometry::STGeomFromText(:wkt, :srid)" in compiled_sql
+        assert processor("SRID=4326;POINT ZM (1 2 3 4)") == "POINT (1 2 3 4)"
+        assert "srid" not in compiled._bind_processors
 
     def test_geom_from_text_bindparam_uses_runtime_wkt_normalization(self):
         stmt = select([func.ST_GeomFromText(bindparam("wkt"), 4326)])

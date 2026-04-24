@@ -253,6 +253,17 @@ class TestCallFunction:
             == 4326
         )
 
+    def test_geom_from_ewkt_with_explicit_srid_keeps_explicit_srid(self, session):
+        stmt = select(func.ST_SRID(func.ST_GeomFromEWKT(bindparam("wkt"), bindparam("srid"))))
+
+        assert (
+            session.execute(
+                stmt,
+                {"wkt": "SRID=4326;POINT(1 2)", "srid": 3857},
+            ).scalar_one()
+            == 3857
+        )
+
 
 @test_only_with_dialects("mssql")
 class TestSpatialElementExecution:
