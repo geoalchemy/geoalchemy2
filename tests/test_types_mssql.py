@@ -262,6 +262,57 @@ class TestMSSQLCompilation:
         assert "geometry::STGeomFromWKB" in compiled
         assert ".AsTextZM()" in compiled
 
+    def test_constructor_wkt_element_argument_does_not_nest_mssql_constructor(self):
+        expr = func.ST_GeomFromEWKT(WKTElement("POINT(1 2)", srid=4326))
+        compiled = normalize_sql(
+            expr.compile(dialect=self.dialect, compile_kwargs={"literal_binds": True})
+        )
+
+        assert compiled == "geometry::STGeomFromText(N'POINT(1 2)', 4326)"
+        assert "STGeomFromText(geometry::STGeomFromText" not in compiled
+
+    def test_constructor_extended_wkt_element_argument_does_not_nest_mssql_constructor(self):
+        expr = func.ST_GeomFromEWKT(WKTElement("SRID=3857;POINT(1 2)", extended=True))
+        compiled = normalize_sql(
+            expr.compile(dialect=self.dialect, compile_kwargs={"literal_binds": True})
+        )
+
+        assert compiled == "geometry::STGeomFromText(N'POINT(1 2)', 3857)"
+        assert "SRID=" not in compiled
+        assert "STGeomFromText(geometry::STGeomFromText" not in compiled
+
+    def test_constructor_geography_wkt_element_argument_uses_geography_constructor(self):
+        expr = func.ST_GeogFromText(WKTElement("POINT(1 2)", srid=4326))
+        compiled = normalize_sql(
+            expr.compile(dialect=self.dialect, compile_kwargs={"literal_binds": True})
+        )
+
+        assert compiled == "geography::STGeomFromText(N'POINT(1 2)', 4326)"
+        assert "geometry::STGeomFromText" not in compiled
+        assert "STGeomFromText(geometry::STGeomFromText" not in compiled
+
+    def test_constructor_wkb_element_argument_does_not_nest_mssql_constructor(self):
+        wkb = bytes.fromhex("0101000000000000000000f03f0000000000000040")
+        expected = "geometry::STGeomFromWKB(0x0101000000000000000000f03f0000000000000040, 4326)"
+        expr = func.ST_GeomFromWKB(WKBElement(wkb, srid=4326))
+        compiled = normalize_sql(
+            expr.compile(dialect=self.dialect, compile_kwargs={"literal_binds": True})
+        )
+
+        assert compiled == expected
+        assert "STGeomFromWKB(geometry::STGeomFromWKB" not in compiled
+
+    def test_constructor_ewkb_element_argument_does_not_nest_mssql_constructor(self):
+        wkb = bytes.fromhex("0101000000000000000000f03f0000000000000040")
+        expected = "geometry::STGeomFromWKB(0x0101000000000000000000f03f0000000000000040, 4326)"
+        expr = func.ST_GeomFromEWKB(WKBElement(wkb, srid=4326).as_ewkb())
+        compiled = normalize_sql(
+            expr.compile(dialect=self.dialect, compile_kwargs={"literal_binds": True})
+        )
+
+        assert compiled == expected
+        assert "STGeomFromWKB(geometry::STGeomFromWKB" not in compiled
+
     def test_as_ewkb_compiles_to_ewkb_expression(self, geometry_table):
         stmt = select([geometry_table.c.geom.ST_AsEWKB()])
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
@@ -335,10 +386,15 @@ class TestMSSQLCompilation:
 
     def test_geography_from_wkb_compiles_to_stgeomfromwkb(self):
         wkb = bytes.fromhex("0101000000000000000000f03f0000000000000040")
-        stmt = select([func.ST_GeogFromWKB(WKBElement(wkb, srid=4326))])
-        compiled = normalize_sql(stmt.compile(dialect=self.dialect))
+        expected = "geography::STGeomFromWKB(0x0101000000000000000000f03f0000000000000040, 4326)"
+        expr = func.ST_GeogFromWKB(WKBElement(wkb, srid=4326))
+        compiled = normalize_sql(
+            expr.compile(dialect=self.dialect, compile_kwargs={"literal_binds": True})
+        )
 
-        assert "geography::STGeomFromWKB" in compiled
+        assert compiled == expected
+        assert "geometry::STGeomFromWKB" not in compiled
+        assert "STGeomFromWKB(geometry::STGeomFromWKB" not in compiled
 
     def test_negative_srid_literal_compiles_as_zero(self):
         stmt = select([func.ST_GeomFromText("POINT(1 2)", -1)])
@@ -555,6 +611,115 @@ class TestMSSQLCompilation:
         )
         assert idx.kwargs["mssql_using"] == "GEOMETRY_GRID"
         assert idx.kwargs["mssql_cells_per_object"] == 16
+
+    def test_mssql_after_create_recreates_non_single_spatial_indexes(self, monkeypatch):
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry(geometry_type="POINT", srid=4326, spatial_index=False)),
+        )
+        idx = Index("ix_lake_id_geom", table.c.id, table.c.geom)
+        bind = type("Bind", (), {"dialect": self.dialect})()
+        created_indexes = []
+        spatial_indexes = []
+
+        def create_index(index, bind=None, **kw):
+            created_indexes.append((index, bind, kw))
+
+        monkeypatch.setattr(Index, "create", create_index)
+        monkeypatch.setattr(mssql_admin, "create_spatial_constraints", lambda *args, **kw: None)
+        monkeypatch.setattr(
+            mssql_admin,
+            "create_spatial_index",
+            lambda *args, **kw: spatial_indexes.append((args, kw)),
+        )
+
+        mssql_admin.before_create(table, bind)
+
+        assert idx not in table.indexes
+        assert table.info["_after_create_indexes"] == [idx]
+
+        mssql_admin.after_create(table, bind)
+
+        assert idx in table.indexes
+        assert created_indexes == [(idx, bind, {})]
+        assert spatial_indexes == []
+
+    def test_mssql_after_create_recreates_generated_name_custom_indexes(self, monkeypatch):
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry(geometry_type="POINT", srid=4326)),
+        )
+        idx = Index("idx_lake_geom", table.c.id, table.c.geom)
+        bind = type("Bind", (), {"dialect": self.dialect})()
+        created_indexes = []
+        spatial_indexes = []
+
+        def create_index(index, bind=None, **kw):
+            created_indexes.append((index, bind, kw))
+
+        monkeypatch.setattr(Index, "create", create_index)
+        monkeypatch.setattr(mssql_admin, "create_spatial_constraints", lambda *args, **kw: None)
+        monkeypatch.setattr(
+            mssql_admin,
+            "create_spatial_index",
+            lambda *args, **kw: spatial_indexes.append((args, kw)),
+        )
+
+        mssql_admin.before_create(table, bind)
+
+        assert idx not in table.indexes
+        assert table.info["_after_create_indexes"] == [idx]
+
+        mssql_admin.after_create(table, bind)
+
+        assert idx in table.indexes
+        assert created_indexes == [(idx, bind, {})]
+        assert spatial_indexes == []
+
+    def test_mssql_after_create_uses_spatial_ddl_for_custom_single_spatial_index(
+        self,
+        monkeypatch,
+    ):
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry(geometry_type="POINT", srid=4326)),
+        )
+        Index(
+            "custom_spatial_idx",
+            table.c.geom,
+            mssql_using="GEOMETRY_GRID",
+        )
+        bind = type("Bind", (), {"dialect": self.dialect})()
+        created_indexes = []
+        spatial_indexes = []
+
+        def create_index(index, bind=None, **kw):
+            created_indexes.append((index, bind, kw))
+
+        def create_spatial_index(bind, table_name, column_name, col_type, **kw):
+            spatial_indexes.append((bind, table_name, column_name, col_type, kw))
+
+        monkeypatch.setattr(Index, "create", create_index)
+        monkeypatch.setattr(mssql_admin, "create_spatial_constraints", lambda *args, **kw: None)
+        monkeypatch.setattr(mssql_admin, "create_spatial_index", create_spatial_index)
+
+        mssql_admin.before_create(table, bind)
+        mssql_admin.after_create(table, bind)
+
+        assert created_indexes == []
+        assert len(spatial_indexes) == 1
+        assert spatial_indexes[0][1:3] == ("lake", "geom")
+        assert spatial_indexes[0][4] == {
+            "schema": None,
+            "index_name": "custom_spatial_idx",
+            "mssql_using": "GEOMETRY_GRID",
+        }
 
 
 class TestMSSQLReflectionHelpers:

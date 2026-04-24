@@ -492,6 +492,17 @@ def reflect_geometry_column(inspector, table, column_info):
     )
 
 
+def _is_mssql_generated_spatial_index(idx, table, col):
+    columns = list(idx.columns.values())
+    return (
+        getattr(idx, "_column_flag", False)
+        and len(columns) == 1
+        and columns[0] is col
+        and idx.name == _spatial_idx_name(table.name, col.name)
+        and getattr(col.type, "spatial_index", False)
+    )
+
+
 def before_create(table, bind, **kw):
     """Remove spatial indexes from CREATE TABLE so they can be emitted separately."""
     schema = table.schema
@@ -514,9 +525,7 @@ def before_create(table, bind, **kw):
                 and col in idx.columns.values()
             ):
                 table.indexes.remove(idx)
-                if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
-                    col.type, "spatial_index", False
-                ):
+                if not _is_mssql_generated_spatial_index(idx, table, col):
                     table.info["_after_create_indexes"].append(idx)
                 break
 
@@ -527,12 +536,11 @@ def after_create(table, bind, **kw):
     delayed_spatial_index_cols = set()
     for idx in after_create_indexes:
         columns = list(idx.columns.values())
-        if len(columns) == 1 and _check_spatial_type(
-            columns[0].type,
-            (Geometry, Geography),
-            dialect,
-        ):
-            delayed_spatial_index_cols.add(columns[0].name)
+        for col in columns:
+            if not _check_spatial_type(col.type, (Geometry, Geography), dialect):
+                continue
+            if len(columns) == 1 or idx.name == _spatial_idx_name(table.name, col.name):
+                delayed_spatial_index_cols.add(col.name)
 
     for col in table.columns:
         if _check_spatial_type(col.type, (Geometry, Geography), dialect):
@@ -562,6 +570,8 @@ def after_create(table, bind, **kw):
                 index_name=idx.name,
                 **idx.kwargs,
             )
+        else:
+            idx.create(bind=bind)
 
 
 def before_drop(table, bind, **kw):
@@ -797,6 +807,39 @@ def _is_mssql_spatial_constructor(clause):
             functions.ST_GeomFromEWKB,
         ),
     )
+
+
+def _is_mssql_text_constructor(clause):
+    return isinstance(
+        clause,
+        (
+            functions.ST_GeomFromText,
+            functions.ST_GeogFromText,
+            functions.ST_GeomFromEWKT,
+        ),
+    )
+
+
+def _is_mssql_wkb_constructor(clause):
+    return isinstance(
+        clause,
+        (
+            functions.ST_GeomFromWKB,
+            functions.ST_GeogFromWKB,
+            functions.ST_GeomFromEWKB,
+        ),
+    )
+
+
+def _unwrap_mssql_constructor_clauses(clauses, predicate):
+    if len(clauses) != 1:
+        return clauses, None
+
+    inner_constructor = clauses[0]
+    if not predicate(inner_constructor):
+        return clauses, None
+
+    return list(inner_constructor.clauses), inner_constructor
 
 
 def _spatial_constructor_matches_target(constructor_type, target_type, dialect):
@@ -1148,6 +1191,11 @@ def before_execute(conn, clauseelement, multiparams, params, execution_options):
 
 def _compile_mssql_geom_from_text(element, compiler, strip_srid=False, **kw):
     clauses = list(element.clauses)
+    clauses, inner_constructor = _unwrap_mssql_constructor_clauses(
+        clauses,
+        _is_mssql_text_constructor,
+    )
+    strip_srid = strip_srid or isinstance(inner_constructor, functions.ST_GeomFromEWKT)
     original_wkt_clause = clauses[0]
     wkt_clause = original_wkt_clause
     spatial_type = None
@@ -1215,6 +1263,11 @@ def _compile_mssql_geom_from_text(element, compiler, strip_srid=False, **kw):
 
 def _compile_mssql_geom_from_wkb(element, compiler, extended=False, **kw):
     clauses = list(element.clauses)
+    clauses, inner_constructor = _unwrap_mssql_constructor_clauses(
+        clauses,
+        _is_mssql_wkb_constructor,
+    )
+    extended = extended or isinstance(inner_constructor, functions.ST_GeomFromEWKB)
     original_wkb_clause = clauses[0]
     wkb_clause = original_wkb_clause
     if kw.get("literal_binds", False) or _should_coerce_wkb_bind_clause(clauses[0]):

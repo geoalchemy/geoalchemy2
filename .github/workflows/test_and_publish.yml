@@ -41,7 +41,7 @@ jobs:
 
     services:
       postgres:
-        image: postgis/postgis:18-master
+        image: postgis/postgis:18-3.6
         env:
           POSTGRES_DB: gis
           POSTGRES_PASSWORD: gis
@@ -56,7 +56,7 @@ jobs:
           --health-retries 20
           --health-start-period 5s
       mysql:
-        image: mysql:9
+        image: mysql:9.6.0
         ports:
           - 3307:3306
         env:
@@ -69,7 +69,7 @@ jobs:
           --health-retries 20
           --health-start-period 10s
       mariadb:
-        image: mariadb:12
+        image: mariadb:12.2.2
         ports:
           - 3308:3306
         env:
@@ -82,17 +82,14 @@ jobs:
           --health-retries 20
           --health-start-period 10s
       mssql:
-        image: mcr.microsoft.com/mssql/server:2025-latest
+        image: mcr.microsoft.com/mssql/server:2022-CU24-ubuntu-22.04
         ports:
           - 1433:1433
         env:
           ACCEPT_EULA: "Y"
           MSSQL_SA_PASSWORD: "GeoAlchemy2!Sql2025"
-        # Set health checks to wait until MSSQL has started. SQL Server 2025
-        # can assert on heterogeneous host CPU topology unless the container
-        # sees a constrained CPU set.
+        # Set health checks to wait until MSSQL has started.
         options: >-
-          --cpuset-cpus 0
           --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'GeoAlchemy2!Sql2025' -C -b -Q 'SELECT 1'"
           --health-interval 5s
           --health-timeout 5s
