@@ -1024,6 +1024,35 @@ class TestMSSQLBindAndResultProcessing:
         with pytest.raises(ArgumentError):
             bind_processor(WKTElement("LINESTRING(0 0,1 1)", srid=2154))
 
+    def test_bind_processor_accepts_runtime_srid_for_unconstrained_column(self):
+        geom = Geometry(geometry_type="LINESTRING", srid=-1)
+        bind_processor = geom.bind_processor(self.dialect)
+        wkb = bytes.fromhex(
+            "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"
+        )
+
+        assert bind_processor("SRID=4326;LINESTRING(0 0,1 1)") == "LINESTRING(0 0,1 1)"
+        assert bind_processor(WKTElement("LINESTRING(0 0,1 1)", srid=4326)) == (
+            "LINESTRING(0 0,1 1)"
+        )
+        assert bind_processor(WKBElement(wkb, srid=4326)) == "LINESTRING (0 0, 1 1)"
+
+    def test_bind_processor_treats_zero_srid_as_fixed(self):
+        geom = Geometry(geometry_type="LINESTRING", srid=0)
+        bind_processor = geom.bind_processor(self.dialect)
+        wkb = bytes.fromhex(
+            "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"
+        )
+
+        with pytest.raises(ArgumentError, match=r"column \(0\)"):
+            bind_processor("SRID=4326;LINESTRING(0 0,1 1)")
+
+        with pytest.raises(ArgumentError, match=r"column \(0\)"):
+            bind_processor(WKTElement("LINESTRING(0 0,1 1)", srid=4326))
+
+        with pytest.raises(ArgumentError, match=r"column \(0\)"):
+            bind_processor(WKBElement(wkb, srid=4326))
+
     def test_bind_processor_resolves_typedecorator_metadata_for_srid_validation(self):
         wrapped_geography = WrappedGeography()
 

@@ -233,6 +233,8 @@ def _resolve_mssql_spatial_type(spatial_type, dialect):
 
 def bind_processor_process(spatial_type, bindvalue, dialect=None):
     spatial_type = _resolve_mssql_spatial_type(spatial_type, dialect)
+    column_srid = spatial_type.srid
+    has_fixed_srid = column_srid >= 0
     if isinstance(bindvalue, str):
         wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
         srid = wkt_match.group(2)
@@ -244,21 +246,22 @@ def bind_processor_process(spatial_type, bindvalue, dialect=None):
                 f"The SRID ({srid}) of the supplied value can not be casted to integer"
             ) from None
 
-        if srid is not None and srid != spatial_type.srid:
+        if has_fixed_srid and srid is not None and srid != column_srid:
             raise ArgumentError(
                 f"The SRID ({srid}) of the supplied value is different "
-                f"from the one of the column ({spatial_type.srid})"
+                f"from the one of the column ({column_srid})"
             )
         return _normalize_wkt_for_mssql(wkt_match.group(3))
 
     if (
         isinstance(bindvalue, _SpatialElement)
+        and has_fixed_srid
         and bindvalue.srid != -1
-        and bindvalue.srid != spatial_type.srid
+        and bindvalue.srid != column_srid
     ):
         raise ArgumentError(
             f"The SRID ({bindvalue.srid}) of the supplied value is different "
-            f"from the one of the column ({spatial_type.srid})"
+            f"from the one of the column ({column_srid})"
         )
 
     if isinstance(bindvalue, WKTElement):
