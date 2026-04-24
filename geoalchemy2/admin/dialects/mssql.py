@@ -59,6 +59,7 @@ _MSSQL_BOUNDING_BOX_ERROR = (
     "formatted as finite numeric coordinates: xmin, ymin, xmax, ymax"
 )
 _MSSQL_DYNAMIC_EWKT_KEY_PREFIX = "_geoalchemy2_mssql_ewkt"
+_MSSQL_DYNAMIC_EWKB_KEY_PREFIX = "_geoalchemy2_mssql_ewkb"
 _MSSQL_DISABLE_DYNAMIC_EWKT_SPLIT_OPTION = "geoalchemy2_mssql_disable_dynamic_ewkt_split"
 
 
@@ -621,14 +622,30 @@ def _process_ewkt_srid_value(value, default_srid=0):
 
 
 def _process_wkb_value(value, extended=False):
+    if value is None:
+        return None
     if isinstance(value, WKBElement):
-        value = value.data
-    if extended:
+        value = value.as_wkb().data if extended else value.data
+    elif extended:
         value = WKBElement(value, extended=True).as_wkb().data
     if isinstance(value, memoryview):
         value = value.tobytes()
 
     return value
+
+
+def _process_ewkb_srid_value(value, default_srid=0):
+    if value is None:
+        return default_srid
+
+    if isinstance(value, WKBElement):
+        return value.srid if value.srid >= 0 else default_srid
+
+    if isinstance(value, (bytes, bytearray, memoryview, str)):
+        srid = WKBElement(value, extended=True).srid
+        return srid if srid >= 0 else default_srid
+
+    return default_srid
 
 
 class _MSSQLWKTBindType(TypeDecorator):
@@ -676,6 +693,18 @@ class _MSSQLDynamicEWKTSRIDBindType(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         return _process_ewkt_srid_value(value, default_srid=self.default_srid)
+
+
+class _MSSQLDynamicEWKBSRIDBindType(TypeDecorator):
+    impl = Integer
+    cache_ok = True
+
+    def __init__(self, default_srid=0):
+        super().__init__()
+        self.default_srid = default_srid
+
+    def process_bind_param(self, value, dialect):
+        return _process_ewkb_srid_value(value, default_srid=self.default_srid)
 
 
 class _MSSQLDynamicEWKTCallable:
@@ -755,6 +784,14 @@ def _should_coerce_wkt_bind_clause_for_text(wkt_clause, strip_srid=False):
 
 def _is_bindparam_clause(clause):
     return isinstance(clause, BindParameter)
+
+
+def _is_mssql_auto_constructor_bindparam(clause, constructor_name):
+    return (
+        _is_bindparam_clause(clause)
+        and getattr(clause, "unique", False)
+        and getattr(clause, "_orig_key", None) == constructor_name
+    )
 
 
 def _should_coerce_wkb_bind_clause(wkb_clause):
@@ -1059,6 +1096,56 @@ def _get_mssql_dynamic_ewkt_bind_clauses(wkt_clause, compiler, default_srid=0):
     return cache[source_identifier]
 
 
+def _mssql_dynamic_ewkb_bind_keys(source_bind):
+    source_name = getattr(source_bind, "_orig_key", None) or source_bind.key
+    source_name = str(source_name)
+    source_key = str(source_bind.key)
+    key_token = re.sub(r"[^0-9A-Za-z_]+", "_", source_name).strip("_") or "param"
+    key_digest = hashlib.sha1(source_key.encode("utf-8")).hexdigest()[:8]
+    key_base = f"{_MSSQL_DYNAMIC_EWKB_KEY_PREFIX}_{key_token}_{key_digest}"
+    return f"{key_base}_wkb", f"{key_base}_srid"
+
+
+def _make_mssql_dynamic_ewkb_bind_clauses(wkb_clause, default_srid=0):
+    wkb_key, srid_key = _mssql_dynamic_ewkb_bind_keys(wkb_clause)
+    bind_kwargs = {
+        "required": wkb_clause.required,
+    }
+    if getattr(wkb_clause, "callable", None) is not None:
+        shared_callable = _MSSQLDynamicEWKTCallable(wkb_clause.callable)
+        bind_kwargs["callable_"] = shared_callable
+    elif not wkb_clause.required:
+        bind_kwargs["value"] = getattr(wkb_clause, "value", None)
+
+    return (
+        expression.bindparam(
+            key=wkb_key,
+            type_=_MSSQLWKBBindType(extended=True),
+            **bind_kwargs,
+        ),
+        expression.bindparam(
+            key=srid_key,
+            type_=_MSSQLDynamicEWKBSRIDBindType(default_srid=default_srid),
+            **bind_kwargs,
+        ),
+    )
+
+
+def _get_mssql_dynamic_ewkb_bind_clauses(wkb_clause, compiler, default_srid=0):
+    cache = getattr(compiler, "_geoalchemy2_mssql_dynamic_ewkb_bind_cache", None)
+    if cache is None:
+        cache = {}
+        compiler._geoalchemy2_mssql_dynamic_ewkb_bind_cache = cache
+
+    source_identifier = _mssql_dynamic_ewkt_bind_identifier(wkb_clause)
+    if source_identifier not in cache:
+        cache[source_identifier] = _make_mssql_dynamic_ewkb_bind_clauses(
+            wkb_clause,
+            default_srid=default_srid,
+        )
+    return cache[source_identifier]
+
+
 def _collect_mssql_dynamic_ewkt_source_binds(clauseelement, dialect):
     if not hasattr(clauseelement, "get_children"):
         return ()
@@ -1071,6 +1158,38 @@ def _collect_mssql_dynamic_ewkt_source_binds(clauseelement, dialect):
 
         clauses = list(element.clauses)
         if len(clauses) != 1 or not _is_bindparam_clause(clauses[0]):
+            continue
+
+        candidate_spatial_type = _resolve_mssql_spatial_type(element.type, dialect)
+        if (
+            _check_spatial_type(candidate_spatial_type, (Geometry, Geography), dialect)
+            and getattr(candidate_spatial_type, "srid", -1) >= 0
+        ):
+            continue
+
+        source_identifier = _mssql_dynamic_ewkt_bind_identifier(clauses[0])
+        if source_identifier in seen_source_identifiers:
+            continue
+        seen_source_identifiers.add(source_identifier)
+        source_binds.append(clauses[0])
+
+    return tuple(source_binds)
+
+
+def _collect_mssql_dynamic_ewkb_source_binds(clauseelement, dialect):
+    if not hasattr(clauseelement, "get_children"):
+        return ()
+
+    source_binds = []
+    seen_source_identifiers = set()
+    for element in visitors.iterate(clauseelement):
+        if not isinstance(element, functions.ST_GeomFromEWKB):
+            continue
+
+        clauses = list(element.clauses)
+        if len(clauses) != 1 or not _is_bindparam_clause(clauses[0]):
+            continue
+        if _is_mssql_auto_constructor_bindparam(clauses[0], "ST_GeomFromEWKB"):
             continue
 
         candidate_spatial_type = _resolve_mssql_spatial_type(element.type, dialect)
@@ -1132,6 +1251,30 @@ def _get_mssql_dynamic_ewkt_bind_mappings(clauseelement, dialect):
     return tuple(dynamic_bind_mappings)
 
 
+def _get_mssql_dynamic_ewkb_bind_mappings(clauseelement, dialect):
+    source_binds = _collect_mssql_dynamic_ewkb_source_binds(clauseelement, dialect)
+    if not source_binds:
+        return ()
+
+    statement_bind_name_map = _compile_mssql_statement_bind_name_map(clauseelement, dialect)
+    dynamic_bind_mappings = []
+    for source_bind in source_binds:
+        source_identifier = _mssql_dynamic_ewkt_bind_identifier(source_bind)
+        candidate_keys = []
+        for candidate_key in (
+            source_bind.key,
+            getattr(source_bind, "_orig_key", None),
+            statement_bind_name_map.get(source_identifier),
+        ):
+            if candidate_key is not None and candidate_key not in candidate_keys:
+                candidate_keys.append(candidate_key)
+
+        wkb_key, srid_key = _mssql_dynamic_ewkb_bind_keys(source_bind)
+        dynamic_bind_mappings.append((tuple(candidate_keys), wkb_key, srid_key))
+
+    return tuple(dynamic_bind_mappings)
+
+
 def _expand_mssql_dynamic_ewkt_param_mapping(parameters, dynamic_bind_mappings):
     if not isinstance(parameters, Mapping):
         return parameters, False
@@ -1161,7 +1304,7 @@ def before_execute(conn, clauseelement, multiparams, params, execution_options):
     dynamic_bind_mappings = _get_mssql_dynamic_ewkt_bind_mappings(
         clauseelement,
         conn.dialect,
-    )
+    ) + _get_mssql_dynamic_ewkb_bind_mappings(clauseelement, conn.dialect)
     if not dynamic_bind_mappings:
         return clauseelement, multiparams, params
 
@@ -1270,7 +1413,44 @@ def _compile_mssql_geom_from_wkb(element, compiler, extended=False, **kw):
     extended = extended or isinstance(inner_constructor, functions.ST_GeomFromEWKB)
     original_wkb_clause = clauses[0]
     wkb_clause = original_wkb_clause
-    if kw.get("literal_binds", False) or _should_coerce_wkb_bind_clause(clauses[0]):
+    spatial_type = None
+    split_disabled = bool(
+        getattr(compiler, "execution_options", {}).get(
+            _MSSQL_DISABLE_DYNAMIC_EWKT_SPLIT_OPTION,
+            False,
+        )
+    )
+    if extended:
+        candidate_spatial_type = _resolve_mssql_spatial_type(element.type, compiler.dialect)
+        if (
+            _check_spatial_type(candidate_spatial_type, (Geometry, Geography), compiler.dialect)
+            and getattr(candidate_spatial_type, "srid", -1) >= 0
+        ):
+            spatial_type = candidate_spatial_type
+    if (
+        extended
+        and spatial_type is None
+        and len(clauses) == 1
+        and _is_bindparam_clause(original_wkb_clause)
+        and not _is_mssql_auto_constructor_bindparam(original_wkb_clause, "ST_GeomFromEWKB")
+        and not kw.get("literal_binds", False)
+        and not split_disabled
+    ):
+        default_srid = element.type.srid if element.type.srid >= 0 else 0
+        dynamic_wkb_clause, dynamic_srid_clause = _get_mssql_dynamic_ewkb_bind_clauses(
+            original_wkb_clause,
+            compiler,
+            default_srid=default_srid,
+        )
+        compiled_wkb = compiler.process(dynamic_wkb_clause, **kw)
+        compiled_srid = compiler.process(dynamic_srid_clause, **kw)
+        return f"{element.type.name}::STGeomFromWKB({compiled_wkb}, {compiled_srid})"
+
+    if (
+        kw.get("literal_binds", False)
+        or (extended and _is_bindparam_clause(original_wkb_clause))
+        or _should_coerce_wkb_bind_clause(clauses[0])
+    ):
         wkb_clause = _coerce_wkb_bind_clause(
             clauses[0], extended=extended, literal=kw.get("literal_binds", False)
         )

@@ -1138,6 +1138,50 @@ class TestMSSQLBindAndResultProcessing:
         assert text_processor("SRID=4326;POINT ZM (1 2 3 4)") == "POINT (1 2 3 4)"
         assert srid_processor("SRID=4326;POINT ZM (1 2 3 4)") == 4326
 
+    def test_geom_from_ewkb_bindparam_compiles_to_split_wkb_and_srid_binds(self):
+        source_bind = bindparam("wkb")
+        stmt = select([func.ST_GeomFromEWKB(source_bind)])
+        wkb_key, srid_key = mssql_admin._mssql_dynamic_ewkb_bind_keys(source_bind)
+        compiled_sql = normalize_sql(stmt.compile(dialect=self.dialect))
+        compiled = stmt.compile(dialect=self.dialect)
+        wkb_processor = compiled._bind_processors[wkb_key]
+        srid_processor = compiled._bind_processors[srid_key]
+        ewkb = from_shape(Point(1, 2), srid=4326, extended=True)
+
+        assert f"geometry::STGeomFromWKB(:{wkb_key}, :{srid_key})" in compiled_sql
+        assert bytes(wkb_processor(ewkb.data)) == bytes(ewkb.as_wkb().data)
+        assert srid_processor(ewkb.data) == 4326
+        plain_wkb = from_shape(Point(1, 2), extended=False).data
+        runtime_wkb = WKBElement(plain_wkb, srid=3857, extended=False)
+        assert bytes(wkb_processor(runtime_wkb)) == bytes(plain_wkb)
+        assert srid_processor(runtime_wkb) == 3857
+        assert wkb_processor(None) is None
+        assert srid_processor(None) == 0
+
+    def test_geom_from_ewkb_bindparam_with_explicit_srid_strips_runtime_ewkb(self):
+        stmt = select([func.ST_GeomFromEWKB(bindparam("wkb"), 4326)])
+        compiled_sql = normalize_sql(stmt.compile(dialect=self.dialect))
+        compiled = stmt.compile(dialect=self.dialect)
+        processor = compiled._bind_processors["wkb"]
+        ewkb = from_shape(Point(1, 2), srid=4326, extended=True)
+
+        assert "geometry::STGeomFromWKB(:wkb, :ST_GeomFromEWKB_2)" in compiled_sql
+        assert bytes(processor(ewkb.data)) == bytes(ewkb.as_wkb().data)
+
+    def test_geom_from_ewkb_bindparam_defaults_preserve_compile_time_value(self):
+        ewkb = from_shape(Point(1, 2), srid=3857, extended=True)
+        source_bind = bindparam("wkb", ewkb.data)
+        stmt = select([func.ST_GeomFromEWKB(source_bind)])
+        compiled = stmt.compile(dialect=self.dialect)
+        wkb_key, srid_key = mssql_admin._mssql_dynamic_ewkb_bind_keys(source_bind)
+        wkb_processor = compiled._bind_processors[wkb_key]
+        srid_processor = compiled._bind_processors[srid_key]
+
+        assert compiled.params[wkb_key] is ewkb.data
+        assert compiled.params[srid_key] is ewkb.data
+        assert bytes(wkb_processor(compiled.params[wkb_key])) == bytes(ewkb.as_wkb().data)
+        assert srid_processor(compiled.params[srid_key]) == 3857
+
     def test_mssql_before_execute_expands_dynamic_ewkt_bindparams(self):
         source_bind = bindparam("wkt")
         stmt = select([func.ST_GeomFromEWKT(source_bind)])
@@ -1157,6 +1201,44 @@ class TestMSSQLBindAndResultProcessing:
             text_key: "SRID=4326;POINT(1 2)",
             srid_key: "SRID=4326;POINT(1 2)",
         }
+
+    def test_mssql_before_execute_expands_dynamic_ewkb_bindparams(self):
+        source_bind = bindparam("wkb")
+        stmt = select([func.ST_GeomFromEWKB(source_bind)])
+        wkb_key, srid_key = mssql_admin._mssql_dynamic_ewkb_bind_keys(source_bind)
+        ewkb = from_shape(Point(1, 2), srid=4326, extended=True).data
+        clauseelement, multiparams, params = mssql_admin.before_execute(
+            type("Conn", (), {"dialect": self.dialect})(),
+            stmt,
+            (),
+            {"wkb": ewkb},
+            {},
+        )
+
+        assert clauseelement is stmt
+        assert multiparams == ()
+        assert params == {
+            "wkb": ewkb,
+            wkb_key: ewkb,
+            srid_key: ewkb,
+        }
+
+    def test_mssql_before_execute_ignores_auto_ewkb_constructor_bindparams(self):
+        ewkb = from_shape(Point(1, 2), srid=4326, extended=True)
+        stmt = select([func.ST_AsText(ewkb)])
+        compiled = stmt.compile(dialect=self.dialect)
+        params = compiled.params
+        clauseelement, multiparams, expanded_params = mssql_admin.before_execute(
+            type("Conn", (), {"dialect": self.dialect})(),
+            stmt,
+            (),
+            params,
+            {},
+        )
+
+        assert clauseelement is stmt
+        assert multiparams == ()
+        assert expanded_params is params
 
     def test_geom_from_ewkt_bindparam_defaults_preserve_compile_time_value(self):
         source_bind = bindparam("wkt", "SRID=3857;POINT(1 2)")

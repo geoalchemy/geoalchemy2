@@ -328,6 +328,16 @@ class TestCallFunction:
             == 4326
         )
 
+    def test_untyped_geom_from_ewkb_bindparam_preserves_runtime_srid(self, session):
+        geom = func.ST_GeomFromEWKB(bindparam("wkb"))
+        stmt = select(func.ST_AsText(geom), func.ST_SRID(geom))
+        ewkb = from_shape(Point(1, 2), srid=4326, extended=True)
+        plain_wkb = from_shape(Point(1, 2), extended=False).data
+        runtime_wkb = WKBElement(plain_wkb, srid=3857, extended=False)
+
+        assert session.execute(stmt, {"wkb": ewkb.data}).one() == ("POINT (1 2)", 4326)
+        assert session.execute(stmt, {"wkb": runtime_wkb}).one() == ("POINT (1 2)", 3857)
+
     def test_geom_from_ewkt_with_explicit_srid_keeps_explicit_srid(self, session):
         stmt = select(func.ST_SRID(func.ST_GeomFromEWKT(bindparam("wkt"), bindparam("srid"))))
 
