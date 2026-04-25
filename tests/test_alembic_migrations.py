@@ -7,11 +7,15 @@ from alembic import script
 from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
+from alembic.operations import Operations
+from alembic.operations import ops
+from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import text
+from sqlalchemy.dialects import mssql
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import alembic_helpers
@@ -39,6 +43,7 @@ class TestAutogenerate:
                 Geometry(
                     geometry_type="LINESTRING",
                     srid=4326,
+                    spatial_index=True,
                     nullable=dialect_name not in ["mysql", "mariadb"],
                 ),
             ),
@@ -116,6 +121,314 @@ class TestAutogenerate:
         assert add_new_geom_col[3].type.geometry_type == "LINESTRING"
         assert add_new_geom_col[3].type.name == "geometry"
         assert add_new_geom_col[3].type.dimension == 2
+
+
+class TestMSSQLAlterColumnRewrite:
+    def test_spatial_alter_column_wraps_constraints_and_indexes(self, monkeypatch):
+        from geoalchemy2.admin.dialects import mssql as mssql_admin
+
+        def get_spatial_indexes(*args, **kwargs):
+            assert kwargs["schema"] == "dbo"
+            return [{"name": "idx_lake_geom", "dialect_options": {}}]
+
+        monkeypatch.setattr(mssql_admin, "_get_mssql_spatial_indexes", get_spatial_indexes)
+
+        class Bind:
+            dialect = mssql.dialect()
+
+        Bind.dialect.default_schema_name = "dbo"
+
+        class Context:
+            bind = Bind()
+
+        alter_op = ops.AlterColumnOp(
+            "lake",
+            "geom",
+            modify_type=Geometry(geometry_type="LINESTRING", srid=3857),
+            existing_type=Geometry(geometry_type="POINT", srid=4326),
+            existing_nullable=True,
+        )
+
+        rewritten_ops = alembic_helpers.alter_geo_column(Context(), None, alter_op)
+
+        assert [type(rewritten_op) for rewritten_op in rewritten_ops] == [
+            alembic_helpers.DropGeospatialIndexOp,
+            alembic_helpers.DropGeospatialConstraintsOp,
+            ops.AlterColumnOp,
+            alembic_helpers.CreateGeospatialConstraintsOp,
+            alembic_helpers.CreateGeospatialIndexOp,
+        ]
+        assert rewritten_ops[0].schema == "dbo"
+        assert rewritten_ops[1].schema == "dbo"
+        assert rewritten_ops[3].schema is None
+        assert rewritten_ops[3].column.type.geometry_type == "LINESTRING"
+        assert rewritten_ops[3].column.type.srid == 3857
+
+    def test_drop_spatial_column_uses_default_schema_for_mssql_metadata(self, monkeypatch):
+        from geoalchemy2.admin.dialects import mssql as mssql_admin
+
+        calls = []
+
+        def drop_spatial_constraints(*args, **kwargs):
+            calls.append(("drop_constraints", kwargs["schema"]))
+
+        def get_spatial_indexes(*args, **kwargs):
+            calls.append(("get_indexes", kwargs["schema"]))
+            return [{"name": "idx_lake_geom"}]
+
+        def drop_spatial_index(*args, **kwargs):
+            calls.append(("drop_index", kwargs["schema"]))
+
+        monkeypatch.setattr(mssql_admin, "drop_spatial_constraints", drop_spatial_constraints)
+        monkeypatch.setattr(mssql_admin, "_get_mssql_spatial_indexes", get_spatial_indexes)
+        monkeypatch.setattr(mssql_admin, "drop_spatial_index", drop_spatial_index)
+
+        class Bind:
+            dialect = mssql.dialect()
+
+        Bind.dialect.default_schema_name = "dbo"
+
+        class Impl:
+            def __init__(self):
+                self.calls = []
+
+            def drop_column(self, table_name, column, schema=None, **kw):
+                self.calls.append((table_name, column.name, schema, kw))
+
+        class Operations:
+            migration_context = None
+
+            def __init__(self):
+                self.impl = Impl()
+
+            def get_bind(self):
+                return Bind()
+
+        operation = alembic_helpers.DropGeospatialColumnOp("lake", "geom", schema=None)
+        alembic_helpers.drop_geospatial_column(Operations(), operation)
+
+        assert calls == [
+            ("drop_constraints", "dbo"),
+            ("get_indexes", "dbo"),
+            ("drop_index", "dbo"),
+        ]
+
+    def test_spatial_alter_column_recreates_metadata_with_renamed_column(self, monkeypatch):
+        from geoalchemy2.admin.dialects import mssql as mssql_admin
+
+        def get_spatial_indexes(*args, **kwargs):
+            assert kwargs["column_name"] == "geom"
+            return [{"name": "idx_lake_geom", "dialect_options": {}}]
+
+        monkeypatch.setattr(mssql_admin, "_get_mssql_spatial_indexes", get_spatial_indexes)
+
+        class Bind:
+            dialect = mssql.dialect()
+
+        class Context:
+            bind = Bind()
+
+        alter_op = ops.AlterColumnOp(
+            "lake",
+            "geom",
+            modify_name="shape",
+            modify_type=Geometry(geometry_type="LINESTRING", srid=3857),
+            existing_type=Geometry(geometry_type="POINT", srid=4326),
+            existing_nullable=True,
+        )
+
+        rewritten_ops = alembic_helpers.alter_geo_column(Context(), None, alter_op)
+
+        assert rewritten_ops[0].column_name == "geom"
+        assert rewritten_ops[1].column_name == "geom"
+        assert rewritten_ops[3].column.name == "shape"
+        assert rewritten_ops[4].columns[0].name == "shape"
+
+    def test_spatial_alter_column_wraps_constraints_without_indexes(self, monkeypatch):
+        from geoalchemy2.admin.dialects import mssql as mssql_admin
+
+        monkeypatch.setattr(mssql_admin, "_get_mssql_spatial_indexes", lambda *args, **kwargs: [])
+
+        class Bind:
+            dialect = mssql.dialect()
+
+        class Context:
+            bind = Bind()
+
+        alter_op = ops.AlterColumnOp(
+            "lake",
+            "geom",
+            modify_type=Geometry(geometry_type="LINESTRING", srid=3857),
+            existing_type=Geometry(geometry_type="POINT", srid=4326),
+            existing_nullable=True,
+        )
+
+        rewritten_ops = alembic_helpers.alter_geo_column(Context(), None, alter_op)
+
+        assert [type(rewritten_op) for rewritten_op in rewritten_ops] == [
+            alembic_helpers.DropGeospatialConstraintsOp,
+            ops.AlterColumnOp,
+            alembic_helpers.CreateGeospatialConstraintsOp,
+        ]
+
+    def test_non_spatial_alter_column_to_spatial_creates_metadata(self):
+        class Bind:
+            dialect = mssql.dialect()
+
+        class Context:
+            bind = Bind()
+
+        alter_op = ops.AlterColumnOp(
+            "lake",
+            "geom",
+            modify_type=Geometry(geometry_type="POINT", srid=4326),
+            existing_type=Integer(),
+            existing_nullable=True,
+        )
+
+        rewritten_ops = alembic_helpers.alter_geo_column(Context(), None, alter_op)
+
+        assert [type(rewritten_op) for rewritten_op in rewritten_ops] == [
+            ops.AlterColumnOp,
+            alembic_helpers.CreateGeospatialConstraintsOp,
+            alembic_helpers.CreateGeospatialIndexOp,
+        ]
+        assert rewritten_ops[1].column.name == "geom"
+        assert rewritten_ops[1].column.type.geometry_type == "POINT"
+        assert rewritten_ops[1].column.type.srid == 4326
+        assert rewritten_ops[2].index_name == "idx_lake_geom"
+        assert rewritten_ops[2].columns[0].name == "geom"
+
+    def test_non_spatial_alter_column_to_spatial_honors_spatial_index_flag(self):
+        class Bind:
+            dialect = mssql.dialect()
+
+        class Context:
+            bind = Bind()
+
+        alter_op = ops.AlterColumnOp(
+            "lake",
+            "geom",
+            modify_type=Geometry(geometry_type="POINT", srid=4326, spatial_index=False),
+            existing_type=Integer(),
+            existing_nullable=True,
+        )
+
+        rewritten_ops = alembic_helpers.alter_geo_column(Context(), None, alter_op)
+
+        assert [type(rewritten_op) for rewritten_op in rewritten_ops] == [
+            ops.AlterColumnOp,
+            alembic_helpers.CreateGeospatialConstraintsOp,
+        ]
+
+    def test_spatial_alter_column_to_non_spatial_drops_metadata_only(self, monkeypatch):
+        from geoalchemy2.admin.dialects import mssql as mssql_admin
+
+        def get_spatial_indexes(*args, **kwargs):
+            assert kwargs["column_name"] == "geom"
+            return [{"name": "idx_lake_geom", "dialect_options": {}}]
+
+        monkeypatch.setattr(mssql_admin, "_get_mssql_spatial_indexes", get_spatial_indexes)
+
+        class Bind:
+            dialect = mssql.dialect()
+
+        class Context:
+            bind = Bind()
+
+        alter_op = ops.AlterColumnOp(
+            "lake",
+            "geom",
+            modify_type=Integer(),
+            existing_type=Geometry(geometry_type="POINT", srid=4326),
+            existing_nullable=True,
+        )
+
+        rewritten_ops = alembic_helpers.alter_geo_column(Context(), None, alter_op)
+
+        assert [type(rewritten_op) for rewritten_op in rewritten_ops] == [
+            alembic_helpers.DropGeospatialIndexOp,
+            alembic_helpers.DropGeospatialConstraintsOp,
+            ops.AlterColumnOp,
+        ]
+        assert rewritten_ops[0].index_name == "idx_lake_geom"
+        assert rewritten_ops[1].column_name == "geom"
+        assert rewritten_ops[2] is alter_op
+
+    @test_only_with_dialects("mssql")
+    def test_spatial_alter_column_recreates_constraints(self, conn, metadata):
+        from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_column_constraints
+
+        table_name = "mssql_alter_constraints"
+        table = Table(
+            table_name,
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(geometry_type="POINT", srid=4326, spatial_index=False),
+            ),
+            CheckConstraint(
+                "[geom] IS NULL OR [geom].STIsValid() = 1",
+                name="ck_mssql_alter_constraints_geom_valid",
+            ),
+            CheckConstraint(
+                "[geom] IS NULL OR [geom].STSrid IN (4326, 3857)",
+                name="ck_mssql_alter_constraints_geom_custom_srid",
+            ),
+        )
+
+        metadata.drop_all(bind=conn, checkfirst=True)
+        try:
+            metadata.create_all(bind=conn)
+            assert _get_mssql_spatial_column_constraints(conn, table_name, "geom") == (
+                "POINT",
+                4326,
+            )
+
+            context = MigrationContext.configure(conn)
+            operations = Operations(context)
+            alter_op = ops.AlterColumnOp(
+                table_name,
+                "geom",
+                modify_type=Geometry(
+                    geometry_type="LINESTRING",
+                    srid=3857,
+                    spatial_index=False,
+                ),
+                existing_type=Geometry(
+                    geometry_type="POINT",
+                    srid=4326,
+                    spatial_index=False,
+                ),
+                existing_nullable=True,
+            )
+
+            for rewritten_op in alembic_helpers.alter_geo_column(context, None, alter_op):
+                operations.invoke(rewritten_op)
+
+            assert _get_mssql_spatial_column_constraints(conn, table_name, "geom") == (
+                "LINESTRING",
+                3857,
+            )
+            assert (
+                conn.execute(
+                    text(
+                        """SELECT COUNT(*)
+                        FROM sys.check_constraints
+                        WHERE parent_object_id = OBJECT_ID(:table_name)
+                            AND name IN (:valid_constraint_name, :srid_constraint_name)"""
+                    ),
+                    {
+                        "table_name": table_name,
+                        "valid_constraint_name": "ck_mssql_alter_constraints_geom_valid",
+                        "srid_constraint_name": "ck_mssql_alter_constraints_geom_custom_srid",
+                    },
+                ).scalar()
+                == 2
+            )
+        finally:
+            table.drop(bind=conn, checkfirst=True)
 
 
 @pytest.fixture
@@ -248,7 +561,7 @@ datefmt = %%H:%%M:%%S
     return cfg
 
 
-@test_only_with_dialects("postgresql", "sqlite-spatialite4")
+@test_only_with_dialects("postgresql", "sqlite-spatialite4", "mssql")
 def test_migration_revision(
     conn,
     metadata,
@@ -354,12 +667,20 @@ new_table = Table(
                 ("new_spatial_table", "geom_without_idx", 2, 2, 4326, 0),
                 ("new_spatial_table", "geom_without_idx_2", 2, 2, 4326, 0),
             ],
+            "mssql": [
+                ("idx_new_spatial_table_geom_with_idx", "geom_with_idx"),
+            ],
         },
         table_name="new_spatial_table",
     )
 
     # Insert data in new table to check that everything works when Alembic copies the tables
-    from_text = "GeomFromEWKT" if conn.dialect.name == "sqlite" else "ST_GeomFromEWKT"
+    if conn.dialect.name == "sqlite":
+        geom_expr = "GeomFromEWKT('SRID=4326;LINESTRING(0 0, 1 1)')"
+    elif conn.dialect.name == "mssql":
+        geom_expr = "geometry::STGeomFromText('LINESTRING(0 0, 1 1)', 4326)"
+    else:
+        geom_expr = "ST_GeomFromEWKT('SRID=4326;LINESTRING(0 0, 1 1)')"
     conn.execute(
         text(
             f"""INSERT INTO new_spatial_table (
@@ -367,9 +688,9 @@ new_table = Table(
             geom_without_idx,
             geom_without_idx_2
         ) VALUES (
-            {from_text}('SRID=4326;LINESTRING(0 0, 1 1)'),
-            {from_text}('SRID=4326;LINESTRING(0 0, 1 1)'),
-            {from_text}('SRID=4326;LINESTRING(0 0, 1 1)')
+            {geom_expr},
+            {geom_expr},
+            {geom_expr}
         )
         """
         )
@@ -478,6 +799,10 @@ new_table = Table(
                 ("new_spatial_table", "new_geom_with_idx", 2, 2, 4326, 1),
                 ("new_spatial_table", "new_geom_without_idx", 2, 2, 4326, 0),
             ],
+            "mssql": [
+                ("idx_new_spatial_table_geom_with_idx", "geom_with_idx"),
+                ("idx_new_spatial_table_new_geom_with_idx", "new_geom_with_idx"),
+            ],
         },
         table_name="new_spatial_table",
     )
@@ -508,6 +833,9 @@ new_table = Table(
                 ("new_spatial_table", "geom_without_idx", 2, 2, 4326, 0),
                 ("new_spatial_table", "geom_without_idx_2", 2, 2, 4326, 0),
             ],
+            "mssql": [
+                ("idx_new_spatial_table_geom_with_idx", "geom_with_idx"),
+            ],
         },
         table_name="new_spatial_table",
     )
@@ -521,6 +849,7 @@ new_table = Table(
         {
             "postgresql": [],
             "sqlite": [],
+            "mssql": [],
         },
         table_name="new_spatial_table",
     )

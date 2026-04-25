@@ -32,6 +32,7 @@ from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.exc import ArgumentError
 from geoalchemy2.types import dialects
+from geoalchemy2.types.dialects.mssql import _split_mssql_st_point_args
 
 
 def select_dialect(dialect_name):
@@ -40,6 +41,7 @@ def select_dialect(dialect_name):
         "geopackage": dialects.geopackage,
         "mysql": dialects.mysql,
         "mariadb": dialects.mariadb,
+        "mssql": dialects.mssql,
         "postgresql": dialects.postgresql,
         "sqlite": dialects.sqlite,
     }
@@ -163,7 +165,7 @@ class _GISType(UserDefinedType):
                 kwargs = {}
                 if self.srid > 0:
                     kwargs["srid"] = self.srid
-                if self.extended is not None and dialect.name not in ["mysql", "mariadb"]:
+                if self.extended is not None and dialect.name not in ["mysql", "mariadb", "mssql"]:
                     kwargs["extended"] = self.extended
                 return self.ElementType(value, **kwargs)
 
@@ -177,7 +179,10 @@ class _GISType(UserDefinedType):
         """Specific bind_processor that automatically process spatial elements."""
 
         def process(bindvalue):
-            return select_dialect(dialect.name).bind_processor_process(self, bindvalue)
+            dialect_module = select_dialect(dialect.name)
+            if dialect.name == "mssql":
+                return dialect_module.bind_processor_process(self, bindvalue, dialect)
+            return dialect_module.bind_processor_process(self, bindvalue)
 
         return process
 
@@ -229,6 +234,11 @@ def get_col_spec_mysql(self, compiler, *args, **kwargs):
     return spec
 
 
+@compiles(_GISType, "mssql")
+def get_col_spec_mssql(self, compiler, *args, **kwargs):
+    return self.name
+
+
 @compiles(Computed, "mysql")
 @compiles(Computed, "mariadb")
 def get_col_spec_computed_mysql(self, compiler, *args, **kwargs):
@@ -238,6 +248,40 @@ def get_col_spec_computed_mysql(self, compiler, *args, **kwargs):
     pattern = re.compile("st_", re.IGNORECASE)
     spec = f"AS ({re.sub(pattern, '', spec)})"
     return spec
+
+
+@compiles(Computed, "mssql")
+def get_col_spec_computed_mssql(self, compiler, *args, **kwargs):
+    spec = compiler.sql_compiler.process(
+        self.sqltext,
+        include_table=False,
+        literal_binds=True,
+    )
+    type_expression = kwargs.get("type_expression") or getattr(self, "column", None)
+    spatial_type = getattr(type_expression, "type", None)
+
+    spec = _rewrite_mssql_computed_spec(spec, spatial_type, compiler.dialect)
+
+    persisted = " PERSISTED" if self.persisted else ""
+    return f"AS ({spec}){persisted}"
+
+
+def _rewrite_mssql_computed_spec(spec, spatial_type, dialect=None):
+    if isinstance(spatial_type, TypeDecorator) and dialect is not None:
+        spatial_type = spatial_type.load_dialect_impl(dialect)
+    if not isinstance(spatial_type, (Geometry, Geography)):
+        return spec
+
+    parsed_args = _split_mssql_st_point_args(spec)
+    if parsed_args is None:
+        return spec
+
+    srid = spatial_type.srid if spatial_type.srid >= 0 else 0
+    x_expr, y_expr = parsed_args
+    if isinstance(spatial_type, Geography):
+        # geography::Point expects (Lat, Long, SRID), the reverse of ST_POINT(x, y).
+        x_expr, y_expr = y_expr, x_expr
+    return f"{spatial_type.name}::Point({x_expr}, {y_expr}, {srid})"
 
 
 class Geometry(_GISType):

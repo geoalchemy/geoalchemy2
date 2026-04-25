@@ -45,6 +45,7 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import from_shape
 from geoalchemy2.shape import to_shape
+from geoalchemy2.types.dialects.mssql import _normalize_wkt_for_mssql
 
 from . import check_indexes
 from . import format_wkt
@@ -489,18 +490,20 @@ class TestInsertionCore:
         ]
         if dialect_name not in ["postgresql", "sqlite"] or not has_m:
             # Use the DB to generate the corresponding raw WKB
-            raw_wkb = conn.execute(
-                text(f"SELECT ST_AsBinary(ST_GeomFromText('{inserted_wkt}', 4326))")
-            ).scalar()
+            if dialect_name == "mssql":
+                raw_wkb = conn.execute(
+                    select([func.ST_AsEWKB(func.ST_GeomFromText(inserted_wkt, 4326))])
+                ).scalar()
+            else:
+                raw_wkb = conn.execute(
+                    select([func.ST_AsBinary(func.ST_GeomFromText(inserted_wkt, 4326))])
+                ).scalar()
 
             wkb_elem = WKBElement(raw_wkb, srid=4326)
 
             # Currently Shapely does not support geometry types with M dimension
             inserted_elements.append({"geom": wkb_elem})
             inserted_elements.append({"geom": wkb_elem.as_ewkb()})
-
-        print(inserted_elements)
-        # raise ValueError()
 
         # Insert the elements
         conn.execute(
@@ -523,6 +526,9 @@ class TestInsertionCore:
         for row_id, row, srid in rows:
             checked_wkt = row.upper().replace(" ", "")
             expected_wkt = inserted_wkt.upper().replace(" ", "")
+            if dialect_name == "mssql":
+                checked_wkt = _normalize_wkt_for_mssql(checked_wkt)
+                expected_wkt = _normalize_wkt_for_mssql(expected_wkt)
             if "MULTIPOINT" in geom_type:
                 # Some dialects return MULTIPOINT geometries with nested parenthesis and others
                 # do not so we remove them before checking the results
@@ -913,7 +919,7 @@ class TestUpdateORM:
         lake.geom = 1
 
         # Update in DB
-        if dialect_name == "postgresql":
+        if dialect_name in ["postgresql", "mssql"]:
             with pytest.raises(ProgrammingError):
                 # Call __eq__() operator of _SpatialElement with 'other' argument equal to 1
                 # so the lake instance is detected as different and is thus updated but with
@@ -951,7 +957,12 @@ class TestCallFunction:
     def test_ST_GeometryType(self, session, Lake, setup_one_lake, dialect_name):
         lake_id = setup_one_lake
 
-        expected_geometry_type = "ST_LineString" if dialect_name == "postgresql" else "LINESTRING"
+        if dialect_name == "postgresql":
+            expected_geometry_type = "ST_LineString"
+        elif dialect_name == "mssql":
+            expected_geometry_type = "LineString"
+        else:
+            expected_geometry_type = "LINESTRING"
 
         s = select([func.ST_GeometryType(Lake.__table__.c.geom)])
         r1 = session.execute(s).scalar()
@@ -968,7 +979,7 @@ class TestCallFunction:
         assert isinstance(r4, Lake)
         assert r4.id == lake_id
 
-    @test_only_with_dialects("postgresql", "sqlite")
+    @test_only_with_dialects("postgresql", "sqlite", "mssql")
     def test_ST_Buffer(self, session, Lake, setup_one_lake):
         lake_id = setup_one_lake
 
@@ -1059,7 +1070,7 @@ class TestCallFunction:
 
     def test_unknown_function_column(self, session, Lake, setup_one_lake, dialect_name):
         s = select([func.ST_UnknownFunction(Lake.__table__.c.geom, 2)])
-        exc = ProgrammingError if dialect_name == "postgresql" else OperationalError
+        exc = ProgrammingError if dialect_name in ["postgresql", "mssql"] else OperationalError
         with pytest.raises(exc, match="ST_UnknownFunction"):
             session.execute(s)
 
@@ -1068,11 +1079,12 @@ class TestCallFunction:
         lake = session.query(Lake).get(lake_id)
 
         s = select([func.ST_UnknownFunction(lake.geom, 2)])
-        exc = ProgrammingError if dialect_name == "postgresql" else OperationalError
+        exc = ProgrammingError if dialect_name in ["postgresql", "mssql"] else OperationalError
         with pytest.raises(exc):
             # TODO: here the query fails because of a
             # "(psycopg2.ProgrammingError) can't adapt type 'WKBElement'"
-            # It would be better if it could fail because of a "UndefinedFunction" error
+            # or a "(pyodbc.ProgrammingError) Invalid parameter type. param-type=WKBElement"
+            # It would be better if it could fail because of an "UndefinedFunction" error
             session.execute(s)
 
     def test_unknown_function_element_ORM(self, session, Lake, setup_one_lake):
@@ -1089,6 +1101,8 @@ class TestShapely:
             data_type = str
         elif dialect_name in ["mysql", "mariadb"]:
             data_type = bytes
+        elif dialect_name == "mssql":
+            data_type = (bytes, memoryview)
         else:
             data_type = memoryview
 
@@ -1401,7 +1415,7 @@ class TestAsBinaryWKT:
             as_binary = "ST_AsText"
             ElementType = WKTElement
 
-        dialects_with_srid = ["geopackage", "mysql", "mariadb"]
+        dialects_with_srid = ["geopackage", "mysql", "mariadb", "mssql"]
 
         # Define the table
         cols = [
@@ -1466,14 +1480,21 @@ class TestCompileQuery:
         query = select([func.ST_AsText(elem)])
         compiled_with_literal = str(query.compile(conn, compile_kwargs={"literal_binds": True}))
         res_text = conn.execute(text(compiled_with_literal)).scalar()
-        assert res_text == "POINT(1 2)"
+        expected_text = "POINT (1 2)" if conn.dialect.name == "mssql" else "POINT(1 2)"
+        assert res_text == expected_text
 
         compiled_without_literal = str(query.compile(conn, compile_kwargs={"literal_binds": False}))
 
         res_query = conn.execute(query).scalar()
-        assert res_query == "POINT(1 2)"
+        assert res_query == expected_text
 
-        assert compiled_with_literal.startswith("SELECT ST_AsText(")
+        if conn.dialect.name == "mssql":
+            assert "geometry::STGeomFromWKB(" in compiled_with_literal
+            assert ".AsTextZM()" in compiled_with_literal
+            assert "geometry::STGeomFromWKB(" in compiled_without_literal
+            assert ".AsTextZM()" in compiled_without_literal
+        else:
+            assert compiled_with_literal.startswith("SELECT ST_AsText(")
+            assert compiled_without_literal.startswith("SELECT ST_AsText(")
         assert "0101000000000000000000f03f0000000000000040" in compiled_with_literal
-        assert compiled_without_literal.startswith("SELECT ST_AsText(")
         assert "0101000000000000000000f03f0000000000000040" not in compiled_without_literal

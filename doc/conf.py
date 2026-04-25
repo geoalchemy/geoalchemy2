@@ -237,4 +237,5 @@ sphinx_gallery_conf = {
     "thumbnail_size": (100, 100),
     "within_subsection_order": ExampleTitleSortKey,
     "min_reported_time": 999,
+    "write_computation_times": False,
 }

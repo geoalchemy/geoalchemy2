@@ -16,7 +16,10 @@ from alembic.operations import BatchOperations
 from alembic.operations import Operations
 from alembic.operations import ops
 from sqlalchemy import Column
+from sqlalchemy import MetaData
+from sqlalchemy import Table
 from sqlalchemy import text
+from sqlalchemy.dialects.mssql.base import MSDialect
 from sqlalchemy.dialects.mysql.base import MySQLDialect
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.ext.compiler import compiles
@@ -160,9 +163,50 @@ def _monkey_patch_get_indexes_for_mysql():
 _monkey_patch_get_indexes_for_mysql()
 
 
+def _monkey_patch_get_indexes_for_mssql():
+    """Monkey patch SQLAlchemy to fix spatial index reflection."""
+    normal_behavior = MSDialect.get_indexes
+
+    def spatial_behavior(self, connection, table_name, schema=None, **kw):
+        from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_indexes
+
+        indexes = self._get_indexes_normal_behavior(connection, table_name, schema=schema, **kw)
+        schema_name = schema or connection.dialect.default_schema_name
+        spatial_indexes = _get_mssql_spatial_indexes(connection, table_name, schema=schema_name)
+
+        if spatial_indexes:
+            reflected_indexes = {i["name"]: i for i in indexes}
+            for idx in spatial_indexes:
+                idx_name = idx["name"]
+                dialect_options = idx["dialect_options"].copy()
+                if idx_name in reflected_indexes:
+                    reflected_indexes[idx_name].setdefault("dialect_options", {}).update(
+                        dialect_options
+                    )
+                    continue
+                dialect_options["_column_flag"] = True
+                indexes.append(
+                    {
+                        "name": idx_name,
+                        "column_names": [idx["column_name"]],
+                        "unique": 0,
+                        "dialect_options": dialect_options,
+                    }
+                )
+
+        return indexes
+
+    spatial_behavior.__doc__ = normal_behavior.__doc__
+    MSDialect.get_indexes = spatial_behavior
+    MSDialect._get_indexes_normal_behavior = normal_behavior
+
+
+_monkey_patch_get_indexes_for_mssql()
+
+
 def render_item(obj_type, obj, autogen_context):
     """Add proper imports for spatial types."""
-    if obj_type == "type" and isinstance(obj, Geometry | Geography | Raster):
+    if obj_type == "type" and isinstance(obj, (Geometry, Geography, Raster)):
         import_name = obj.__class__.__name__
         autogen_context.imports.add(f"from geoalchemy2 import {import_name}")
         return f"{obj!r}"
@@ -269,6 +313,29 @@ class DropGeospatialColumnOp(ops.DropColumnOp):
         return operations.invoke(op)
 
 
+@Operations.register_operation("create_geospatial_constraints")
+class CreateGeospatialConstraintsOp(ops.AddColumnOp):
+    """Create spatial metadata constraints for a geospatial column."""
+
+    @classmethod
+    def create_geospatial_constraints(cls, operations, table_name, column, schema=None):
+        op = cls(table_name, column, schema=schema)
+        return operations.invoke(op)
+
+    def reverse(self):
+        return DropGeospatialConstraintsOp(self.table_name, self.column.name, schema=self.schema)
+
+
+@Operations.register_operation("drop_geospatial_constraints")
+class DropGeospatialConstraintsOp(ops.DropColumnOp):
+    """Drop spatial metadata constraints for a geospatial column."""
+
+    @classmethod
+    def drop_geospatial_constraints(cls, operations, table_name, column_name, schema=None):
+        op = cls(table_name, column_name, schema=schema)
+        return operations.invoke(op)
+
+
 @Operations.implementation_for(AddGeospatialColumnOp)
 def add_geospatial_column(operations, operation):
     """Handle the actual column addition according to the dialect backend.
@@ -306,6 +373,23 @@ def add_geospatial_column(operations, operation):
             operation.column,
             schema=operation.schema,
         )
+    elif dialect.name == "mssql":
+        table = Table(table_name, MetaData(), schema=operation.schema)
+        table.append_column(operation.column)
+        operations.impl.add_column(
+            table_name,
+            operation.column,
+            schema=operation.schema,
+        )
+        from geoalchemy2.admin.dialects.mssql import create_spatial_constraints
+
+        create_spatial_constraints(
+            operations.get_bind(),
+            table_name,
+            column_name,
+            operation.column.type,
+            schema=operation.schema,
+        )
 
 
 @Operations.implementation_for(DropGeospatialColumnOp)
@@ -324,7 +408,62 @@ def drop_geospatial_column(operations, operation):
 
     if dialect.name == "sqlite":
         _SPATIAL_TABLES.add(table_name)
+    elif dialect.name == "mssql":
+        from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_indexes
+        from geoalchemy2.admin.dialects.mssql import drop_spatial_constraints
+        from geoalchemy2.admin.dialects.mssql import drop_spatial_index as drop_mssql_spatial_index
+
+        schema_name = operation.schema or dialect.default_schema_name
+        drop_spatial_constraints(
+            operations.get_bind(),
+            table_name,
+            column.name,
+            schema=schema_name,
+        )
+        for spatial_index in _get_mssql_spatial_indexes(
+            operations.get_bind(),
+            table_name,
+            schema=schema_name,
+            column_name=column.name,
+        ):
+            drop_mssql_spatial_index(
+                operations.get_bind(),
+                table_name,
+                spatial_index["name"],
+                schema=schema_name,
+            )
     operations.impl.drop_column(table_name, column, schema=operation.schema, **operation.kw)
+
+
+@Operations.implementation_for(CreateGeospatialConstraintsOp)
+def create_geospatial_constraints(operations, operation):
+    """Create backend-specific spatial metadata constraints for a column."""
+    bind = operations.get_bind()
+    if bind.dialect.name == "mssql":
+        from geoalchemy2.admin.dialects.mssql import create_spatial_constraints
+
+        create_spatial_constraints(
+            bind,
+            operation.table_name,
+            operation.column.name,
+            operation.column.type,
+            schema=operation.schema,
+        )
+
+
+@Operations.implementation_for(DropGeospatialConstraintsOp)
+def drop_geospatial_constraints(operations, operation):
+    """Drop backend-specific spatial metadata constraints for a column."""
+    bind = operations.get_bind()
+    if bind.dialect.name == "mssql":
+        from geoalchemy2.admin.dialects.mssql import drop_spatial_constraints
+
+        drop_spatial_constraints(
+            bind,
+            operation.table_name,
+            operation.column_name,
+            schema=operation.schema,
+        )
 
 
 @compiles(RenameTable, "sqlite")
@@ -371,6 +510,20 @@ def render_drop_geo_column(autogen_context, op):
     return col_render.replace(".drop_column(", ".drop_geospatial_column(")
 
 
+@renderers.dispatch_for(CreateGeospatialConstraintsOp)
+def render_create_geo_constraints(autogen_context, op):
+    """Render the create_geospatial_constraints operation in migration script."""
+    col_render = _add_column(autogen_context, op)
+    return col_render.replace(".add_column(", ".create_geospatial_constraints(")
+
+
+@renderers.dispatch_for(DropGeospatialConstraintsOp)
+def render_drop_geo_constraints(autogen_context, op):
+    """Render the drop_geospatial_constraints operation in migration script."""
+    col_render = _drop_column(autogen_context, op)
+    return col_render.replace(".drop_column(", ".drop_geospatial_constraints(")
+
+
 @writer.rewrites(ops.AddColumnOp)
 def add_geo_column(context, revision, op):
     """Replace the default AddColumnOp by a geospatial-specific one."""
@@ -378,7 +531,7 @@ def add_geo_column(context, revision, op):
     if isinstance(col_type, TypeDecorator):
         dialect = context.bind.dialect
         col_type = col_type.load_dialect_impl(dialect)
-    if isinstance(col_type, Geometry | Geography | Raster):
+    if isinstance(col_type, (Geometry, Geography, Raster)):
         op.column.type.spatial_index = False
         op.column.type._spatial_index_reflected = None
         new_op = AddGeospatialColumnOp(op.table_name, op.column, schema=op.schema)
@@ -394,11 +547,96 @@ def drop_geo_column(context, revision, op):
     if isinstance(col_type, TypeDecorator):
         dialect = context.bind.dialect
         col_type = col_type.load_dialect_impl(dialect)
-    if isinstance(col_type, Geometry | Geography | Raster):
+    if isinstance(col_type, (Geometry, Geography, Raster)):
         new_op = DropGeospatialColumnOp(op.table_name, op.column_name, schema=op.schema)
     else:
         new_op = op
     return new_op
+
+
+@writer.rewrites(ops.AlterColumnOp)
+def alter_geo_column(context, revision, op):
+    """Rewrite MSSQL spatial column alterations to refresh constraints and indexes."""
+    dialect = context.bind.dialect
+    if dialect.name != "mssql":
+        return op
+
+    col_type = getattr(op, "modify_type", None) or op.existing_type
+    if isinstance(col_type, TypeDecorator):
+        col_type = col_type.load_dialect_impl(dialect)
+
+    existing_type = op.existing_type
+    if isinstance(existing_type, TypeDecorator):
+        existing_type = existing_type.load_dialect_impl(dialect)
+
+    col_type_is_spatial = _check_spatial_type(col_type, (Geometry, Geography), dialect)
+    existing_type_is_spatial = _check_spatial_type(existing_type, (Geometry, Geography), dialect)
+
+    if not col_type_is_spatial and not existing_type_is_spatial:
+        return op
+
+    recreated_column_name = (
+        getattr(op, "modify_name", None) or getattr(op, "new_column_name", None) or op.column_name
+    )
+    spatial_indexes = []
+    if existing_type_is_spatial:
+        from geoalchemy2.admin.dialects.mssql import _get_mssql_spatial_indexes
+
+        schema_name = op.schema or dialect.default_schema_name
+        spatial_indexes = _get_mssql_spatial_indexes(
+            context.bind,
+            op.table_name,
+            schema=schema_name,
+            column_name=op.column_name,
+        )
+        rewritten_ops = [
+            DropGeospatialIndexOp(
+                spatial_index["name"],
+                table_name=op.table_name,
+                column_name=op.column_name,
+                schema=schema_name,
+            )
+            for spatial_index in spatial_indexes
+        ]
+        rewritten_ops.append(
+            DropGeospatialConstraintsOp(
+                op.table_name,
+                op.column_name,
+                schema=schema_name,
+            )
+        )
+    else:
+        rewritten_ops = []
+        if col_type_is_spatial and getattr(col_type, "spatial_index", False):
+            spatial_indexes.append(
+                {
+                    "name": _spatial_idx_name(op.table_name, recreated_column_name),
+                    "dialect_options": {},
+                }
+            )
+
+    rewritten_ops.append(op)
+    if col_type_is_spatial:
+        rewritten_ops.append(
+            CreateGeospatialConstraintsOp(
+                op.table_name,
+                Column(recreated_column_name, col_type),
+                schema=op.schema,
+            )
+        )
+        rewritten_ops.extend(
+            [
+                CreateGeospatialIndexOp(
+                    spatial_index["name"],
+                    op.table_name,
+                    [Column(recreated_column_name, col_type)],
+                    schema=op.schema,
+                    **spatial_index["dialect_options"],
+                )
+                for spatial_index in spatial_indexes
+            ]
+        )
+    return rewritten_ops
 
 
 @Operations.register_operation("create_geospatial_table")
@@ -673,6 +911,23 @@ def create_geospatial_index(operations, operation):
     if dialect.name == "sqlite":
         assert len(operation.columns) == 1, "A spatial index must be set on one column only"
         operations.execute(func.CreateSpatialIndex(operation.table_name, operation.columns[0]))
+    elif dialect.name == "mssql":
+        from geoalchemy2.admin.dialects.mssql import (
+            create_spatial_index as create_mssql_spatial_index,
+        )
+
+        idx = operation.to_index(operations.migration_context)
+        assert len(idx.columns) == 1, "A spatial index must be set on one column only"
+        col = list(idx.columns)[0]
+        create_mssql_spatial_index(
+            bind,
+            operation.table_name,
+            col.name,
+            col.type,
+            schema=operation.schema,
+            index_name=operation.index_name,
+            **idx.kwargs,
+        )
     else:
         idx = operation.to_index(operations.migration_context)
         operations.impl.create_index(idx)
@@ -692,6 +947,15 @@ def drop_geospatial_index(operations, operation):
 
     if dialect.name == "sqlite":
         operations.execute(func.DisableSpatialIndex(operation.table_name, operation.column_name))
+    elif dialect.name == "mssql":
+        from geoalchemy2.admin.dialects.mssql import drop_spatial_index as drop_mssql_spatial_index
+
+        drop_mssql_spatial_index(
+            bind,
+            operation.table_name,
+            operation.index_name,
+            schema=operation.schema,
+        )
     else:
         operations.impl.drop_index(operation.to_index(operations.migration_context))
 

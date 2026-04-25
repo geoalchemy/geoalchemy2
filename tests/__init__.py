@@ -32,6 +32,14 @@ class test_only_with_dialects:
 
 
 def get_postgis_major_version(bind):
+    dialect = getattr(bind, "dialect", None)
+    if dialect is None and getattr(bind, "bind", None) is not None:
+        dialect = bind.bind.dialect
+    if dialect is None and hasattr(bind, "get_bind"):
+        dialect = bind.get_bind().dialect
+
+    if dialect.name == "mssql":
+        return parse_version("0").major
     try:
         return parse_version(bind.execute(func.postgis_lib_version()).scalar()).major
     except OperationalError:
@@ -98,7 +106,7 @@ def select(args):
 
 
 def format_wkt(wkt):
-    return wkt.replace(", ", ",")
+    return wkt.replace(", ", ",").replace(" (", "(")
 
 
 def copy_and_connect_sqlite_db(input_db, tmp_db, engine_echo, dialect):
@@ -134,6 +142,11 @@ def get_versions(conn):
         db_version = "PostGIS_Full_Version()"
         geos_version = "PostGIS_GEOS_Version()"
         proj_version = "PostGIS_PROJ_Version()"
+        proj_path = ""
+    elif dialect_name == "mssql":
+        db_version = "CAST(SERVERPROPERTY('ProductVersion') AS NVARCHAR(128))"
+        geos_version = ""
+        proj_version = ""
         proj_path = ""
     elif dialect_name in ["mysql", "mariadb"]:
         db_version = "VERSION()"
@@ -204,6 +217,22 @@ def check_indexes(conn, dialect_name, expected, table_name):
             FROM gpkg_extensions
             WHERE table_name = '{table_name}' and extension_name = 'gpkg_rtree_index'
             """
+        ),
+        "mssql": text(
+            f"""SELECT i.name, c.name
+            FROM sys.indexes AS i
+            JOIN sys.index_columns AS ic
+                ON i.object_id = ic.object_id
+                AND i.index_id = ic.index_id
+            JOIN sys.columns AS c
+                ON ic.object_id = c.object_id
+                AND ic.column_id = c.column_id
+            JOIN sys.tables AS t
+                ON i.object_id = t.object_id
+            WHERE
+                t.name = '{table_name}'
+                AND i.type_desc = 'SPATIAL'
+            ORDER BY i.name;"""
         ),
     }
 

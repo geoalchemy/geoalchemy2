@@ -38,7 +38,7 @@ _POSSIBLE_TYPES = [
 
 def reflect_geometry_column(inspector, table, column_info):
     """Reflect a column of type Geometry with Postgresql dialect."""
-    if not isinstance(column_info.get("type"), Geometry | NullType):
+    if not isinstance(column_info.get("type"), (Geometry, NullType)):
         return
 
     column_name = column_info.get("name")
@@ -85,7 +85,7 @@ def before_cursor_execute(conn, cursor, statement, parameters, context, executem
         convert (bool): Trigger the conversion.
     """
     if convert:
-        if isinstance(parameters, tuple | list):
+        if isinstance(parameters, (tuple, list)):
             parameters = tuple(x.tobytes() if isinstance(x, memoryview) else x for x in parameters)
         elif isinstance(parameters, dict):
             for k in parameters:

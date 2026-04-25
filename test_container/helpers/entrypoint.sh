@@ -28,6 +28,15 @@ until mysqladmin ping \
     sleep 0.5
 done
 
+echo "configuring postgres"
+/configure_postgres.sh
+
+echo "configuring mysql"
+/configure_mysql.sh
+
+echo "configuring mariadb"
+/configure_mariadb.sh
+
 echo "initializing mssql"
 /init_mssql.sh
 
@@ -70,5 +79,9 @@ git commit -m "dummy commit" > /dev/null
 export MYPY_CACHE_DIR=/output/.mypy_cache
 
 ###############################
+
+if [ "$#" -gt 0 ]; then
+    exec "$@"
+fi
 
 exec bash

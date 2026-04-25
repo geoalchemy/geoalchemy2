@@ -41,7 +41,7 @@ jobs:
 
     services:
       postgres:
-        image: postgis/postgis:16-3.4
+        image: postgis/postgis:18-3.6
         env:
           POSTGRES_DB: gis
           POSTGRES_PASSWORD: gis
@@ -50,40 +50,51 @@ jobs:
           - 5432:5432
         # Set health checks to wait until postgres has started
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
+          --health-cmd "pg_isready -U gis -d gis"
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 20
+          --health-start-period 5s
       mysql:
-        image: mysql:latest
+        image: mysql:9.6.0
         ports:
           - 3307:3306
         env:
-          MYSQL_USER: gis
-          MYSQL_PASSWORD: gis
-          MYSQL_DATABASE: gis
           MYSQL_ROOT_PASSWORD: gis
         # Set health checks to wait until MySQL has started
         options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+          --health-cmd "mysqladmin ping -h localhost -uroot -pgis --silent"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+          --health-start-period 10s
       mariadb:
-        image: mariadb:latest
+        image: mariadb:12.2.2
         ports:
           - 3308:3306
         env:
-          MARIADB_USER: gis
-          MARIADB_PASSWORD: gis
-          MARIADB_DATABASE: gis
           MARIADB_ROOT_PASSWORD: gis
         # Set health checks to wait until MariaDB has started
         options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+          --health-cmd "mariadb-admin ping -h localhost -uroot -pgis --silent"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+          --health-start-period 10s
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-CU24-ubuntu-22.04
+        ports:
+          - 1433:1433
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "GeoAlchemy2!Sql2025"
+        # Set health checks to wait until MSSQL has started.
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'GeoAlchemy2!Sql2025' -C -b -Q 'SELECT 1'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+          --health-start-period 10s
 
 
     steps:
@@ -103,35 +114,58 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libsqlite3-mod-spatialite libgdal-dev gdal-bin rasterio
 
+    # Install MSSQL tools and drivers
+    - name: Install MSSQL tools and drivers
+      run: |
+        curl -sSL -O https://packages.microsoft.com/config/ubuntu/$(grep VERSION_ID /etc/os-release | cut -d '"' -f 2)/packages-microsoft-prod.deb
+        sudo dpkg -i packages-microsoft-prod.deb
+        rm packages-microsoft-prod.deb
+        sudo apt-get update
+        sudo env ACCEPT_EULA=Y apt-get install -y msodbcsql18 mssql-tools18 unixodbc-dev
+        echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
+
     # Config PostgreSQL
     - name: Configure PostgreSQL
+      env:
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        POSTGRES_USER: gis
+        POSTGRES_PASSWORD: gis
+        POSTGRES_DB: gis
       run: |
-        # Create schema "gis" into database "gis"
-        psql -h localhost -p 5432 -U gis -d gis -c 'CREATE SCHEMA gis;'
+        ./test_container/helpers/configure_postgres.sh
+        psql -h localhost -p 5432 -U gis -d gis -c 'SELECT postgis_version();'
 
-        # Add PostGIS extension to "gis" database
-        psql -h localhost -p 5432 -U gis -d gis -c 'CREATE EXTENSION IF NOT EXISTS postgis SCHEMA public;'
-
-        # Drop PostGIS Tiger Geocoder extension to "gis" database
-        psql -h localhost -p 5432 -U gis -d gis -c 'DROP EXTENSION IF EXISTS postgis_tiger_geocoder CASCADE;'
-
-        # Add PostGISRaster extension to "gis" database
-        psql -h localhost -p 5432 -U gis -d gis -c 'CREATE EXTENSION IF NOT EXISTS postgis_raster SCHEMA public;'
-
-        # Drop PostGIS Topology extension to "gis" database
-        psql -h localhost -p 5432 -U gis -d gis -c 'DROP EXTENSION IF EXISTS postgis_topology;'
-
-    # Check MySQL
-    - name: Check MySQL
+    # Configure MySQL
+    - name: Configure MySQL
+      env:
+        MYSQL_HOST: 127.0.0.1
+        MYSQL_PORT: 3307
+        MYSQL_ROOT_PASSWORD: gis
       run: |
+        ./test_container/helpers/configure_mysql.sh
         mysql --user=gis --password=gis --host=127.0.0.1 -P 3307 -e "SELECT VERSION();"
-        mysql --user=root --password=gis --host=127.0.0.1 -P 3307 -e "GRANT ALL PRIVILEGES ON *.* TO 'gis'@'%' WITH GRANT OPTION;"
 
-    # Check MariaDB
-    - name: Check MariaDB
+    # Configure MariaDB
+    - name: Configure MariaDB
+      env:
+        MARIADB_HOST: 127.0.0.1
+        MARIADB_PORT: 3308
+        MARIADB_ROOT_PASSWORD: gis
       run: |
+        ./test_container/helpers/configure_mariadb.sh
         mysql --user=gis --password=gis --host=127.0.0.1 -P 3308 -e "SELECT VERSION();"
-        mysql --user=root --password=gis --host=127.0.0.1 -P 3308 -e "GRANT ALL PRIVILEGES ON *.* TO 'gis'@'%' WITH GRANT OPTION;"
+
+    # Configure MSSQL
+    - name: Configure MSSQL
+      env:
+        MSSQL_HOST: localhost,1433
+        MSSQL_SA_PASSWORD: "GeoAlchemy2!Sql2025"
+        MSSQL_TEST_DB: gis
+        MSSQL_TEST_LOGIN: gis
+        MSSQL_TEST_PASSWORD: gis
+      run: |
+        ./test_container/helpers/init_mssql.sh
 
     # Check python version
     - name: Display Python version
@@ -153,6 +187,7 @@ jobs:
         COVERAGE_FILE: .coverage
         PYTEST_MYSQL_DB_URL: mysql://gis:gis@127.0.0.1:3307/gis
         PYTEST_MARIADB_DB_URL: mariadb://gis:gis@127.0.0.1:3308/gis
+        PYTEST_MSSQL_DB_URL: mssql+pyodbc://gis:gis@localhost:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
       run: |
         if [[ ${{ matrix.python-version.flag }} == 'pypy3.10' ]]; then
           export PYTEST_SPATIALITE3_DB_URL="FAILING URL"

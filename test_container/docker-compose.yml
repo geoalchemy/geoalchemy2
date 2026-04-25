@@ -10,8 +10,8 @@ services:
         condition: service_healthy
       mariadb:
         condition: service_healthy
-      geoalchemy2-mssql:
-        condition: service_started
+      mssql:
+        condition: service_healthy
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_USER: gis
@@ -21,7 +21,7 @@ services:
       MYSQL_ROOT_PASSWORD: gis
       MARIADB_HOST: mariadb
       MARIADB_ROOT_PASSWORD: gis
-      MSSQL_HOST: geoalchemy2-mssql
+      MSSQL_HOST: mssql
       MSSQL_SA_PASSWORD: "GeoAlchemy2!Sql2025"
       MSSQL_TEST_DB: gis
       MSSQL_TEST_LOGIN: gis
@@ -29,7 +29,7 @@ services:
       PYTEST_POSTGRESQL_DB_URL: "postgresql://gis:gis@postgres/gis"
       PYTEST_MYSQL_DB_URL: "mysql://gis:gis@mysql/gis"
       PYTEST_MARIADB_DB_URL: "mariadb://gis:gis@mariadb/gis"
-      PYTEST_MSSQL_DB_URL: "mssql+pyodbc://gis:gis@geoalchemy2-mssql:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
+      PYTEST_MSSQL_DB_URL: "mssql+pyodbc://gis:gis@mssql:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
       SPATIALITE_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/mod_spatialite.so
     stdin_open: true
     tty: true
@@ -38,7 +38,7 @@ services:
       - ./output:/output
 
   postgres:
-    image: postgis/postgis:16-3.4
+    image: postgis/postgis:18-3.6
     environment:
       POSTGRES_USER: gis
       POSTGRES_PASSWORD: gis
@@ -49,11 +49,9 @@ services:
       timeout: 5s
       retries: 20
       start_period: 5s
-    volumes:
-      - ./initdb/postgres:/docker-entrypoint-initdb.d:ro
 
   mysql:
-    image: mysql:8.4
+    image: mysql:9.6.0
     environment:
       MYSQL_ROOT_PASSWORD: gis
     healthcheck:
@@ -62,11 +60,9 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
-    volumes:
-      - ./initdb/mysql:/docker-entrypoint-initdb.d:ro
 
   mariadb:
-    image: mariadb:11.4
+    image: mariadb:12.2.2
     environment:
       MARIADB_ROOT_PASSWORD: gis
     healthcheck:
@@ -75,11 +71,19 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
-    volumes:
-      - ./initdb/mariadb:/docker-entrypoint-initdb.d:ro
 
-  geoalchemy2-mssql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-CU24-ubuntu-22.04
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "GeoAlchemy2!Sql2025"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -Q \"SELECT 1\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s

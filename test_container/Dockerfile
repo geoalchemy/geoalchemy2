@@ -31,7 +31,7 @@ ENV MYSQL_HOST="mysql"
 ENV MYSQL_ROOT_PASSWORD="gis"
 ENV MARIADB_HOST="mariadb"
 ENV MARIADB_ROOT_PASSWORD="gis"
-ENV MSSQL_HOST="geoalchemy2-mssql"
+ENV MSSQL_HOST="mssql"
 ENV MSSQL_SA_PASSWORD="GeoAlchemy2!Sql2025"
 ENV MSSQL_TEST_DB="gis"
 ENV MSSQL_TEST_LOGIN="gis"
@@ -39,8 +39,17 @@ ENV MSSQL_TEST_PASSWORD="gis"
 ENV PYTEST_POSTGRESQL_DB_URL="postgresql://gis:gis@postgres/gis"
 ENV PYTEST_MYSQL_DB_URL="mysql://gis:gis@mysql/gis"
 ENV PYTEST_MARIADB_DB_URL="mariadb://gis:gis@mariadb/gis"
-ENV PYTEST_MSSQL_DB_URL="mssql+pyodbc://gis:gis@geoalchemy2-mssql:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
+ENV PYTEST_MSSQL_DB_URL="mssql+pyodbc://gis:gis@mssql:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
 
 COPY ./helpers/init_mssql.sh /
+COPY ./helpers/configure_postgres.sh /
+COPY ./helpers/configure_mysql.sh /
+COPY ./helpers/configure_mariadb.sh /
 COPY ./helpers/entrypoint.sh /
+RUN chmod +x \
+    /init_mssql.sh \
+    /configure_postgres.sh \
+    /configure_mysql.sh \
+    /configure_mariadb.sh \
+    /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

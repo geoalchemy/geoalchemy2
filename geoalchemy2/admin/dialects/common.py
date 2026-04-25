@@ -106,7 +106,7 @@ def after_drop(table, bind, **kw):
 def compile_bin_literal(wkb_clause):
     """Compile a binary literal for WKBElement."""
     wkb_data = wkb_clause.value
-    if isinstance(wkb_data, bytes | memoryview | WKBElement):
+    if isinstance(wkb_data, (bytes, memoryview, WKBElement)):
         if isinstance(wkb_data, memoryview):
             wkb_data = wkb_data.tobytes()
         if isinstance(wkb_data, bytes):

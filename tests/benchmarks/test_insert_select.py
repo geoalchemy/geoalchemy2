@@ -1,8 +1,8 @@
 import pytest
 from sqlalchemy import Column
 from sqlalchemy import Integer
-from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.sql import func
 
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKBElement
@@ -278,11 +278,11 @@ def test_insert(
         )
 
         assert (
-            len(
-                conn.execute(
-                    text(f"SELECT * FROM {GeomTable.__table__.name} WHERE geom IS NOT NULL")
-                ).fetchall()
-            )
+            conn.execute(
+                select([func.count()])
+                .select_from(GeomTable.__table__)
+                .where(GeomTable.__table__.c.geom.is_not(None))
+            ).scalar()
             == N * N * ROUNDS
         )
 
@@ -341,6 +341,7 @@ def _actual_test_insert_select(
     is_extended_input,
     output_representation,
     is_extended_output,
+    is_default_geom_type,
 ):
     """Actual test for insert and select operations."""
     convert_wkb = input_representation == "WKB"
@@ -367,7 +368,10 @@ def _actual_test_insert_select(
     assert len(all_points) == N * N * ROUNDS
 
     res = conn.execute(select([GeomTable.__table__.c.geom])).fetchone()
-    assert res[0].extended == is_extended_output
+    expected_extended_output = is_extended_output
+    if conn.dialect.name == "mssql" and is_default_geom_type:
+        expected_extended_output = True
+    assert res[0].extended == expected_extended_output
     if output_representation == "WKB":
         assert isinstance(res[0], WKBElement)
     elif output_representation == "WKT":
@@ -394,6 +398,7 @@ def test_insert_select(
     is_extended_input,
     output_representation,
     is_extended_output,
+    is_default_geom_type,
     _insert_select_fail_or_success_type,
 ):
     """Benchmark the insert operation."""
@@ -409,6 +414,7 @@ def test_insert_select(
             is_extended_input,
             output_representation,
             is_extended_output,
+            is_default_geom_type,
         )
     except SuccessfulTest:
         # Handle the successful test case

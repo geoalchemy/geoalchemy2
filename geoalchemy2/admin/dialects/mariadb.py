@@ -30,7 +30,7 @@ def before_cursor_execute(conn, cursor, statement, parameters, context, executem
         convert (bool): Trigger the conversion.
     """
     if convert:
-        if isinstance(parameters, tuple | list):
+        if isinstance(parameters, (tuple, list)):
             parameters = tuple(_cast(x) for x in parameters)
         elif isinstance(parameters, dict):
             for k in parameters:

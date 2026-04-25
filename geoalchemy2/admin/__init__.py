@@ -4,6 +4,7 @@ from sqlalchemy import Column
 from sqlalchemy import Index
 from sqlalchemy import Table
 from sqlalchemy import event
+from sqlalchemy.engine import Engine
 from sqlalchemy.sql import func
 
 from geoalchemy2.admin import dialects
@@ -21,6 +22,7 @@ def select_dialect(dialect_name):
         "geopackage": dialects.geopackage,
         "mysql": dialects.mysql,
         "mariadb": dialects.mariadb,
+        "mssql": dialects.mssql,
         "postgresql": dialects.postgresql,
         "sqlite": dialects.sqlite,
     }
@@ -102,6 +104,19 @@ def setup_ddl_event_listeners():
         select_dialect(inspector.bind.dialect.name).reflect_geometry_column(
             inspector, table, column_info
         )
+
+    @event.listens_for(Engine, "before_execute", retval=True)
+    def before_execute(conn, clauseelement, multiparams, params, execution_options):
+        dialect_module = select_dialect(conn.dialect.name)
+        if hasattr(dialect_module, "before_execute"):
+            return dialect_module.before_execute(
+                conn,
+                clauseelement,
+                multiparams,
+                params,
+                execution_options,
+            )
+        return clauseelement, multiparams, params
 
 
 __all__ = [
