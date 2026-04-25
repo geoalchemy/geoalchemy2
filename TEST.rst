@@ -38,8 +38,9 @@ or inside an interactive shell::
 
     # tox --workdir /output -v run -e py310-sqlalatest
 
-You can combine `py310`, `py311`, `py312` with `sqla14` or `sqlalatest` to run the tests for
-Python 3.10, 3.11 or 3.12 with SQLAlchemy 1.4 or 2.*.
+You can combine `py310`, `py311`, `py312`, `py313`, or `pypy3` with `sqla14` or
+`sqlalatest` to run the tests for Python 3.10, 3.11, 3.12, 3.13, or PyPy with
+SQLAlchemy 1.4 or 2.*.
 
 Remove the container and associated data::
 
@@ -67,6 +68,11 @@ Install the Python and PostgreSQL development packages::
 
     $ sudo apt-get install python3-dev libpq-dev libgeos-dev
 
+Install the SQL Server ODBC driver and unixODBC development headers if you want
+to run the MSSQL functional tests. The CI and test container use Microsoft ODBC
+Driver 18 for SQL Server, which is also what tox's ``pyodbc`` dependency expects
+at runtime.
+
 Install SpatiaLite::
 
     $ sudo apt-get install libsqlite3-mod-spatialite
@@ -77,8 +83,12 @@ Install MySQL::
 
 Install the Python dependencies::
 
-    $ pip install -r requirements.txt
-    $ pip install psycopg2
+    $ pip install -r requirements.txt -r requirements-mypy.txt
+    $ pip install psycopg2-binary pyodbc "Shapely>=1.3.0"
+
+The tox environments also install these full-suite dependencies from ``tox.ini``:
+``psycopg2-binary`` and ``pyodbc`` on CPython, ``psycopg2cffi`` on PyPy, and
+``Shapely`` for shape conversion tests.
 
 Or you can use the Conda environment provided in the `GeoAlchemy2_dev.yml` file.
 
@@ -132,4 +142,9 @@ Run Tests
 
 To run the tests::
 
-    $ py.test
+    $ pytest
+
+To run the same environment matrix used by tox, choose one of the environments
+from ``tox.ini``. For example::
+
+    $ tox -e py313-sqlalatest

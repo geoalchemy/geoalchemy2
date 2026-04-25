@@ -10,12 +10,10 @@ This example uses SQLAlchemy ORM queries.
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import func
+from sqlalchemy import select
 from sqlalchemy.orm import declarative_base
 
 from geoalchemy2 import Geometry
-
-# Tests imports
-from tests import select
 
 Base = declarative_base()
 
@@ -36,7 +34,7 @@ class Point(Base):  # type: ignore
 
 def test_no_wrapping():
     # Select all columns
-    select_query = select([Point])
+    select_query = select(Point)
 
     # Check that the 'geom' column is wrapped by 'ST_AsEWKB()' and that the column
     # 'raw_geom' is not.
@@ -48,11 +46,9 @@ def test_no_wrapping():
 def test_func_no_wrapping():
     # Select query with function
     select_query = select(
-        [
-            func.ST_Buffer(Point.geom),  # with wrapping (default behavior)
-            func.ST_Buffer(Point.geom, type_=Geometry),  # with wrapping
-            func.ST_Buffer(Point.geom, type_=RawGeometry),  # without wrapping
-        ]
+        func.ST_Buffer(Point.geom),  # with wrapping (default behavior)
+        func.ST_Buffer(Point.geom, type_=Geometry),  # with wrapping
+        func.ST_Buffer(Point.geom, type_=RawGeometry),  # without wrapping
     )
 
     # Check the query

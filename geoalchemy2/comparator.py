@@ -10,14 +10,14 @@ Examples:
 Select the objects whose bounding boxes are to the left of the
 bounding box of ``POLYGON((-5 45,5 45,5 -45,-5 -45,-5 45))``::
 
-    select([table]).where(table.c.geom.to_left(
+    select(table).where(table.c.geom.to_left(
         'POLYGON((-5 45,5 45,5 -45,-5 -45,-5 45))'))
 
 The ``<<`` and ``>>`` operators are a bit specific, because they have
 corresponding Python operator (``__lshift__`` and ``__rshift__``). The
 above ``SELECT`` expression can thus be rewritten like this::
 
-    select([table]).where(
+    select(table).where(
         table.c.geom << 'POLYGON((-5 45,5 45,5 -45,-5 -45,-5 45))')
 
 Operators can also be used when using the ORM. For example::
@@ -30,7 +30,7 @@ Now some other examples with the ``<#>`` operator.
 Select the ten objects that are the closest to ``POINT(0 0)`` (typical
 closed neighbors problem)::
 
-    select([table]).order_by(table.c.geom.distance_box('POINT(0 0)')).limit(10)
+    select(table).order_by(table.c.geom.distance_box('POINT(0 0)')).limit(10)
 
 Using the ORM::
 

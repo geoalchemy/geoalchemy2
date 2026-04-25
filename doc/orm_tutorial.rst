@@ -181,7 +181,7 @@ their names::
 Any ``Query`` is iterable::
 
     >>> for lake in query:
-    ...     print lake.name
+    ...     print(lake.name)
     ...
     Garde
     Majeur
@@ -211,7 +211,7 @@ we can use this ``Query``::
     ...             func.ST_Contains(Lake.geom, 'POINT(4 1)'))
     ...
     >>> for lake in query:
-    ...     print lake.name
+    ...     print(lake.name)
     ...
     Orta
 
@@ -219,7 +219,7 @@ GeoAlchemy allows rewriting this ``Query`` more concisely::
 
     >>> query = session.query(Lake).filter(Lake.geom.ST_Contains('POINT(4 1)'))
     >>> for lake in query:
-    ...     print lake.name
+    ...     print(lake.name)
     ...
     Orta
 
@@ -233,7 +233,7 @@ Here's another spatial filtering query, based on ``ST_Intersects``::
     ...             Lake.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
     ...
     >>> for lake in query:
-    ...     print lake.name
+    ...     print(lake.name)
     ...
     Garde
     Orta
@@ -242,7 +242,7 @@ We can also apply relationship functions to
 :class:`geoalchemy2.elements.WKBElement`. For example::
 
     >>> lake = session.query(Lake).filter_by(name='Garde').one()
-    >>> print session.scalar(lake.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
+    >>> print(session.scalar(lake.geom.ST_Intersects('LINESTRING(2 1,4 1)')))
     True
 
 ``session.scalar`` allows executing a clause and returning a scalar
@@ -262,7 +262,7 @@ the ``intersects`` function for that::
     ...             Lake.geom.intersects('LINESTRING(2 1,4 1)'))
     ...
     >>> for lake in query:
-    ...     print lake.name
+    ...     print(lake.name)
     ...
     Garde
     Orta
@@ -334,7 +334,7 @@ Here's a ``Query`` that calculates the areas of buffers for our lakes::
     ...                       func.ST_Area(func.ST_Buffer(Lake.geom, 2)) \
     ...                           .label('bufferarea'))
     >>> for row in query:
-    ...     print '%s: %f' % (row.name, row.bufferarea)
+    ...     print("%s: %f" % (row.name, row.bufferarea))
     ...
     Majeur: 21.485781
     Garde: 32.485781
@@ -351,7 +351,7 @@ Again, the ``Query`` can written more concisely::
     >>> query = session.query(Lake.name,
     ...                       Lake.geom.ST_Buffer(2).ST_Area().label('bufferarea'))
     >>> for row in query:
-    ...     print '%s: %f' % (row.name, row.bufferarea)
+    ...     print("%s: %f" % (row.name, row.bufferarea))
     ...
     Majeur: 21.485781
     Garde: 32.485781
@@ -363,7 +363,7 @@ clauses. For example::
     >>> lake = session.query(Lake).filter(
     ...             Lake.geom.ST_Buffer(2).ST_Area() > 33).one()
     ...
-    >>> print lake.name
+    >>> print(lake.name)
     Orta
 
 And, like any other functions supported by GeoAlchemy, processing and
@@ -372,8 +372,7 @@ measurement functions can be applied to
 
     >>> lake = session.query(Lake).filter_by(name='Majeur').one()
     >>> bufferarea = session.scalar(lake.geom.ST_Buffer(2).ST_Area())
-    >>> print '%s: %f' % (lake.name, bufferarea)
-    Majeur: 21.485781
+    >>> print("%s: %f" % (lake.name, bufferarea))
     Majeur: 21.485781
 
 Use Raster functions

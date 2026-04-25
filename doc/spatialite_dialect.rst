@@ -88,12 +88,12 @@ based on the PostGIS syntax but it is possible to automatically translate the qu
 SpatiaLite ones. For example, the function ``ST_GeomFromEWKT`` is automatically translated into
 ``GeomFromEWKT``. Unfortunately, only a few functions are automatically mapped (mainly the ones
 internally used by GeoAlchemy 2). Nevertheless, it is possible to define new mappings in order to
-translate the queries automatically. Here is an example to register a mapping for the ``ST_Buffer``
-function::
+translate the queries automatically with
+:func:`geoalchemy2.admin.dialects.sqlite.register_sqlite_mapping`. Here is an example to register a
+mapping for the ``ST_Buffer`` function::
 
-    >>> geoalchemy2.functions.register_sqlite_mapping(
-    ...     {"ST_Buffer": "Buffer"}
-    ... )
+    >>> from geoalchemy2.admin.dialects.sqlite import register_sqlite_mapping
+    >>> register_sqlite_mapping({"ST_Buffer": "Buffer"})
 
 After this command, all ``ST_Buffer`` calls in the queries will be translated to ``Buffer`` calls
 when the query is executed on a SQLite DB.

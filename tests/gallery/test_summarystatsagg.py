@@ -12,6 +12,7 @@ from sqlalchemy import Float
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import __version__ as SA_VERSION
+from sqlalchemy import select
 from sqlalchemy.orm import declarative_base
 
 from geoalchemy2 import Raster
@@ -20,7 +21,6 @@ from geoalchemy2.functions import GenericFunction
 from geoalchemy2.types import CompositeType
 
 # Tests imports
-from tests import select
 from tests import test_only_with_dialects
 
 
@@ -77,19 +77,17 @@ class TestSTSummaryStatsAgg:
         session.flush()
 
         # Define the query to compute stats
-        stats_agg = select([Ocean.rast.ST_SummaryStatsAgg_custom(1, True, 1).label("stats")])
+        stats_agg = select(Ocean.rast.ST_SummaryStatsAgg_custom(1, True, 1).label("stats"))
         stats_agg_alias = stats_agg.alias("stats_agg")
 
         # Use these stats
         query = select(
-            [
-                stats_agg_alias.c.stats.count.label("count"),
-                stats_agg_alias.c.stats.sum.label("sum"),
-                stats_agg_alias.c.stats.mean.label("mean"),
-                stats_agg_alias.c.stats.stddev.label("stddev"),
-                stats_agg_alias.c.stats.min.label("min"),
-                stats_agg_alias.c.stats.max.label("max"),
-            ]
+            stats_agg_alias.c.stats.count.label("count"),
+            stats_agg_alias.c.stats.sum.label("sum"),
+            stats_agg_alias.c.stats.mean.label("mean"),
+            stats_agg_alias.c.stats.stddev.label("stddev"),
+            stats_agg_alias.c.stats.min.label("min"),
+            stats_agg_alias.c.stats.max.label("max"),
         )
 
         # Check the query
