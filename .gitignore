@@ -74,5 +74,6 @@ dmypy.json
 !test_container/helpers/configure_postgres.sh
 !test_container/helpers/configure_mysql.sh
 !test_container/helpers/configure_mariadb.sh
+!test_container/helpers/configure_cockroach.sh
 issues
 mylocal_db/

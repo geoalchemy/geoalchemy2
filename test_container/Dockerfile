@@ -36,20 +36,27 @@ ENV MSSQL_SA_PASSWORD="GeoAlchemy2!Sql2025"
 ENV MSSQL_TEST_DB="gis"
 ENV MSSQL_TEST_LOGIN="gis"
 ENV MSSQL_TEST_PASSWORD="gis"
+ENV COCKROACH_HOST="cockroachdb"
+ENV COCKROACH_PORT="26257"
+ENV COCKROACH_DATABASE="gis"
+ENV COCKROACH_USER="gis"
 ENV PYTEST_POSTGRESQL_DB_URL="postgresql://gis:gis@postgres/gis"
 ENV PYTEST_MYSQL_DB_URL="mysql://gis:gis@mysql/gis"
 ENV PYTEST_MARIADB_DB_URL="mariadb://gis:gis@mariadb/gis"
 ENV PYTEST_MSSQL_DB_URL="mssql+pyodbc://gis:gis@mssql:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
+ENV PYTEST_COCKROACHDB_DB_URL="cockroachdb://gis@cockroachdb:26257/gis?sslmode=disable"
 
 COPY ./helpers/init_mssql.sh /
 COPY ./helpers/configure_postgres.sh /
 COPY ./helpers/configure_mysql.sh /
 COPY ./helpers/configure_mariadb.sh /
+COPY ./helpers/configure_cockroach.sh /
 COPY ./helpers/entrypoint.sh /
 RUN chmod +x \
     /init_mssql.sh \
     /configure_postgres.sh \
     /configure_mysql.sh \
     /configure_mariadb.sh \
+    /configure_cockroach.sh \
     /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

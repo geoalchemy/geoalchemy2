@@ -28,6 +28,13 @@ until mysqladmin ping \
     sleep 0.5
 done
 
+echo "waiting for cockroachdb at ${COCKROACH_HOST}:${COCKROACH_PORT}"
+until psql "postgresql://root@${COCKROACH_HOST}:${COCKROACH_PORT}/defaultdb?sslmode=disable" \
+    -v ON_ERROR_STOP=1 \
+    -c "SELECT 1" >/dev/null 2>&1; do
+    sleep 0.5
+done
+
 echo "configuring postgres"
 /configure_postgres.sh
 
@@ -40,12 +47,16 @@ echo "configuring mariadb"
 echo "initializing mssql"
 /init_mssql.sh
 
+echo "configuring cockroachdb"
+/configure_cockroach.sh
+
 echo "###############################"
 echo "GeoAlchemy2 Test Container"
 echo ""
 echo 'run tests with `tox --workdir /output -v run`'
 echo 'run only a specific job, e.g. `py310-sqlalatest`, with `tox --workdir /output -v run -e py310-sqlalatest`'
 echo "MSSQL defaults: server=${MSSQL_HOST} db=${MSSQL_TEST_DB} user=${MSSQL_TEST_LOGIN} password=${MSSQL_TEST_PASSWORD}"
+echo "CockroachDB defaults: server=${COCKROACH_HOST}:${COCKROACH_PORT} db=${COCKROACH_DATABASE} user=${COCKROACH_USER}"
 echo "###############################"
 
 ###############################
