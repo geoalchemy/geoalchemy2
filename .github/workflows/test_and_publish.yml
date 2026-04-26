@@ -97,21 +97,17 @@ jobs:
           --health-start-period 10s
       cockroachdb:
         image: cockroachdb/cockroach:latest-v25.3
+        command: start-single-node --insecure --http-addr=0.0.0.0:8080
         ports:
           - 26257:26257
           - 8080:8080
-        env:
-          COCKROACHDB_USER: gis
-          COCKROACHDB_PASSWORD: gis
-          COCKROACHDB_DATABASE: gis
-          COCKROACH_ARGS: 'start-single-node --insecure'
         # Set health checks to wait until CockroachDB has started
         options: >-
-          start-single-node --insecure --advertise-addr=localhost --http-addr=localhost:8080
-          --health-cmd="cockroach sql --user=gis --database=gis --execute='SELECT 1'"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+          --health-cmd "cockroach sql --insecure --host=localhost:26257 --execute='SELECT 1'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+          --health-start-period 10s
 
     steps:
 
@@ -183,11 +179,16 @@ jobs:
       run: |
         ./test_container/helpers/init_mssql.sh
 
-    # Check CockroachDB
-    - name: Check CockroachDB
+    # Configure CockroachDB
+    - name: Configure CockroachDB
+      env:
+        COCKROACH_HOST: 127.0.0.1
+        COCKROACH_PORT: 26257
+        COCKROACH_DATABASE: gis
+        COCKROACH_USER: gis
       run: |
-        cockroach sql --user=gis --database=gis --execute='SELECT VERSION();'
-        cockroach sql --user=root --database=gis --execute='GRANT ALL PRIVILEGES ON *.* TO "gis"@"%" WITH GRANT OPTION;'
+        ./test_container/helpers/configure_cockroach.sh
+        psql "postgresql://gis@127.0.0.1:26257/gis?sslmode=disable" -v ON_ERROR_STOP=1 -c "SELECT version();"
 
     # Check python version
     - name: Display Python version
@@ -210,6 +211,7 @@ jobs:
         PYTEST_MYSQL_DB_URL: mysql://gis:gis@127.0.0.1:3307/gis
         PYTEST_MARIADB_DB_URL: mariadb://gis:gis@127.0.0.1:3308/gis
         PYTEST_MSSQL_DB_URL: mssql+pyodbc://gis:gis@localhost:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
+        PYTEST_COCKROACHDB_DB_URL: cockroachdb://gis@127.0.0.1:26257/gis?sslmode=disable
       run: |
         if [[ ${{ matrix.python-version.flag }} == 'pypy3.10' ]]; then
           export PYTEST_SPATIALITE3_DB_URL="FAILING URL"

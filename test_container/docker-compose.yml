@@ -12,6 +12,8 @@ services:
         condition: service_healthy
       mssql:
         condition: service_healthy
+      cockroachdb:
+        condition: service_healthy
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_USER: gis
@@ -26,10 +28,15 @@ services:
       MSSQL_TEST_DB: gis
       MSSQL_TEST_LOGIN: gis
       MSSQL_TEST_PASSWORD: gis
+      COCKROACH_HOST: cockroachdb
+      COCKROACH_PORT: 26257
+      COCKROACH_DATABASE: gis
+      COCKROACH_USER: gis
       PYTEST_POSTGRESQL_DB_URL: "postgresql://gis:gis@postgres/gis"
       PYTEST_MYSQL_DB_URL: "mysql://gis:gis@mysql/gis"
       PYTEST_MARIADB_DB_URL: "mariadb://gis:gis@mariadb/gis"
       PYTEST_MSSQL_DB_URL: "mssql+pyodbc://gis:gis@mssql:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
+      PYTEST_COCKROACHDB_DB_URL: "cockroachdb://gis@cockroachdb:26257/gis?sslmode=disable"
       SPATIALITE_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/mod_spatialite.so
     stdin_open: true
     tty: true
@@ -82,6 +89,20 @@ services:
         [
           "CMD-SHELL",
           "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -Q \"SELECT 1\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  cockroachdb:
+    image: cockroachdb/cockroach:latest-v25.3
+    command: start-single-node --insecure --http-addr=0.0.0.0:8080
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "cockroach sql --insecure --host=localhost:26257 --execute='SELECT 1'",
         ]
       interval: 5s
       timeout: 5s

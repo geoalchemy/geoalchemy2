@@ -12,5 +12,5 @@ cleanup() {
 trap cleanup EXIT
 
 cd "${SCRIPT_DIR}"
-docker compose up -d postgres mysql mariadb mssql
+docker compose up -d postgres mysql mariadb mssql cockroachdb
 docker compose run --rm runner "$@"
