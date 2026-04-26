@@ -13,12 +13,12 @@ from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import bindparam
 from sqlalchemy import func
+from sqlalchemy import select
 
 from geoalchemy2 import Geometry
 from geoalchemy2.shape import to_shape
 
 # Tests imports
-from tests import select
 from tests import test_only_with_dialects
 
 metadata = MetaData()
@@ -54,7 +54,7 @@ class TestLengthAtInsert:
         conn.execute(i, values)
 
         # Check the result
-        q = select([table])
+        q = select(table)
         res = conn.execute(q).fetchall()
 
         # Check results

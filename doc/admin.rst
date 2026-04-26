@@ -25,8 +25,8 @@ PostgreSQL-specific objects
    :private-members:
    :show-inheritance:
 
-MySQL/MariadDB-specific objects
--------------------------------
+MySQL/MariaDB-specific objects
+------------------------------
 
 .. automodule:: geoalchemy2.admin.dialects.mysql
    :members:
@@ -42,6 +42,14 @@ SQLite-specific objects
 -----------------------
 
 .. automodule:: geoalchemy2.admin.dialects.sqlite
+   :members:
+   :private-members:
+   :show-inheritance:
+
+MSSQL-specific objects
+----------------------
+
+.. automodule:: geoalchemy2.admin.dialects.mssql
    :members:
    :private-members:
    :show-inheritance:

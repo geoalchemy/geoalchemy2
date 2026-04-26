@@ -651,6 +651,7 @@ def _process_ewkb_srid_value(value, default_srid=0):
 class _MSSQLWKTBindType(TypeDecorator):
     impl = UnicodeText
     cache_ok = True
+    """Allow SQLAlchemy to cache statements using this bind adapter."""
 
     def __init__(self, strip_srid=False, spatial_type=None):
         super().__init__()
@@ -658,6 +659,7 @@ class _MSSQLWKTBindType(TypeDecorator):
         self.spatial_type = spatial_type
 
     def process_bind_param(self, value, dialect):
+        """Return the MSSQL WKT text value for a bound spatial object."""
         if self.spatial_type is not None:
             return _type_bind_processor_process(self.spatial_type, value, dialect)
         return _process_wkt_value(value, strip_srid=self.strip_srid)
@@ -666,44 +668,52 @@ class _MSSQLWKTBindType(TypeDecorator):
 class _MSSQLWKBBindType(TypeDecorator):
     impl = LargeBinary
     cache_ok = True
+    """Allow SQLAlchemy to cache statements using this bind adapter."""
 
     def __init__(self, extended=False):
         super().__init__()
         self.extended = extended
 
     def process_bind_param(self, value, dialect):
+        """Return the MSSQL WKB value for a bound spatial object."""
         return _process_wkb_value(value, extended=self.extended)
 
 
 class _MSSQLDynamicEWKTTextBindType(TypeDecorator):
     impl = UnicodeText
     cache_ok = True
+    """Allow SQLAlchemy to cache statements using this bind adapter."""
 
     def process_bind_param(self, value, dialect):
+        """Return the text component from a dynamic EWKT value."""
         return _process_wkt_value(value, strip_srid=True)
 
 
 class _MSSQLDynamicEWKTSRIDBindType(TypeDecorator):
     impl = Integer
     cache_ok = True
+    """Allow SQLAlchemy to cache statements using this bind adapter."""
 
     def __init__(self, default_srid=0):
         super().__init__()
         self.default_srid = default_srid
 
     def process_bind_param(self, value, dialect):
+        """Return the SRID component from a dynamic EWKT value."""
         return _process_ewkt_srid_value(value, default_srid=self.default_srid)
 
 
 class _MSSQLDynamicEWKBSRIDBindType(TypeDecorator):
     impl = Integer
     cache_ok = True
+    """Allow SQLAlchemy to cache statements using this bind adapter."""
 
     def __init__(self, default_srid=0):
         super().__init__()
         self.default_srid = default_srid
 
     def process_bind_param(self, value, dialect):
+        """Return the SRID component from a dynamic EWKB value."""
         return _process_ewkb_srid_value(value, default_srid=self.default_srid)
 
 

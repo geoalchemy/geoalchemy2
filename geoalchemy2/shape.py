@@ -42,14 +42,15 @@ def check_shapely():
 
 @check_shapely()
 def to_shape(element: WKBElement | WKTElement) -> ShapelyGeometry:
-    """Function to convert a :class:`geoalchemy2.types.SpatialElement` to a Shapely geometry.
+    """Convert a GeoAlchemy 2 WKB or WKT element to a Shapely geometry.
 
     Args:
-        element: The element to convert into a ``Shapely`` object.
+        element: The :class:`geoalchemy2.elements.WKBElement` or
+            :class:`geoalchemy2.elements.WKTElement` to convert into a ``Shapely`` object.
 
     Example::
 
-        lake = Session.query(Lake).get(1)
+        lake = session.get(Lake, 1)
         polygon = to_shape(lake.geom)
     """
     if isinstance(element, WKBElement):
@@ -68,7 +69,7 @@ def to_shape(element: WKBElement | WKTElement) -> ShapelyGeometry:
 
 @check_shapely()
 def from_shape(shape: ShapelyGeometry, srid: int = -1, extended: bool | None = False) -> WKBElement:
-    """Function to convert a Shapely geometry to a :class:`geoalchemy2.types.WKBElement`.
+    """Function to convert a Shapely geometry to a :class:`geoalchemy2.elements.WKBElement`.
 
     Args:
         shape: The shape to convert.

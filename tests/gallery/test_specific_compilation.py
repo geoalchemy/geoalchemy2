@@ -30,6 +30,7 @@ This example uses SQLAlchemy core queries.
 
 from sqlalchemy import MetaData
 from sqlalchemy import func
+from sqlalchemy import select
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql.expression import BindParameter
@@ -39,7 +40,6 @@ from geoalchemy2 import functions
 
 # Tests imports
 from tests import format_wkt
-from tests import select
 from tests import test_only_with_dialects
 
 metadata = MetaData()
@@ -93,11 +93,9 @@ compiles(functions.ST_Buffer, "geopackage")(_compile_buffer_sqlite)  # type: ign
 def test_specific_compilation(conn):
     # Build a query with a sided buffer
     query = select(
-        [
-            func.ST_AsText(
-                func.ST_Buffer(WKTElement("LINESTRING(0 0, 1 0)", srid=4326), 1, "side=left")
-            )
-        ]
+        func.ST_AsText(
+            func.ST_Buffer(WKTElement("LINESTRING(0 0, 1 0)", srid=4326), 1, "side=left")
+        )
     )
 
     # Check the compiled query: the sided buffer should appear only in the SQLite query
@@ -114,9 +112,7 @@ def test_specific_compilation(conn):
     assert format_wkt(res) == "POLYGON((1 0,0 0,0 1,1 1,1 0))"
 
     # Build a query with symmetric buffer to check nothing was broken
-    query = select(
-        [func.ST_AsText(func.ST_Buffer(WKTElement("LINESTRING(0 0, 1 0)", srid=4326), 1))]
-    )
+    query = select(func.ST_AsText(func.ST_Buffer(WKTElement("LINESTRING(0 0, 1 0)", srid=4326), 1)))
 
     # Check the compiled query: the sided buffer should never appear in the query
     compiled_query = str(query.compile(dialect=conn.dialect))

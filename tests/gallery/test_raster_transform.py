@@ -14,14 +14,12 @@ from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import func
+from sqlalchemy import select
 from sqlalchemy.orm import Query
 from sqlalchemy.orm import declarative_base
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
-
-# Tests imports
-from tests import select
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
@@ -48,7 +46,8 @@ class RasterTable(Base):  # type: ignore
 def test_transform_core():
     # Define the transform query for both the geometry and the raster in a naive way
     wrong_query = select(
-        [func.ST_Transform(table.c.geom, 2154), func.ST_Transform(table.c.rast, 2154)]
+        func.ST_Transform(table.c.geom, 2154),
+        func.ST_Transform(table.c.rast, 2154),
     )
 
     # Check the query
@@ -63,10 +62,8 @@ def test_transform_core():
 
     # Define the transform query for both the geometry and the raster in the correct way
     correct_query = select(
-        [
-            func.ST_Transform(table.c.geom, 2154),
-            func.ST_Transform(table.c.rast, 2154, type_=Raster),
-        ]
+        func.ST_Transform(table.c.geom, 2154),
+        func.ST_Transform(table.c.rast, 2154, type_=Raster),
     )
 
     # Check the query

@@ -130,8 +130,8 @@ can be used::
     view the data we can get a compiled form of the expression, and ask
     for its ``params``::
 
-        >>> ins.compile.params()
-        {'geom': 'POLYGON((0 0,1 0,1 1,0 1,0 0))', 'name': 'Majeur'}
+        >>> ins.compile().params
+        {'name': 'Majeur', 'geom': 'POLYGON((0 0,1 0,1 1,0 1,0 0))'}
 
 Up to now we've created an ``INSERT`` query but we haven't sent this query to
 the database yet. Before being able to send it to the database we need
@@ -151,7 +151,7 @@ This is what the logging system should output::
     COMMIT
 
 The value returned by ``conn.execute()``, stored in ``result``, is
-a ``sqlalchemy.engine.ResultProxy`` object. In the case of an ``INSERT`` we can
+a SQLAlchemy ``Result`` object. In the case of an ``INSERT`` we can
 get the primary key value which was generated from our statement::
 
     >>> result.inserted_primary_key
@@ -161,8 +161,10 @@ Instead of using ``values()`` to specify our ``INSERT`` data, we can send
 the data to the ``execute()`` method on ``Connection``. So we could rewrite
 things as follows::
 
-    >>> conn.execute(lake_table.insert(),
-    ...              name='Majeur', geom='POLYGON((0 0,1 0,1 1,0 1,0 0))')
+    >>> conn.execute(
+    ...     lake_table.insert(),
+    ...     {"name": "Majeur", "geom": "POLYGON((0 0,1 0,1 1,0 1,0 0))"},
+    ... )
 
 Now let's use another form, allowing to insert multiple rows at once::
 
@@ -185,10 +187,11 @@ Inserting involved creating an ``Insert`` object, so it'd come to no surprise
 that Selecting involves creating a ``Select`` object.  The primary construct to
 generate ``SELECT`` statements is SQLAlchemy`s ``select()`` function::
 
-    >>> from sqlalchemy.sql import select
-    >>> s = select([lake_table])
+    >>> from sqlalchemy import select
+    >>> s = select(lake_table)
     >>> str(s)
-    SELECT lake.id, lake.name, ST_AsEWKB(lake.geom) AS geom FROM lake
+    SELECT lake.id, lake.name, ST_AsEWKB(lake.geom) AS geom
+    FROM lake
 
 The ``geom`` column being a ``Geometry`` it is wrapped in a ``ST_AsEWKB``
 call when specified as a column in a ``SELECT`` statement.
@@ -197,13 +200,14 @@ We can now execute the statement and look at the results::
 
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row['name'], '; geom:', row['geom'].desc
+    ...     row = row._mapping
+    ...     print("name:", row["name"], "; geom:", row["geom"].desc)
     ...
     name: Majeur ; geom: 0103...
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
 
-``row['geom']`` is a :class:`geoalchemy2.types.WKBElement` instance.  In this
+``row._mapping["geom"]`` is a :class:`geoalchemy2.elements.WKBElement` instance.  In this
 example we just get an hexadecimal representation of the geometry's WKB value
 using the ``desc`` property.
 
@@ -225,21 +229,27 @@ we can use this::
 
 
     >>> from sqlalchemy import func
-    >>> s = select([lake_table],
-                   func.ST_Contains(lake_table.c.geom, 'POINT(4 1)'))
+    >>> s = select(lake_table).where(
+    ...     func.ST_Contains(lake_table.c.geom, 'POINT(4 1)')
+    ... )
     >>> str(s)
-    SELECT lake.id, lake.name, ST_AsEWKB(lake.geom) AS geom FROM lake WHERE ST_Contains(lake.geom, :param_1)
+    SELECT lake.id, lake.name, ST_AsEWKB(lake.geom) AS geom
+    FROM lake
+    WHERE ST_Contains(lake.geom, :ST_Contains_1)
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row['name'], '; geom:', row['geom'].desc
+    ...     row = row._mapping
+    ...     print("name:", row["name"], "; geom:", row["geom"].desc)
     ...
     name: Orta ; geom: 0103...
 
 GeoAlchemy allows rewriting this more concisely::
 
-    >>> s = select([lake_table], lake_table.c.geom.ST_Contains('POINT(4 1)'))
+    >>> s = select(lake_table).where(lake_table.c.geom.ST_Contains('POINT(4 1)'))
     >>> str(s)
-    SELECT lake.id, lake.name, ST_AsEWKB(lake.geom) AS geom FROM lake WHERE ST_Contains(lake.geom, :param_1)
+    SELECT lake.id, lake.name, ST_AsEWKB(lake.geom) AS geom
+    FROM lake
+    WHERE ST_Contains(lake.geom, :ST_Contains_1)
 
 Here the ``ST_Contains`` function is applied to ``lake.c.geom``. And the
 generated SQL the ``lake.geom`` column is actually passed to the
@@ -247,11 +257,13 @@ generated SQL the ``lake.geom`` column is actually passed to the
 
 Here's another spatial query, based on ``ST_Intersects``::
 
-    >>> s = select([lake_table],
-    ...            lake_table.c.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
+    >>> s = select(lake_table).where(
+    ...     lake_table.c.geom.ST_Intersects('LINESTRING(2 1,4 1)')
+    ... )
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row['name'], '; geom:', row['geom'].desc
+    ...     row = row._mapping
+    ...     print("name:", row["name"], "; geom:", row["geom"].desc)
     ...
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
@@ -266,11 +278,13 @@ As an example let's use PostGIS' ``&&`` operator, which allows testing
 whether the bounding boxes of geometries intersect. GeoAlchemy provides the
 ``intersects`` function for that::
 
-    >>> s = select([lake_table],
-    ...            lake_table.c.geom.intersects('LINESTRING(2 1,4 1)'))
+    >>> s = select(lake_table).where(
+    ...     lake_table.c.geom.intersects('LINESTRING(2 1,4 1)')
+    ... )
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print 'name:', row['name'], '; geom:', row['geom'].desc
+    ...     row = row._mapping
+    ...     print("name:", row["name"], "; geom:", row["geom"].desc)
     ...
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
@@ -280,14 +294,17 @@ Processing and Measurement
 
 Here's a ``Select`` that calculates the areas of buffers for our lakes::
 
-    >>> s = select([lake_table.c.name,
-                    func.ST_Area(
-                        lake_table.c.geom.ST_Buffer(2)).label('bufferarea')])
+    >>> s = select(
+    ...     lake_table.c.name,
+    ...     func.ST_Area(lake_table.c.geom.ST_Buffer(2)).label('bufferarea'),
+    ... )
     >>> str(s)
-    SELECT lake.name, ST_Area(ST_Buffer(lake.geom, %(param_1)s)) AS bufferarea FROM lake
+    SELECT lake.name, ST_Area(ST_Buffer(lake.geom, :ST_Buffer_1)) AS bufferarea
+    FROM lake
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print '%s: %f' % (row['name'], row['bufferarea'])
+    ...     row = row._mapping
+    ...     print("%s: %f" % (row["name"], row["bufferarea"]))
     Majeur: 21.485781
     Garde: 32.485781
     Orta: 45.485781
@@ -295,24 +312,27 @@ Here's a ``Select`` that calculates the areas of buffers for our lakes::
 Obviously, processing and measurement functions can also be used in ``WHERE``
 clauses. For example::
 
-    >>> s = select([lake_table.c.name],
-                   lake_table.c.geom.ST_Buffer(2).ST_Area() > 33)
+    >>> s = select(lake_table.c.name).where(
+    ...     lake_table.c.geom.ST_Buffer(2).ST_Area() > 33
+    ... )
     >>> str(s)
-    SELECT lake.name FROM lake WHERE ST_Area(ST_Buffer(lake.geom, :param_1)) > :ST_Area_1
+    SELECT lake.name
+    FROM lake
+    WHERE ST_Area(ST_Buffer(lake.geom, :ST_Buffer_1)) > :ST_Area_1
     >>> result = conn.execute(s)
     >>> for row in result:
-    ...     print row['name']
+    ...     print(row._mapping["name"])
     Orta
 
 And, like any other functions supported by GeoAlchemy, processing and
 measurement functions can be applied to
 :class:`geoalchemy2.elements.WKBElement`. For example::
 
-    >>> s = select([lake_table], lake_table.c.name == 'Majeur')
+    >>> s = select(lake_table).where(lake_table.c.name == 'Majeur')
     >>> result = conn.execute(s)
     >>> lake = result.fetchone()
-    >>> bufferarea = conn.scalar(lake[lake_table.c.geom].ST_Buffer(2).ST_Area())
-    >>> print '%s: %f' % (lake['name'], bufferarea)
+    >>> bufferarea = conn.scalar(lake._mapping["geom"].ST_Buffer(2).ST_Area())
+    >>> print("%s: %f" % (lake._mapping["name"], bufferarea))
     Majeur: 21.485781
 
 Use Raster functions
@@ -326,11 +346,13 @@ same time. Thus using these functions on :class:`Raster` requires
 minor tweaking to enforce the type by passing the `type_=Raster` argument to the
 function:
 
-    >>> s = select([func.ST_Transform(
-                        lake_table.c.raster,
-                        2154,
-                        type_=Raster)
-                    .label('transformed_raster')])
+    >>> s = select(
+    ...     func.ST_Transform(
+    ...         lake_table.c.raster,
+    ...         2154,
+    ...         type_=Raster,
+    ...     ).label('transformed_raster')
+    ... )
 
 Further Reference
 -----------------

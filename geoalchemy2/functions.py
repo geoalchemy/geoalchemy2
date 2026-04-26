@@ -18,7 +18,7 @@ in several ways:
 * By using the ``func`` object, which is the SQLAlchemy standard way of calling
   a function. For example, without the ORM::
 
-      select([func.ST_Area(lake_table.c.geom)])
+      select(func.ST_Area(lake_table.c.geom))
 
   and with the ORM::
 
@@ -27,7 +27,7 @@ in several ways:
 * By applying the function to a geometry column. For example, without the
   ORM::
 
-      select([lake_table.c.geom.ST_Area()])
+      select(lake_table.c.geom.ST_Area())
 
   and with the ORM::
 
@@ -39,7 +39,7 @@ in several ways:
   to a :class:`geoalchemy2.elements.WKTElement` object. For example,
   without the ORM::
 
-      conn.scalar(lake['geom'].ST_Area())
+      conn.scalar(lake._mapping["geom"].ST_Area())
 
   and with the ORM::
 
@@ -56,11 +56,13 @@ in several ways:
     tweaking to enforce the type by passing the `type_=Geography` or `type_=Raster` argument to the
     function::
 
-        s = select([func.ST_Transform(
-                            lake_table.c.raster,
-                            2154,
-                            type_=Raster)
-                        .label('transformed_raster')])
+        s = select(
+            func.ST_Transform(
+                lake_table.c.raster,
+                2154,
+                type_=Raster,
+            ).label("transformed_raster")
+        )
 
 Reference
 ---------
