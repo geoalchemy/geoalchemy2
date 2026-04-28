@@ -3,6 +3,7 @@
 from sqlalchemy import text
 from sqlalchemy.dialects.mysql.base import ischema_names as _mysql_ischema_names
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql import expression
 from sqlalchemy.sql.sqltypes import NullType
 
 from geoalchemy2 import functions
@@ -10,6 +11,7 @@ from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
+from geoalchemy2.elements import WKBElement
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 
@@ -187,29 +189,68 @@ def _compile_GeomFromText_MySql(element, compiler, **kw):
         return f"{identifier}({compiled})"
 
 
-def _compile_GeomFromWKB_MySql(element, compiler, **kw):
+def _coerce_ewkb_clause_to_wkb(wkb_clause, *, as_hex=False):
+    try:
+        wkb_data = wkb_clause.value
+    except AttributeError:
+        return wkb_clause, None
+
+    if isinstance(wkb_data, WKBElement):
+        wkb_element = wkb_data.as_wkb()
+    elif isinstance(wkb_data, (bytes, memoryview, str)):
+        wkb_element = WKBElement(wkb_data).as_wkb()
+    else:
+        return wkb_clause, None
+
+    wkb_data = wkb_element.desc if as_hex else wkb_element.data
+    srid = wkb_element.srid if wkb_element.srid > 0 else None
+
+    if isinstance(wkb_data, memoryview):
+        wkb_data = wkb_data.tobytes()
+    if isinstance(wkb_data, str) and not as_hex:
+        wkb_data = WKBElement._data_from_desc(wkb_data)
+
+    bindparam_args = {
+        "key": wkb_clause.key,
+        "value": wkb_data,
+        "unique": True,
+    }
+    if not as_hex:
+        bindparam_args["type_"] = wkb_clause.type
+
+    return expression.bindparam(**bindparam_args), srid
+
+
+def _compile_GeomFromWKB_MySql(element, compiler, *, identifier=None, coerce_ewkb=False, **kw):
+    identifier = identifier or element.identifier
+
     # Store the SRID
     clauses = list(element.clauses)
+    inferred_srid = None
+    if coerce_ewkb:
+        wkb_value_clause, inferred_srid = _coerce_ewkb_clause_to_wkb(clauses[0])
+    else:
+        wkb_value_clause = clauses[0]
     try:
         srid = clauses[1].value
     except (IndexError, TypeError, ValueError):
-        srid = element.type.srid
+        srid = inferred_srid if inferred_srid is not None else element.type.srid
 
     if kw.get("literal_binds", False):
-        wkb_clause = compile_bin_literal(clauses[0])
+        wkb_clause = compile_bin_literal(wkb_value_clause)
         prefix = "unhex("
         suffix = ")"
     else:
-        wkb_clause = clauses[0]
+        wkb_clause = wkb_value_clause
         prefix = ""
         suffix = ""
 
     compiled = compiler.process(wkb_clause, **kw)
 
     if srid > 0:
-        return f"{element.identifier}({prefix}{compiled}{suffix}, {srid})"
+        return f"{identifier}({prefix}{compiled}{suffix}, {srid})"
     else:
-        return f"{element.identifier}({prefix}{compiled}{suffix})"
+        return f"{identifier}({prefix}{compiled}{suffix})"
 
 
 @compiles(functions.ST_GeomFromText, "mysql")  # type: ignore
@@ -229,4 +270,6 @@ def _MySQL_ST_GeomFromWKB(element, compiler, **kw):
 
 @compiles(functions.ST_GeomFromEWKB, "mysql")  # type: ignore
 def _MySQL_ST_GeomFromEWKB(element, compiler, **kw):
-    return _compile_GeomFromWKB_MySql(element, compiler, **kw)
+    return _compile_GeomFromWKB_MySql(
+        element, compiler, identifier="ST_GeomFromWKB", coerce_ewkb=True, **kw
+    )

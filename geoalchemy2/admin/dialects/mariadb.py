@@ -4,6 +4,7 @@ from sqlalchemy.ext.compiler import compiles
 
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import compile_bin_literal
+from geoalchemy2.admin.dialects.mysql import _coerce_ewkb_clause_to_wkb
 from geoalchemy2.admin.dialects.mysql import after_create  # noqa
 from geoalchemy2.admin.dialects.mysql import after_drop  # noqa
 from geoalchemy2.admin.dialects.mysql import before_create  # noqa
@@ -86,16 +87,23 @@ def _compile_GeomFromText_MariaDB(element, compiler, **kw):
     return res
 
 
-def _compile_GeomFromWKB_MariaDB(element, compiler, **kw):
+def _compile_GeomFromWKB_MariaDB(element, compiler, *, coerce_ewkb=False, **kw):
     identifier = "ST_GeomFromWKB"
     # Store the SRID
     clauses = list(element.clauses)
+    inferred_srid = None
+    if coerce_ewkb:
+        wkb_value_clause, inferred_srid = _coerce_ewkb_clause_to_wkb(clauses[0], as_hex=True)
+    else:
+        wkb_value_clause = clauses[0]
     try:
         srid = clauses[1].value
     except (IndexError, TypeError, ValueError):
-        srid = element.type.srid
+        srid = inferred_srid if inferred_srid is not None else element.type.srid
 
-    wkb_clause = compile_bin_literal(clauses[0]) if kw.get("literal_binds", False) else clauses[0]
+    wkb_clause = wkb_value_clause
+    if kw.get("literal_binds", False):
+        wkb_clause = compile_bin_literal(wkb_value_clause)
     prefix = "unhex("
     suffix = ")"
 
@@ -124,4 +132,4 @@ def _MariaDB_ST_GeomFromWKB(element, compiler, **kw):
 
 @compiles(functions.ST_GeomFromEWKB, "mariadb")  # type: ignore
 def _MariaDB_ST_GeomFromEWKB(element, compiler, **kw):
-    return _compile_GeomFromWKB_MariaDB(element, compiler, **kw)
+    return _compile_GeomFromWKB_MariaDB(element, compiler, coerce_ewkb=True, **kw)

@@ -9,6 +9,20 @@ from geoalchemy2.elements import WKTElement
 from geoalchemy2.shape import to_shape
 
 
+def _is_wkb_constructor(spatial_type):
+    return "wkb" in (getattr(spatial_type, "from_text", "") or "").lower()
+
+
+def _as_binary_wkb(bindvalue):
+    if isinstance(bindvalue, WKBElement):
+        bindvalue = bindvalue.data
+    if isinstance(bindvalue, memoryview):
+        return bindvalue.tobytes()
+    if isinstance(bindvalue, str):
+        return WKBElement._data_from_desc(bindvalue)
+    return bytes(bindvalue)
+
+
 def format_geom_type(wkt, default_srid=None):
     """Format the Geometry type for SQLite."""
     match = re.match(WKTElement.SPLIT_WKT_PATTERN, wkt)
@@ -40,6 +54,8 @@ def bind_processor_process(spatial_type, bindvalue):
             default_srid=bindvalue.srid if bindvalue.srid >= 0 else spatial_type.srid,
         )
     elif isinstance(bindvalue, WKBElement):
+        if _is_wkb_constructor(spatial_type):
+            return _as_binary_wkb(bindvalue)
         # With SpatiaLite we use Shapely to convert the WKBElement to an EWKT string
         shape = to_shape(bindvalue)
         # shapely.wkb.loads returns geom_type with a 'Z', for example, 'LINESTRING Z'
@@ -51,6 +67,10 @@ def bind_processor_process(spatial_type, bindvalue):
     elif isinstance(bindvalue, RasterElement):
         return f"{bindvalue.data}"
     elif isinstance(bindvalue, str):
+        if _is_wkb_constructor(spatial_type):
+            return _as_binary_wkb(bindvalue)
         return format_geom_type(bindvalue, default_srid=spatial_type.srid)
+    elif isinstance(bindvalue, (bytes, memoryview)) and _is_wkb_constructor(spatial_type):
+        return _as_binary_wkb(bindvalue)
     else:
         return bindvalue

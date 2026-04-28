@@ -7,6 +7,15 @@ from geoalchemy2.exc import ArgumentError
 from geoalchemy2.shape import to_shape
 
 
+def _is_wkb_constructor(spatial_type):
+    return "wkb" in (getattr(spatial_type, "from_text", "") or "").lower()
+
+
+def _as_wkb_hex(bindvalue):
+    wkb_element = bindvalue if isinstance(bindvalue, WKBElement) else WKBElement(bindvalue)
+    return wkb_element.as_wkb().desc
+
+
 def bind_processor_process(spatial_type, bindvalue):
     if isinstance(bindvalue, str):
         wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
@@ -42,7 +51,7 @@ def bind_processor_process(spatial_type, bindvalue):
             bindvalue.srid = spatial_type.srid
         return bindvalue
     elif isinstance(bindvalue, WKBElement):
-        if "wkb" not in spatial_type.from_text.lower():
+        if not _is_wkb_constructor(spatial_type):
             # With MariaDB we use Shapely to convert the WKBElement to an EWKT string
             wkt = to_shape(bindvalue).wkt
             if "multipoint" in wkt[:20].lower():
@@ -56,7 +65,7 @@ def bind_processor_process(spatial_type, bindvalue):
                 )
             return wkt
         # MariaDB does not support raw binary data so we use the hex representation
-        return bindvalue.desc
-    elif isinstance(bindvalue, memoryview):
-        return bindvalue.tobytes().hex()
+        return _as_wkb_hex(bindvalue)
+    elif isinstance(bindvalue, (bytes, memoryview)) and _is_wkb_constructor(spatial_type):
+        return _as_wkb_hex(bindvalue)
     return bindvalue

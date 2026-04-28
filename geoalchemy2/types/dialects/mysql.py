@@ -7,6 +7,20 @@ from geoalchemy2.exc import ArgumentError
 from geoalchemy2.shape import to_shape
 
 
+def _is_wkb_constructor(spatial_type):
+    return "wkb" in (getattr(spatial_type, "from_text", "") or "").lower()
+
+
+def _as_binary_wkb(bindvalue):
+    wkb_element = bindvalue if isinstance(bindvalue, WKBElement) else WKBElement(bindvalue)
+    bindvalue = wkb_element.as_wkb().data
+    if isinstance(bindvalue, memoryview):
+        return bindvalue.tobytes()
+    if isinstance(bindvalue, str):
+        return WKBElement._data_from_desc(bindvalue)
+    return bytes(bindvalue)
+
+
 def bind_processor_process(spatial_type, bindvalue):
     if isinstance(bindvalue, str):
         wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
@@ -42,7 +56,11 @@ def bind_processor_process(spatial_type, bindvalue):
             bindvalue.srid = spatial_type.srid
         return bindvalue
     elif isinstance(bindvalue, WKBElement):
-        if "wkb" not in spatial_type.from_text.lower():
+        if _is_wkb_constructor(spatial_type):
+            return _as_binary_wkb(bindvalue)
+        else:
             # With MySQL we use Shapely to convert the WKBElement to an EWKT string
             return to_shape(bindvalue).wkt
+    elif isinstance(bindvalue, (bytes, memoryview)) and _is_wkb_constructor(spatial_type):
+        return _as_binary_wkb(bindvalue)
     return bindvalue

@@ -184,7 +184,7 @@ def after_drop(table, bind, **kw):
         table.columns = saved_cols
 
 
-def _compile_GeomFromWKB_Postgresql(element, compiler, **kw):
+def _compile_GeomFromWKB_Postgresql(element, compiler, *, include_srid=True, **kw):
     # Store the SRID
     clauses = list(element.clauses)
     try:
@@ -203,7 +203,7 @@ def _compile_GeomFromWKB_Postgresql(element, compiler, **kw):
 
     compiled = compiler.process(wkb_clause, **kw)
 
-    if srid > 0:
+    if include_srid and srid > 0:
         return f"{element.identifier}({prefix}{compiled}{suffix}, {srid})"
     else:
         return f"{element.identifier}({prefix}{compiled}{suffix})"
@@ -216,4 +216,4 @@ def _PostgreSQL_ST_GeomFromWKB(element, compiler, **kw):
 
 @compiles(functions.ST_GeomFromEWKB, "postgresql")  # type: ignore
 def _PostgreSQL_ST_GeomFromEWKB(element, compiler, **kw):
-    return _compile_GeomFromWKB_Postgresql(element, compiler, **kw)
+    return _compile_GeomFromWKB_Postgresql(element, compiler, include_srid=False, **kw)

@@ -400,7 +400,7 @@ def register_sqlite_mapping(mapping):
 register_sqlite_mapping(_SQLITE_FUNCTIONS)
 
 
-def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, **kw):
+def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, include_srid=True, **kw):
     element.identifier = identifier
 
     # Store the SRID
@@ -422,7 +422,7 @@ def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, **kw):
 
     compiled = compiler.process(wkb_clause, **kw)
 
-    if srid > 0:
+    if include_srid and srid > 0:
         return f"{identifier}({prefix}{compiled}{suffix}, {srid})"
     else:
         return f"{identifier}({prefix}{compiled}{suffix})"
@@ -435,4 +435,6 @@ def _SQLite_ST_GeomFromWKB(element, compiler, **kw):
 
 @compiles(functions.ST_GeomFromEWKB, "sqlite")  # type: ignore
 def _SQLite_ST_GeomFromEWKB(element, compiler, **kw):
-    return _compile_GeomFromWKB_SQLite(element, compiler, identifier="GeomFromEWKB", **kw)
+    return _compile_GeomFromWKB_SQLite(
+        element, compiler, identifier="GeomFromEWKB", include_srid=False, **kw
+    )
