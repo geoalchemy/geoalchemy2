@@ -261,6 +261,27 @@ class TestMySQLWKBConstructors:
 
         assert compiled == f"ST_GeomFromWKB(unhex('{WKB_HEX}'), 4326)"
 
+    def test_geom_from_wkb_omits_unknown_srid(self):
+        expr = func.ST_GeomFromWKB(bytes.fromhex(WKB_HEX), -1)
+
+        compiled_expr = expr.compile(dialect=mysql.dialect())
+        compiled_literal = expr.compile(
+            dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}
+        )
+
+        assert self.normalize_sql(compiled_expr) == "ST_GeomFromWKB(%s)"
+        assert self.normalize_sql(compiled_literal) == f"ST_GeomFromWKB(unhex('{WKB_HEX}'))"
+
+    def test_wkbelement_literal_compile_omits_unknown_srid(self):
+        query = select([func.ST_AsText(WKBElement(bytes.fromhex(WKB_HEX)))])
+
+        compiled = self.normalize_sql(
+            query.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True})
+        )
+
+        assert f"ST_GeomFromWKB(unhex('{WKB_HEX}'))" in compiled
+        assert ", -1" not in compiled
+
     def test_geom_from_ewkb_prefers_embedded_srid_over_return_type_srid(self):
         expr = func.ST_GeomFromEWKB(bytes.fromhex(EWKB_HEX), type_=Geometry(srid=3857))
 
@@ -314,6 +335,30 @@ class TestMariaDBWKBConstructors:
         )
 
         assert compiled == f"ST_GeomFromWKB(unhex('{WKB_HEX}'), 4326)"
+
+    def test_geom_from_wkb_omits_unknown_srid(self):
+        expr = func.ST_GeomFromWKB(bytes.fromhex(WKB_HEX), -1)
+
+        compiled_expr = expr.compile(dialect=mariadb_dialect.MariaDBDialect())
+        compiled_literal = expr.compile(
+            dialect=mariadb_dialect.MariaDBDialect(), compile_kwargs={"literal_binds": True}
+        )
+
+        assert self.normalize_sql(compiled_expr) == "ST_GeomFromWKB(unhex(%s))"
+        assert self.normalize_sql(compiled_literal) == f"ST_GeomFromWKB(unhex('{WKB_HEX}'))"
+
+    def test_wkbelement_literal_compile_omits_unknown_srid(self):
+        query = select([func.ST_AsText(WKBElement(bytes.fromhex(WKB_HEX)))])
+
+        compiled = self.normalize_sql(
+            query.compile(
+                dialect=mariadb_dialect.MariaDBDialect(),
+                compile_kwargs={"literal_binds": True},
+            )
+        )
+
+        assert f"ST_GeomFromWKB(unhex('{WKB_HEX}'))" in compiled
+        assert ", -1" not in compiled
 
     def test_geom_from_ewkb_prefers_embedded_srid_over_return_type_srid(self):
         expr = func.ST_GeomFromEWKB(bytes.fromhex(EWKB_HEX), type_=Geometry(srid=3857))
