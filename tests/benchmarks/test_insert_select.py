@@ -14,6 +14,9 @@ from .. import select
 
 ROUNDS = 5
 
+# SQL Server allows at most 1000 row value expressions per INSERT statement.
+_MSSQL_INSERT_CHUNK_SIZE = 1000
+
 
 class SuccessfulTest(BaseException):
     """A custom exception used to mark the successful test."""
@@ -129,15 +132,14 @@ def GeomTable(
 
 def insert_all_points(conn, table, points):
     """Insert all points into the database."""
-    query = table.insert().values(
-        [
-            {
-                "geom": point,
-            }
-            for point in points
-        ]
-    )
-    return conn.execute(query)
+    rows = [{"geom": point} for point in points]
+    if conn.dialect.name != "mssql":
+        return conn.execute(table.insert().values(rows))
+
+    result = None
+    for start in range(0, len(rows), _MSSQL_INSERT_CHUNK_SIZE):
+        result = conn.execute(table.insert().values(rows[start : start + _MSSQL_INSERT_CHUNK_SIZE]))
+    return result
 
 
 def select_all_points(conn, table):
