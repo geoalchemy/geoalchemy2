@@ -405,6 +405,22 @@ def _compile_GeomFromWKB_gpkg(element, compiler, *, identifier, **kw):
         return f"{identifier}({prefix}{compiled}{suffix})"
 
 
+def _compile_GeomFromEWKB_gpkg(element, compiler, *, identifier, **kw):
+    clauses = list(element.clauses)
+
+    if kw.get("literal_binds", False):
+        wkb_clause = compile_bin_literal(clauses[0])
+        prefix = "unhex("
+        suffix = ")"
+    else:
+        wkb_clause = clauses[0]
+        prefix = ""
+        suffix = ""
+
+    compiled = compiler.process(wkb_clause, **kw)
+    return f"{identifier}({prefix}{compiled}{suffix})"
+
+
 @compiles(functions.ST_GeomFromWKB, "geopackage")  # type: ignore
 def _gpkg_ST_GeomFromWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_gpkg(element, compiler, identifier="GeomFromWKB", **kw)
@@ -412,4 +428,4 @@ def _gpkg_ST_GeomFromWKB(element, compiler, **kw):
 
 @compiles(functions.ST_GeomFromEWKB, "geopackage")  # type: ignore
 def _gpkg_ST_GeomFromEWKB(element, compiler, **kw):
-    return _compile_GeomFromWKB_gpkg(element, compiler, identifier="GeomFromEWKB", **kw)
+    return _compile_GeomFromEWKB_gpkg(element, compiler, identifier="GeomFromEWKB", **kw)

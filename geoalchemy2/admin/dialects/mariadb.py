@@ -4,11 +4,13 @@ from sqlalchemy.ext.compiler import compiles
 
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import compile_bin_literal
-from geoalchemy2.admin.dialects.mysql import _coerce_ewkb_clause_to_wkb
+from geoalchemy2.admin.dialects.mysql import _compile_srid_arg
+from geoalchemy2.admin.dialects.mysql import _prepare_ewkb_wkb_clause
 from geoalchemy2.admin.dialects.mysql import after_create  # noqa
 from geoalchemy2.admin.dialects.mysql import after_drop  # noqa
 from geoalchemy2.admin.dialects.mysql import before_create  # noqa
 from geoalchemy2.admin.dialects.mysql import before_drop  # noqa
+from geoalchemy2.admin.dialects.mysql import before_execute  # noqa
 from geoalchemy2.admin.dialects.mysql import reflect_geometry_column  # noqa
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
@@ -92,14 +94,16 @@ def _compile_GeomFromWKB_MariaDB(element, compiler, *, coerce_ewkb=False, **kw):
     # Store the SRID
     clauses = list(element.clauses)
     inferred_srid = None
+    dynamic_srid_clause = None
     if coerce_ewkb:
-        wkb_value_clause, inferred_srid = _coerce_ewkb_clause_to_wkb(clauses[0], as_hex=True)
+        clauses, wkb_value_clause, inferred_srid, dynamic_srid_clause = _prepare_ewkb_wkb_clause(
+            element,
+            compiler,
+            as_hex=True,
+            **kw,
+        )
     else:
         wkb_value_clause = clauses[0]
-    try:
-        srid = clauses[1].value
-    except (IndexError, TypeError, ValueError):
-        srid = inferred_srid if inferred_srid is not None else element.type.srid
 
     wkb_clause = wkb_value_clause
     if kw.get("literal_binds", False):
@@ -108,9 +112,17 @@ def _compile_GeomFromWKB_MariaDB(element, compiler, *, coerce_ewkb=False, **kw):
     suffix = ")"
 
     compiled = compiler.process(wkb_clause, **kw)
+    compiled_srid = _compile_srid_arg(
+        element,
+        clauses,
+        inferred_srid,
+        dynamic_srid_clause,
+        compiler,
+        **kw,
+    )
 
-    if srid > 0:
-        return f"{identifier}({prefix}{compiled}{suffix}, {srid})"
+    if compiled_srid is not None:
+        return f"{identifier}({prefix}{compiled}{suffix}, {compiled_srid})"
     else:
         return f"{identifier}({prefix}{compiled}{suffix})"
 
