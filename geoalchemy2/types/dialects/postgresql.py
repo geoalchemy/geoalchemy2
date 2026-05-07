@@ -3,7 +3,7 @@
 from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
-from geoalchemy2.shape import to_shape
+from geoalchemy2.types.dialects.common import _wkbelement_to_wkt
 
 
 def _is_wkb_constructor(spatial_type):
@@ -30,11 +30,7 @@ def bind_processor_process(spatial_type, bindvalue):
         if _is_wkb_constructor(spatial_type):
             return _as_binary_wkb(bindvalue)
         elif not bindvalue.extended:
-            # When the WKBElement includes a WKB value rather
-            # than a EWKB value we use Shapely to convert the WKBElement to an
-            # EWKT string
-            shape = to_shape(bindvalue)
-            return f"SRID={bindvalue.srid};{shape.wkt}"
+            return f"SRID={bindvalue.srid};{_wkbelement_to_wkt(bindvalue)}"
         else:
             # PostGIS ST_GeomFromEWKT works with EWKT strings as well
             # as EWKB hex strings

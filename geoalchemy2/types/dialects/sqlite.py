@@ -6,7 +6,7 @@ import warnings
 from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
-from geoalchemy2.shape import to_shape
+from geoalchemy2.types.dialects.common import _wkbelement_to_wkt
 
 
 def _is_wkb_constructor(spatial_type):
@@ -56,12 +56,9 @@ def bind_processor_process(spatial_type, bindvalue):
     elif isinstance(bindvalue, WKBElement):
         if _is_wkb_constructor(spatial_type):
             return _as_binary_wkb(bindvalue)
-        # With SpatiaLite we use Shapely to convert the WKBElement to an EWKT string
-        shape = to_shape(bindvalue)
-        # shapely.wkb.loads returns geom_type with a 'Z', for example, 'LINESTRING Z'
-        # which is a limitation with SpatiaLite. Hence, a temporary fix.
         res = format_geom_type(
-            shape.wkt, default_srid=bindvalue.srid if bindvalue.srid >= 0 else spatial_type.srid
+            _wkbelement_to_wkt(bindvalue),
+            default_srid=bindvalue.srid if bindvalue.srid >= 0 else spatial_type.srid,
         )
         return res
     elif isinstance(bindvalue, RasterElement):

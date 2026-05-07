@@ -4,7 +4,7 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
 from geoalchemy2.exc import ArgumentError
-from geoalchemy2.shape import to_shape
+from geoalchemy2.types.dialects.common import _wkbelement_to_wkt
 
 
 def _is_wkb_constructor(spatial_type):
@@ -52,10 +52,9 @@ def bind_processor_process(spatial_type, bindvalue):
         return bindvalue
     elif isinstance(bindvalue, WKBElement):
         if not _is_wkb_constructor(spatial_type):
-            # With MariaDB we use Shapely to convert the WKBElement to an EWKT string
-            wkt = to_shape(bindvalue).wkt
+            wkt = _wkbelement_to_wkt(bindvalue)
             if "multipoint" in wkt[:20].lower():
-                # Shapely>=2.1 adds parentheses around each sub-point which is not supported
+                # MariaDB does not support ISO WKT with parentheses around each sub-point
                 first_idx = wkt.find("(")
                 last_idx = wkt.rfind(")")
                 wkt = (
