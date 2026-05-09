@@ -120,6 +120,44 @@ class TestWKTElement:
         assert e3.as_wkt() == e3.as_wkt().as_wkt() == e1
         assert e4.as_wkt() == e4.as_wkt().as_wkt() == e2
 
+    def test_as_wkb(self):
+        e1 = WKTElement(self._wkt)
+        e2 = WKTElement(self._wkt, srid=self._srid)
+        e3 = WKTElement(self._ewkt, extended=True)
+
+        # No SRID, extended=False (default)
+        r1 = e1.as_wkb()
+        assert isinstance(r1, WKBElement)
+        assert r1.extended is False
+        assert r1.srid == -1
+
+        # With SRID, extended=False — SRID preserved as attribute
+        r2 = e2.as_wkb()
+        assert isinstance(r2, WKBElement)
+        assert r2.extended is False
+        assert r2.srid == self._srid
+
+        # With SRID, extended=True — SRID embedded in binary
+        r3 = e2.as_wkb(extended=True)
+        assert isinstance(r3, WKBElement)
+        assert r3.extended is True
+        assert r3.srid == self._srid
+
+        # EWKT input, extended=True
+        r4 = e3.as_wkb(extended=True)
+        assert isinstance(r4, WKBElement)
+        assert r4.extended is True
+        assert r4.srid == self._srid
+
+        # No SRID, extended=True → falls back to extended=False (no SRID to embed)
+        r5 = e1.as_wkb(extended=True)
+        assert isinstance(r5, WKBElement)
+        assert r5.extended is False
+        assert r5.srid == -1
+
+        # Roundtrip: WKT → WKB → WKT
+        assert r2.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+
 
 class TestExtendedWKTElement:
     _srid = 3857  # expected srid
@@ -407,6 +445,45 @@ class TestExtendedWKBElement:
         e8_ewkb = WKBElement(self._hex_ewkb, srid=arbitrary_srid)
         e8_ewkb.data = e8_ewkb.data[:11] + "4" + e8_ewkb.data[12:]
         assert e8.as_ewkb() == e8_ewkb
+
+    def test_as_wkt(self):
+        e1 = WKBElement(self._bin_ewkb)
+        e2 = WKBElement(self._hex_ewkb)
+        e3 = WKBElement(self._hex_wkb)
+
+        # Binary EWKB, extended=False (default) — SRID preserved as attribute
+        r1 = e1.as_wkt()
+        assert isinstance(r1, WKTElement)
+        assert r1.extended is False
+        assert r1.srid == self._srid
+        assert r1.desc == self._wkt
+
+        # Binary EWKB, extended=True — SRID in WKT string
+        r2 = e1.as_wkt(extended=True)
+        assert isinstance(r2, WKTElement)
+        assert r2.extended is True
+        assert r2.srid == self._srid
+        assert r2.desc == f"SRID={self._srid};{self._wkt}"
+
+        # Hex EWKB, extended=False
+        r3 = e2.as_wkt()
+        assert isinstance(r3, WKTElement)
+        assert r3.extended is False
+        assert r3.srid == self._srid
+        assert r3.desc == self._wkt
+
+        # Hex EWKB, extended=True
+        r4 = e2.as_wkt(extended=True)
+        assert isinstance(r4, WKTElement)
+        assert r4.extended is True
+        assert r4.srid == self._srid
+        assert r4.desc == f"SRID={self._srid};{self._wkt}"
+
+        # Plain WKB (no SRID), extended=True → no SRID to embed, falls back to extended=False
+        r5 = e3.as_wkt(extended=True)
+        assert isinstance(r5, WKTElement)
+        assert r5.extended is False
+        assert r5.srid == -1
 
 
 class TestWKBElement:

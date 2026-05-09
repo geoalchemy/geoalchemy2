@@ -9,6 +9,9 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
 from sqlalchemy.sql.functions import FunctionElement
 from sqlalchemy.types import to_instance
+from wkb_wkt_converter import text_to_wkb
+from wkb_wkt_converter import text_to_wkt
+from wkb_wkt_converter import wkb_to_wkt_split_srid
 
 from geoalchemy2.exc import ArgumentError
 
@@ -162,6 +165,21 @@ class WKTElement(_SpatialElement):
             data = f"SRID={self.srid};" + self.data
             return WKTElement(data, extended=True)
         return WKTElement(self.data, self.srid, self.extended)
+
+    def as_wkb(self, extended: bool = False) -> WKBElement:
+        """Return this element as a :class:`WKBElement`.
+
+        Args:
+            extended: If ``True`` and the element has a valid SRID, the result
+                uses EWKB format (SRID embedded in the binary data).
+                If ``False`` (default), plain WKB is returned and the SRID is
+                stored as a Python attribute only.
+        """
+        if extended and self.srid != -1:
+            wkb_bytes = text_to_wkb(self.data, srid=self.srid)
+            return WKBElement(wkb_bytes, extended=True)
+        wkb_bytes = text_to_wkb(self.data, srid=False)
+        return WKBElement(wkb_bytes, srid=self.srid, extended=False)
 
 
 class DynamicWKTElement(WKTElement):
@@ -321,6 +339,32 @@ class WKBElement(_SpatialElement):
 
             return WKBElement(data, self.srid, extended=True)
         return WKBElement(self.data, self.srid)
+
+    def as_wkt(self, extended: bool = False) -> WKTElement:
+        """Return this element as a :class:`WKTElement`.
+
+        Args:
+            extended: If ``True`` and the element has a valid SRID, the result
+                uses EWKT format (``SRID=N;WKT`` string).
+                If ``False`` (default), plain WKT is returned and the SRID is
+                stored as a Python attribute only.
+        """
+        data = self.data
+        if isinstance(data, str):
+            srid_arg: int | bool = self.srid if (extended and self.srid != -1) else False
+            wkt = text_to_wkt(data, srid=srid_arg)
+        else:
+            if isinstance(data, memoryview):
+                data = bytes(data)
+            plain_wkt, _ = wkb_to_wkt_split_srid(data)
+            if extended and self.srid != -1:  # noqa: SIM108
+                wkt = f"SRID={self.srid};{plain_wkt}"
+            else:
+                wkt = plain_wkt
+
+        if extended and self.srid != -1:
+            return WKTElement(wkt, extended=True)
+        return WKTElement(wkt, srid=self.srid, extended=False)
 
 
 class DynamicWKBElement(WKBElement):
