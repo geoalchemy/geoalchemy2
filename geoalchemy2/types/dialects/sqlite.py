@@ -3,10 +3,11 @@
 import re
 import warnings
 
+from wkb_wkt_converter import to_wkt
+
 from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
-from geoalchemy2.types.dialects.common import _wkbelement_to_wkt
 
 
 def _is_wkb_constructor(spatial_type):
@@ -57,7 +58,7 @@ def bind_processor_process(spatial_type, bindvalue):
         if _is_wkb_constructor(spatial_type):
             return _as_binary_wkb(bindvalue)
         res = format_geom_type(
-            _wkbelement_to_wkt(bindvalue),
+            to_wkt(bindvalue.data, srid=False),
             default_srid=bindvalue.srid if bindvalue.srid >= 0 else spatial_type.srid,
         )
         return res

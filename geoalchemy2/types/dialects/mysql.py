@@ -1,10 +1,11 @@
 """This module defines specific functions for MySQL dialect."""
 
+from wkb_wkt_converter import to_wkt
+
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
 from geoalchemy2.exc import ArgumentError
-from geoalchemy2.types.dialects.common import _wkbelement_to_wkt
 
 
 def _is_wkb_constructor(spatial_type):
@@ -59,7 +60,7 @@ def bind_processor_process(spatial_type, bindvalue):
         if _is_wkb_constructor(spatial_type):
             return _as_binary_wkb(bindvalue)
         else:
-            return _wkbelement_to_wkt(bindvalue)
+            return to_wkt(bindvalue.data, srid=False)
     elif isinstance(bindvalue, (bytes, memoryview)) and _is_wkb_constructor(spatial_type):
         return _as_binary_wkb(bindvalue)
     return bindvalue

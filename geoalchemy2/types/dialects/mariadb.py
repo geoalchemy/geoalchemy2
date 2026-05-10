@@ -1,10 +1,11 @@
 """This module defines specific functions for MySQL dialect."""
 
+from wkb_wkt_converter import to_wkt
+
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
 from geoalchemy2.exc import ArgumentError
-from geoalchemy2.types.dialects.common import _wkbelement_to_wkt
 
 
 def _is_wkb_constructor(spatial_type):
@@ -52,7 +53,7 @@ def bind_processor_process(spatial_type, bindvalue):
         return bindvalue
     elif isinstance(bindvalue, WKBElement):
         if not _is_wkb_constructor(spatial_type):
-            wkt = _wkbelement_to_wkt(bindvalue)
+            wkt = to_wkt(bindvalue.data, srid=False)
             if "multipoint" in wkt[:20].lower():
                 # MariaDB does not support ISO WKT with parentheses around each sub-point
                 first_idx = wkt.find("(")
