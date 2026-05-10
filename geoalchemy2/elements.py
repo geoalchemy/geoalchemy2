@@ -9,9 +9,8 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import functions
 from sqlalchemy.sql.functions import FunctionElement
 from sqlalchemy.types import to_instance
-from wkb_wkt_converter import text_to_wkb
-from wkb_wkt_converter import text_to_wkt
-from wkb_wkt_converter import wkb_to_wkt_split_srid
+from wkb_wkt_converter import to_wkb
+from wkb_wkt_converter import to_wkt
 
 from geoalchemy2.exc import ArgumentError
 
@@ -166,19 +165,23 @@ class WKTElement(_SpatialElement):
             return WKTElement(data, extended=True)
         return WKTElement(self.data, self.srid, self.extended)
 
-    def as_wkb(self, extended: bool = False) -> WKBElement:
-        """Return this element as a :class:`WKBElement`.
+    def as_wkb(self) -> WKBElement:
+        """Return this element as a plain :class:`WKBElement` (no SRID embedded).
 
-        Args:
-            extended: If ``True`` and the element has a valid SRID, the result
-                uses EWKB format (SRID embedded in the binary data).
-                If ``False`` (default), plain WKB is returned and the SRID is
-                stored as a Python attribute only.
+        The SRID is preserved as a Python attribute on the returned element.
         """
-        if extended and self.srid != -1:
-            wkb_bytes = text_to_wkb(self.data, srid=self.srid)
+        wkb_bytes = to_wkb(self.data, srid=False)
+        return WKBElement(wkb_bytes, srid=self.srid, extended=False)
+
+    def as_ewkb(self) -> WKBElement:
+        """Return this element as an extended :class:`WKBElement` (SRID embedded).
+
+        If the element has no valid SRID, the result is equivalent to :meth:`as_wkb`.
+        """
+        srid_arg: int | bool = self.srid if self.srid != -1 else False
+        wkb_bytes = to_wkb(self.data, srid=srid_arg)
+        if self.srid != -1:
             return WKBElement(wkb_bytes, extended=True)
-        wkb_bytes = text_to_wkb(self.data, srid=False)
         return WKBElement(wkb_bytes, srid=self.srid, extended=False)
 
 
@@ -340,29 +343,22 @@ class WKBElement(_SpatialElement):
             return WKBElement(data, self.srid, extended=True)
         return WKBElement(self.data, self.srid)
 
-    def as_wkt(self, extended: bool = False) -> WKTElement:
-        """Return this element as a :class:`WKTElement`.
+    def as_wkt(self) -> WKTElement:
+        """Return this element as a plain :class:`WKTElement` (no SRID prefix).
 
-        Args:
-            extended: If ``True`` and the element has a valid SRID, the result
-                uses EWKT format (``SRID=N;WKT`` string).
-                If ``False`` (default), plain WKT is returned and the SRID is
-                stored as a Python attribute only.
+        The SRID is preserved as a Python attribute on the returned element.
         """
-        data = self.data
-        if isinstance(data, str):
-            srid_arg: int | bool = self.srid if (extended and self.srid != -1) else False
-            wkt = text_to_wkt(data, srid=srid_arg)
-        else:
-            if isinstance(data, memoryview):
-                data = bytes(data)
-            plain_wkt, _ = wkb_to_wkt_split_srid(data)
-            if extended and self.srid != -1:  # noqa: SIM108
-                wkt = f"SRID={self.srid};{plain_wkt}"
-            else:
-                wkt = plain_wkt
+        wkt = to_wkt(self.data, srid=False)
+        return WKTElement(wkt, srid=self.srid, extended=False)
 
-        if extended and self.srid != -1:
+    def as_ewkt(self) -> WKTElement:
+        """Return this element as an extended :class:`WKTElement` (``SRID=N;WKT``).
+
+        If the element has no valid SRID, the result is equivalent to :meth:`as_wkt`.
+        """
+        srid_arg: int | bool = self.srid if self.srid != -1 else False
+        wkt = to_wkt(self.data, srid=srid_arg)
+        if self.srid != -1:
             return WKTElement(wkt, extended=True)
         return WKTElement(wkt, srid=self.srid, extended=False)
 

@@ -33,7 +33,7 @@ classifiers = [
 dependencies = [
     "SQLAlchemy>=1.4",
     "packaging",
-    "wkb-wkt-converter",
+    "wkb-wkt-converter>=0.4.0",
 ]
 
 [project.optional-dependencies]
