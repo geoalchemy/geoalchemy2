@@ -77,3 +77,4 @@ dmypy.json
 !test_container/helpers/configure_cockroach.sh
 issues
 mylocal_db/
+uv.lock

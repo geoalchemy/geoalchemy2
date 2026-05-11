@@ -37,7 +37,7 @@ from geoalchemy2.admin.dialects.common import _spatial_idx_name
 writer = rewriter.Rewriter()
 """Rewriter object for Alembic."""
 
-_SPATIAL_TABLES = set()
+_SPATIAL_TABLES: set[str] = set()
 
 
 class GeoPackageImpl(SQLiteImpl):
