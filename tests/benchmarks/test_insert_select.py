@@ -237,23 +237,14 @@ def _insert_fail_or_success_type(
 ):
     """Fixture to determine if the current test should fail or succeed."""
     if (
-        dialect_name in ["mysql", "mariadb", "postgresql", "sqlite"]
-        and input_representation == "WKB input"
-        and is_raw_input
-        and is_default_geom_type
-    ):
-        return (SQLAlchemyError, AssertionError)
-    if (
         dialect_name == "sqlite"
         and input_representation == "WKB input"
         and is_extended_input
         and not is_default_geom_type
     ):
         return (OperationalError, AssertionError)
-    if dialect_name == "geopackage" and input_representation == "WKB input":
-        if is_raw_input and (is_extended_input or is_default_geom_type):
-            return AssertionError
-        if is_extended_input and not is_default_geom_type:
+    if dialect_name == "geopackage" and input_representation == "WKB input":  # noqa: SIM102
+        if is_extended_input and not is_default_geom_type:  # noqa: SIM102
             return AssertionError
     if (
         dialect_name in ["sqlite", "geopackage"]

@@ -21,6 +21,7 @@ from sqlalchemy.types import LargeBinary
 from sqlalchemy.types import TypeDecorator
 from sqlalchemy.types import UnicodeText
 
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
@@ -589,8 +590,7 @@ def _process_wkt_value(value, strip_srid=False):
     elif isinstance(value, (WKBElement, bytes, bytearray, memoryview)):
         value = _to_mssql_wkt(value)
     if isinstance(value, str) and strip_srid:
-        wkt_match = WKTElement._REMOVE_SRID.match(value)
-        value = wkt_match.group(3)
+        value = _wkb_wkt.to_wkt_no_srid(value)
     if isinstance(value, str):
         value = _normalize_wkt_for_mssql(value)
 
@@ -625,9 +625,9 @@ def _process_wkb_value(value, extended=False):
     if value is None:
         return None
     if isinstance(value, WKBElement):
-        value = value.as_wkb().data if extended else value.data
+        value = _wkb_wkt.to_wkb_no_srid(value.data) if extended else value.data
     elif extended:
-        value = WKBElement(value, extended=None).as_wkb().data
+        value = _wkb_wkt.to_wkb_no_srid(value)
     if isinstance(value, memoryview):
         value = value.tobytes()
 
@@ -642,8 +642,8 @@ def _process_ewkb_srid_value(value, default_srid=0):
         return value.srid if value.srid >= 0 else default_srid
 
     if isinstance(value, (bytes, bytearray, memoryview, str)):
-        srid = WKBElement(value, extended=None).srid
-        return srid if srid >= 0 else default_srid
+        _, srid = _wkb_wkt.split_wkb_srid(value)
+        return srid if srid is not None and srid >= 0 else default_srid
 
     return default_srid
 
@@ -822,9 +822,9 @@ def _infer_srid_from_wkb_clause(wkb_clause, default_srid, extended=False):
     if isinstance(value, WKBElement):
         return value.srid if value.srid >= 0 else default_srid
 
-    if extended and isinstance(value, (bytes, bytearray, memoryview)):
-        srid = WKBElement(value, extended=None).srid
-        return srid if srid >= 0 else default_srid
+    if extended and isinstance(value, (bytes, bytearray, memoryview, str)):
+        _, srid = _wkb_wkt.split_wkb_srid(value)
+        return srid if srid is not None and srid >= 0 else default_srid
 
     return default_srid
 

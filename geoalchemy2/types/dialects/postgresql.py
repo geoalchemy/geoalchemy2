@@ -1,7 +1,6 @@
 """This module defines specific functions for Postgresql dialect."""
 
-from wkb_wkt_converter import to_wkt
-
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
@@ -26,19 +25,21 @@ def bind_processor_process(spatial_type, bindvalue):
         if bindvalue.extended:
             return bindvalue.data
         else:
-            return to_wkt(bindvalue.data, srid=bindvalue.srid)
+            return _wkb_wkt.to_wkt(bindvalue.data, srid=bindvalue.srid)
     elif isinstance(bindvalue, WKBElement):
         if _is_wkb_constructor(spatial_type):
             return _as_binary_wkb(bindvalue)
         elif not bindvalue.extended:
-            return to_wkt(bindvalue.data, srid=bindvalue.srid)
+            return _wkb_wkt.to_wkt(bindvalue.data, srid=bindvalue.srid)
         else:
             # PostGIS ST_GeomFromEWKT works with EWKT strings as well
             # as EWKB hex strings
             return bindvalue.desc
     elif isinstance(bindvalue, RasterElement):
         return f"{bindvalue.data}"
-    elif isinstance(bindvalue, (bytes, memoryview)) and _is_wkb_constructor(spatial_type):
-        return _as_binary_wkb(bindvalue)
+    elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
+        if _is_wkb_constructor(spatial_type):
+            return _as_binary_wkb(bindvalue)
+        return _wkb_wkt.to_wkt_for_column(bindvalue, srid=spatial_type.srid)
     else:
         return bindvalue

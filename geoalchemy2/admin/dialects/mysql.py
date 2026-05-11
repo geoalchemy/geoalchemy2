@@ -20,6 +20,7 @@ from sqlalchemy.types import LargeBinary
 from sqlalchemy.types import String
 from sqlalchemy.types import TypeDecorator
 
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
@@ -207,16 +208,10 @@ def _ewkb_to_wkb_data(value, *, as_hex=False):
         value = bytes(value)
 
     if isinstance(value, WKBElement):
-        wkb_element = value.as_wkb()
-    else:
-        wkb_element = WKBElement(value, extended=None).as_wkb()
-
-    wkb_data = wkb_element.desc if as_hex else wkb_element.data
-    if isinstance(wkb_data, memoryview):
-        return wkb_data.tobytes()
-    if isinstance(wkb_data, str) and not as_hex:
-        return WKBElement._data_from_desc(wkb_data)
-    return wkb_data
+        value = value.data
+    if as_hex:
+        return _wkb_wkt.to_hex_wkb_no_srid(value).lower()
+    return _wkb_wkt.to_wkb_no_srid(value)
 
 
 def _ewkb_srid(value, *, default_srid=0):
@@ -231,9 +226,9 @@ def _ewkb_srid(value, *, default_srid=0):
             return value.srid
         value = value.data
 
-    if isinstance(value, (bytes, memoryview, str)):
-        srid = WKBElement(value, extended=None).srid
-        if srid >= 0:
+    if isinstance(value, (bytes, bytearray, memoryview, str)):
+        _, srid = _wkb_wkt.split_wkb_srid(value)
+        if srid is not None and srid >= 0:
             return srid
 
     return default_srid
@@ -912,19 +907,18 @@ def _coerce_ewkb_clause_to_wkb(wkb_clause, *, as_hex=False):
         return wkb_clause, None
 
     if isinstance(wkb_data, WKBElement):
-        wkb_element = wkb_data.as_wkb()
-    elif isinstance(wkb_data, (bytes, memoryview, str)):
-        wkb_element = WKBElement(wkb_data).as_wkb()
+        srid = wkb_data.srid if wkb_data.srid > 0 else None
+        wkb_data = wkb_data.data
+    elif isinstance(wkb_data, (bytes, bytearray, memoryview, str)):
+        _, srid = _wkb_wkt.split_wkb_srid(wkb_data)
+        srid = srid if srid is not None and srid > 0 else None
     else:
         return wkb_clause, None
 
-    wkb_data = wkb_element.desc if as_hex else wkb_element.data
-    srid = wkb_element.srid if wkb_element.srid > 0 else None
-
-    if isinstance(wkb_data, memoryview):
-        wkb_data = wkb_data.tobytes()
-    if isinstance(wkb_data, str) and not as_hex:
-        wkb_data = WKBElement._data_from_desc(wkb_data)
+    if as_hex:
+        wkb_data = _wkb_wkt.to_hex_wkb_no_srid(wkb_data).lower()
+    else:
+        wkb_data = _wkb_wkt.to_wkb_no_srid(wkb_data)
 
     bindparam_args = {
         "key": wkb_clause.key,

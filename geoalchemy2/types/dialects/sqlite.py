@@ -3,8 +3,7 @@
 import re
 import warnings
 
-from wkb_wkt_converter import to_wkt
-
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
@@ -58,7 +57,7 @@ def bind_processor_process(spatial_type, bindvalue):
         if _is_wkb_constructor(spatial_type):
             return _as_binary_wkb(bindvalue)
         res = format_geom_type(
-            to_wkt(bindvalue.data, srid=False),
+            _wkb_wkt.to_wkt_no_srid(bindvalue.data),
             default_srid=bindvalue.srid if bindvalue.srid >= 0 else spatial_type.srid,
         )
         return res
@@ -68,7 +67,13 @@ def bind_processor_process(spatial_type, bindvalue):
         if _is_wkb_constructor(spatial_type):
             return _as_binary_wkb(bindvalue)
         return format_geom_type(bindvalue, default_srid=spatial_type.srid)
-    elif isinstance(bindvalue, (bytes, memoryview)) and _is_wkb_constructor(spatial_type):
-        return _as_binary_wkb(bindvalue)
+    elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
+        if _is_wkb_constructor(spatial_type):
+            return _as_binary_wkb(bindvalue)
+        _, srid = _wkb_wkt.split_wkb_srid(bindvalue)
+        return format_geom_type(
+            _wkb_wkt.to_wkt_no_srid(bindvalue),
+            default_srid=srid if srid is not None and srid >= 0 else spatial_type.srid,
+        )
     else:
         return bindvalue

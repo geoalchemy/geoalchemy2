@@ -1,7 +1,6 @@
 """This module defines specific functions for MySQL dialect."""
 
-from wkb_wkt_converter import to_wkt
-
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
@@ -15,6 +14,30 @@ def _is_wkb_constructor(spatial_type):
 def _as_wkb_hex(bindvalue):
     wkb_element = bindvalue if isinstance(bindvalue, WKBElement) else WKBElement(bindvalue)
     return wkb_element.as_wkb().desc
+
+
+def _validate_raw_wkb_srid(spatial_type, bindvalue):
+    _, srid = _wkb_wkt.split_wkb_srid(bindvalue)
+    if srid is not None and srid != spatial_type.srid:
+        raise ArgumentError(
+            f"The SRID ({srid}) of the supplied value is different "
+            f"from the one of the column ({spatial_type.srid})"
+        )
+
+
+def _normalize_mariadb_wkt(wkt):
+    if "multipoint" in wkt[:20].lower() and "empty" not in wkt[:30].lower():
+        # MariaDB does not support ISO WKT with parentheses around each sub-point.
+        first_idx = wkt.find("(")
+        last_idx = wkt.rfind(")")
+        if first_idx == -1 or last_idx == -1:
+            return wkt
+        wkt = (
+            wkt[: first_idx + 1]
+            + wkt[first_idx:last_idx].replace("(", "").replace(")", "")
+            + wkt[last_idx:]
+        )
+    return wkt
 
 
 def bind_processor_process(spatial_type, bindvalue):
@@ -53,19 +76,12 @@ def bind_processor_process(spatial_type, bindvalue):
         return bindvalue
     elif isinstance(bindvalue, WKBElement):
         if not _is_wkb_constructor(spatial_type):
-            wkt = to_wkt(bindvalue.data, srid=False)
-            if "multipoint" in wkt[:20].lower():
-                # MariaDB does not support ISO WKT with parentheses around each sub-point
-                first_idx = wkt.find("(")
-                last_idx = wkt.rfind(")")
-                wkt = (
-                    wkt[: first_idx + 1]
-                    + wkt[first_idx:last_idx].replace("(", "").replace(")", "")
-                    + wkt[last_idx:]
-                )
-            return wkt
+            return _normalize_mariadb_wkt(_wkb_wkt.to_wkt_no_srid(bindvalue.data))
         # MariaDB does not support raw binary data so we use the hex representation
         return _as_wkb_hex(bindvalue)
-    elif isinstance(bindvalue, (bytes, memoryview)) and _is_wkb_constructor(spatial_type):
-        return _as_wkb_hex(bindvalue)
+    elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
+        if _is_wkb_constructor(spatial_type):
+            return _as_wkb_hex(bindvalue)
+        _validate_raw_wkb_srid(spatial_type, bindvalue)
+        return _normalize_mariadb_wkt(_wkb_wkt.to_wkt_no_srid(bindvalue))
     return bindvalue

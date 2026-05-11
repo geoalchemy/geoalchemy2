@@ -15,12 +15,14 @@ from sqlalchemy.sql import insert
 from sqlalchemy.sql import text
 from sqlalchemy.sql import update
 
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2.admin.dialects import mariadb as _mariadb_admin  # noqa: F401
 from geoalchemy2.admin.dialects import mysql as _mysql_admin  # noqa: F401
 from geoalchemy2.admin.dialects import postgresql as _postgresql_admin  # noqa: F401
 from geoalchemy2.admin.dialects import sqlite as _sqlite_admin  # noqa: F401
 from geoalchemy2.admin.dialects.geopackage import GeoPackageDialect
 from geoalchemy2.elements import WKBElement
+from geoalchemy2.elements import WKTElement
 from geoalchemy2.exc import ArgumentError
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
@@ -40,6 +42,13 @@ EWKB_HEX = "0101000020e6100000000000000000f03f0000000000000040"
 def eq_sql(a, b):
     a = re.sub(r"[\n\t]", "", str(a))
     assert a == b
+
+
+def test_split_wkb_srid_treats_strings_as_hex_wkb_only():
+    assert _wkb_wkt.split_wkb_srid(EWKB_HEX) == ("POINT (1 2)", 4326)
+
+    with pytest.raises(ValueError):
+        _wkb_wkt.split_wkb_srid("SRID=4326;POINT (1 2)")
 
 
 @pytest.fixture
@@ -747,6 +756,21 @@ class TestMySQLWKBConstructors:
             spatial_type, WKBElement(bytes.fromhex(WKB_HEX), srid=4326)
         ) == bytes.fromhex(WKB_HEX)
 
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [bytes.fromhex(WKB_HEX), memoryview(bytes.fromhex(WKB_HEX))],
+    )
+    def test_bind_processor_converts_raw_wkb_for_text_constructor(self, bindvalue):
+        spatial_type = Geometry(srid=4326)
+
+        assert mysql_type.bind_processor_process(spatial_type, bindvalue) == "POINT (1 2)"
+
+    def test_bind_processor_validates_raw_ewkb_srid(self):
+        spatial_type = Geometry(srid=3857)
+
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            mysql_type.bind_processor_process(spatial_type, bytes.fromhex(EWKB_HEX))
+
     def test_bind_processor_strips_ewkb_for_ewkb_constructor(self):
         spatial_type = Geometry(srid=4326, from_text="ST_GeomFromEWKB")
 
@@ -1029,6 +1053,41 @@ class TestMariaDBWKBConstructors:
             == WKB_HEX
         )
 
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [bytes.fromhex(WKB_HEX), memoryview(bytes.fromhex(WKB_HEX))],
+    )
+    def test_bind_processor_converts_raw_wkb_for_text_constructor(self, bindvalue):
+        spatial_type = Geometry(srid=4326)
+
+        assert mariadb_type.bind_processor_process(spatial_type, bindvalue) == "POINT (1 2)"
+
+    def test_bind_processor_validates_raw_ewkb_srid(self):
+        spatial_type = Geometry(srid=3857)
+
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            mariadb_type.bind_processor_process(spatial_type, bytes.fromhex(EWKB_HEX))
+
+    def test_bind_processor_normalizes_multipoint_wkt_for_wkbelement_and_raw_wkb(self):
+        spatial_type = Geometry(geometry_type="MULTIPOINT", srid=4326)
+        wkb = WKTElement("MULTIPOINT ((1 2), (3 4))").as_wkb().data
+
+        assert (
+            mariadb_type.bind_processor_process(spatial_type, WKBElement(wkb, srid=4326))
+            == "MULTIPOINT (1 2, 3 4)"
+        )
+        assert mariadb_type.bind_processor_process(spatial_type, wkb) == ("MULTIPOINT (1 2, 3 4)")
+
+    def test_bind_processor_preserves_empty_multipoint_for_wkbelement_and_raw_wkb(self):
+        spatial_type = Geometry(geometry_type="MULTIPOINT", srid=4326)
+        wkb = WKTElement("MULTIPOINT EMPTY").as_wkb().data
+
+        assert (
+            mariadb_type.bind_processor_process(spatial_type, WKBElement(wkb, srid=4326))
+            == "MULTIPOINT EMPTY"
+        )
+        assert mariadb_type.bind_processor_process(spatial_type, wkb) == "MULTIPOINT EMPTY"
+
 
 class TestPostgreSQLWKBConstructors:
     @staticmethod
@@ -1049,6 +1108,30 @@ class TestPostgreSQLWKBConstructors:
             spatial_type, WKBElement(bytes.fromhex(WKB_HEX), srid=4326)
         ) == bytes.fromhex(WKB_HEX)
 
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [bytes.fromhex(WKB_HEX), memoryview(bytes.fromhex(WKB_HEX))],
+    )
+    def test_bind_processor_converts_raw_wkb_for_text_constructor(self, bindvalue):
+        spatial_type = Geometry(srid=4326)
+
+        assert (
+            postgresql_type.bind_processor_process(spatial_type, bindvalue)
+            == "SRID=4326;POINT (1 2)"
+        )
+
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [bytes.fromhex(EWKB_HEX), memoryview(bytes.fromhex(EWKB_HEX))],
+    )
+    def test_bind_processor_preserves_raw_ewkb_srid_for_unknown_column(self, bindvalue):
+        spatial_type = Geometry()
+
+        assert (
+            postgresql_type.bind_processor_process(spatial_type, bindvalue)
+            == "SRID=4326;POINT (1 2)"
+        )
+
 
 class TestSQLiteWKBConstructors:
     @staticmethod
@@ -1068,6 +1151,28 @@ class TestSQLiteWKBConstructors:
         assert sqlite_type.bind_processor_process(
             spatial_type, WKBElement(bytes.fromhex(WKB_HEX), srid=4326)
         ) == bytes.fromhex(WKB_HEX)
+
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [bytes.fromhex(WKB_HEX), memoryview(bytes.fromhex(WKB_HEX))],
+    )
+    def test_bind_processor_converts_raw_wkb_for_text_constructor(self, bindvalue):
+        spatial_type = Geometry(srid=4326)
+
+        assert sqlite_type.bind_processor_process(spatial_type, bindvalue) == (
+            "SRID=4326;POINT(1 2)"
+        )
+
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [bytes.fromhex(EWKB_HEX), memoryview(bytes.fromhex(EWKB_HEX))],
+    )
+    def test_bind_processor_preserves_raw_ewkb_srid_for_unknown_column(self, bindvalue):
+        spatial_type = Geometry()
+
+        assert sqlite_type.bind_processor_process(spatial_type, bindvalue) == (
+            "SRID=4326;POINT(1 2)"
+        )
 
 
 class TestGeoPackage:

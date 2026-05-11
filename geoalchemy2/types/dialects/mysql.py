@@ -1,7 +1,6 @@
 """This module defines specific functions for MySQL dialect."""
 
-from wkb_wkt_converter import to_wkt
-
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
@@ -20,6 +19,15 @@ def _as_binary_wkb(bindvalue):
     if isinstance(bindvalue, str):
         return WKBElement._data_from_desc(bindvalue)
     return bytes(bindvalue)
+
+
+def _validate_raw_wkb_srid(spatial_type, bindvalue):
+    _, srid = _wkb_wkt.split_wkb_srid(bindvalue)
+    if srid is not None and srid != spatial_type.srid:
+        raise ArgumentError(
+            f"The SRID ({srid}) of the supplied value is different "
+            f"from the one of the column ({spatial_type.srid})"
+        )
 
 
 def bind_processor_process(spatial_type, bindvalue):
@@ -60,7 +68,10 @@ def bind_processor_process(spatial_type, bindvalue):
         if _is_wkb_constructor(spatial_type):
             return _as_binary_wkb(bindvalue)
         else:
-            return to_wkt(bindvalue.data, srid=False)
-    elif isinstance(bindvalue, (bytes, memoryview)) and _is_wkb_constructor(spatial_type):
-        return _as_binary_wkb(bindvalue)
+            return _wkb_wkt.to_wkt_no_srid(bindvalue.data)
+    elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
+        if _is_wkb_constructor(spatial_type):
+            return _as_binary_wkb(bindvalue)
+        _validate_raw_wkb_srid(spatial_type, bindvalue)
+        return _wkb_wkt.to_wkt_no_srid(bindvalue)
     return bindvalue

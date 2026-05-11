@@ -1,4 +1,5 @@
 import re
+import struct
 from itertools import permutations
 
 import pytest
@@ -157,6 +158,27 @@ class TestWKTElement:
 
         # Roundtrip: WKT → WKB → WKT
         assert r2.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+
+    def test_as_ewkt_as_ewkb_treats_zero_srid_as_no_embedded_srid(self):
+        e = WKTElement(f"SRID=0;{self._wkt}", extended=True)
+
+        assert e.srid == 0
+
+        wkt = e.as_wkt()
+        assert wkt.desc == self._wkt
+        assert wkt.srid == 0
+        assert wkt.extended is False
+
+        ewkt = e.as_ewkt()
+        assert ewkt.desc == self._wkt
+        assert ewkt.srid == 0
+        assert ewkt.extended is False
+
+        wkb = e.as_wkb()
+        ewkb = e.as_ewkb()
+        assert ewkb.desc == wkb.desc
+        assert ewkb.srid == 0
+        assert ewkb.extended is False
 
 
 class TestExtendedWKTElement:
@@ -450,6 +472,7 @@ class TestExtendedWKBElement:
         e1 = WKBElement(self._bin_ewkb)
         e2 = WKBElement(self._hex_ewkb)
         e3 = WKBElement(self._hex_wkb)
+        e4 = WKBElement(self._hex_wkb, srid=0)
 
         # Binary EWKB — SRID preserved as attribute
         r1 = e1.as_wkt()
@@ -484,6 +507,21 @@ class TestExtendedWKBElement:
         assert isinstance(r5, WKTElement)
         assert r5.extended is False
         assert r5.srid == -1
+
+        # Plain WKB with SRID 0 keeps SRID as an attribute but does not emit EWKT.
+        r6 = e4.as_ewkt()
+        assert isinstance(r6, WKTElement)
+        assert r6.extended is False
+        assert r6.srid == 0
+        assert r6.desc == self._wkt
+        assert e4.as_ewkb().extended is False
+
+    def test_as_ewkb_preserves_already_extended_big_endian_data(self):
+        data = memoryview(struct.pack(">BII2d", 0, 0x20000001, self._srid, 1.0, 2.0))
+        elem = WKBElement(data, extended=True)
+
+        assert elem.srid == self._srid
+        assert elem.as_ewkb().desc == elem.desc
 
 
 class TestWKBElement:
