@@ -11,7 +11,7 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.types import Geometry
 
 _SQLALCHEMY_VERSION_BEFORE_14 = version.parse(sqlalchemy.__version__) < version.parse("1.4")
-_SQLALCHEMY_VERSION_BEFORE_21 = version.parse(sqlalchemy.__version__) < version.parse("2.1")
+_SQLALCHEMY_VERSION_BEFORE_21 = version.parse(sqlalchemy.__version__) <= version.parse("2.0")
 
 
 def _spatial_idx_name(table_name, column_name):
