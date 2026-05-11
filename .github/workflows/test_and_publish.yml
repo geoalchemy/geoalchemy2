@@ -9,6 +9,8 @@ on:
       - '*'
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: 0 5 1 * *
 
 env:
   PGPASSWORD: gis
