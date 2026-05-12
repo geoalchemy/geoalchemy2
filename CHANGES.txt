@@ -1,6 +1,16 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.20.0
+------
+
+* Feat: Compatibility for SQLAlchemy >= 2.1 @adrien-berchet (#606)
+* Feat: Add MSSQL dialect @adrien-berchet (#603)
+* Docs: Update docs @adrien-berchet (#604)
+* CI: Setup cockroachdb @adrien-berchet (#569)
+* CI: Replace pre-commit by prek and fix yaml files accordingly @adrien-berchet (#602)
+* Test: Rework Docker image with docker-compose @adrien-berchet (#601)
+
 0.19.0
 ------
 
