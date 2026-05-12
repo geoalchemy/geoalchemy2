@@ -269,17 +269,20 @@ class WKBElement(_SpatialElement):
 
     def as_wkb(self) -> WKBElement:
         if self.extended:
-            data = _wkb_wkt.to_wkb_no_srid(self.data)
+            data = _wkb_wkt.to_wkb_no_srid_header(self.data)
             return WKBElement(data, self.srid, extended=False)
-        return WKBElement(self.data, self.srid)
+        return WKBElement(self.data, self.srid, extended=False)
 
     def as_ewkb(self) -> WKBElement:
         if self.srid > 0:
             if self.extended:
-                _, embedded_srid = _wkb_wkt.split_wkb_srid(self.data)
+                if _wkb_wkt.can_header_rewrite(self.data):
+                    embedded_srid = _wkb_wkt.wkb_srid(self.data)
+                else:
+                    _, embedded_srid = _wkb_wkt.split_wkb_srid(self.data)
                 if embedded_srid == self.srid:
                     return WKBElement(self.data, self.srid, extended=True)
-            data = _wkb_wkt.to_wkb(self.data, srid=self.srid)
+            data = _wkb_wkt.to_ewkb_header(self.data, self.srid)
             return WKBElement(data, self.srid, extended=True)
         return self.as_wkb()
 

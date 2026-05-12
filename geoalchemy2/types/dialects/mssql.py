@@ -111,14 +111,28 @@ def _wkb_to_mssql_wkt(value):
         raise
 
 
+def _split_wkb_to_mssql_wkt(value):
+    data = _coerce_wkb_data(value)
+    try:
+        wkt, srid = _wkb_wkt.split_wkb_srid(data)
+    except ValueError as exc:
+        message = str(exc)
+        message_lower = message.lower()
+        if "unsupported geometry type" in message_lower:
+            raise ValueError(f"Unsupported WKB geometry type: {message}") from None
+        if "invalid byte order marker" in message_lower:
+            raise ValueError(f"Invalid WKB byte order marker: {message}") from None
+        raise
+    return _normalize_wkt_for_mssql(wkt), srid
+
+
 def _to_mssql_wkt(value):
     if isinstance(value, WKTElement):
         return _normalize_wkt_for_mssql(_wkb_wkt.to_wkt_no_srid(value.data))
     return _wkb_to_mssql_wkt(value)
 
 
-def _validate_raw_wkb_srid(column_srid, has_fixed_srid, bindvalue):
-    _, srid = _wkb_wkt.split_wkb_srid(bindvalue)
+def _validate_wkb_srid(column_srid, has_fixed_srid, srid):
     if has_fixed_srid and srid is not None and srid != column_srid:
         raise ArgumentError(
             f"The SRID ({srid}) of the supplied value is different "
@@ -173,6 +187,7 @@ def bind_processor_process(spatial_type, bindvalue, dialect=None):
     elif isinstance(bindvalue, WKBElement):
         return _to_mssql_wkt(bindvalue)
     elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
-        _validate_raw_wkb_srid(column_srid, has_fixed_srid, bindvalue)
-        return _to_mssql_wkt(bindvalue)
+        wkt, srid = _split_wkb_to_mssql_wkt(bindvalue)
+        _validate_wkb_srid(column_srid, has_fixed_srid, srid)
+        return wkt
     return bindvalue

@@ -70,9 +70,9 @@ def bind_processor_process(spatial_type, bindvalue):
     elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
         if _is_wkb_constructor(spatial_type):
             return _as_binary_wkb(bindvalue)
-        _, srid = _wkb_wkt.split_wkb_srid(bindvalue)
+        wkt, srid = _wkb_wkt.split_wkb_srid(bindvalue)
         return format_geom_type(
-            _wkb_wkt.to_wkt_no_srid(bindvalue),
+            wkt,
             default_srid=srid if srid is not None and srid >= 0 else spatial_type.srid,
         )
     else:

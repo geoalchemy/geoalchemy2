@@ -1173,6 +1173,25 @@ class TestMSSQLBindAndResultProcessing:
         with pytest.raises(ValueError, match="unsupported converter path"):
             mssql_type._to_mssql_wkt(b"\x01")
 
+    def test_bind_processor_reuses_split_wkb_for_raw_text_constructor(self, monkeypatch):
+        geom = Geometry(geometry_type="POINT", srid=4326)
+        bind_processor = geom.bind_processor(self.dialect)
+        bindvalue = bytearray(b"\x01\x01\x00\x00\x00")
+        calls = []
+
+        def split_wkb_srid(value):
+            calls.append(value)
+            return "POINT Z (1 2 3)", 4326
+
+        def to_wkt_no_srid(value):
+            raise AssertionError("raw bind processor should reuse split WKT")
+
+        monkeypatch.setattr(mssql_type._wkb_wkt, "split_wkb_srid", split_wkb_srid)
+        monkeypatch.setattr(mssql_type._wkb_wkt, "to_wkt_no_srid", to_wkt_no_srid)
+
+        assert bind_processor(bindvalue) == "POINT (1 2 3)"
+        assert calls == [bytes(bindvalue)]
+
     def test_bind_coercion_helpers_keep_non_bind_clauses(self):
         table = Table("raw_values", MetaData(), Column("value", Integer))
 

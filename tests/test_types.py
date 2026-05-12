@@ -765,6 +765,24 @@ class TestMySQLWKBConstructors:
 
         assert mysql_type.bind_processor_process(spatial_type, bindvalue) == "POINT (1 2)"
 
+    def test_bind_processor_reuses_split_wkb_for_raw_text_constructor(self, monkeypatch):
+        spatial_type = Geometry(srid=4326)
+        bindvalue = bytearray(bytes.fromhex(EWKB_HEX))
+        calls = []
+
+        def split_wkb_srid(value):
+            calls.append(value)
+            return "POINT Z (1 2 3)", 4326
+
+        def to_wkt_no_srid(value):
+            raise AssertionError("raw bind processor should reuse split WKT")
+
+        monkeypatch.setattr(mysql_type._wkb_wkt, "split_wkb_srid", split_wkb_srid)
+        monkeypatch.setattr(mysql_type._wkb_wkt, "to_wkt_no_srid", to_wkt_no_srid)
+
+        assert mysql_type.bind_processor_process(spatial_type, bindvalue) == "POINT Z (1 2 3)"
+        assert calls == [bindvalue]
+
     def test_bind_processor_validates_raw_ewkb_srid(self):
         spatial_type = Geometry(srid=3857)
 
@@ -1062,6 +1080,26 @@ class TestMariaDBWKBConstructors:
 
         assert mariadb_type.bind_processor_process(spatial_type, bindvalue) == "POINT (1 2)"
 
+    def test_bind_processor_reuses_split_wkb_for_raw_text_constructor(self, monkeypatch):
+        spatial_type = Geometry(srid=4326)
+        bindvalue = bytearray(bytes.fromhex(EWKB_HEX))
+        calls = []
+
+        def split_wkb_srid(value):
+            calls.append(value)
+            return "MULTIPOINT ((1 2), (3 4))", 4326
+
+        def to_wkt_no_srid(value):
+            raise AssertionError("raw bind processor should reuse split WKT")
+
+        monkeypatch.setattr(mariadb_type._wkb_wkt, "split_wkb_srid", split_wkb_srid)
+        monkeypatch.setattr(mariadb_type._wkb_wkt, "to_wkt_no_srid", to_wkt_no_srid)
+
+        assert mariadb_type.bind_processor_process(spatial_type, bindvalue) == (
+            "MULTIPOINT (1 2, 3 4)"
+        )
+        assert calls == [bindvalue]
+
     def test_bind_processor_validates_raw_ewkb_srid(self):
         spatial_type = Geometry(srid=3857)
 
@@ -1162,6 +1200,26 @@ class TestSQLiteWKBConstructors:
         assert sqlite_type.bind_processor_process(spatial_type, bindvalue) == (
             "SRID=4326;POINT(1 2)"
         )
+
+    def test_bind_processor_reuses_split_wkb_for_raw_text_constructor(self, monkeypatch):
+        spatial_type = Geometry(srid=3857)
+        bindvalue = bytearray(bytes.fromhex(EWKB_HEX))
+        calls = []
+
+        def split_wkb_srid(value):
+            calls.append(value)
+            return "POINT Z (1 2 3)", 4326
+
+        def to_wkt_no_srid(value):
+            raise AssertionError("raw bind processor should reuse split WKT")
+
+        monkeypatch.setattr(sqlite_type._wkb_wkt, "split_wkb_srid", split_wkb_srid)
+        monkeypatch.setattr(sqlite_type._wkb_wkt, "to_wkt_no_srid", to_wkt_no_srid)
+
+        assert sqlite_type.bind_processor_process(spatial_type, bindvalue) == (
+            "SRID=4326;POINT(1 2 3)"
+        )
+        assert calls == [bindvalue]
 
     @pytest.mark.parametrize(
         "bindvalue",

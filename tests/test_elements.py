@@ -10,6 +10,7 @@ from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import func
 
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2.elements import CompositeElement
 from geoalchemy2.elements import DynamicWKBElement
 from geoalchemy2.elements import DynamicWKTElement
@@ -522,6 +523,100 @@ class TestExtendedWKBElement:
 
         assert elem.srid == self._srid
         assert elem.as_ewkb().desc == elem.desc
+
+    def test_as_ewkb_overrides_already_extended_binary_srid(self):
+        arbitrary_srid = self._srid + 1
+        elem = WKBElement(self._bin_ewkb, srid=arbitrary_srid, extended=True)
+        result = elem.as_ewkb()
+
+        assert result.extended is True
+        assert result.srid == arbitrary_srid
+        assert result.desc == "010100002004000000000000000000f03f0000000000000040"
+
+    def test_as_ewkb_overrides_already_extended_hex_srid(self):
+        arbitrary_srid = self._srid + 1
+        elem = WKBElement(self._hex_ewkb, srid=arbitrary_srid, extended=True)
+        result = elem.as_ewkb()
+
+        assert result.extended is True
+        assert result.srid == arbitrary_srid
+        assert result.desc == "010100002004000000000000000000f03f0000000000000040"
+
+    def test_as_ewkb_overrides_already_extended_big_endian_srid(self):
+        arbitrary_srid = self._srid + 1
+        data = memoryview(struct.pack(">BII2d", 0, 0x20000001, self._srid, 1.0, 2.0))
+        elem = WKBElement(data, srid=arbitrary_srid, extended=True)
+        result = elem.as_ewkb()
+
+        assert result.extended is True
+        assert result.srid == arbitrary_srid
+        assert result.desc == "0020000001000000043ff00000000000004000000000000000"
+
+    def test_as_wkb_uses_explicit_plain_wkb_state_for_plain_values(self):
+        elem = WKBElement(self._bin_wkb, srid=self._srid, extended=False)
+        result = elem.as_wkb()
+
+        assert result.data is self._bin_wkb
+        assert result.extended is False
+        assert result.srid == self._srid
+
+    def test_as_wkb_and_as_ewkb_support_memoryview_bytearray_and_hex(self):
+        binary_elem = WKBElement(memoryview(bytearray(self._bin_ewkb)), extended=True)
+        plain_binary = binary_elem.as_wkb()
+        assert plain_binary.desc == self._hex_wkb
+        assert plain_binary.as_ewkb().desc == self._hex_ewkb
+
+        hex_elem = WKBElement(self._hex_ewkb, extended=True)
+        plain_hex = hex_elem.as_wkb()
+        assert plain_hex.desc == self._hex_wkb
+        assert plain_hex.as_ewkb().desc == self._hex_ewkb
+
+    def test_as_wkb_short_header_preserves_current_failure_behavior(self):
+        elem = WKBElement(b"\x01", srid=self._srid, extended=True)
+
+        with pytest.raises(ValueError, match="too short"):
+            elem.as_wkb()
+
+    def test_as_ewkb_matching_simple_header_uses_header_only_noop(self, monkeypatch):
+        data = struct.pack("<BII", 1, 0x20000001, self._srid)
+        elem = WKBElement(data, srid=self._srid, extended=True)
+
+        def split_wkb_srid(value):
+            raise AssertionError("simple no-op should not full-parse WKB")
+
+        monkeypatch.setattr(_wkb_wkt, "split_wkb_srid", split_wkb_srid)
+
+        result = elem.as_ewkb()
+
+        assert result.extended is True
+        assert result.srid == self._srid
+        assert result.desc == data.hex()
+
+    def test_as_ewkb_falls_back_for_iso_dimensional_wkb(self):
+        data = struct.pack("<BI3d", 1, 1001, 1.0, 2.0, 3.0)
+        elem = WKBElement(data, srid=4326, extended=False)
+        result = elem.as_ewkb()
+
+        assert result.extended is True
+        assert result.srid == 4326
+        assert result.desc == ("01010000a0e6100000000000000000f03f00000000000000400000000000000840")
+
+    def test_as_wkb_falls_back_for_nested_collection_headers(self):
+        child = struct.pack("<BIIdd", 1, 0x20000001, 3857, 1.0, 2.0)
+        data = struct.pack("<BIII", 1, 0x20000007, 4326, 1) + child
+        elem = WKBElement(data, srid=4326, extended=True)
+        result = elem.as_wkb()
+
+        assert result.extended is False
+        assert result.srid == 4326
+        assert result.desc == ("0107000000010000000101000000000000000000f03f0000000000000040")
+
+    def test_as_ewkb_validates_complex_extended_payload_before_returning_original(self):
+        data = struct.pack("<BIII", 1, 0x20000007, 4326, 1)
+        elem = WKBElement(data, srid=4326, extended=True)
+
+        with pytest.raises(ValueError, match="unexpected end of data"):
+            elem.as_ewkb()
 
 
 class TestWKBElement:

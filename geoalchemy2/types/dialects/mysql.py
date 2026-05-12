@@ -21,8 +21,7 @@ def _as_binary_wkb(bindvalue):
     return bytes(bindvalue)
 
 
-def _validate_raw_wkb_srid(spatial_type, bindvalue):
-    _, srid = _wkb_wkt.split_wkb_srid(bindvalue)
+def _validate_wkb_srid(spatial_type, srid):
     if srid is not None and srid != spatial_type.srid:
         raise ArgumentError(
             f"The SRID ({srid}) of the supplied value is different "
@@ -72,6 +71,7 @@ def bind_processor_process(spatial_type, bindvalue):
     elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
         if _is_wkb_constructor(spatial_type):
             return _as_binary_wkb(bindvalue)
-        _validate_raw_wkb_srid(spatial_type, bindvalue)
-        return _wkb_wkt.to_wkt_no_srid(bindvalue)
+        wkt, srid = _wkb_wkt.split_wkb_srid(bindvalue)
+        _validate_wkb_srid(spatial_type, srid)
+        return wkt
     return bindvalue
