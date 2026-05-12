@@ -9,6 +9,8 @@ on:
       - '*'
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: 0 5 1 * *
 
 env:
   PGPASSWORD: gis
@@ -33,7 +35,7 @@ jobs:
           {"pkg_name": "python==3.11.*", "flag": "3.11"},
           {"pkg_name": "python==3.12.*", "flag": "3.12"},
           {"pkg_name": "python==3.13.*", "flag": "3.13"},
-          {"pkg_name": "pypy3.10", "flag": "pypy3.10"},
+          {"pkg_name": "pypy3.11", "flag": "pypy3.11"},
         ]
 
     # The type of runner that the job will run on
@@ -213,7 +215,7 @@ jobs:
         PYTEST_MSSQL_DB_URL: mssql+pyodbc://gis:gis@localhost:1433/gis?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
         PYTEST_COCKROACHDB_DB_URL: cockroachdb://gis@127.0.0.1:26257/gis?sslmode=disable
       run: |
-        if [[ ${{ matrix.python-version.flag }} == 'pypy3.10' ]]; then
+        if [[ ${{ matrix.python-version.flag }} == 'pypy3.11' ]]; then
           export PYTEST_SPATIALITE3_DB_URL="FAILING URL"
           export PYTEST_SPATIALITE4_DB_URL="FAILING URL"
           export PYTEST_GEOPACKAGE_DB_URL="FAILING URL"
@@ -246,7 +248,7 @@ jobs:
       with:
         fail-on-error: false
         parallel-finished: true
-        carryforward: "run-3.10,run-3.11,run-3.12,run-3.13,run-pypy3.10"
+        carryforward: "run-3.10,run-3.11,run-3.12,run-3.13,run-pypy3.11"
 
   # This workflow deploys the package
   deploy:

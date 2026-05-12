@@ -11,6 +11,9 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.types import Geometry
 
 _SQLALCHEMY_VERSION_BEFORE_14 = version.parse(sqlalchemy.__version__) < version.parse("1.4")
+_COLUMN_COLLECTION_CLASS = getattr(
+    expression, "WriteableColumnCollection", expression.ColumnCollection
+)
 
 
 def _spatial_idx_name(table_name, column_name):
@@ -70,7 +73,7 @@ def _update_table_for_dispatch(table, regular_cols):
 
     # Temporarily patch a set of columns not including the
     # managed Geometry columns
-    column_collection = expression.ColumnCollection()
+    column_collection = _COLUMN_COLLECTION_CLASS()
     for col in regular_cols:
         column_collection.add(col)
     table.columns = column_collection
