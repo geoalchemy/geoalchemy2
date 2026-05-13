@@ -5,23 +5,9 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
 from geoalchemy2.exc import ArgumentError
-
-
-def _is_wkb_constructor(spatial_type):
-    return "wkb" in (getattr(spatial_type, "from_text", "") or "").lower()
-
-
-def _as_wkb_hex(bindvalue):
-    wkb_element = bindvalue if isinstance(bindvalue, WKBElement) else WKBElement(bindvalue)
-    return wkb_element.as_wkb().desc
-
-
-def _validate_wkb_srid(spatial_type, srid):
-    if srid is not None and srid != spatial_type.srid:
-        raise ArgumentError(
-            f"The SRID ({srid}) of the supplied value is different "
-            f"from the one of the column ({spatial_type.srid})"
-        )
+from geoalchemy2.types.dialects.common import as_wkb_hex
+from geoalchemy2.types.dialects.common import is_wkb_constructor
+from geoalchemy2.types.dialects.common import validate_wkb_srid
 
 
 def _normalize_mariadb_wkt(wkt):
@@ -74,14 +60,14 @@ def bind_processor_process(spatial_type, bindvalue):
             bindvalue.srid = spatial_type.srid
         return bindvalue
     elif isinstance(bindvalue, WKBElement):
-        if not _is_wkb_constructor(spatial_type):
+        if not is_wkb_constructor(spatial_type):
             return _normalize_mariadb_wkt(_wkb_wkt.to_wkt_no_srid(bindvalue.data))
         # MariaDB does not support raw binary data so we use the hex representation
-        return _as_wkb_hex(bindvalue)
+        return as_wkb_hex(bindvalue)
     elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
-        if _is_wkb_constructor(spatial_type):
-            return _as_wkb_hex(bindvalue)
+        if is_wkb_constructor(spatial_type):
+            return as_wkb_hex(bindvalue)
         wkt, srid = _wkb_wkt.split_wkb_srid(bindvalue)
-        _validate_wkb_srid(spatial_type, srid)
+        validate_wkb_srid(spatial_type.srid, srid)
         return _normalize_mariadb_wkt(wkt)
     return bindvalue

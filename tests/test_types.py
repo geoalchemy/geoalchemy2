@@ -567,7 +567,12 @@ class TestMySQLWKBConstructors:
 
         assert calls == [stmt]
 
-    def test_before_execute_avoids_statement_compile_for_named_bindparam(self, monkeypatch):
+    @pytest.mark.parametrize("runtime_value", [bytes.fromhex(EWKB_HEX), None])
+    def test_before_execute_avoids_statement_compile_for_named_bindparam(
+        self,
+        monkeypatch,
+        runtime_value,
+    ):
         class Conn:
             dialect = mysql.dialect()
 
@@ -581,19 +586,68 @@ class TestMySQLWKBConstructors:
         )
         source_bind = bindparam("wkb")
         stmt = select([func.ST_GeomFromEWKB(source_bind)])
-        ewkb = bytes.fromhex(EWKB_HEX)
 
         _, _, expanded_params = _mysql_admin.before_execute(
             Conn(),
             stmt,
             (),
-            {"wkb": ewkb},
+            {"wkb": runtime_value},
             {},
         )
 
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(source_bind)
-        assert expanded_params[wkb_key] is ewkb
-        assert expanded_params[srid_key] is ewkb
+        assert expanded_params[wkb_key] is runtime_value
+        assert expanded_params[srid_key] is runtime_value
+
+    def test_before_execute_prefilter_short_circuits_candidate_values(self):
+        class ShortCircuitValues(dict):
+            def values(self):
+                yield bytes.fromhex(EWKB_HEX)
+                raise AssertionError("candidate value scan should short-circuit")
+
+        assert _mysql_admin._parameters_may_need_dynamic_ewkb(
+            (),
+            ShortCircuitValues({"wkb": bytes.fromhex(EWKB_HEX), "other": object()}),
+        )
+
+    def test_dynamic_ewkb_key_collection_uses_candidate_membership(self):
+        class NoIterationKeys(dict):
+            def __iter__(self):
+                raise AssertionError("source key lookup should use direct membership")
+
+        present_keys = _mysql_admin._collect_present_mysql_dynamic_ewkb_parameter_keys(
+            (),
+            NoIterationKeys({f"other_{i}": object() for i in range(1000)} | {"wkb": None}),
+            [("wkb",)],
+        )
+
+        assert present_keys == {"wkb"}
+
+    def test_before_execute_respects_dynamic_ewkb_split_disable_option(self, monkeypatch):
+        class Conn:
+            dialect = mysql.dialect()
+
+        def collect_source_binds(clauseelement):
+            raise AssertionError("disabled dynamic splitting should not traverse the statement")
+
+        monkeypatch.setattr(
+            _mysql_admin,
+            "_collect_mysql_dynamic_ewkb_source_binds",
+            collect_source_binds,
+        )
+        source_bind = bindparam("wkb")
+        stmt = select([func.ST_GeomFromEWKB(source_bind)])
+        params = {"wkb": bytes.fromhex(EWKB_HEX)}
+
+        result = _mysql_admin.before_execute(
+            Conn(),
+            stmt,
+            (),
+            params,
+            {_mysql_admin._MYSQL_DISABLE_DYNAMIC_EWKB_SPLIT_OPTION: True},
+        )
+
+        assert result == (stmt, (), params)
 
     def test_before_execute_wraps_multivalue_dml_without_runtime_params(self):
         class Conn:
@@ -649,7 +703,7 @@ class TestMySQLWKBConstructors:
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(source_bind)
         ewkb = bytes.fromhex(EWKB_HEX)
         wkb = bytes.fromhex(WKB_HEX)
-        multiparams = ({"wkb": ewkb}, {"wkb": wkb})
+        multiparams = ({"wkb": ewkb}, {"wkb": wkb}, {"wkb": None})
 
         _, expanded_multiparams, expanded_params = _mysql_admin.before_execute(
             Conn(),
@@ -660,11 +714,13 @@ class TestMySQLWKBConstructors:
         )
 
         assert expanded_params == {}
-        assert multiparams == ({"wkb": ewkb}, {"wkb": wkb})
+        assert multiparams == ({"wkb": ewkb}, {"wkb": wkb}, {"wkb": None})
         assert expanded_multiparams[0][wkb_key] is ewkb
         assert expanded_multiparams[0][srid_key] is ewkb
         assert expanded_multiparams[1][wkb_key] is wkb
         assert expanded_multiparams[1][srid_key] is wkb
+        assert expanded_multiparams[2][wkb_key] is None
+        assert expanded_multiparams[2][srid_key] is None
 
     def test_before_execute_expands_dynamic_ewkb_unique_compiled_name(self):
         class Conn:
@@ -1050,6 +1106,42 @@ class TestMariaDBWKBConstructors:
         assert params == {"wkb": ewkb}
         assert expanded_params[wkb_key] is ewkb
         assert expanded_params[srid_key] is ewkb
+
+    def test_before_execute_expands_none_dynamic_ewkb_params_for_mariadb_without_compile(
+        self,
+        monkeypatch,
+    ):
+        class Conn:
+            dialect = mariadb_dialect.MariaDBDialect()
+
+        def compile_bind_name_map(clauseelement, dialect):
+            raise AssertionError("named bindparams should not need a statement compile")
+
+        monkeypatch.setattr(
+            _mysql_admin,
+            "_compile_mysql_statement_bind_name_map",
+            compile_bind_name_map,
+        )
+        source_bind = bindparam("wkb")
+        stmt = select([func.ST_GeomFromEWKB(source_bind, type_=Geometry(srid=3857))])
+        wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
+            source_bind,
+            default_srid=3857,
+        )
+        params = {"wkb": None}
+
+        _, multiparams, expanded_params = _mariadb_admin.before_execute(
+            Conn(),
+            stmt,
+            (),
+            params,
+            {},
+        )
+
+        assert multiparams == ()
+        assert params == {"wkb": None}
+        assert expanded_params[wkb_key] is None
+        assert expanded_params[srid_key] is None
 
     def test_bind_processor_converts_wkbelement_for_wkb_constructor(self):
         spatial_type = Geometry(srid=4326, from_text="ST_GeomFromWKB")

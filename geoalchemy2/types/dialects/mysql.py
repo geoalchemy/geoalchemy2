@@ -5,28 +5,9 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
 from geoalchemy2.exc import ArgumentError
-
-
-def _is_wkb_constructor(spatial_type):
-    return "wkb" in (getattr(spatial_type, "from_text", "") or "").lower()
-
-
-def _as_binary_wkb(bindvalue):
-    wkb_element = bindvalue if isinstance(bindvalue, WKBElement) else WKBElement(bindvalue)
-    bindvalue = wkb_element.as_wkb().data
-    if isinstance(bindvalue, memoryview):
-        return bindvalue.tobytes()
-    if isinstance(bindvalue, str):
-        return WKBElement._data_from_desc(bindvalue)
-    return bytes(bindvalue)
-
-
-def _validate_wkb_srid(spatial_type, srid):
-    if srid is not None and srid != spatial_type.srid:
-        raise ArgumentError(
-            f"The SRID ({srid}) of the supplied value is different "
-            f"from the one of the column ({spatial_type.srid})"
-        )
+from geoalchemy2.types.dialects.common import as_binary_wkb
+from geoalchemy2.types.dialects.common import is_wkb_constructor
+from geoalchemy2.types.dialects.common import validate_wkb_srid
 
 
 def bind_processor_process(spatial_type, bindvalue):
@@ -64,14 +45,14 @@ def bind_processor_process(spatial_type, bindvalue):
             bindvalue.srid = spatial_type.srid
         return bindvalue
     elif isinstance(bindvalue, WKBElement):
-        if _is_wkb_constructor(spatial_type):
-            return _as_binary_wkb(bindvalue)
+        if is_wkb_constructor(spatial_type):
+            return as_binary_wkb(bindvalue, strip_srid=True)
         else:
             return _wkb_wkt.to_wkt_no_srid(bindvalue.data)
     elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
-        if _is_wkb_constructor(spatial_type):
-            return _as_binary_wkb(bindvalue)
+        if is_wkb_constructor(spatial_type):
+            return as_binary_wkb(bindvalue, strip_srid=True)
         wkt, srid = _wkb_wkt.split_wkb_srid(bindvalue)
-        _validate_wkb_srid(spatial_type, srid)
+        validate_wkb_srid(spatial_type.srid, srid)
         return wkt
     return bindvalue

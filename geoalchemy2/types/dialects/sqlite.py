@@ -7,20 +7,8 @@ from geoalchemy2 import _wkb_wkt
 from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
-
-
-def _is_wkb_constructor(spatial_type):
-    return "wkb" in (getattr(spatial_type, "from_text", "") or "").lower()
-
-
-def _as_binary_wkb(bindvalue):
-    if isinstance(bindvalue, WKBElement):
-        bindvalue = bindvalue.data
-    if isinstance(bindvalue, memoryview):
-        return bindvalue.tobytes()
-    if isinstance(bindvalue, str):
-        return WKBElement._data_from_desc(bindvalue)
-    return bytes(bindvalue)
+from geoalchemy2.types.dialects.common import as_binary_wkb
+from geoalchemy2.types.dialects.common import is_wkb_constructor
 
 
 def format_geom_type(wkt, default_srid=None):
@@ -54,8 +42,8 @@ def bind_processor_process(spatial_type, bindvalue):
             default_srid=bindvalue.srid if bindvalue.srid >= 0 else spatial_type.srid,
         )
     elif isinstance(bindvalue, WKBElement):
-        if _is_wkb_constructor(spatial_type):
-            return _as_binary_wkb(bindvalue)
+        if is_wkb_constructor(spatial_type):
+            return as_binary_wkb(bindvalue)
         res = format_geom_type(
             _wkb_wkt.to_wkt_no_srid(bindvalue.data),
             default_srid=bindvalue.srid if bindvalue.srid >= 0 else spatial_type.srid,
@@ -64,12 +52,12 @@ def bind_processor_process(spatial_type, bindvalue):
     elif isinstance(bindvalue, RasterElement):
         return f"{bindvalue.data}"
     elif isinstance(bindvalue, str):
-        if _is_wkb_constructor(spatial_type):
-            return _as_binary_wkb(bindvalue)
+        if is_wkb_constructor(spatial_type):
+            return as_binary_wkb(bindvalue)
         return format_geom_type(bindvalue, default_srid=spatial_type.srid)
     elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
-        if _is_wkb_constructor(spatial_type):
-            return _as_binary_wkb(bindvalue)
+        if is_wkb_constructor(spatial_type):
+            return as_binary_wkb(bindvalue)
         wkt, srid = _wkb_wkt.split_wkb_srid(bindvalue)
         return format_geom_type(
             wkt,
