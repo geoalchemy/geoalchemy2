@@ -227,7 +227,7 @@ def _ewkb_srid(value, *, default_srid=0):
         value = value.data
 
     if isinstance(value, (bytes, bytearray, memoryview, str)):
-        _, srid = _wkb_wkt.split_wkb_srid(value)
+        srid = _wkb_wkt.wkb_srid(value)
         if srid is not None and srid >= 0:
             return srid
 
@@ -929,7 +929,7 @@ def _coerce_ewkb_clause_to_wkb(wkb_clause, *, as_hex=False):
         srid = wkb_data.srid if wkb_data.srid > 0 else None
         wkb_data = wkb_data.data
     elif isinstance(wkb_data, (bytes, bytearray, memoryview, str)):
-        _, srid = _wkb_wkt.split_wkb_srid(wkb_data)
+        srid = _wkb_wkt.wkb_srid(wkb_data)
         srid = srid if srid is not None and srid > 0 else None
     else:
         return wkb_clause, None

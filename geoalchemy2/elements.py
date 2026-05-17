@@ -219,33 +219,16 @@ class WKBElement(_SpatialElement):
         self, data: str | bytes | memoryview, srid: int = -1, extended: bool | None = None
     ) -> None:
         if srid == -1 or extended is None or extended:
-            # read srid from the EWKB
-            #
-            # WKB struct {
-            #    byte    byteOrder;
-            #    uint32  wkbType;
-            #    uint32  SRID;
-            #    struct  geometry;
-            # }
-            # byteOrder enum {
-            #     WKB_XDR = 0,  // Most Significant Byte First
-            #     WKB_NDR = 1,  // Least Significant Byte First
-            # }
-            # See https://trac.osgeo.org/postgis/browser/branches/3.0/doc/ZMSgeoms.txt
-            # for more details about WKB/EWKB specifications.
-
-            # SpatiaLite case: assume that the string is an hex value
-            header = binascii.unhexlify(data[:18]) if isinstance(data, str) else data[:9]
-            byte_order, wkb_type, wkb_srid = header[0], header[1:5], header[5:]
-            byte_order_marker = "<I" if byte_order else ">I"
-            wkb_type_int = (
-                int(struct.unpack(byte_order_marker, wkb_type)[0]) if len(wkb_type) == 4 else 0
-            )
+            wkb_srid = None
+            if (extended is True and srid == -1) or (extended is None and len(data) >= 5):
+                try:
+                    wkb_srid = _wkb_wkt.wkb_srid(data)
+                except ValueError:
+                    if extended is True:
+                        raise
             if extended is None:
-                # Check SRID bit
-                extended = False if not wkb_type_int else extended or bool(wkb_type_int & 536870912)
+                extended = wkb_srid is not None
             if extended and srid == -1:
-                wkb_srid = struct.unpack(byte_order_marker, wkb_srid)[0]
                 srid = int(wkb_srid)
         _SpatialElement.__init__(self, data, srid, extended)
 
@@ -275,14 +258,9 @@ class WKBElement(_SpatialElement):
 
     def as_ewkb(self) -> WKBElement:
         if self.srid > 0:
-            if self.extended:
-                if _wkb_wkt.can_header_rewrite(self.data):
-                    embedded_srid = _wkb_wkt.wkb_srid(self.data)
-                else:
-                    _, embedded_srid = _wkb_wkt.split_wkb_srid(self.data)
-                if embedded_srid == self.srid:
-                    return WKBElement(self.data, self.srid, extended=True)
             data = _wkb_wkt.to_ewkb_header(self.data, self.srid)
+            if self.extended and _wkb_wkt.wkb_srid(self.data) == self.srid:
+                return WKBElement(self.data, self.srid, extended=True)
             return WKBElement(data, self.srid, extended=True)
         return self.as_wkb()
 

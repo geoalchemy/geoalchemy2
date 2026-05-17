@@ -642,7 +642,7 @@ def _process_ewkb_srid_value(value, default_srid=0):
         return value.srid if value.srid >= 0 else default_srid
 
     if isinstance(value, (bytes, bytearray, memoryview, str)):
-        _, srid = _wkb_wkt.split_wkb_srid(value)
+        srid = _wkb_wkt.wkb_srid(value)
         return srid if srid is not None and srid >= 0 else default_srid
 
     return default_srid
@@ -823,7 +823,7 @@ def _infer_srid_from_wkb_clause(wkb_clause, default_srid, extended=False):
         return value.srid if value.srid >= 0 else default_srid
 
     if extended and isinstance(value, (bytes, bytearray, memoryview, str)):
-        _, srid = _wkb_wkt.split_wkb_srid(value)
+        srid = _wkb_wkt.wkb_srid(value)
         return srid if srid is not None and srid >= 0 else default_srid
 
     return default_srid
