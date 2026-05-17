@@ -8,6 +8,10 @@ def is_wkb_constructor(spatial_type):
     return "wkb" in (getattr(spatial_type, "from_text", "") or "").lower()
 
 
+def is_ewkb_constructor(spatial_type):
+    return "ewkb" in (getattr(spatial_type, "from_text", "") or "").lower()
+
+
 def as_binary_wkb(bindvalue, *, strip_srid=False):
     if strip_srid:
         wkb_element = bindvalue if isinstance(bindvalue, WKBElement) else WKBElement(bindvalue)

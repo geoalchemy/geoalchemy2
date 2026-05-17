@@ -1271,9 +1271,29 @@ class TestSQLiteWKBConstructors:
     def test_geom_from_ewkb_compile_omits_srid_parameter(self):
         expr = func.ST_GeomFromEWKB(bytes.fromhex(EWKB_HEX), type_=Geometry(srid=4326))
 
-        compiled = self.normalize_sql(expr.compile(dialect=sqlite.dialect()))
+        compiled_expr = expr.compile(dialect=sqlite.dialect())
+        compiled = self.normalize_sql(compiled_expr)
 
         assert compiled == "GeomFromEWKB(?)"
+        param_key = next(iter(compiled_expr.params))
+        assert compiled_expr.params == {param_key: bytes.fromhex(EWKB_HEX)}
+        assert compiled_expr._bind_processors[param_key](bytes.fromhex(EWKB_HEX)) == EWKB_HEX
+
+    def test_geom_from_ewkb_literal_compile_uses_hex_text(self):
+        expr = func.ST_GeomFromEWKB(bytes.fromhex(EWKB_HEX), type_=Geometry(srid=4326))
+
+        compiled = self.normalize_sql(
+            expr.compile(dialect=sqlite.dialect(), compile_kwargs={"literal_binds": True})
+        )
+
+        assert compiled == f"GeomFromEWKB('{EWKB_HEX}')"
+
+    def test_geom_from_ewkb_bindparam_converts_runtime_value_to_hex_text(self):
+        expr = func.ST_GeomFromEWKB(bindparam("wkb"))
+        compiled_expr = expr.compile(dialect=sqlite.dialect())
+
+        assert self.normalize_sql(compiled_expr) == "GeomFromEWKB(?)"
+        assert compiled_expr._bind_processors["wkb"](bytes.fromhex(EWKB_HEX)) == EWKB_HEX
 
     def test_bind_processor_preserves_wkbelement_for_wkb_constructor(self):
         spatial_type = Geometry(srid=4326, from_text="ST_GeomFromWKB")
@@ -1324,6 +1344,21 @@ class TestSQLiteWKBConstructors:
             "SRID=4326;POINT(1 2)"
         )
 
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [
+            bytes.fromhex(EWKB_HEX),
+            memoryview(bytes.fromhex(EWKB_HEX)),
+            EWKB_HEX,
+            WKBElement(bytes.fromhex(EWKB_HEX), extended=True),
+            WKBElement(EWKB_HEX, extended=True),
+        ],
+    )
+    def test_bind_processor_converts_ewkb_to_hex_for_ewkb_constructor(self, bindvalue):
+        spatial_type = Geometry(srid=4326, from_text="ST_GeomFromEWKB")
+
+        assert sqlite_type.bind_processor_process(spatial_type, bindvalue) == EWKB_HEX
+
 
 class TestGeoPackage:
     WKB_HEX = WKB_HEX
@@ -1342,7 +1377,7 @@ class TestGeoPackage:
 
         assert compiled == f"GeomFromWKB(unhex('{self.WKB_HEX}'), 4326)"
 
-    def test_geom_from_ewkb_literal_compile_omits_srid(self):
+    def test_geom_from_ewkb_literal_compile_uses_hex_text(self):
         ewkb = bytes.fromhex(self.EWKB_HEX)
         expr = func.ST_GeomFromEWKB(ewkb, type_=Geometry(srid=4326))
 
@@ -1350,15 +1385,28 @@ class TestGeoPackage:
             expr.compile(dialect=GeoPackageDialect(), compile_kwargs={"literal_binds": True})
         )
 
-        assert compiled == f"GeomFromEWKB(unhex('{self.EWKB_HEX}'))"
+        assert compiled == f"GeomFromEWKB('{self.EWKB_HEX}')"
 
     def test_geom_from_ewkb_compile_omits_srid_parameter(self):
         ewkb = bytes.fromhex(self.EWKB_HEX)
         expr = func.ST_GeomFromEWKB(ewkb, type_=Geometry(srid=4326))
 
-        compiled = self.normalize_sql(expr.compile(dialect=GeoPackageDialect()))
+        compiled_expr = expr.compile(dialect=GeoPackageDialect())
+        compiled = self.normalize_sql(compiled_expr)
 
         assert compiled == "GeomFromEWKB(?)"
+        param_key = next(iter(compiled_expr.params))
+        assert compiled_expr.params == {param_key: bytes.fromhex(self.EWKB_HEX)}
+        assert (
+            compiled_expr._bind_processors[param_key](bytes.fromhex(self.EWKB_HEX)) == self.EWKB_HEX
+        )
+
+    def test_geom_from_ewkb_bindparam_converts_runtime_value_to_hex_text(self):
+        expr = func.ST_GeomFromEWKB(bindparam("wkb"))
+        compiled_expr = expr.compile(dialect=GeoPackageDialect())
+
+        assert self.normalize_sql(compiled_expr) == "GeomFromEWKB(?)"
+        assert compiled_expr._bind_processors["wkb"](bytes.fromhex(self.EWKB_HEX)) == self.EWKB_HEX
 
     @pytest.mark.parametrize(
         "bindvalue",
@@ -1389,11 +1437,10 @@ class TestGeoPackage:
             WKBElement(EWKB_HEX, extended=True),
         ],
     )
-    def test_bind_processor_preserves_ewkb_for_ewkb_constructor(self, bindvalue):
-        ewkb = bytes.fromhex(self.EWKB_HEX)
+    def test_bind_processor_converts_ewkb_to_hex_for_ewkb_constructor(self, bindvalue):
         spatial_type = Geometry(srid=4326, from_text="ST_GeomFromEWKB")
 
-        assert geopackage_type.bind_processor_process(spatial_type, bindvalue) == ewkb
+        assert geopackage_type.bind_processor_process(spatial_type, bindvalue) == self.EWKB_HEX
 
 
 class TestRaster:

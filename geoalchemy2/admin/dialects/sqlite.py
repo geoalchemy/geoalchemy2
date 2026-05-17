@@ -5,8 +5,11 @@ import os
 from sqlalchemy import text
 from sqlalchemy.dialects.sqlite.base import ischema_names as _sqlite_ischema_names
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql import expression
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
+from sqlalchemy.types import String
+from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
@@ -18,6 +21,7 @@ from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import Raster
 from geoalchemy2.types import _DummyGeometry
+from geoalchemy2.types.dialects.common import as_wkb_hex
 from geoalchemy2.utils import authorized_values_in_docstring
 
 # Register Geometry, Geography and Raster to SQLAlchemy's reflection subsystems.
@@ -400,7 +404,27 @@ def register_sqlite_mapping(mapping):
 register_sqlite_mapping(_SQLITE_FUNCTIONS)
 
 
-def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, include_srid=True, **kw):
+class _SpatialiteEWKBHexBindType(TypeDecorator):
+    """Bind EWKB as HEXEWKB text for SpatiaLite's GeomFromEWKB."""
+
+    impl = String
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        return as_wkb_hex(value, strip_srid=False)
+
+
+def _coerce_ewkb_clause_to_hex(wkb_clause, *, literal=False):
+    if literal:
+        return compile_bin_literal(wkb_clause)
+    return expression.type_coerce(wkb_clause, _SpatialiteEWKBHexBindType())
+
+
+def _compile_GeomFromWKB_SQLite(
+    element, compiler, *, identifier, include_srid=True, coerce_ewkb=False, **kw
+):
     element.identifier = identifier
 
     # Store the SRID
@@ -411,7 +435,12 @@ def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, include_srid=T
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    if kw.get("literal_binds", False):
+    literal_binds = kw.get("literal_binds", False)
+    if coerce_ewkb:
+        wkb_clause = _coerce_ewkb_clause_to_hex(clauses[0], literal=literal_binds)
+        prefix = ""
+        suffix = ""
+    elif literal_binds:
         wkb_clause = compile_bin_literal(clauses[0])
         prefix = "unhex("
         suffix = ")"
@@ -436,5 +465,10 @@ def _SQLite_ST_GeomFromWKB(element, compiler, **kw):
 @compiles(functions.ST_GeomFromEWKB, "sqlite")  # type: ignore
 def _SQLite_ST_GeomFromEWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_SQLite(
-        element, compiler, identifier="GeomFromEWKB", include_srid=False, **kw
+        element,
+        compiler,
+        identifier="GeomFromEWKB",
+        include_srid=False,
+        coerce_ewkb=True,
+        **kw,
     )
