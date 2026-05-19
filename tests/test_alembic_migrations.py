@@ -1,5 +1,7 @@
 """Test alembic migrations of spatial columns."""
 
+from types import SimpleNamespace
+
 import pytest
 import sqlalchemy as sa  # noqa (This import is only used in the migration scripts)
 from alembic import command
@@ -17,7 +19,9 @@ from sqlalchemy import Table
 from sqlalchemy import text
 from sqlalchemy.dialects import mssql
 
+from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
+from geoalchemy2 import Raster
 from geoalchemy2 import alembic_helpers
 
 from . import check_indexes
@@ -30,6 +34,27 @@ def filter_tables(name, type_, parent_names):
 
 
 class TestAutogenerate:
+    @pytest.mark.parametrize(
+        ("type_", "expected_import"),
+        [
+            (Geometry(geometry_type="POINT", srid=4326), "from geoalchemy2 import Geometry"),
+            (Geography(geometry_type="POINT", srid=4326), "from geoalchemy2 import Geography"),
+            (Raster(), "from geoalchemy2 import Raster"),
+            (sa.Integer(), None),
+        ],
+    )
+    def test_render_item_uses_explicit_spatial_repr(self, type_, expected_import):
+        context = SimpleNamespace(imports=set())
+
+        rendered = alembic_helpers.render_item("type", type_, context)
+
+        if expected_import is None:
+            assert rendered is False
+            assert context.imports == set()
+        else:
+            assert rendered == repr(type_)
+            assert context.imports == {expected_import}
+
     def test_no_diff(self, conn, Lake, setup_tables, use_alembic_monkeypatch, dialect_name):
         """Check that the autogeneration detects spatial types properly."""
         metadata = MetaData()

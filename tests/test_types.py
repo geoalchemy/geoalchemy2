@@ -3,9 +3,11 @@ import weakref
 
 import pytest
 from sqlalchemy import Column
+from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import bindparam
+from sqlalchemy import column
 from sqlalchemy.dialects import mysql
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects import sqlite
@@ -24,9 +26,12 @@ from geoalchemy2.admin.dialects.geopackage import GeoPackageDialect
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.exc import ArgumentError
+from geoalchemy2.types import CompositeType
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
+from geoalchemy2.types import GeometryDump
 from geoalchemy2.types import Raster
+from geoalchemy2.types import SummaryStats
 from geoalchemy2.types.dialects import geopackage as geopackage_type
 from geoalchemy2.types.dialects import mariadb as mariadb_type
 from geoalchemy2.types.dialects import mysql as mysql_type
@@ -38,6 +43,19 @@ from . import select
 WKB_HEX = "0101000000000000000000f03f0000000000000040"
 EWKB_HEX = "0101000020e6100000000000000000f03f0000000000000040"
 ZERO_SRID_EWKB_HEX = "010100002000000000000000000000f03f0000000000000040"
+
+
+class CustomCompositeType(CompositeType):
+    typemap = {"value": Integer}
+
+    cache_ok = True
+
+
+class BrokenReprCompositeType(CompositeType):
+    typemap = {}
+
+    def __repr__(self) -> str:
+        raise AssertionError("__repr__ should not be used for missing composite attributes")
 
 
 def eq_sql(a, b):
@@ -104,6 +122,30 @@ class TestGeometry:
     def test_get_col_spec_geometrym(self):
         g = Geometry(geometry_type="GEOMETRYM", srid=900913)
         assert g.get_col_spec() == "geometry(GEOMETRYM,900913)"
+
+    @pytest.mark.parametrize(
+        ("spatial_type", "expected"),
+        [
+            (Geometry(), "Geometry()"),
+            (
+                Geometry(geometry_type="POINT", srid=4326),
+                "Geometry(geometry_type='POINT', srid=4326)",
+            ),
+            (
+                Geometry(
+                    geometry_type=None,
+                    srid=4326,
+                    spatial_index=False,
+                    nullable=False,
+                ),
+                ("Geometry(geometry_type=None, srid=4326, spatial_index=False, nullable=False)"),
+            ),
+        ],
+    )
+    def test_repr_is_stable(self, spatial_type, expected):
+        assert repr(spatial_type) == expected
+        recreated = eval(expected, {"Geometry": Geometry})
+        assert repr(recreated) == expected
 
     def test_check_ctor_args_srid_not_enforced(self):
         with pytest.warns(UserWarning):
@@ -201,6 +243,12 @@ class TestGeography:
             "SELECT ST_AsBinary(name.geom) AS geom FROM "
             '(SELECT "table".geom AS geom FROM "table") AS name',
         )
+
+    def test_repr_is_stable(self):
+        geography = Geography(geometry_type="POINT", srid=4326)
+        assert repr(geography) == "Geography(geometry_type='POINT', srid=4326)"
+        recreated = eval(repr(geography), {"Geography": Geography})
+        assert repr(recreated) == repr(geography)
 
 
 class TestPoint:
@@ -1490,6 +1538,18 @@ class TestRaster:
         eq_sql(i, 'INSERT INTO "table" (rast) VALUES (raster(:rast))')
         assert i.compile().params == {"rast": b"\x01\x02"}
 
+    @pytest.mark.parametrize(
+        ("raster", "expected"),
+        [
+            (Raster(), "Raster()"),
+            (Raster(spatial_index=False), "Raster(spatial_index=False)"),
+        ],
+    )
+    def test_repr_is_stable(self, raster, expected):
+        assert repr(raster) == expected
+        recreated = eval(expected, {"Raster": Raster})
+        assert repr(recreated) == expected
+
     def test_function_call(self, raster_table):
         s = select([raster_table.c.rast.ST_Height()])
         eq_sql(s, 'SELECT ST_Height("table".rast) AS "ST_Height_1" FROM "table"')
@@ -1504,3 +1564,35 @@ class TestCompositeType:
         s = select([func.ST_Dump(geography_table.c.geom).geom.label("geom")])
 
         eq_sql(s, 'SELECT ST_AsEWKB((ST_Dump("table".geom)).geom) AS geom FROM "table"')
+
+    @pytest.mark.parametrize(
+        ("type_", "expected", "namespace"),
+        [
+            (GeometryDump(), "GeometryDump()", {"GeometryDump": GeometryDump}),
+            (SummaryStats(), "SummaryStats()", {"SummaryStats": SummaryStats}),
+            (
+                CustomCompositeType(),
+                "CustomCompositeType()",
+                {"CustomCompositeType": CustomCompositeType},
+            ),
+        ],
+    )
+    def test_repr_is_stable(self, type_, expected, namespace):
+        assert repr(type_) == expected
+        recreated = eval(expected, namespace)
+        assert repr(recreated) == expected
+
+    def test_custom_type_can_access_known_attributes(self):
+        stats = column("stats", CustomCompositeType())
+        query = select([stats.value.label("value")])
+
+        eq_sql(query, "SELECT (stats).value AS value")
+
+    def test_missing_attribute_does_not_use_type_repr(self):
+        stats = column("stats", BrokenReprCompositeType())
+
+        with pytest.raises(
+            AttributeError,
+            match="Type 'BrokenReprCompositeType' doesn't have an attribute: 'missing'",
+        ):
+            stats.comparator.missing  # noqa: B018

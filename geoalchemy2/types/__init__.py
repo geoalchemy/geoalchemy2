@@ -219,6 +219,45 @@ class _GISType(UserDefinedType):
 
         return geometry_type, srid, dimension
 
+    def _repr_kwarg_defaults(self) -> dict[str, Any]:
+        return {
+            "geometry_type": "GEOMETRY",
+            "srid": -1,
+            "dimension": None,
+            "spatial_index": True,
+            "use_N_D_index": False,
+            "use_typmod": None,
+            "from_text": type(self).from_text,
+            "name": type(self).name,
+            "nullable": True,
+        }
+
+    def __repr__(self) -> str:
+        defaults = self._repr_kwarg_defaults()
+        values = (
+            ("geometry_type", self.geometry_type),
+            ("srid", self.srid),
+            ("dimension", self.dimension),
+            ("spatial_index", self.spatial_index),
+            ("use_N_D_index", self.use_N_D_index),
+            ("use_typmod", self.use_typmod),
+            ("from_text", self.from_text),
+            ("name", self.name),
+            ("nullable", self.nullable),
+        )
+
+        parts = []
+        for key, value in values:
+            if key == "dimension" and self.geometry_type is not None:
+                continue
+            if value != defaults[key]:
+                parts.append(f"{key}={value!r}")
+
+        arguments = ", ".join(parts)
+        if not arguments:
+            return f"{self.__class__.__name__}()"
+        return f"{self.__class__.__name__}({arguments})"
+
 
 @compiles(_GISType, "mysql")
 @compiles(_GISType, "mariadb")
@@ -416,6 +455,11 @@ class Raster(_GISType):
     def check_ctor_args(*args, **kwargs):
         return None, -1, None
 
+    def _repr_kwarg_defaults(self) -> dict[str, Any]:
+        defaults = super()._repr_kwarg_defaults()
+        defaults.update({"geometry_type": None, "use_typmod": False})
+        return defaults
+
 
 class _DummyGeometry(Geometry):
     """A dummy type only used with SQLite."""
@@ -438,13 +482,17 @@ class CompositeType(UserDefinedType):
     """ Dictionary used for defining the content types and their
         corresponding keys. Set in subclasses. """
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}()"
+
     class comparator_factory(UserDefinedType.Comparator):
         def __getattr__(self, key):
             try:
                 type_ = self.type.typemap[key]
             except KeyError:
+                type_name = type(self.type).__name__
                 raise AttributeError(
-                    f"Type '{self.type}' doesn't have an attribute: '{key}'"
+                    f"Type '{type_name}' doesn't have an attribute: '{key}'"
                 ) from None
 
             return CompositeElement(self.expr, key, type_)
