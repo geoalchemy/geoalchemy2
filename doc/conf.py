@@ -98,6 +98,7 @@ pygments_style = "sphinx"
 
 # -- Options for Autodoc ---------------------------------------------------
 autodoc_default_options = {"exclude-members": "inherit_cache"}
+autodoc_inherit_docstrings = False
 
 # -- Options for HTML output ---------------------------------------------------
 
