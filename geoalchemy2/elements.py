@@ -228,8 +228,8 @@ class WKBElement(_SpatialElement):
                         raise
             if extended is None:
                 extended = wkb_srid is not None
-            if extended and srid == -1:
-                srid = int(wkb_srid)
+            if extended and srid == -1 and wkb_srid is not None:
+                srid = wkb_srid
         _SpatialElement.__init__(self, data, srid, extended)
 
     @staticmethod

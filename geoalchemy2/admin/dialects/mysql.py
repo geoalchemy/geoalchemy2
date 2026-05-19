@@ -222,13 +222,13 @@ def _ewkb_srid(value, *, default_srid=0):
         value = bytes(value)
 
     if isinstance(value, WKBElement):
-        if value.srid >= 0:
+        if value.srid > 0:
             return value.srid
         value = value.data
 
     if isinstance(value, (bytes, bytearray, memoryview, str)):
         srid = _wkb_wkt.wkb_srid(value)
-        if srid is not None and srid >= 0:
+        if srid is not None and srid > 0:
             return srid
 
     return default_srid

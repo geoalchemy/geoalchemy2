@@ -37,6 +37,7 @@ from . import select
 
 WKB_HEX = "0101000000000000000000f03f0000000000000040"
 EWKB_HEX = "0101000020e6100000000000000000f03f0000000000000040"
+ZERO_SRID_EWKB_HEX = "010100002000000000000000000000f03f0000000000000040"
 
 
 def eq_sql(a, b):
@@ -355,6 +356,22 @@ class TestMySQLWKBConstructors:
             WKB_HEX
         )
         assert compiled_expr._bind_processors[srid_key](bytes.fromhex(WKB_HEX)) == 3857
+
+    def test_geom_from_ewkb_dynamic_bindparam_treats_zero_srid_wkbelement_as_unknown(self):
+        source_bind = bindparam("wkb")
+        expr = func.ST_GeomFromEWKB(
+            source_bind,
+            type_=Geometry(srid=3857, from_text="ST_GeomFromEWKB"),
+        )
+        compiled_expr = expr.compile(dialect=mysql.dialect())
+        _, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
+            source_bind,
+            default_srid=3857,
+        )
+
+        srid_processor = compiled_expr._bind_processors[srid_key]
+        assert srid_processor(WKBElement(bytes.fromhex(WKB_HEX), srid=0)) == 3857
+        assert srid_processor(bytes.fromhex(ZERO_SRID_EWKB_HEX)) == 3857
 
     def test_geom_from_ewkb_dynamic_bindparam_with_explicit_srid_literal(self):
         expr = func.ST_GeomFromEWKB(bindparam("wkb"), 3857)
@@ -960,6 +977,22 @@ class TestMariaDBWKBConstructors:
         assert self.normalize_sql(compiled_expr) == "ST_GeomFromWKB(unhex(%s), %s)"
         assert compiled_expr._bind_processors[wkb_key](bytes.fromhex(WKB_HEX)) == WKB_HEX
         assert compiled_expr._bind_processors[srid_key](bytes.fromhex(WKB_HEX)) == 3857
+
+    def test_geom_from_ewkb_dynamic_bindparam_treats_zero_srid_wkbelement_as_unknown(self):
+        source_bind = bindparam("wkb")
+        expr = func.ST_GeomFromEWKB(
+            source_bind,
+            type_=Geometry(srid=3857, from_text="ST_GeomFromEWKB"),
+        )
+        compiled_expr = expr.compile(dialect=mariadb_dialect.MariaDBDialect())
+        _, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
+            source_bind,
+            default_srid=3857,
+        )
+
+        srid_processor = compiled_expr._bind_processors[srid_key]
+        assert srid_processor(WKBElement(bytes.fromhex(WKB_HEX), srid=0)) == 3857
+        assert srid_processor(bytes.fromhex(ZERO_SRID_EWKB_HEX)) == 3857
 
     def test_geom_from_ewkb_dynamic_bindparam_with_explicit_srid_literal(self):
         expr = func.ST_GeomFromEWKB(bindparam("wkb"), 3857)
