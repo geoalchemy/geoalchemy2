@@ -6,5 +6,5 @@ pytest
 pytest-cov
 pytest-benchmark
 pytest-html
-pytest-mypy
+pytest-mypy;implementation_name!='pypy'
 rasterio;implementation_name!='pypy'

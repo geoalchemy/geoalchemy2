@@ -7,6 +7,8 @@ import sqlalchemy as sa  # noqa (This import is only used in the migration scrip
 from alembic import command
 from alembic import script
 from alembic.autogenerate import compare_metadata
+from alembic.autogenerate import render as alembic_render
+from alembic.autogenerate.api import AutogenContext
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
@@ -18,6 +20,7 @@ from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import text
 from sqlalchemy.dialects import mssql
+from sqlalchemy.sql import type_api
 
 from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
@@ -35,25 +38,68 @@ def filter_tables(name, type_, parent_names):
 
 class TestAutogenerate:
     @pytest.mark.parametrize(
-        ("type_", "expected_import"),
+        ("type_", "expected_rendered", "expected_import"),
         [
-            (Geometry(geometry_type="POINT", srid=4326), "from geoalchemy2 import Geometry"),
-            (Geography(geometry_type="POINT", srid=4326), "from geoalchemy2 import Geography"),
-            (Raster(), "from geoalchemy2 import Raster"),
-            (sa.Integer(), None),
+            (
+                Geometry(geometry_type="POINT", srid=4326),
+                "Geometry(geometry_type='POINT', srid=4326)",
+                "from geoalchemy2 import Geometry",
+            ),
+            (
+                Geography(geometry_type="POINT", srid=4326),
+                "Geography(geometry_type='POINT', srid=4326)",
+                "from geoalchemy2 import Geography",
+            ),
+            (Raster(), "Raster()", "from geoalchemy2 import Raster"),
+            (sa.Integer(), "sa.Integer()", None),
         ],
     )
-    def test_render_item_uses_explicit_spatial_repr(self, type_, expected_import):
-        context = SimpleNamespace(imports=set())
+    def test_render_item_uses_explicit_type_repr(self, type_, expected_rendered, expected_import):
+        context = SimpleNamespace(imports=set(), opts={"sqlalchemy_module_prefix": "sa."})
 
         rendered = alembic_helpers.render_item("type", type_, context)
 
         if expected_import is None:
-            assert rendered is False
             assert context.imports == set()
         else:
-            assert rendered == repr(type_)
             assert context.imports == {expected_import}
+        assert rendered == expected_rendered
+
+    def test_render_table_does_not_require_sqlalchemy_type_repr(self, monkeypatch):
+        def fail_repr(self):
+            raise RecursionError("simulated PyPy repr recursion")
+
+        monkeypatch.setattr(type_api.TypeEngine, "__repr__", fail_repr)
+
+        metadata = MetaData()
+        table = Table(
+            "new_spatial_table",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("name", sa.String),
+            Column("geom", Geometry(geometry_type="LINESTRING", srid=4326)),
+        )
+        engine = sa.create_engine("sqlite://")
+        with engine.connect() as conn:
+            migration_context = MigrationContext.configure(
+                conn,
+                opts={
+                    "alembic_module_prefix": "op.",
+                    "render_item": alembic_helpers.render_item,
+                    "sqlalchemy_module_prefix": "sa.",
+                    "user_module_prefix": None,
+                },
+            )
+            autogen_context = AutogenContext(migration_context)
+
+            rendered = alembic_render._add_table(
+                autogen_context,
+                ops.CreateTableOp.from_table(table),
+            )
+
+        assert "sa.Integer()" in rendered
+        assert "sa.String()" in rendered
+        assert "Geometry(geometry_type='LINESTRING', srid=4326)" in rendered
 
     def test_no_diff(self, conn, Lake, setup_tables, use_alembic_monkeypatch, dialect_name):
         """Check that the autogeneration detects spatial types properly."""
