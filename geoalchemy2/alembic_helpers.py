@@ -1,5 +1,8 @@
 """Some helpers to use with Alembic migration tool."""
 
+import sys
+from functools import wraps
+
 from alembic.autogenerate import renderers
 from alembic.autogenerate import rewriter
 from alembic.autogenerate.render import _add_column
@@ -25,9 +28,8 @@ from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import DropTable
 from sqlalchemy.sql import func
-from sqlalchemy.types import Integer
-from sqlalchemy.types import String
 from sqlalchemy.types import TypeDecorator
+from sqlalchemy.util import compat
 
 from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
@@ -213,31 +215,31 @@ def render_item(obj_type, obj, autogen_context):
         autogen_context.imports.add(f"from geoalchemy2 import {import_name}")
         return f"{obj!r}"
     if obj_type == "type":
-        rendered_sqlalchemy_type = _render_simple_sqlalchemy_type(obj, autogen_context)
-        if rendered_sqlalchemy_type is not False:
-            return rendered_sqlalchemy_type
+        _ensure_pypy_type_repr_compat()
 
     # Default rendering for other objects
     return False
 
 
-def _render_simple_sqlalchemy_type(obj, autogen_context):
-    """Render simple SQLAlchemy types without relying on their generic repr."""
-    prefix = autogen_context.opts.get("sqlalchemy_module_prefix", "sa.")
-    prefix = prefix or ""
+def _ensure_pypy_type_repr_compat(_force=False):
+    """Avoid PyPy recursion in SQLAlchemy's generic type repr fallback."""
+    if not _force and sys.implementation.name != "pypy":
+        return
 
-    if type(obj) is Integer:
-        return f"{prefix}Integer()"
+    inspect_getfullargspec = compat.inspect_getfullargspec
+    if getattr(inspect_getfullargspec, "_geoalchemy2_pypy_type_repr_compat", False):
+        return
 
-    if type(obj) is String:
-        arguments = []
-        if obj.length is not None:
-            arguments.append(repr(obj.length))
-        if obj.collation is not None:
-            arguments.append(f"collation={obj.collation!r}")
-        return f"{prefix}String({', '.join(arguments)})"
+    @wraps(inspect_getfullargspec)
+    def inspect_getfullargspec_compat(func):
+        try:
+            return inspect_getfullargspec(func)
+        except RecursionError as exc:
+            raise TypeError("Could not inspect function signature without recursive repr") from exc
 
-    return False
+    inspect_getfullargspec_compat._geoalchemy2_pypy_type_repr_compat = True
+    inspect_getfullargspec_compat._geoalchemy2_original = inspect_getfullargspec
+    compat.inspect_getfullargspec = inspect_getfullargspec_compat
 
 
 def include_object(obj, name, obj_type, reflected, compare_to):

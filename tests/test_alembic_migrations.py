@@ -20,7 +20,7 @@ from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import text
 from sqlalchemy.dialects import mssql
-from sqlalchemy.sql import type_api
+from sqlalchemy.util import compat
 
 from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
@@ -51,7 +51,6 @@ class TestAutogenerate:
                 "from geoalchemy2 import Geography",
             ),
             (Raster(), "Raster()", "from geoalchemy2 import Raster"),
-            (sa.Integer(), "sa.Integer()", None),
         ],
     )
     def test_render_item_uses_explicit_type_repr(self, type_, expected_rendered, expected_import):
@@ -65,18 +64,51 @@ class TestAutogenerate:
             assert context.imports == {expected_import}
         assert rendered == expected_rendered
 
-    def test_render_table_does_not_require_sqlalchemy_type_repr(self, monkeypatch):
-        def fail_repr(self):
-            raise RecursionError("simulated PyPy repr recursion")
+    def test_render_item_leaves_sqlalchemy_types_to_alembic(self):
+        context = SimpleNamespace(imports=set(), opts={"sqlalchemy_module_prefix": "sa."})
 
-        monkeypatch.setattr(type_api.TypeEngine, "__repr__", fail_repr)
+        rendered = alembic_helpers.render_item("type", sa.Integer(), context)
+
+        assert rendered is False
+        assert context.imports == set()
+
+    def test_pypy_type_repr_compat_is_idempotent(self, monkeypatch):
+        original = compat.inspect_getfullargspec
+        previous = getattr(original, "_geoalchemy2_original", original)
+        monkeypatch.setattr(compat, "inspect_getfullargspec", previous)
+
+        alembic_helpers._ensure_pypy_type_repr_compat(_force=True)
+        first_wrapper = compat.inspect_getfullargspec
+        alembic_helpers._ensure_pypy_type_repr_compat(_force=True)
+
+        assert compat.inspect_getfullargspec is first_wrapper
+        assert first_wrapper is not previous
+        assert first_wrapper._geoalchemy2_original is previous
+
+    def test_render_table_handles_pypy_type_repr_recursion(self, monkeypatch):
+        original = compat.inspect_getfullargspec
+        original = getattr(original, "_geoalchemy2_original", original)
+
+        def inspect_getfullargspec_with_pypy_recursion(func):
+            try:
+                return original(func)
+            except TypeError as exc:
+                raise RecursionError("simulated PyPy repr recursion") from exc
+
+        monkeypatch.setattr(
+            compat,
+            "inspect_getfullargspec",
+            inspect_getfullargspec_with_pypy_recursion,
+        )
+        alembic_helpers._ensure_pypy_type_repr_compat(_force=True)
 
         metadata = MetaData()
         table = Table(
             "new_spatial_table",
             metadata,
             Column("id", Integer, primary_key=True),
-            Column("name", sa.String),
+            Column("created", sa.Date),
+            Column("name", sa.String(30)),
             Column("geom", Geometry(geometry_type="LINESTRING", srid=4326)),
         )
         engine = sa.create_engine("sqlite://")
@@ -98,7 +130,8 @@ class TestAutogenerate:
             )
 
         assert "sa.Integer()" in rendered
-        assert "sa.String()" in rendered
+        assert "sa.Date()" in rendered
+        assert "sa.String(length=30)" in rendered
         assert "Geometry(geometry_type='LINESTRING', srid=4326)" in rendered
 
     def test_no_diff(self, conn, Lake, setup_tables, use_alembic_monkeypatch, dialect_name):
