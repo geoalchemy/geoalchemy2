@@ -856,6 +856,33 @@ class TestMySQLWKBConstructors:
         assert mysql_type.bind_processor_process(spatial_type, bindvalue) == "POINT Z (1 2 3)"
         assert calls == [bindvalue]
 
+    @pytest.mark.parametrize(
+        "spatial_type",
+        [
+            pytest.param(Geometry(), id="default-srid"),
+            pytest.param(Geometry(srid=0), id="zero-srid"),
+        ],
+    )
+    def test_bind_processor_accepts_raw_ewkb_srid_for_non_fixed_column(self, spatial_type):
+        assert (
+            mysql_type.bind_processor_process(
+                spatial_type,
+                bytes.fromhex(EWKB_HEX),
+            )
+            == "POINT (1 2)"
+        )
+
+    def test_bind_processor_accepts_zero_raw_ewkb_srid_for_fixed_column(self):
+        spatial_type = Geometry(srid=3857)
+
+        assert (
+            mysql_type.bind_processor_process(
+                spatial_type,
+                bytes.fromhex(ZERO_SRID_EWKB_HEX),
+            )
+            == "POINT (1 2)"
+        )
+
     def test_bind_processor_validates_raw_ewkb_srid(self):
         spatial_type = Geometry(srid=3857)
 
@@ -1224,6 +1251,33 @@ class TestMariaDBWKBConstructors:
             "MULTIPOINT (1 2, 3 4)"
         )
         assert calls == [bindvalue]
+
+    @pytest.mark.parametrize(
+        "spatial_type",
+        [
+            pytest.param(Geometry(), id="default-srid"),
+            pytest.param(Geometry(srid=0), id="zero-srid"),
+        ],
+    )
+    def test_bind_processor_accepts_raw_ewkb_srid_for_non_fixed_column(self, spatial_type):
+        assert (
+            mariadb_type.bind_processor_process(
+                spatial_type,
+                bytes.fromhex(EWKB_HEX),
+            )
+            == "POINT (1 2)"
+        )
+
+    def test_bind_processor_accepts_zero_raw_ewkb_srid_for_fixed_column(self):
+        spatial_type = Geometry(srid=3857)
+
+        assert (
+            mariadb_type.bind_processor_process(
+                spatial_type,
+                bytes.fromhex(ZERO_SRID_EWKB_HEX),
+            )
+            == "POINT (1 2)"
+        )
 
     def test_bind_processor_validates_raw_ewkb_srid(self):
         spatial_type = Geometry(srid=3857)

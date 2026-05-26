@@ -39,7 +39,14 @@ def as_wkb_hex(bindvalue, *, strip_srid=True):
 
 
 def validate_wkb_srid(column_srid, srid, *, has_fixed_srid=True):
-    if has_fixed_srid and srid is not None and srid != column_srid:
+    if (
+        has_fixed_srid
+        and column_srid is not None
+        and column_srid > 0
+        and srid is not None
+        and srid > 0
+        and srid != column_srid
+    ):
         raise ArgumentError(
             f"The SRID ({srid}) of the supplied value is different "
             f"from the one of the column ({column_srid})"
