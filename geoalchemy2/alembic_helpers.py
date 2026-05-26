@@ -1,5 +1,9 @@
 """Some helpers to use with Alembic migration tool."""
 
+import inspect
+import platform
+
+import sqlalchemy
 from alembic.autogenerate import renderers
 from alembic.autogenerate import rewriter
 from alembic.autogenerate.render import _add_column
@@ -26,6 +30,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import DropTable
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
+from sqlalchemy.util import compat as sqlalchemy_compat
 
 from geoalchemy2 import Geography
 from geoalchemy2 import Geometry
@@ -38,6 +43,27 @@ writer = rewriter.Rewriter()
 """Rewriter object for Alembic."""
 
 _SPATIAL_TABLES: set[str] = set()
+
+
+def _monkey_patch_sqlalchemy_pypy_builtin_method_repr():
+    """Avoid SQLAlchemy 1.4 repr recursion on PyPy bound built-in methods."""
+    if platform.python_implementation() != "PyPy" or not sqlalchemy.__version__.startswith("1.4."):
+        return
+
+    normal_behavior = sqlalchemy_compat.inspect_getfullargspec
+    if getattr(normal_behavior, "_geoalchemy2_pypy_builtin_method_patch", False):
+        return
+
+    def inspect_getfullargspec(func):
+        if not inspect.ismethod(func) and inspect.isbuiltin(func) and hasattr(func, "__func__"):
+            raise TypeError("not a Python function")
+        return normal_behavior(func)
+
+    inspect_getfullargspec._geoalchemy2_pypy_builtin_method_patch = True
+    sqlalchemy_compat.inspect_getfullargspec = inspect_getfullargspec
+
+
+_monkey_patch_sqlalchemy_pypy_builtin_method_repr()
 
 
 class GeoPackageImpl(SQLiteImpl):
