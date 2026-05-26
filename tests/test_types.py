@@ -1295,6 +1295,43 @@ class TestPostgreSQLWKBConstructors:
             == "SRID=4326;POINT (1 2)"
         )
 
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [
+            bytes.fromhex(EWKB_HEX),
+            bytearray(bytes.fromhex(EWKB_HEX)),
+            memoryview(bytes.fromhex(EWKB_HEX)),
+        ],
+    )
+    def test_bind_processor_preserves_matching_raw_ewkb_srid_for_fixed_column(self, bindvalue):
+        spatial_type = Geometry(srid=4326)
+
+        assert (
+            postgresql_type.bind_processor_process(spatial_type, bindvalue)
+            == "SRID=4326;POINT (1 2)"
+        )
+
+    def test_bind_processor_rejects_mismatched_raw_ewkb_srid_for_fixed_column(self):
+        spatial_type = Geometry(srid=3857)
+
+        with pytest.raises(ArgumentError) as exc:
+            postgresql_type.bind_processor_process(spatial_type, bytes.fromhex(EWKB_HEX))
+
+        assert str(exc.value) == (
+            "The SRID (4326) of the supplied value is different from the one of the column (3857)"
+        )
+
+    def test_bind_processor_uses_column_srid_for_zero_srid_raw_ewkb(self):
+        spatial_type = Geometry(srid=3857)
+
+        assert (
+            postgresql_type.bind_processor_process(
+                spatial_type,
+                bytes.fromhex(ZERO_SRID_EWKB_HEX),
+            )
+            == "SRID=3857;POINT (1 2)"
+        )
+
 
 class TestSQLiteWKBConstructors:
     @staticmethod
