@@ -133,7 +133,7 @@ def _to_mssql_wkt(value):
 
 
 def _validate_wkb_srid(column_srid, has_fixed_srid, srid):
-    if has_fixed_srid and srid is not None and srid != column_srid:
+    if has_fixed_srid and srid is not None and srid > 0 and srid != column_srid:
         raise ArgumentError(
             f"The SRID ({srid}) of the supplied value is different "
             f"from the one of the column ({column_srid})"

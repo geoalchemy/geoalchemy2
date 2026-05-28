@@ -4,6 +4,7 @@ import weakref
 import pytest
 from sqlalchemy import Column
 from sqlalchemy import MetaData
+from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import bindparam
 from sqlalchemy.dialects import mysql
@@ -451,6 +452,51 @@ class TestMySQLWKBConstructors:
 
         assert expanded_params[wkb_key] is ewkb
         assert expanded_params[srid_key] is ewkb
+        assert compiled.construct_params(params=expanded_params)[wkb_key] is ewkb
+
+    @pytest.mark.parametrize(
+        "statement_factory",
+        [
+            insert,
+            update,
+        ],
+    )
+    def test_before_execute_expands_dml_runtime_ewkb_binds_with_other_fixed_values(
+        self,
+        statement_factory,
+    ):
+        class Conn:
+            dialect = mysql.dialect()
+
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("name", String),
+            Column("geom", Geometry(srid=3857, from_text="ST_GeomFromEWKB")),
+        )
+        stmt = statement_factory(table).values(name="fixed")
+        source_bind = bindparam("geom")
+        wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
+            source_bind,
+            default_srid=3857,
+        )
+        ewkb = bytes.fromhex(EWKB_HEX)
+
+        clauseelement, _, expanded_params = _mysql_admin.before_execute(
+            Conn(),
+            stmt,
+            (),
+            {"geom": ewkb},
+            {},
+        )
+
+        assert clauseelement is stmt
+        assert expanded_params[wkb_key] is ewkb
+        assert expanded_params[srid_key] is ewkb
+        compiled = clauseelement.compile(
+            dialect=mysql.dialect(),
+            column_keys=list(expanded_params),
+        )
         assert compiled.construct_params(params=expanded_params)[wkb_key] is ewkb
 
     def test_before_execute_expands_multivalue_dml_generated_dynamic_ewkb_binds(self):
@@ -1531,6 +1577,33 @@ class TestGeoPackage:
 
         assert self.normalize_sql(compiled_expr) == "GeomFromEWKB(?)"
         assert compiled_expr._bind_processors["wkb"](bytes.fromhex(self.EWKB_HEX)) == self.EWKB_HEX
+
+    def test_geom_from_ewkb_default_geometry_typed_bindparam_uses_ewkb_processor(self):
+        expr = func.ST_GeomFromEWKB(bindparam("wkb", type_=Geometry(srid=4326)))
+        compiled_expr = expr.compile(dialect=GeoPackageDialect())
+
+        assert self.normalize_sql(compiled_expr) == "GeomFromEWKB(?)"
+        assert compiled_expr._bind_processors["wkb"](bytes.fromhex(self.EWKB_HEX)) == self.EWKB_HEX
+
+    def test_geom_from_ewkb_insert_bindparam_uses_geometry_bind_processor(self, monkeypatch):
+        def fail_type_coerce(*args, **kwargs):
+            raise AssertionError("GeoPackage EWKB binds should not use compiler type coercion")
+
+        monkeypatch.setattr(_sqlite_admin.expression, "type_coerce", fail_type_coerce)
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("geom", Geometry(srid=4326, from_text="ST_GeomFromEWKB")),
+        )
+        stmt = insert(table).values(geom=bindparam("geom"))
+
+        compiled_expr = stmt.compile(dialect=GeoPackageDialect())
+
+        assert self.normalize_sql(compiled_expr) == (
+            "INSERT INTO lake (geom) VALUES (GeomFromEWKB(?))"
+        )
+        assert isinstance(compiled_expr.binds["geom"].type, Geometry)
+        assert compiled_expr._bind_processors["geom"](bytes.fromhex(self.EWKB_HEX)) == self.EWKB_HEX
 
     @pytest.mark.parametrize(
         "bindvalue",

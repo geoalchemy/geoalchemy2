@@ -654,12 +654,12 @@ def _collect_mysql_dynamic_ewkb_dml_source_binds(clauseelement):
 
     source_binds = []
     seen_bind_keys = set()
-    has_value_containers = False
+    represented_spatial_columns = set()
     for column_key, value in _iter_dml_source_bind_pairs(clauseelement):
-        has_value_containers = True
         column_key = _column_key(column_key)
         if column_key not in spatial_columns:
             continue
+        represented_spatial_columns.add(column_key)
 
         default_srid = _default_srid_from_type(spatial_columns[column_key])
         if _is_bindparam_clause(value):
@@ -681,10 +681,9 @@ def _collect_mysql_dynamic_ewkb_dml_source_binds(clauseelement):
         seen_bind_keys.add(bind_key)
         source_binds.append((source_bind, default_srid))
 
-    if has_value_containers:
-        return tuple(source_binds)
-
     for column_key, spatial_type in spatial_columns.items():
+        if column_key in represented_spatial_columns:
+            continue
         default_srid = _default_srid_from_type(spatial_type)
         source_bind = expression.bindparam(column_key)
         bind_key = (_mysql_dynamic_ewkb_bind_identifier(source_bind), default_srid)

@@ -387,11 +387,20 @@ def _gpkg_ST_GeomFromWKB(element, compiler, **kw):
 
 @compiles(functions.ST_GeomFromEWKB, "geopackage")  # type: ignore
 def _gpkg_ST_GeomFromEWKB(element, compiler, **kw):
+    wkb_clause = next(iter(element.clauses), None)
+    wkb_type = getattr(wkb_clause, "type", None)
+    # Geometry bind expressions already use the GeoPackage bind processor for EWKB hex.
+    use_geometry_ewkb_processor = (
+        isinstance(wkb_type, Geometry)
+        and "ewkb" in (getattr(wkb_type, "from_text", "") or "").lower()
+    )
+    coerce_ewkb = kw.get("literal_binds", False) or not use_geometry_ewkb_processor
+
     return _compile_GeomFromWKB_SQLite(
         element,
         compiler,
         identifier="GeomFromEWKB",
         include_srid=False,
-        coerce_ewkb=True,
+        coerce_ewkb=coerce_ewkb,
         **kw,
     )
