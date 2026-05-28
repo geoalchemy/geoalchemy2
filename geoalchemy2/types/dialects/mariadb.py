@@ -27,6 +27,9 @@ def _normalize_mariadb_wkt(wkt):
 
 def bind_processor_process(spatial_type, bindvalue):
     if isinstance(bindvalue, str):
+        if is_wkb_constructor(spatial_type):
+            return as_wkb_hex(bindvalue)
+
         wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
         srid = wkt_match.group(2)
         try:

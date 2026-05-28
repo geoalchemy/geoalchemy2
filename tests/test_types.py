@@ -875,6 +875,16 @@ class TestMySQLWKBConstructors:
             spatial_type, WKBElement(bytes.fromhex(WKB_HEX), srid=4326)
         ) == bytes.fromhex(WKB_HEX)
 
+    def test_bind_processor_converts_hex_wkb_string_for_wkb_constructor(self):
+        spatial_type = Geometry(srid=4326, from_text="ST_GeomFromWKB")
+
+        assert mysql_type.bind_processor_process(spatial_type, WKB_HEX) == bytes.fromhex(WKB_HEX)
+
+    def test_bind_processor_strips_hex_ewkb_string_for_ewkb_constructor(self):
+        spatial_type = Geometry(srid=4326, from_text="ST_GeomFromEWKB")
+
+        assert mysql_type.bind_processor_process(spatial_type, EWKB_HEX) == bytes.fromhex(WKB_HEX)
+
     @pytest.mark.parametrize(
         "bindvalue",
         [bytes.fromhex(WKB_HEX), memoryview(bytes.fromhex(WKB_HEX))],
@@ -1259,6 +1269,11 @@ class TestMariaDBWKBConstructors:
             == WKB_HEX
         )
 
+    def test_bind_processor_converts_hex_wkb_string_for_wkb_constructor(self):
+        spatial_type = Geometry(srid=4326, from_text="ST_GeomFromWKB")
+
+        assert mariadb_type.bind_processor_process(spatial_type, WKB_HEX) == WKB_HEX
+
     def test_bind_processor_strips_ewkb_for_ewkb_constructor(self):
         spatial_type = Geometry(srid=4326, from_text="ST_GeomFromEWKB")
 
@@ -1268,6 +1283,11 @@ class TestMariaDBWKBConstructors:
             )
             == WKB_HEX
         )
+
+    def test_bind_processor_strips_hex_ewkb_string_for_ewkb_constructor(self):
+        spatial_type = Geometry(srid=4326, from_text="ST_GeomFromEWKB")
+
+        assert mariadb_type.bind_processor_process(spatial_type, EWKB_HEX) == WKB_HEX
 
     @pytest.mark.parametrize(
         "bindvalue",

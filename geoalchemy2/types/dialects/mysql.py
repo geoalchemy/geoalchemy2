@@ -12,6 +12,9 @@ from geoalchemy2.types.dialects.common import validate_wkb_srid
 
 def bind_processor_process(spatial_type, bindvalue):
     if isinstance(bindvalue, str):
+        if is_wkb_constructor(spatial_type):
+            return as_binary_wkb(bindvalue, strip_srid=True)
+
         wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
         srid = wkt_match.group(2)
         try:
