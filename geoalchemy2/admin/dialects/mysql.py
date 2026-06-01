@@ -29,6 +29,7 @@ from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
+from geoalchemy2.types.dialects.common import _validate_wkb_bindvalue_srid
 
 # Register Geometry, Geography and Raster to SQLAlchemy's reflection subsystems.
 _mysql_ischema_names["geometry"] = Geometry
@@ -200,9 +201,11 @@ def register_mysql_mapping(mapping):
 register_mysql_mapping(_MYSQL_FUNCTIONS)
 
 
-def _ewkb_to_wkb_data(value, *, as_hex=False):
+def _ewkb_to_wkb_data(value, *, as_hex=False, fixed_srid=None):
     if value is None:
         return None
+
+    _validate_wkb_bindvalue_srid(value, fixed_srid)
 
     if isinstance(value, bytearray):
         value = bytes(value)
@@ -238,16 +241,17 @@ class _MySQLEWKBBindType(TypeDecorator):
     impl = LargeBinary
     cache_ok = True
 
-    def __init__(self, *, as_hex=False):
+    def __init__(self, *, as_hex=False, fixed_srid=None):
         super().__init__()
         self.as_hex = as_hex
+        self.fixed_srid = fixed_srid
 
     def load_dialect_impl(self, dialect):
         impl = String() if self.as_hex else LargeBinary()
         return dialect.type_descriptor(impl)
 
     def process_bind_param(self, value, dialect):
-        return _ewkb_to_wkb_data(value, as_hex=self.as_hex)
+        return _ewkb_to_wkb_data(value, as_hex=self.as_hex, fixed_srid=self.fixed_srid)
 
 
 class _MySQLDynamicEWKBSRIDBindType(TypeDecorator):
@@ -296,7 +300,13 @@ def _is_mysql_auto_constructor_bindparam(clause, constructor_name):
     )
 
 
-def _coerce_ewkb_bind_clause_to_wkb(wkb_clause, *, as_hex=False, literal=False):
+def _coerce_ewkb_bind_clause_to_wkb(
+    wkb_clause,
+    *,
+    as_hex=False,
+    literal=False,
+    fixed_srid=None,
+):
     if not hasattr(wkb_clause, "value"):
         return wkb_clause
 
@@ -304,7 +314,10 @@ def _coerce_ewkb_bind_clause_to_wkb(wkb_clause, *, as_hex=False, literal=False):
         wkb_clause, _ = _coerce_ewkb_clause_to_wkb(wkb_clause, as_hex=as_hex)
         return wkb_clause
 
-    return expression.type_coerce(wkb_clause, _MySQLEWKBBindType(as_hex=as_hex))
+    return expression.type_coerce(
+        wkb_clause,
+        _MySQLEWKBBindType(as_hex=as_hex, fixed_srid=fixed_srid),
+    )
 
 
 def _mysql_dynamic_ewkb_bind_identifier(source_bind):
@@ -442,11 +455,32 @@ def _default_srid_from_type(spatial_type):
     return srid if srid >= 0 else 0
 
 
+def _needs_dynamic_ewkb_split(default_srid):
+    return default_srid <= 0
+
+
+def _is_fixed_srid_ewkb_dml_bind(wkb_clause, fixed_srid):
+    if fixed_srid is None or fixed_srid <= 0:
+        return False
+    if not (
+        getattr(wkb_clause, "_is_crud", False)
+        or getattr(wkb_clause, "_is_clone_of", None) is not None
+    ):
+        return False
+
+    spatial_type = getattr(wkb_clause, "type", None)
+    return (
+        getattr(spatial_type, "from_text", None) == "ST_GeomFromEWKB"
+        and getattr(spatial_type, "srid", None) == fixed_srid
+    )
+
+
 def _prepare_ewkb_wkb_clause(element, compiler, *, as_hex=False, **kw):
     clauses = list(element.clauses)
     original_wkb_clause = clauses[0]
     inferred_srid = None
     dynamic_srid_clause = None
+    default_srid = _default_srid(element)
     split_disabled = bool(
         getattr(compiler, "execution_options", {}).get(
             _MYSQL_DISABLE_DYNAMIC_EWKB_SPLIT_OPTION,
@@ -463,17 +497,28 @@ def _prepare_ewkb_wkb_clause(element, compiler, *, as_hex=False, **kw):
     if (
         user_bind
         and len(clauses) == 1
+        and _needs_dynamic_ewkb_split(default_srid)
         and not kw.get("literal_binds", False)
         and not split_disabled
     ):
         wkb_value_clause, dynamic_srid_clause = _get_mysql_dynamic_ewkb_bind_clauses(
             original_wkb_clause,
             compiler,
-            default_srid=_default_srid(element),
+            default_srid=default_srid,
             as_hex=as_hex,
         )
     elif user_bind and not kw.get("literal_binds", False):
-        wkb_value_clause = _coerce_ewkb_bind_clause_to_wkb(original_wkb_clause, as_hex=as_hex)
+        fixed_srid = None
+        if len(clauses) == 1 and default_srid > 0:
+            fixed_srid = default_srid
+        if _is_fixed_srid_ewkb_dml_bind(original_wkb_clause, fixed_srid):
+            wkb_value_clause = original_wkb_clause
+        else:
+            wkb_value_clause = _coerce_ewkb_bind_clause_to_wkb(
+                original_wkb_clause,
+                as_hex=as_hex,
+                fixed_srid=fixed_srid,
+            )
     else:
         wkb_value_clause, inferred_srid = _coerce_ewkb_clause_to_wkb(
             original_wkb_clause,
@@ -663,6 +708,8 @@ def _collect_mysql_dynamic_ewkb_dml_source_binds(clauseelement):
 
         default_srid = _default_srid_from_type(spatial_columns[column_key])
         if _is_bindparam_clause(value):
+            if not _needs_dynamic_ewkb_split(default_srid):
+                continue
             source_bind = value
         elif isinstance(value, functions.ST_GeomFromEWKB):
             clauses = list(value.clauses)
@@ -672,6 +719,8 @@ def _collect_mysql_dynamic_ewkb_dml_source_binds(clauseelement):
                 continue
             source_bind = clauses[0]
             default_srid = _default_srid(value)
+            if not _needs_dynamic_ewkb_split(default_srid):
+                continue
         else:
             continue
 
@@ -685,6 +734,8 @@ def _collect_mysql_dynamic_ewkb_dml_source_binds(clauseelement):
         if column_key in represented_spatial_columns:
             continue
         default_srid = _default_srid_from_type(spatial_type)
+        if not _needs_dynamic_ewkb_split(default_srid):
+            continue
         source_bind = expression.bindparam(column_key)
         bind_key = (_mysql_dynamic_ewkb_bind_identifier(source_bind), default_srid)
         if bind_key in seen_bind_keys:
@@ -712,6 +763,8 @@ def _collect_mysql_dynamic_ewkb_source_binds_uncached(clauseelement):
             continue
 
         default_srid = _default_srid(element)
+        if not _needs_dynamic_ewkb_split(default_srid):
+            continue
         bind_key = (_mysql_dynamic_ewkb_bind_identifier(clauses[0]), default_srid)
         if bind_key in seen_bind_keys:
             continue

@@ -28,7 +28,7 @@ def _normalize_mariadb_wkt(wkt):
 def bind_processor_process(spatial_type, bindvalue):
     if isinstance(bindvalue, str):
         if is_wkb_constructor(spatial_type):
-            return as_wkb_hex(bindvalue)
+            return as_wkb_hex(bindvalue, column_srid=spatial_type.srid)
 
         wkt_match = WKTElement._REMOVE_SRID.match(bindvalue)
         srid = wkt_match.group(2)
@@ -49,7 +49,7 @@ def bind_processor_process(spatial_type, bindvalue):
 
     if (
         isinstance(bindvalue, _SpatialElement)
-        and bindvalue.srid != -1
+        and bindvalue.srid > 0
         and bindvalue.srid != spatial_type.srid
     ):
         raise ArgumentError(
@@ -66,10 +66,10 @@ def bind_processor_process(spatial_type, bindvalue):
         if not is_wkb_constructor(spatial_type):
             return _normalize_mariadb_wkt(_wkb_wkt.to_wkt_no_srid(bindvalue.data))
         # MariaDB does not support raw binary data so we use the hex representation
-        return as_wkb_hex(bindvalue)
+        return as_wkb_hex(bindvalue, column_srid=spatial_type.srid)
     elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
         if is_wkb_constructor(spatial_type):
-            return as_wkb_hex(bindvalue)
+            return as_wkb_hex(bindvalue, column_srid=spatial_type.srid)
         wkt, srid = _wkb_wkt.split_wkb_srid(bindvalue)
         validate_wkb_srid(spatial_type.srid, srid)
         return _normalize_mariadb_wkt(wkt)

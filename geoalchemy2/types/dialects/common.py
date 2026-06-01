@@ -1,5 +1,6 @@
 """This module defines functions used by several dialects."""
 
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.exc import ArgumentError
 
@@ -12,10 +13,36 @@ def is_ewkb_constructor(spatial_type):
     return "ewkb" in (getattr(spatial_type, "from_text", "") or "").lower()
 
 
-def as_binary_wkb(bindvalue, *, strip_srid=False):
+def _validate_wkb_bindvalue_srid(bindvalue, column_srid):
+    if column_srid is None or column_srid <= 0:
+        return
+
+    if isinstance(bindvalue, bytearray):
+        bindvalue = bytes(bindvalue)
+
+    srids = []
+    if isinstance(bindvalue, WKBElement):
+        if bindvalue.srid > 0:
+            srids.append(bindvalue.srid)
+        bindvalue = bindvalue.data
+
+    if isinstance(bindvalue, (bytes, bytearray, memoryview, str)):
+        srid = _wkb_wkt.wkb_srid(bindvalue)
+        if srid is not None and srid > 0:
+            srids.append(srid)
+
+    for srid in srids:
+        validate_wkb_srid(column_srid, srid)
+
+
+def as_binary_wkb(bindvalue, *, strip_srid=False, column_srid=None):
     if strip_srid:
-        wkb_element = bindvalue if isinstance(bindvalue, WKBElement) else WKBElement(bindvalue)
-        bindvalue = wkb_element.as_wkb().data
+        _validate_wkb_bindvalue_srid(bindvalue, column_srid)
+        if isinstance(bindvalue, WKBElement):
+            bindvalue = bindvalue.data
+        if isinstance(bindvalue, bytearray):
+            bindvalue = bytes(bindvalue)
+        return _wkb_wkt.to_wkb_no_srid(bindvalue)
     elif isinstance(bindvalue, WKBElement):
         bindvalue = bindvalue.data
     if isinstance(bindvalue, memoryview):
@@ -25,10 +52,14 @@ def as_binary_wkb(bindvalue, *, strip_srid=False):
     return bytes(bindvalue)
 
 
-def as_wkb_hex(bindvalue, *, strip_srid=True):
+def as_wkb_hex(bindvalue, *, strip_srid=True, column_srid=None):
     if strip_srid:
-        wkb_element = bindvalue if isinstance(bindvalue, WKBElement) else WKBElement(bindvalue)
-        return wkb_element.as_wkb().desc
+        _validate_wkb_bindvalue_srid(bindvalue, column_srid)
+        if isinstance(bindvalue, WKBElement):
+            bindvalue = bindvalue.data
+        if isinstance(bindvalue, bytearray):
+            bindvalue = bytes(bindvalue)
+        return _wkb_wkt.to_hex_wkb_no_srid(bindvalue).lower()
     if isinstance(bindvalue, WKBElement):
         bindvalue = bindvalue.data
     if isinstance(bindvalue, memoryview):

@@ -343,36 +343,65 @@ class TestMySQLWKBConstructors:
         assert processed_wkb == expected_wkb
         assert srid_processor(runtime_value) == expected_srid
 
-    def test_geom_from_ewkb_dynamic_bindparam_uses_type_srid_for_plain_wkb(self):
+    def test_geom_from_ewkb_fixed_srid_bindparam_uses_literal_srid(self):
         source_bind = bindparam("wkb")
         expr = func.ST_GeomFromEWKB(source_bind, type_=Geometry(srid=3857))
         compiled_expr = expr.compile(dialect=mysql.dialect())
-        wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
-            source_bind,
-            default_srid=3857,
-        )
 
-        assert self.normalize_sql(compiled_expr) == "ST_GeomFromWKB(%s, %s)"
-        assert compiled_expr._bind_processors[wkb_key](bytes.fromhex(WKB_HEX)) == bytes.fromhex(
+        assert self.normalize_sql(compiled_expr) == "ST_GeomFromWKB(%s, 3857)"
+        assert set(compiled_expr.params) == {"wkb"}
+        assert compiled_expr._bind_processors["wkb"](bytes.fromhex(WKB_HEX)) == bytes.fromhex(
             WKB_HEX
         )
-        assert compiled_expr._bind_processors[srid_key](bytes.fromhex(WKB_HEX)) == 3857
+        assert compiled_expr._bind_processors["wkb"](
+            _wkb_wkt.to_wkb(bytes.fromhex(WKB_HEX), srid=3857)
+        ) == bytes.fromhex(WKB_HEX)
+        assert compiled_expr._bind_processors["wkb"](
+            WKBElement(bytes.fromhex(WKB_HEX), srid=3857)
+        ) == bytes.fromhex(WKB_HEX)
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            compiled_expr._bind_processors["wkb"](bytes.fromhex(EWKB_HEX))
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            compiled_expr._bind_processors["wkb"](WKBElement(bytes.fromhex(WKB_HEX), srid=4326))
 
-    def test_geom_from_ewkb_dynamic_bindparam_treats_zero_srid_wkbelement_as_unknown(self):
+    def test_geom_from_ewkb_fixed_srid_bindparam_accepts_zero_srid(self):
         source_bind = bindparam("wkb")
         expr = func.ST_GeomFromEWKB(
             source_bind,
             type_=Geometry(srid=3857, from_text="ST_GeomFromEWKB"),
         )
         compiled_expr = expr.compile(dialect=mysql.dialect())
-        _, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
-            source_bind,
-            default_srid=3857,
-        )
 
-        srid_processor = compiled_expr._bind_processors[srid_key]
-        assert srid_processor(WKBElement(bytes.fromhex(WKB_HEX), srid=0)) == 3857
-        assert srid_processor(bytes.fromhex(ZERO_SRID_EWKB_HEX)) == 3857
+        wkb_processor = compiled_expr._bind_processors["wkb"]
+        assert self.normalize_sql(compiled_expr) == "ST_GeomFromWKB(%s, 3857)"
+        assert wkb_processor(WKBElement(bytes.fromhex(WKB_HEX), srid=0)) == bytes.fromhex(WKB_HEX)
+        assert wkb_processor(bytes.fromhex(ZERO_SRID_EWKB_HEX)) == bytes.fromhex(WKB_HEX)
+
+    def test_geom_from_ewkb_fixed_srid_dml_column_bind_skips_type_coerce(self, monkeypatch):
+        def coerce_ewkb_bind_clause_to_wkb(*args, **kwargs):
+            raise AssertionError("fixed-SRID DML column binds should use the column processor")
+
+        monkeypatch.setattr(
+            _mysql_admin,
+            "_coerce_ewkb_bind_clause_to_wkb",
+            coerce_ewkb_bind_clause_to_wkb,
+        )
+        table = Table(
+            "geom_table",
+            MetaData(),
+            Column(
+                "geom",
+                Geometry(geometry_type="POINT", srid=4326, from_text="ST_GeomFromEWKB"),
+            ),
+        )
+        stmt = insert(table).values([{"geom": bytes.fromhex(EWKB_HEX)} for _ in range(4)])
+
+        compiled = stmt.compile(dialect=mysql.dialect())
+        sql = self.normalize_sql(compiled)
+
+        assert sql.count("ST_GeomFromWKB(%s, 4326)") == 4
+        assert sql.count("%s") == 4
+        assert len(compiled.params) == 4
 
     def test_geom_from_ewkb_dynamic_bindparam_with_explicit_srid_literal(self):
         expr = func.ST_GeomFromEWKB(bindparam("wkb"), 3857)
@@ -431,13 +460,13 @@ class TestMySQLWKBConstructors:
         table = Table(
             "lake",
             MetaData(),
-            Column("geom", Geometry(srid=3857, from_text="ST_GeomFromEWKB")),
+            Column("geom", Geometry(srid=0, from_text="ST_GeomFromEWKB")),
         )
         stmt = statement_factory(table)
         source_bind = bindparam(param_key)
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             source_bind,
-            default_srid=3857,
+            default_srid=0,
         )
         ewkb = bytes.fromhex(EWKB_HEX)
 
@@ -461,7 +490,7 @@ class TestMySQLWKBConstructors:
             update,
         ],
     )
-    def test_before_execute_expands_dml_runtime_ewkb_binds_with_other_fixed_values(
+    def test_before_execute_does_not_expand_fixed_srid_dml_runtime_ewkb_binds(
         self,
         statement_factory,
     ):
@@ -491,13 +520,15 @@ class TestMySQLWKBConstructors:
         )
 
         assert clauseelement is stmt
-        assert expanded_params[wkb_key] is ewkb
-        assert expanded_params[srid_key] is ewkb
+        assert expanded_params == {"geom": ewkb}
+        assert wkb_key not in expanded_params
+        assert srid_key not in expanded_params
         compiled = clauseelement.compile(
             dialect=mysql.dialect(),
             column_keys=list(expanded_params),
         )
-        assert compiled.construct_params(params=expanded_params)[wkb_key] is ewkb
+        assert "ST_GeomFromWKB(%s, 3857)" in self.normalize_sql(compiled)
+        assert compiled.construct_params(params=expanded_params)["geom"] is ewkb
 
     def test_before_execute_expands_multivalue_dml_generated_dynamic_ewkb_binds(self):
         class Conn:
@@ -506,7 +537,7 @@ class TestMySQLWKBConstructors:
         table = Table(
             "lake",
             MetaData(),
-            Column("geom", Geometry(srid=3857, from_text="ST_GeomFromEWKB")),
+            Column("geom", Geometry(srid=0, from_text="ST_GeomFromEWKB")),
         )
         stmt = insert(table).values(
             [
@@ -529,21 +560,21 @@ class TestMySQLWKBConstructors:
 
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             bindparam("wkb1"),
-            default_srid=3857,
+            default_srid=0,
         )
         assert expanded_params[wkb_key] is ewkb1
         assert expanded_params[srid_key] is ewkb1
         assert compiled.construct_params(params=expanded_params)[wkb_key] is ewkb1
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             bindparam("wkb2"),
-            default_srid=3857,
+            default_srid=0,
         )
         assert expanded_params[wkb_key] is ewkb2
         assert expanded_params[srid_key] is ewkb2
         assert compiled.construct_params(params=expanded_params)[wkb_key] is ewkb2
         assert self.normalize_sql(compiled).count("ST_GeomFromWKB") == 2
 
-    def test_before_execute_expands_dynamic_ewkb_params_without_mutating_source(self):
+    def test_before_execute_does_not_expand_fixed_srid_ewkb_params(self):
         class Conn:
             dialect = mysql.dialect()
 
@@ -560,9 +591,9 @@ class TestMySQLWKBConstructors:
 
         assert multiparams == ()
         assert params == {"wkb": ewkb}
-        assert expanded_params["wkb"] is ewkb
-        assert expanded_params[wkb_key] is ewkb
-        assert expanded_params[srid_key] is ewkb
+        assert expanded_params is params
+        assert wkb_key not in expanded_params
+        assert srid_key not in expanded_params
 
     def test_before_execute_skips_non_wkb_runtime_params(self, monkeypatch):
         class Conn:
@@ -807,25 +838,22 @@ class TestMySQLWKBConstructors:
         assert expanded_params[wkb_key] is ewkb
         assert expanded_params[srid_key] is ewkb
 
-    def test_before_execute_expands_reused_dynamic_ewkb_bind_for_distinct_default_srids(self):
+    def test_before_execute_expands_reused_ewkb_bind_only_for_unknown_srid(self):
         class Conn:
             dialect = mysql.dialect()
 
         source_bind = bindparam("wkb")
         stmt = select(
             [
-                func.ST_GeomFromEWKB(source_bind, type_=Geometry(srid=4326)),
                 func.ST_GeomFromEWKB(source_bind, type_=Geometry(srid=3857)),
+                func.ST_GeomFromEWKB(source_bind),
             ]
         )
-        wkb_key_4326, srid_key_4326 = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
-            source_bind,
-            default_srid=4326,
-        )
-        wkb_key_3857, srid_key_3857 = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
+        fixed_wkb_key, fixed_srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             source_bind,
             default_srid=3857,
         )
+        wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(source_bind)
         ewkb = bytes.fromhex(EWKB_HEX)
 
         _, _, expanded_params = _mysql_admin.before_execute(
@@ -836,10 +864,11 @@ class TestMySQLWKBConstructors:
             {},
         )
 
-        assert expanded_params[wkb_key_4326] is ewkb
-        assert expanded_params[srid_key_4326] is ewkb
-        assert expanded_params[wkb_key_3857] is ewkb
-        assert expanded_params[srid_key_3857] is ewkb
+        assert expanded_params["wkb"] is ewkb
+        assert expanded_params[wkb_key] is ewkb
+        assert expanded_params[srid_key] is ewkb
+        assert fixed_wkb_key not in expanded_params
+        assert fixed_srid_key not in expanded_params
 
     def test_before_execute_leaves_already_expanded_dynamic_ewkb_params_unchanged(self):
         class Conn:
@@ -952,6 +981,103 @@ class TestMySQLWKBConstructors:
             spatial_type, WKBElement(bytes.fromhex(EWKB_HEX), extended=True)
         ) == bytes.fromhex(WKB_HEX)
 
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [
+            bytes.fromhex(EWKB_HEX),
+            memoryview(bytes.fromhex(EWKB_HEX)),
+            EWKB_HEX,
+            WKBElement(bytes.fromhex(EWKB_HEX), extended=True),
+            WKBElement(bytes.fromhex(WKB_HEX), srid=4326),
+            WKBElement(bytes.fromhex(WKB_HEX), srid=0),
+            bytes.fromhex(ZERO_SRID_EWKB_HEX),
+            bytes.fromhex(WKB_HEX),
+        ],
+    )
+    def test_bind_processor_strips_ewkb_constructor_values_for_fixed_srid(self, bindvalue):
+        spatial_type = Geometry(srid=4326, from_text="ST_GeomFromEWKB")
+
+        assert mysql_type.bind_processor_process(spatial_type, bindvalue) == bytes.fromhex(WKB_HEX)
+
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [
+            bytes.fromhex(EWKB_HEX),
+            EWKB_HEX,
+            WKBElement(bytes.fromhex(EWKB_HEX), srid=3857, extended=True),
+            WKBElement(bytes.fromhex(WKB_HEX), srid=4326),
+        ],
+    )
+    def test_bind_processor_validates_ewkb_constructor_fixed_srid(self, bindvalue):
+        spatial_type = Geometry(srid=3857, from_text="ST_GeomFromEWKB")
+
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            mysql_type.bind_processor_process(spatial_type, bindvalue)
+
+    def test_fixed_srid_dml_bind_processor_strips_and_validates_ewkb_constructor(self):
+        table = Table(
+            "geom_table",
+            MetaData(),
+            Column(
+                "geom",
+                Geometry(geometry_type="POINT", srid=4326, from_text="ST_GeomFromEWKB"),
+            ),
+        )
+        compiled = insert(table).values(geom=bindparam("geom")).compile(dialect=mysql.dialect())
+        wkb_processor = compiled._bind_processors["geom"]
+
+        assert wkb_processor(bytes.fromhex(EWKB_HEX)) == bytes.fromhex(WKB_HEX)
+        assert wkb_processor(WKBElement(bytes.fromhex(WKB_HEX), srid=0)) == bytes.fromhex(WKB_HEX)
+
+        mismatch_table = Table(
+            "geom_table_mismatch",
+            MetaData(),
+            Column(
+                "geom",
+                Geometry(geometry_type="POINT", srid=3857, from_text="ST_GeomFromEWKB"),
+            ),
+        )
+        mismatch_compiled = (
+            insert(mismatch_table).values(geom=bindparam("geom")).compile(dialect=mysql.dialect())
+        )
+        mismatch_processor = mismatch_compiled._bind_processors["geom"]
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            mismatch_processor(bytes.fromhex(EWKB_HEX))
+
+    def test_fixed_srid_dml_fast_path_respects_dynamic_split_disable_option(
+        self,
+        monkeypatch,
+    ):
+        def coerce_ewkb_bind_clause_to_wkb(*args, **kwargs):
+            raise AssertionError("fixed-SRID DML column binds should use the column processor")
+
+        monkeypatch.setattr(
+            _mysql_admin,
+            "_coerce_ewkb_bind_clause_to_wkb",
+            coerce_ewkb_bind_clause_to_wkb,
+        )
+        table = Table(
+            "geom_table",
+            MetaData(),
+            Column(
+                "geom",
+                Geometry(geometry_type="POINT", srid=3857, from_text="ST_GeomFromEWKB"),
+            ),
+        )
+        stmt = (
+            insert(table)
+            .values(geom=bindparam("geom"))
+            .execution_options(**{_mysql_admin._MYSQL_DISABLE_DYNAMIC_EWKB_SPLIT_OPTION: True})
+        )
+
+        compiled = stmt.compile(dialect=mysql.dialect())
+
+        assert self.normalize_sql(compiled) == (
+            "INSERT INTO geom_table (geom) VALUES (ST_GeomFromWKB(%s, 3857))"
+        )
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            compiled._bind_processors["geom"](bytes.fromhex(EWKB_HEX))
+
 
 class TestMariaDBWKBConstructors:
     @staticmethod
@@ -1048,34 +1174,87 @@ class TestMariaDBWKBConstructors:
         assert wkb_processor(runtime_value) == expected_wkb
         assert srid_processor(runtime_value) == expected_srid
 
-    def test_geom_from_ewkb_dynamic_bindparam_uses_type_srid_for_plain_wkb(self):
+    def test_geom_from_ewkb_fixed_srid_bindparam_uses_literal_srid(self):
         source_bind = bindparam("wkb")
         expr = func.ST_GeomFromEWKB(source_bind, type_=Geometry(srid=3857))
         compiled_expr = expr.compile(dialect=mariadb_dialect.MariaDBDialect())
-        wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
-            source_bind,
-            default_srid=3857,
+
+        assert self.normalize_sql(compiled_expr) == "ST_GeomFromWKB(unhex(%s), 3857)"
+        assert set(compiled_expr.params) == {"wkb"}
+        assert compiled_expr._bind_processors["wkb"](bytes.fromhex(WKB_HEX)) == WKB_HEX
+        assert (
+            compiled_expr._bind_processors["wkb"](
+                _wkb_wkt.to_wkb(bytes.fromhex(WKB_HEX), srid=3857)
+            )
+            == WKB_HEX
         )
+        assert (
+            compiled_expr._bind_processors["wkb"](WKBElement(bytes.fromhex(WKB_HEX), srid=3857))
+            == WKB_HEX
+        )
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            compiled_expr._bind_processors["wkb"](bytes.fromhex(EWKB_HEX))
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            compiled_expr._bind_processors["wkb"](WKBElement(bytes.fromhex(WKB_HEX), srid=4326))
 
-        assert self.normalize_sql(compiled_expr) == "ST_GeomFromWKB(unhex(%s), %s)"
-        assert compiled_expr._bind_processors[wkb_key](bytes.fromhex(WKB_HEX)) == WKB_HEX
-        assert compiled_expr._bind_processors[srid_key](bytes.fromhex(WKB_HEX)) == 3857
-
-    def test_geom_from_ewkb_dynamic_bindparam_treats_zero_srid_wkbelement_as_unknown(self):
+    def test_geom_from_ewkb_fixed_srid_bindparam_accepts_zero_srid(self):
         source_bind = bindparam("wkb")
         expr = func.ST_GeomFromEWKB(
             source_bind,
             type_=Geometry(srid=3857, from_text="ST_GeomFromEWKB"),
         )
         compiled_expr = expr.compile(dialect=mariadb_dialect.MariaDBDialect())
-        _, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
-            source_bind,
-            default_srid=3857,
-        )
 
-        srid_processor = compiled_expr._bind_processors[srid_key]
-        assert srid_processor(WKBElement(bytes.fromhex(WKB_HEX), srid=0)) == 3857
-        assert srid_processor(bytes.fromhex(ZERO_SRID_EWKB_HEX)) == 3857
+        wkb_processor = compiled_expr._bind_processors["wkb"]
+        assert self.normalize_sql(compiled_expr) == "ST_GeomFromWKB(unhex(%s), 3857)"
+        assert wkb_processor(WKBElement(bytes.fromhex(WKB_HEX), srid=0)) == WKB_HEX
+        assert wkb_processor(bytes.fromhex(ZERO_SRID_EWKB_HEX)) == WKB_HEX
+
+    def test_geom_from_ewkb_multivalue_fixed_srid_uses_one_bind_per_row(self):
+        class CustomGeometry(Geometry):
+            from_text = "ST_GeomFromEWKB"
+            as_binary = "ST_AsEWKB"
+            cache_ok = True
+
+        table = Table(
+            "geom_table",
+            MetaData(),
+            Column("geom", CustomGeometry(geometry_type="POINT", srid=4326)),
+        )
+        stmt = insert(table).values([{"geom": bytes.fromhex(EWKB_HEX)} for _ in range(4)])
+
+        compiled = stmt.compile(dialect=mariadb_dialect.MariaDBDialect())
+        sql = self.normalize_sql(compiled)
+
+        assert sql.count("ST_GeomFromWKB(unhex(%s), 4326)") == 4
+        assert sql.count("%s") == 4
+        assert len(compiled.params) == 4
+
+    def test_geom_from_ewkb_fixed_srid_dml_column_bind_skips_type_coerce(self, monkeypatch):
+        def coerce_ewkb_bind_clause_to_wkb(*args, **kwargs):
+            raise AssertionError("fixed-SRID DML column binds should use the column processor")
+
+        monkeypatch.setattr(
+            _mysql_admin,
+            "_coerce_ewkb_bind_clause_to_wkb",
+            coerce_ewkb_bind_clause_to_wkb,
+        )
+        table = Table(
+            "geom_table",
+            MetaData(),
+            Column(
+                "geom",
+                Geometry(geometry_type="POINT", srid=4326, from_text="ST_GeomFromEWKB"),
+            ),
+        )
+        stmt = insert(table).values([{"geom": bytes.fromhex(EWKB_HEX)} for _ in range(4)])
+
+        compiled = stmt.compile(dialect=mariadb_dialect.MariaDBDialect())
+        sql = self.normalize_sql(compiled)
+
+        assert sql.count("ST_GeomFromWKB(unhex(%s), 4326)") == 4
+        assert sql.count("%s") == 4
+        assert len(compiled.params) == 4
 
     def test_geom_from_ewkb_dynamic_bindparam_with_explicit_srid_literal(self):
         expr = func.ST_GeomFromEWKB(bindparam("wkb"), 3857)
@@ -1130,13 +1309,13 @@ class TestMariaDBWKBConstructors:
         table = Table(
             "lake",
             MetaData(),
-            Column("geom", Geometry(srid=3857, from_text="ST_GeomFromEWKB")),
+            Column("geom", Geometry(srid=0, from_text="ST_GeomFromEWKB")),
         )
         stmt = statement_factory(table)
         source_bind = bindparam(param_key)
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             source_bind,
-            default_srid=3857,
+            default_srid=0,
         )
         ewkb = bytes.fromhex(EWKB_HEX)
 
@@ -1160,7 +1339,7 @@ class TestMariaDBWKBConstructors:
         table = Table(
             "lake",
             MetaData(),
-            Column("geom", Geometry(srid=3857, from_text="ST_GeomFromEWKB")),
+            Column("geom", Geometry(srid=0, from_text="ST_GeomFromEWKB")),
         )
         stmt = insert(table).values(
             [
@@ -1183,21 +1362,21 @@ class TestMariaDBWKBConstructors:
 
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             bindparam("wkb1"),
-            default_srid=3857,
+            default_srid=0,
         )
         assert expanded_params[wkb_key] is ewkb1
         assert expanded_params[srid_key] is ewkb1
         assert compiled.construct_params(params=expanded_params)[wkb_key] is ewkb1
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             bindparam("wkb2"),
-            default_srid=3857,
+            default_srid=0,
         )
         assert expanded_params[wkb_key] is ewkb2
         assert expanded_params[srid_key] is ewkb2
         assert compiled.construct_params(params=expanded_params)[wkb_key] is ewkb2
         assert self.normalize_sql(compiled).count("ST_GeomFromWKB") == 2
 
-    def test_before_execute_expands_dynamic_ewkb_params_for_mariadb(self):
+    def test_before_execute_does_not_expand_fixed_srid_ewkb_params_for_mariadb(self):
         class Conn:
             dialect = mariadb_dialect.MariaDBDialect()
 
@@ -1220,8 +1399,9 @@ class TestMariaDBWKBConstructors:
 
         assert multiparams == ()
         assert params == {"wkb": ewkb}
-        assert expanded_params[wkb_key] is ewkb
-        assert expanded_params[srid_key] is ewkb
+        assert expanded_params is params
+        assert wkb_key not in expanded_params
+        assert srid_key not in expanded_params
 
     def test_before_execute_expands_none_dynamic_ewkb_params_for_mariadb_without_compile(
         self,
@@ -1239,11 +1419,8 @@ class TestMariaDBWKBConstructors:
             compile_bind_name_map,
         )
         source_bind = bindparam("wkb")
-        stmt = select([func.ST_GeomFromEWKB(source_bind, type_=Geometry(srid=3857))])
-        wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
-            source_bind,
-            default_srid=3857,
-        )
+        stmt = select([func.ST_GeomFromEWKB(source_bind)])
+        wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(source_bind)
         params = {"wkb": None}
 
         _, multiparams, expanded_params = _mariadb_admin.before_execute(
@@ -1288,6 +1465,109 @@ class TestMariaDBWKBConstructors:
         spatial_type = Geometry(srid=4326, from_text="ST_GeomFromEWKB")
 
         assert mariadb_type.bind_processor_process(spatial_type, EWKB_HEX) == WKB_HEX
+
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [
+            bytes.fromhex(EWKB_HEX),
+            memoryview(bytes.fromhex(EWKB_HEX)),
+            EWKB_HEX,
+            WKBElement(bytes.fromhex(EWKB_HEX), extended=True),
+            WKBElement(bytes.fromhex(WKB_HEX), srid=4326),
+            WKBElement(bytes.fromhex(WKB_HEX), srid=0),
+            bytes.fromhex(ZERO_SRID_EWKB_HEX),
+            bytes.fromhex(WKB_HEX),
+        ],
+    )
+    def test_bind_processor_strips_ewkb_constructor_values_for_fixed_srid(self, bindvalue):
+        spatial_type = Geometry(srid=4326, from_text="ST_GeomFromEWKB")
+
+        assert mariadb_type.bind_processor_process(spatial_type, bindvalue) == WKB_HEX
+
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [
+            bytes.fromhex(EWKB_HEX),
+            EWKB_HEX,
+            WKBElement(bytes.fromhex(EWKB_HEX), srid=3857, extended=True),
+            WKBElement(bytes.fromhex(WKB_HEX), srid=4326),
+        ],
+    )
+    def test_bind_processor_validates_ewkb_constructor_fixed_srid(self, bindvalue):
+        spatial_type = Geometry(srid=3857, from_text="ST_GeomFromEWKB")
+
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            mariadb_type.bind_processor_process(spatial_type, bindvalue)
+
+    def test_fixed_srid_dml_bind_processor_strips_and_validates_ewkb_constructor(self):
+        table = Table(
+            "geom_table",
+            MetaData(),
+            Column(
+                "geom",
+                Geometry(geometry_type="POINT", srid=4326, from_text="ST_GeomFromEWKB"),
+            ),
+        )
+        compiled = (
+            insert(table)
+            .values(geom=bindparam("geom"))
+            .compile(dialect=mariadb_dialect.MariaDBDialect())
+        )
+        wkb_processor = compiled._bind_processors["geom"]
+
+        assert wkb_processor(bytes.fromhex(EWKB_HEX)) == WKB_HEX
+        assert wkb_processor(WKBElement(bytes.fromhex(WKB_HEX), srid=0)) == WKB_HEX
+
+        mismatch_table = Table(
+            "geom_table_mismatch",
+            MetaData(),
+            Column(
+                "geom",
+                Geometry(geometry_type="POINT", srid=3857, from_text="ST_GeomFromEWKB"),
+            ),
+        )
+        mismatch_compiled = (
+            insert(mismatch_table)
+            .values(geom=bindparam("geom"))
+            .compile(dialect=mariadb_dialect.MariaDBDialect())
+        )
+        mismatch_processor = mismatch_compiled._bind_processors["geom"]
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            mismatch_processor(bytes.fromhex(EWKB_HEX))
+
+    def test_fixed_srid_dml_fast_path_respects_dynamic_split_disable_option(
+        self,
+        monkeypatch,
+    ):
+        def coerce_ewkb_bind_clause_to_wkb(*args, **kwargs):
+            raise AssertionError("fixed-SRID DML column binds should use the column processor")
+
+        monkeypatch.setattr(
+            _mysql_admin,
+            "_coerce_ewkb_bind_clause_to_wkb",
+            coerce_ewkb_bind_clause_to_wkb,
+        )
+        table = Table(
+            "geom_table",
+            MetaData(),
+            Column(
+                "geom",
+                Geometry(geometry_type="POINT", srid=3857, from_text="ST_GeomFromEWKB"),
+            ),
+        )
+        stmt = (
+            insert(table)
+            .values(geom=bindparam("geom"))
+            .execution_options(**{_mysql_admin._MYSQL_DISABLE_DYNAMIC_EWKB_SPLIT_OPTION: True})
+        )
+
+        compiled = stmt.compile(dialect=mariadb_dialect.MariaDBDialect())
+
+        assert self.normalize_sql(compiled) == (
+            "INSERT INTO geom_table (geom) VALUES (ST_GeomFromWKB(unhex(%s), 3857))"
+        )
+        with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+            compiled._bind_processors["geom"](bytes.fromhex(EWKB_HEX))
 
     @pytest.mark.parametrize(
         "bindvalue",
