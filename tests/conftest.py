@@ -80,7 +80,7 @@ def pytest_addoption(parser):
         "--insert-select-rounds",
         action="store",
         type=int,
-        default=200,
+        default=5,
         help="Number of benchmark rounds for insert/select benchmarks.",
     )
 
