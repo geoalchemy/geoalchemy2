@@ -70,7 +70,11 @@ dmypy.json
 # Miscellaneous
 *.csv
 *.sh
+*.svg
 *.txt
+!test_container/run.sh
+!test_container/start.sh
+!test_container/stop.sh
 !test_container/helpers/configure_postgres.sh
 !test_container/helpers/configure_mysql.sh
 !test_container/helpers/configure_mariadb.sh
@@ -78,3 +82,4 @@ dmypy.json
 issues
 mylocal_db/
 uv.lock
+worktrees
