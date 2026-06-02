@@ -76,6 +76,22 @@ def pytest_addoption(parser):
         default=False,
         help="If set to True, tests marked as long benchmarks will be run.",
     )
+    parser.addoption(
+        "--insert-select-rounds",
+        action="store",
+        type=int,
+        default=200,
+        help="Number of benchmark rounds for insert/select benchmarks.",
+    )
+
+
+@pytest.fixture
+def insert_select_rounds(request):
+    """Number of rounds used by insert/select benchmarks."""
+    rounds = request.config.getoption("--insert-select-rounds")
+    if rounds <= 0:
+        raise pytest.UsageError("--insert-select-rounds must be a positive integer.")
+    return rounds
 
 
 def pytest_configure(config):
