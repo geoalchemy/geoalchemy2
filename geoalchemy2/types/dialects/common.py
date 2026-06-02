@@ -1,6 +1,7 @@
 """This module defines functions used by several dialects."""
 
 from geoalchemy2 import _wkb_wkt
+from geoalchemy2._wkb_wkt import is_known_srid
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.exc import ArgumentError
 
@@ -14,7 +15,7 @@ def is_ewkb_constructor(spatial_type):
 
 
 def _validate_wkb_bindvalue_srid(bindvalue, column_srid):
-    if column_srid is None or column_srid <= 0:
+    if not is_known_srid(column_srid):
         return
 
     if isinstance(bindvalue, bytearray):
@@ -22,13 +23,13 @@ def _validate_wkb_bindvalue_srid(bindvalue, column_srid):
 
     srids = []
     if isinstance(bindvalue, WKBElement):
-        if bindvalue.srid > 0:
+        if is_known_srid(bindvalue.srid):
             srids.append(bindvalue.srid)
         bindvalue = bindvalue.data
 
     if isinstance(bindvalue, (bytes, bytearray, memoryview, str)):
         srid = _wkb_wkt.wkb_srid(bindvalue)
-        if srid is not None and srid > 0:
+        if is_known_srid(srid):
             srids.append(srid)
 
     for srid in srids:
@@ -61,7 +62,7 @@ def as_wkb_hex(bindvalue, *, strip_srid=True, column_srid=None):
             bindvalue = bytes(bindvalue)
         return _wkb_wkt.to_hex_wkb_no_srid(bindvalue).lower()
     if isinstance(bindvalue, WKBElement):
-        bindvalue = bindvalue.data
+        return bindvalue.as_ewkb().desc
     if isinstance(bindvalue, memoryview):
         bindvalue = bindvalue.tobytes()
     if isinstance(bindvalue, (bytes, bytearray)):
@@ -73,9 +74,8 @@ def validate_wkb_srid(column_srid, srid, *, has_fixed_srid=True):
     if (
         has_fixed_srid
         and column_srid is not None
-        and column_srid > 0
-        and srid is not None
-        and srid > 0
+        and is_known_srid(column_srid)
+        and is_known_srid(srid)
         and srid != column_srid
     ):
         raise ArgumentError(

@@ -1050,6 +1050,17 @@ class TestMSSQLBindAndResultProcessing:
 
         assert bind_processor(zero_srid_ewkb) == "LINESTRING (0 0, 1 1)"
 
+    def test_bind_processor_accepts_zero_srid_for_fixed_column(self):
+        geom = Geometry(geometry_type="LINESTRING", srid=4326)
+        bind_processor = geom.bind_processor(self.dialect)
+        wkb = bytes.fromhex(
+            "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"
+        )
+
+        assert bind_processor("SRID=0;LINESTRING(0 0,1 1)") == "LINESTRING(0 0,1 1)"
+        assert bind_processor(WKTElement("LINESTRING(0 0,1 1)", srid=0)) == ("LINESTRING(0 0,1 1)")
+        assert bind_processor(WKBElement(wkb, srid=0)) == "LINESTRING (0 0, 1 1)"
+
     def test_bind_processor_accepts_runtime_srid_for_unconstrained_column(self):
         geom = Geometry(geometry_type="LINESTRING", srid=-1)
         bind_processor = geom.bind_processor(self.dialect)

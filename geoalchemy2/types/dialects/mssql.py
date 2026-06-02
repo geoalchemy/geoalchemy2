@@ -5,6 +5,7 @@ import re
 from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2 import _wkb_wkt
+from geoalchemy2._wkb_wkt import is_known_srid
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
@@ -133,7 +134,7 @@ def _to_mssql_wkt(value):
 
 
 def _validate_wkb_srid(column_srid, has_fixed_srid, srid):
-    if has_fixed_srid and srid is not None and srid > 0 and srid != column_srid:
+    if has_fixed_srid and is_known_srid(srid) and srid != column_srid:
         raise ArgumentError(
             f"The SRID ({srid}) of the supplied value is different "
             f"from the one of the column ({column_srid})"
@@ -161,27 +162,15 @@ def bind_processor_process(spatial_type, bindvalue, dialect=None):
                 f"The SRID ({srid}) of the supplied value can not be casted to integer"
             ) from None
 
-        if has_fixed_srid and srid is not None and srid != column_srid:
-            raise ArgumentError(
-                f"The SRID ({srid}) of the supplied value is different "
-                f"from the one of the column ({column_srid})"
-            )
+        _validate_wkb_srid(column_srid, has_fixed_srid, srid)
         return _normalize_wkt_for_mssql(wkt_match.group(3))
 
-    if (
-        isinstance(bindvalue, _SpatialElement)
-        and has_fixed_srid
-        and bindvalue.srid != -1
-        and bindvalue.srid != column_srid
-    ):
-        raise ArgumentError(
-            f"The SRID ({bindvalue.srid}) of the supplied value is different "
-            f"from the one of the column ({column_srid})"
-        )
+    if isinstance(bindvalue, _SpatialElement):
+        _validate_wkb_srid(column_srid, has_fixed_srid, bindvalue.srid)
 
     if isinstance(bindvalue, WKTElement):
         bindvalue = bindvalue.as_wkt()
-        if bindvalue.srid <= 0:
+        if not is_known_srid(bindvalue.srid):
             bindvalue.srid = spatial_type.srid
         return _normalize_wkt_for_mssql(bindvalue.data)
     elif isinstance(bindvalue, WKBElement):

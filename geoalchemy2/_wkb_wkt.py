@@ -17,8 +17,12 @@ from wkb_wkt_converter import wkb_to_wkt_split_srid
 from wkb_wkt_converter import wkt_to_wkb_split_srid
 
 
+def is_known_srid(srid: int | None) -> bool:
+    return srid is not None and srid > 0
+
+
 def _srid_arg(srid: int | None) -> int | bool:
-    return srid if srid is not None and srid > 0 else False
+    return srid if is_known_srid(srid) else False
 
 
 def wkb_srid(source) -> int | None:
@@ -38,7 +42,7 @@ def to_wkb_no_srid_header(source):
 
 def to_ewkb_header(source, srid: int):
     """Embed or replace an EWKB SRID with native header rewrite/full-conversion fallback."""
-    if srid <= 0:
+    if not is_known_srid(srid):
         return to_wkb_no_srid_header(source)
     return _to_ewkb_header(source, srid)
 
@@ -67,7 +71,7 @@ def to_wkt_for_column(source, srid: int | None, *, normalize_wkt: bool = False) 
     """Convert to WKT/EWKT, preserving source SRID unless the column has one."""
     return _to_wkt(
         source,
-        srid=srid if srid is not None and srid > 0 else None,
+        srid=srid if is_known_srid(srid) else None,
         normalize_wkt=normalize_wkt,
     )
 

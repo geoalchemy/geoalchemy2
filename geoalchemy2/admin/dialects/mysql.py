@@ -22,6 +22,7 @@ from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2 import _wkb_wkt
 from geoalchemy2 import functions
+from geoalchemy2._wkb_wkt import is_known_srid
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import compile_bin_literal
@@ -225,13 +226,13 @@ def _ewkb_srid(value, *, default_srid=0):
         value = bytes(value)
 
     if isinstance(value, WKBElement):
-        if value.srid > 0:
+        if is_known_srid(value.srid):
             return value.srid
         value = value.data
 
     if isinstance(value, (bytes, bytearray, memoryview, str)):
         srid = _wkb_wkt.wkb_srid(value)
-        if srid is not None and srid > 0:
+        if is_known_srid(srid):
             return srid
 
     return default_srid
@@ -362,10 +363,7 @@ def _mapping_may_need_dynamic_ewkb(parameters):
 
 
 def _parameters_may_need_dynamic_ewkb(multiparams, params):
-    if _mapping_may_need_dynamic_ewkb(params):
-        return True
-
-    for parameters in multiparams or ():  # noqa: SIM110
+    for parameters in _iter_parameter_mappings(multiparams, params):  # noqa: SIM110
         if _mapping_may_need_dynamic_ewkb(parameters):
             return True
 
@@ -456,11 +454,11 @@ def _default_srid_from_type(spatial_type):
 
 
 def _needs_dynamic_ewkb_split(default_srid):
-    return default_srid <= 0
+    return not is_known_srid(default_srid)
 
 
 def _is_fixed_srid_ewkb_dml_bind(wkb_clause, fixed_srid):
-    if fixed_srid is None or fixed_srid <= 0:
+    if not is_known_srid(fixed_srid):
         return False
     if not (
         getattr(wkb_clause, "_is_crud", False)
@@ -509,7 +507,7 @@ def _prepare_ewkb_wkb_clause(element, compiler, *, as_hex=False, **kw):
         )
     elif user_bind and not kw.get("literal_binds", False):
         fixed_srid = None
-        if len(clauses) == 1 and default_srid > 0:
+        if len(clauses) == 1 and is_known_srid(default_srid):
             fixed_srid = default_srid
         if _is_fixed_srid_ewkb_dml_bind(original_wkb_clause, fixed_srid):
             wkb_value_clause = original_wkb_clause
@@ -543,7 +541,7 @@ def _compile_srid_clause(srid_clause, compiler, **kw):
             srid = int(value)
         except (TypeError, ValueError):
             return compiler.process(srid_clause, **kw)
-        return str(srid) if srid > 0 else None
+        return str(srid) if is_known_srid(srid) else None
     return compiler.process(srid_clause, **kw)
 
 
@@ -554,7 +552,7 @@ def _compile_srid_arg(element, clauses, inferred_srid, dynamic_srid_clause, comp
         return _compile_srid_clause(clauses[1], compiler, **kw)
 
     srid = inferred_srid if inferred_srid is not None else element.type.srid
-    return str(srid) if srid > 0 else None
+    return str(srid) if is_known_srid(srid) else None
 
 
 def _dml_ewkb_spatial_columns(clauseelement):
@@ -820,6 +818,10 @@ def _iter_parameter_mappings(multiparams, params):
     for parameters in multiparams or ():
         if isinstance(parameters, Mapping):
             yield parameters
+        elif isinstance(parameters, (list, tuple)):
+            for row in parameters:
+                if isinstance(row, Mapping):
+                    yield row
 
 
 def _source_bind_candidate_keys(source_bind):
@@ -914,6 +916,30 @@ def _expand_mysql_dynamic_ewkb_param_mapping(parameters, dynamic_bind_mappings):
     return expanded_parameters, changed
 
 
+def _expand_mysql_dynamic_ewkb_param_container(parameters, dynamic_bind_mappings):
+    if isinstance(parameters, Mapping):
+        return _expand_mysql_dynamic_ewkb_param_mapping(parameters, dynamic_bind_mappings)
+
+    if not isinstance(parameters, (list, tuple)):
+        return parameters, False
+
+    expanded_values = []
+    changed = False
+    for value in parameters:
+        expanded_value, value_changed = _expand_mysql_dynamic_ewkb_param_mapping(
+            value,
+            dynamic_bind_mappings,
+        )
+        expanded_values.append(expanded_value)
+        changed = changed or value_changed
+
+    if not changed:
+        return parameters, False
+    if isinstance(parameters, tuple):
+        return tuple(expanded_values), True
+    return expanded_values, True
+
+
 def before_execute(conn, clauseelement, multiparams, params, execution_options):
     if isinstance(clauseelement, TextClause):
         return clauseelement, multiparams, params
@@ -941,7 +967,7 @@ def before_execute(conn, clauseelement, multiparams, params, execution_options):
     if multiparams:
         expanded_values = []
         for value in multiparams:
-            expanded_value, value_changed = _expand_mysql_dynamic_ewkb_param_mapping(
+            expanded_value, value_changed = _expand_mysql_dynamic_ewkb_param_container(
                 value,
                 dynamic_bind_mappings,
             )
@@ -965,7 +991,7 @@ def _compile_GeomFromText_MySql(element, compiler, **kw):
     compiled = compiler.process(element.clauses, **kw)
     srid = element.type.srid
 
-    if srid > 0:
+    if is_known_srid(srid):
         return f"{identifier}({compiled}, {srid})"
     else:
         return f"{identifier}({compiled})"
@@ -978,11 +1004,11 @@ def _coerce_ewkb_clause_to_wkb(wkb_clause, *, as_hex=False):
         return wkb_clause, None
 
     if isinstance(wkb_data, WKBElement):
-        srid = wkb_data.srid if wkb_data.srid > 0 else None
+        srid = wkb_data.srid if is_known_srid(wkb_data.srid) else None
         wkb_data = wkb_data.data
     elif isinstance(wkb_data, (bytes, bytearray, memoryview, str)):
         srid = _wkb_wkt.wkb_srid(wkb_data)
-        srid = srid if srid is not None and srid > 0 else None
+        srid = srid if is_known_srid(srid) else None
     else:
         return wkb_clause, None
 
