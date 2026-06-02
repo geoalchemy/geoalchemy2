@@ -22,7 +22,9 @@ def is_known_srid(srid: int | None) -> bool:
 
 
 def _srid_arg(srid: int | None) -> int | bool:
-    return srid if is_known_srid(srid) else False
+    if srid is None or not is_known_srid(srid):
+        return False
+    return srid
 
 
 def wkb_srid(source) -> int | None:
