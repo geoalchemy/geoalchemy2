@@ -41,6 +41,7 @@ from . import select
 
 WKB_HEX = "0101000000000000000000f03f0000000000000040"
 EWKB_HEX = "0101000020e6100000000000000000f03f0000000000000040"
+EWKB_3857_HEX = "0101000020110f0000000000000000f03f0000000000000040"
 ZERO_SRID_EWKB_HEX = "010100002000000000000000000000f03f0000000000000040"
 
 
@@ -93,6 +94,14 @@ def test_as_wkb_hex_preserves_known_wkbelement_srid(bindvalue, expected):
 )
 def test_as_binary_ewkb_embeds_or_preserves_known_srid(bindvalue, column_srid, expected):
     assert as_binary_ewkb(bindvalue, column_srid=column_srid) == expected
+
+
+def test_as_binary_ewkb_respects_wkbelement_srid_override_for_ewkb():
+    bindvalue = WKBElement(bytes.fromhex(EWKB_HEX), srid=3857, extended=True)
+    expected = bindvalue.as_ewkb().data
+
+    assert expected == bytes.fromhex(EWKB_3857_HEX)
+    assert as_binary_ewkb(bindvalue) == expected
 
 
 @pytest.mark.parametrize(
@@ -1991,6 +2000,16 @@ class TestPostgreSQLWKBConstructors:
             spatial_type, bytes.fromhex(WKB_HEX)
         ) == bytes.fromhex(EWKB_HEX)
 
+    def test_geom_from_ewkb_return_type_bindparam_embeds_srid_for_raw_wkb(self):
+        expr = func.ST_GeomFromEWKB(bindparam("wkb"), type_=Geometry(srid=4326))
+        compiled_expr = expr.compile(dialect=postgresql.dialect())
+
+        assert self.normalize_sql(compiled_expr) == "ST_GeomFromEWKB(%(wkb)s)"
+        assert "wkb" in compiled_expr._bind_processors
+        assert compiled_expr._bind_processors["wkb"](bytes.fromhex(WKB_HEX)) == bytes.fromhex(
+            EWKB_HEX
+        )
+
     def test_bind_processor_validates_ewkb_constructor_fixed_srid(self):
         spatial_type = Geometry(srid=3857, from_text="ST_GeomFromEWKB")
 
@@ -2119,6 +2138,45 @@ class TestSQLiteWKBConstructors:
 
         assert self.normalize_sql(compiled_expr) == "GeomFromEWKB(?)"
         assert compiled_expr._bind_processors["wkb"](bytes.fromhex(EWKB_HEX)) == EWKB_HEX
+
+    @pytest.mark.parametrize(
+        "runtime_value",
+        [
+            bytes.fromhex(WKB_HEX),
+            memoryview(bytes.fromhex(WKB_HEX)),
+            WKB_HEX,
+        ],
+    )
+    def test_bind_processor_embeds_column_srid_for_raw_wkb_ewkb_constructor(self, runtime_value):
+        spatial_type = Geometry(srid=4326, from_text="ST_GeomFromEWKB")
+
+        assert sqlite_type.bind_processor_process(spatial_type, runtime_value) == EWKB_HEX
+
+    @pytest.mark.parametrize(
+        "runtime_value",
+        [
+            bytes.fromhex(WKB_HEX),
+            memoryview(bytes.fromhex(WKB_HEX)),
+            WKB_HEX,
+        ],
+    )
+    def test_geom_from_ewkb_insert_bindparam_embeds_column_srid_for_raw_wkb(
+        self,
+        runtime_value,
+    ):
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("geom", Geometry(srid=4326, from_text="ST_GeomFromEWKB")),
+        )
+        stmt = insert(table).values(geom=bindparam("geom"))
+
+        compiled_expr = stmt.compile(dialect=sqlite.dialect())
+
+        assert self.normalize_sql(compiled_expr) == (
+            "INSERT INTO lake (geom) VALUES (GeomFromEWKB(?))"
+        )
+        assert compiled_expr._bind_processors["geom"](runtime_value) == EWKB_HEX
 
     def test_bind_processor_preserves_wkbelement_for_wkb_constructor(self):
         spatial_type = Geometry(srid=4326, from_text="ST_GeomFromWKB")
@@ -2289,6 +2347,45 @@ class TestGeoPackage:
         )
         assert isinstance(compiled_expr.binds["geom"].type, Geometry)
         assert compiled_expr._bind_processors["geom"](bytes.fromhex(self.EWKB_HEX)) == self.EWKB_HEX
+
+    @pytest.mark.parametrize(
+        "runtime_value",
+        [
+            bytes.fromhex(WKB_HEX),
+            memoryview(bytes.fromhex(WKB_HEX)),
+            WKB_HEX,
+        ],
+    )
+    def test_bind_processor_embeds_column_srid_for_raw_wkb_ewkb_constructor(self, runtime_value):
+        spatial_type = Geometry(srid=4326, from_text="ST_GeomFromEWKB")
+
+        assert geopackage_type.bind_processor_process(spatial_type, runtime_value) == self.EWKB_HEX
+
+    @pytest.mark.parametrize(
+        "runtime_value",
+        [
+            bytes.fromhex(WKB_HEX),
+            memoryview(bytes.fromhex(WKB_HEX)),
+            WKB_HEX,
+        ],
+    )
+    def test_geom_from_ewkb_insert_bindparam_embeds_column_srid_for_raw_wkb(
+        self,
+        runtime_value,
+    ):
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("geom", Geometry(srid=4326, from_text="ST_GeomFromEWKB")),
+        )
+        stmt = insert(table).values(geom=bindparam("geom"))
+
+        compiled_expr = stmt.compile(dialect=GeoPackageDialect())
+
+        assert self.normalize_sql(compiled_expr) == (
+            "INSERT INTO lake (geom) VALUES (GeomFromEWKB(?))"
+        )
+        assert compiled_expr._bind_processors["geom"](runtime_value) == self.EWKB_HEX
 
     @pytest.mark.parametrize(
         "bindvalue",
