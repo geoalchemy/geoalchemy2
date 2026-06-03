@@ -153,20 +153,16 @@ class WKTElement(_SpatialElement):
 
     def as_wkt(self) -> WKTElement:
         if self.extended:
-            match = self._REMOVE_SRID.match(self.data)
-            assert match is not None
-            return WKTElement(match.group(3), self.srid, extended=False)
+            wkt = _wkb_wkt.to_wkt_no_srid(self.data)
+            return WKTElement(wkt, self.srid, extended=False)
         return WKTElement(self.data, self.srid, self.extended)
 
     def as_ewkt(self) -> WKTElement:
         if self.srid > 0:
             if self.extended:
-                match = self._REMOVE_SRID.match(self.data)
-                assert match is not None
-                data = match.group(3)
-            else:
-                data = self.data
-            return WKTElement(f"SRID={self.srid};{data}", extended=True)
+                wkt = _wkb_wkt.to_wkt(self.data, srid=self.srid)
+                return WKTElement(wkt, extended=True)
+            return WKTElement(f"SRID={self.srid};{self.data}", extended=True)
         return self.as_wkt()
 
     def as_wkb(self) -> WKBElement:

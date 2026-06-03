@@ -181,7 +181,7 @@ class TestWKTElement:
         assert ewkb.srid == 0
         assert ewkb.extended is False
 
-    def test_as_wkt_as_ewkt_use_wkt_only_fast_paths(self, monkeypatch):
+    def test_plain_as_wkt_as_ewkt_use_wkt_only_fast_paths(self, monkeypatch):
         def fail(*args, **kwargs):
             raise AssertionError("WKT-only conversion should not use the WKB/WKT converter")
 
@@ -189,11 +189,61 @@ class TestWKTElement:
         monkeypatch.setattr(_wkb_wkt, "to_wkt_no_srid", fail)
 
         wkt = WKTElement(self._wkt, srid=self._srid)
+        zero_srid_wkt = WKTElement(self._wkt, srid=0)
+        no_srid_wkt = WKTElement(self._wkt)
+
+        assert wkt.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+        assert wkt.as_ewkt() == WKTElement(self._ewkt, extended=True)
+        assert zero_srid_wkt.as_ewkt() == WKTElement(self._wkt, srid=0, extended=False)
+        assert no_srid_wkt.as_ewkt() == WKTElement(self._wkt, srid=-1, extended=False)
+
+    def test_extended_as_wkt_uses_converter(self, monkeypatch):
+        calls = []
+
+        def to_wkt_no_srid(value):
+            calls.append(value)
+            return self._wkt
+
+        def fail_to_wkt(*args, **kwargs):
+            raise AssertionError("as_wkt() should use the no-SRID converter")
+
+        monkeypatch.setattr(_wkb_wkt, "to_wkt_no_srid", to_wkt_no_srid)
+        monkeypatch.setattr(_wkb_wkt, "to_wkt", fail_to_wkt)
+
         ewkt = WKTElement(self._ewkt, extended=True)
+
+        assert ewkt.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+        assert calls == [self._ewkt]
+
+    def test_extended_as_ewkt_with_positive_srid_uses_converter(self, monkeypatch):
+        calls = []
+
+        def to_wkt(value, srid=None):
+            calls.append((value, srid))
+            return f"SRID={srid};{self._wkt}"
+
+        def fail_to_wkt_no_srid(*args, **kwargs):
+            raise AssertionError("positive-SRID as_ewkt() should keep the SRID converter")
+
+        monkeypatch.setattr(_wkb_wkt, "to_wkt", to_wkt)
+        monkeypatch.setattr(_wkb_wkt, "to_wkt_no_srid", fail_to_wkt_no_srid)
+
+        ewkt = WKTElement(self._ewkt, srid=4326, extended=True)
+
+        assert ewkt.as_ewkt() == WKTElement(f"SRID=4326;{self._wkt}", extended=True)
+        assert calls == [(self._ewkt, 4326)]
+
+    def test_extended_as_wkt_as_ewkt_semantics(self):
+        ewkt = WKTElement(self._ewkt, extended=True)
+        spaced_ewkt = WKTElement(f"SRID={self._srid}; {self._wkt}", extended=True)
+        forced_srid_ewkt = WKTElement(self._ewkt, srid=4326, extended=True)
         zero_srid_ewkt = WKTElement(f"SRID=0;{self._wkt}", extended=True)
 
-        assert wkt.as_ewkt() == WKTElement(self._ewkt, extended=True)
         assert ewkt.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+        assert ewkt.as_ewkt() == WKTElement(self._ewkt, extended=True)
+        assert spaced_ewkt.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+        assert spaced_ewkt.as_ewkt() == WKTElement(self._ewkt, extended=True)
+        assert forced_srid_ewkt.as_ewkt() == WKTElement(f"SRID=4326;{self._wkt}", extended=True)
         assert zero_srid_ewkt.as_wkt() == WKTElement(self._wkt, srid=0, extended=False)
         assert zero_srid_ewkt.as_ewkt() == WKTElement(self._wkt, srid=0, extended=False)
 
