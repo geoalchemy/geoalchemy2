@@ -153,13 +153,20 @@ class WKTElement(_SpatialElement):
 
     def as_wkt(self) -> WKTElement:
         if self.extended:
-            return WKTElement(_wkb_wkt.to_wkt_no_srid(self.data), self.srid, extended=False)
+            match = self._REMOVE_SRID.match(self.data)
+            assert match is not None
+            return WKTElement(match.group(3), self.srid, extended=False)
         return WKTElement(self.data, self.srid, self.extended)
 
     def as_ewkt(self) -> WKTElement:
         if self.srid > 0:
-            data = _wkb_wkt.to_wkt(self.data, srid=self.srid)
-            return WKTElement(data, extended=True)
+            if self.extended:
+                match = self._REMOVE_SRID.match(self.data)
+                assert match is not None
+                data = match.group(3)
+            else:
+                data = self.data
+            return WKTElement(f"SRID={self.srid};{data}", extended=True)
         return self.as_wkt()
 
     def as_wkb(self) -> WKBElement:
@@ -256,11 +263,29 @@ class WKBElement(_SpatialElement):
             return WKBElement(data, self.srid, extended=False)
         return WKBElement(self.data, self.srid, extended=False)
 
+    @staticmethod
+    def _has_simple_ewkb_header(data: str | bytes | memoryview) -> bool:
+        if isinstance(data, str):  # noqa: SIM108
+            header = binascii.unhexlify(data[:10])
+        else:
+            header = bytes(data[:5])
+        byte_order = header[0]
+        wkb_type = struct.unpack("<I" if byte_order else ">I", header[1:5])[0]
+        return wkb_type & 0xFF in {1, 2, 3}
+
     def as_ewkb(self) -> WKBElement:
         if self.srid > 0:
+            if self.extended:
+                try:
+                    has_matching_srid = _wkb_wkt.wkb_srid(self.data) == self.srid
+                except ValueError:
+                    has_matching_srid = False
+                if has_matching_srid:
+                    if self._has_simple_ewkb_header(self.data):
+                        return WKBElement(self.data, self.srid, extended=True)
+                    _wkb_wkt.to_ewkb_header(self.data, self.srid)
+                    return WKBElement(self.data, self.srid, extended=True)
             data = _wkb_wkt.to_ewkb_header(self.data, self.srid)
-            if self.extended and _wkb_wkt.wkb_srid(self.data) == self.srid:
-                return WKBElement(self.data, self.srid, extended=True)
             return WKBElement(data, self.srid, extended=True)
         return self.as_wkb()
 

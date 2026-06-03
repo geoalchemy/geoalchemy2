@@ -53,6 +53,34 @@ def as_binary_wkb(bindvalue, *, strip_srid=False, column_srid=None):
     return bytes(bindvalue)
 
 
+def as_binary_ewkb(bindvalue, *, column_srid=None):
+    if bindvalue is None:
+        return None
+
+    _validate_wkb_bindvalue_srid(bindvalue, column_srid)
+
+    element_srid = None
+    if isinstance(bindvalue, WKBElement):
+        if is_known_srid(bindvalue.srid):
+            element_srid = bindvalue.srid
+        bindvalue = bindvalue.data
+    if isinstance(bindvalue, bytearray):
+        bindvalue = bytes(bindvalue)
+
+    embedded_srid = None
+    if isinstance(bindvalue, (bytes, bytearray, memoryview, str)):
+        embedded_srid = _wkb_wkt.wkb_srid(bindvalue)
+
+    if is_known_srid(embedded_srid):
+        return as_binary_wkb(bindvalue)
+
+    srid = element_srid if is_known_srid(element_srid) else column_srid
+    if is_known_srid(srid):
+        return _wkb_wkt.to_ewkb_header(bindvalue, srid)
+
+    return as_binary_wkb(bindvalue)
+
+
 def as_wkb_hex(bindvalue, *, strip_srid=True, column_srid=None):
     if strip_srid:
         _validate_wkb_bindvalue_srid(bindvalue, column_srid)

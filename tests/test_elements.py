@@ -181,6 +181,22 @@ class TestWKTElement:
         assert ewkb.srid == 0
         assert ewkb.extended is False
 
+    def test_as_wkt_as_ewkt_use_wkt_only_fast_paths(self, monkeypatch):
+        def fail(*args, **kwargs):
+            raise AssertionError("WKT-only conversion should not use the WKB/WKT converter")
+
+        monkeypatch.setattr(_wkb_wkt, "to_wkt", fail)
+        monkeypatch.setattr(_wkb_wkt, "to_wkt_no_srid", fail)
+
+        wkt = WKTElement(self._wkt, srid=self._srid)
+        ewkt = WKTElement(self._ewkt, extended=True)
+        zero_srid_ewkt = WKTElement(f"SRID=0;{self._wkt}", extended=True)
+
+        assert wkt.as_ewkt() == WKTElement(self._ewkt, extended=True)
+        assert ewkt.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+        assert zero_srid_ewkt.as_wkt() == WKTElement(self._wkt, srid=0, extended=False)
+        assert zero_srid_ewkt.as_ewkt() == WKTElement(self._wkt, srid=0, extended=False)
+
 
 class TestExtendedWKTElement:
     _srid = 3857  # expected srid
@@ -581,9 +597,13 @@ class TestExtendedWKBElement:
         data = struct.pack("<BII", 1, 0x20000001, self._srid)
         elem = WKBElement(data, srid=self._srid, extended=True)
 
+        def to_ewkb_header(value, srid):
+            raise AssertionError("simple no-op should not rewrite the EWKB header")
+
         def split_wkb_srid(value):
             raise AssertionError("simple no-op should not full-parse WKB")
 
+        monkeypatch.setattr(_wkb_wkt, "to_ewkb_header", to_ewkb_header)
         monkeypatch.setattr(_wkb_wkt, "split_wkb_srid", split_wkb_srid)
 
         result = elem.as_ewkb()

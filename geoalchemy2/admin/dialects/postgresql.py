@@ -6,18 +6,23 @@ from sqlalchemy import Index
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql.base import ischema_names as _postgresql_ischema_names
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql import expression
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
 
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _format_select_args
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
+from geoalchemy2.admin.dialects.common import unwrap_wkb_constructor_clauses
+from geoalchemy2.elements import WKBElement
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import Raster
+from geoalchemy2.types.dialects.common import as_binary_ewkb
 
 _SQLALCHEMY_VERSION_BEFORE_2 = version.parse(sqlalchemy.__version__) < version.parse("2")
 
@@ -187,12 +192,28 @@ def after_drop(table, bind, **kw):
 def _compile_GeomFromWKB_Postgresql(element, compiler, *, include_srid=True, **kw):
     # Store the SRID
     clauses = list(element.clauses)
+    if kw.get("literal_binds", False):
+        clauses, _ = unwrap_wkb_constructor_clauses(clauses)
     try:
         srid = clauses[1].value
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
     if kw.get("literal_binds", False):
+        if not include_srid and hasattr(clauses[0], "value") and clauses[0].value is not None:
+            value = clauses[0].value
+            embedded_srid = None
+            try:
+                embedded_source = value.data if isinstance(value, WKBElement) else value
+                embedded_srid = _wkb_wkt.wkb_srid(embedded_source)
+            except (TypeError, ValueError):
+                pass
+            column_srid = None if _wkb_wkt.is_known_srid(embedded_srid) else srid
+            clauses[0] = expression.bindparam(
+                key=clauses[0].key,
+                value=as_binary_ewkb(value, column_srid=column_srid),
+                unique=True,
+            )
         wkb_clause = compile_bin_literal(clauses[0])
         prefix = "decode("
         suffix = ", 'hex')"

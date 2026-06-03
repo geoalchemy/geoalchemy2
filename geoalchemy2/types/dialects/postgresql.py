@@ -5,7 +5,9 @@ from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.exc import ArgumentError
+from geoalchemy2.types.dialects.common import as_binary_ewkb
 from geoalchemy2.types.dialects.common import as_binary_wkb
+from geoalchemy2.types.dialects.common import is_ewkb_constructor
 from geoalchemy2.types.dialects.common import is_wkb_constructor
 
 
@@ -16,7 +18,9 @@ def bind_processor_process(spatial_type, bindvalue):
         else:
             return _wkb_wkt.to_wkt(bindvalue.data, srid=bindvalue.srid)
     elif isinstance(bindvalue, WKBElement):
-        if is_wkb_constructor(spatial_type):
+        if is_ewkb_constructor(spatial_type):
+            return as_binary_ewkb(bindvalue, column_srid=spatial_type.srid)
+        elif is_wkb_constructor(spatial_type):
             return as_binary_wkb(bindvalue)
         elif not bindvalue.extended:
             return _wkb_wkt.to_wkt(bindvalue.data, srid=bindvalue.srid)
@@ -27,7 +31,9 @@ def bind_processor_process(spatial_type, bindvalue):
     elif isinstance(bindvalue, RasterElement):
         return f"{bindvalue.data}"
     elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
-        if is_wkb_constructor(spatial_type):
+        if is_ewkb_constructor(spatial_type):
+            return as_binary_ewkb(bindvalue, column_srid=spatial_type.srid)
+        elif is_wkb_constructor(spatial_type):
             return as_binary_wkb(bindvalue)
         wkt, srid = _wkb_wkt.split_wkb_srid(bindvalue)
         column_srid = spatial_type.srid

@@ -27,6 +27,7 @@ from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
+from geoalchemy2.admin.dialects.common import unwrap_wkb_constructor_clauses
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
@@ -475,6 +476,8 @@ def _is_fixed_srid_ewkb_dml_bind(wkb_clause, fixed_srid):
 
 def _prepare_ewkb_wkb_clause(element, compiler, *, as_hex=False, **kw):
     clauses = list(element.clauses)
+    if kw.get("literal_binds", False):
+        clauses, _ = unwrap_wkb_constructor_clauses(clauses)
     original_wkb_clause = clauses[0]
     inferred_srid = None
     dynamic_srid_clause = None
@@ -1033,6 +1036,8 @@ def _compile_GeomFromWKB_MySql(element, compiler, *, identifier=None, coerce_ewk
 
     # Store the SRID
     clauses = list(element.clauses)
+    if kw.get("literal_binds", False):
+        clauses, _ = unwrap_wkb_constructor_clauses(clauses)
     inferred_srid = None
     dynamic_srid_clause = None
     if coerce_ewkb:

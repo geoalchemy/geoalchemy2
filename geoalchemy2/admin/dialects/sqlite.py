@@ -17,10 +17,12 @@ from geoalchemy2.admin.dialects.common import _format_select_args
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
+from geoalchemy2.admin.dialects.common import unwrap_wkb_constructor_clauses
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import Raster
 from geoalchemy2.types import _DummyGeometry
+from geoalchemy2.types.dialects.common import as_binary_ewkb
 from geoalchemy2.types.dialects.common import as_wkb_hex
 from geoalchemy2.utils import authorized_values_in_docstring
 
@@ -416,8 +418,14 @@ class _SpatialiteEWKBHexBindType(TypeDecorator):
         return as_wkb_hex(value, strip_srid=False)
 
 
-def _coerce_ewkb_clause_to_hex(wkb_clause, *, literal=False):
+def _coerce_ewkb_clause_to_hex(wkb_clause, *, literal=False, column_srid=None):
     if literal:
+        if hasattr(wkb_clause, "value") and wkb_clause.value is not None:
+            wkb_clause = expression.bindparam(
+                key=wkb_clause.key,
+                value=as_binary_ewkb(wkb_clause.value, column_srid=column_srid),
+                unique=True,
+            )
         return compile_bin_literal(wkb_clause)
     return expression.type_coerce(wkb_clause, _SpatialiteEWKBHexBindType())
 
@@ -429,15 +437,21 @@ def _compile_GeomFromWKB_SQLite(
 
     # Store the SRID
     clauses = list(element.clauses)
+    literal_binds = kw.get("literal_binds", False)
+    if literal_binds:
+        clauses, _ = unwrap_wkb_constructor_clauses(clauses)
     try:
         srid = clauses[1].value
         element.type.srid = srid
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    literal_binds = kw.get("literal_binds", False)
     if coerce_ewkb:
-        wkb_clause = _coerce_ewkb_clause_to_hex(clauses[0], literal=literal_binds)
+        wkb_clause = _coerce_ewkb_clause_to_hex(
+            clauses[0],
+            literal=literal_binds,
+            column_srid=srid,
+        )
         prefix = ""
         suffix = ""
     elif literal_binds:

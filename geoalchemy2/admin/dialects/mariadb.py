@@ -4,6 +4,7 @@ from sqlalchemy.ext.compiler import compiles
 
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import compile_bin_literal
+from geoalchemy2.admin.dialects.common import unwrap_wkb_constructor_clauses
 from geoalchemy2.admin.dialects.mysql import _compile_srid_arg
 from geoalchemy2.admin.dialects.mysql import _prepare_ewkb_wkb_clause
 from geoalchemy2.admin.dialects.mysql import after_create  # noqa
@@ -93,6 +94,8 @@ def _compile_GeomFromWKB_MariaDB(element, compiler, *, coerce_ewkb=False, **kw):
     identifier = "ST_GeomFromWKB"
     # Store the SRID
     clauses = list(element.clauses)
+    if kw.get("literal_binds", False):
+        clauses, _ = unwrap_wkb_constructor_clauses(clauses)
     inferred_srid = None
     dynamic_srid_clause = None
     if coerce_ewkb:
