@@ -57,8 +57,6 @@ def as_binary_ewkb(bindvalue, *, column_srid=None):
     if bindvalue is None:
         return None
 
-    _validate_wkb_bindvalue_srid(bindvalue, column_srid)
-
     element_srid = None
     if isinstance(bindvalue, WKBElement):
         if is_known_srid(bindvalue.srid):
@@ -70,32 +68,40 @@ def as_binary_ewkb(bindvalue, *, column_srid=None):
     embedded_srid = None
     if isinstance(bindvalue, (bytes, bytearray, memoryview, str)):
         embedded_srid = _wkb_wkt.wkb_srid(bindvalue)
+    if isinstance(bindvalue, str):
+        bindvalue = WKBElement._data_from_desc(bindvalue)
+
+    if is_known_srid(element_srid):
+        validate_wkb_srid(column_srid, element_srid)
+    elif is_known_srid(embedded_srid):
+        validate_wkb_srid(column_srid, embedded_srid)
+
+    if is_known_srid(element_srid):
+        return _wkb_wkt.to_ewkb_header(bindvalue, element_srid)
 
     if is_known_srid(embedded_srid):
         return as_binary_wkb(bindvalue)
 
-    srid = element_srid if is_known_srid(element_srid) else column_srid
-    if is_known_srid(srid):
-        return _wkb_wkt.to_ewkb_header(bindvalue, srid)
+    if is_known_srid(column_srid):
+        return _wkb_wkt.to_ewkb_header(bindvalue, column_srid)
 
     return as_binary_wkb(bindvalue)
 
 
-def as_wkb_hex(bindvalue, *, strip_srid=True, column_srid=None):
-    if strip_srid:
-        _validate_wkb_bindvalue_srid(bindvalue, column_srid)
-        if isinstance(bindvalue, WKBElement):
-            bindvalue = bindvalue.data
-        if isinstance(bindvalue, bytearray):
-            bindvalue = bytes(bindvalue)
-        return _wkb_wkt.to_hex_wkb_no_srid(bindvalue).lower()
+def as_ewkb_hex(bindvalue, *, column_srid=None):
+    ewkb = as_binary_ewkb(bindvalue, column_srid=column_srid)
+    if ewkb is None:
+        return None
+    return ewkb.hex()
+
+
+def as_wkb_hex(bindvalue, *, column_srid=None):
+    _validate_wkb_bindvalue_srid(bindvalue, column_srid)
     if isinstance(bindvalue, WKBElement):
-        return bindvalue.as_ewkb().desc
-    if isinstance(bindvalue, memoryview):
-        bindvalue = bindvalue.tobytes()
-    if isinstance(bindvalue, (bytes, bytearray)):
-        return bytes(bindvalue).hex()
-    return bindvalue.lower()
+        bindvalue = bindvalue.data
+    if isinstance(bindvalue, bytearray):
+        bindvalue = bytes(bindvalue)
+    return _wkb_wkt.to_hex_wkb_no_srid(bindvalue).lower()
 
 
 def validate_wkb_srid(column_srid, srid, *, has_fixed_srid=True):

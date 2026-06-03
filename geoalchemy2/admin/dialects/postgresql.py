@@ -9,6 +9,8 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import expression
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
+from sqlalchemy.types import LargeBinary
+from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2 import _wkb_wkt
 from geoalchemy2 import functions
@@ -30,6 +32,35 @@ _SQLALCHEMY_VERSION_BEFORE_2 = version.parse(sqlalchemy.__version__) < version.p
 _postgresql_ischema_names["geometry"] = Geometry
 _postgresql_ischema_names["geography"] = Geography
 _postgresql_ischema_names["raster"] = Raster
+
+
+class _PostgreSQLEWKBBindType(TypeDecorator):
+    """Bind runtime ST_GeomFromEWKB values as EWKB bytes."""
+
+    impl = LargeBinary
+    cache_ok = True
+
+    def __init__(self, column_srid=None):
+        super().__init__()
+        self.column_srid = column_srid
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        embedded_srid = None
+        try:
+            embedded_source = value.data if isinstance(value, WKBElement) else value
+            embedded_srid = _wkb_wkt.wkb_srid(embedded_source)
+        except (TypeError, ValueError):
+            pass
+        column_srid = None if _wkb_wkt.is_known_srid(embedded_srid) else self.column_srid
+        return as_binary_ewkb(value, column_srid=column_srid)
+
+
+def _uses_ewkb_geometry_bind_processor(clause):
+    spatial_type = getattr(clause, "type", None)
+    from_text = getattr(spatial_type, "from_text", "") or ""
+    return isinstance(spatial_type, Geometry) and "ewkb" in from_text.lower()
 
 
 def check_management(column):
@@ -219,10 +250,25 @@ def _compile_GeomFromWKB_Postgresql(element, compiler, *, include_srid=True, **k
         suffix = ", 'hex')"
     else:
         wkb_clause = clauses[0]
+        skip_bind_expression = False
+        if (
+            not include_srid
+            and _wkb_wkt.is_known_srid(srid)
+            and not _uses_ewkb_geometry_bind_processor(wkb_clause)
+        ):
+            wkb_clause = expression.type_coerce(
+                wkb_clause,
+                _PostgreSQLEWKBBindType(column_srid=srid),
+            )
+        elif not include_srid and _uses_ewkb_geometry_bind_processor(wkb_clause):
+            skip_bind_expression = True
         prefix = ""
         suffix = ""
 
-    compiled = compiler.process(wkb_clause, **kw)
+    process_kw = dict(kw)
+    if not kw.get("literal_binds", False) and skip_bind_expression:
+        process_kw["skip_bind_expression"] = True
+    compiled = compiler.process(wkb_clause, **process_kw)
 
     if include_srid and srid > 0:
         return f"{element.identifier}({prefix}{compiled}{suffix}, {srid})"

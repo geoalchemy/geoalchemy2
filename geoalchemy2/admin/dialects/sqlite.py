@@ -23,7 +23,7 @@ from geoalchemy2.types import Geometry
 from geoalchemy2.types import Raster
 from geoalchemy2.types import _DummyGeometry
 from geoalchemy2.types.dialects.common import as_binary_ewkb
-from geoalchemy2.types.dialects.common import as_wkb_hex
+from geoalchemy2.types.dialects.common import as_ewkb_hex
 from geoalchemy2.utils import authorized_values_in_docstring
 
 # Register Geometry, Geography and Raster to SQLAlchemy's reflection subsystems.
@@ -412,10 +412,14 @@ class _SpatialiteEWKBHexBindType(TypeDecorator):
     impl = String
     cache_ok = True
 
+    def __init__(self, column_srid=None):
+        super().__init__()
+        self.column_srid = column_srid
+
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
-        return as_wkb_hex(value, strip_srid=False)
+        return as_ewkb_hex(value, column_srid=self.column_srid)
 
 
 def _coerce_ewkb_clause_to_hex(wkb_clause, *, literal=False, column_srid=None):
@@ -427,7 +431,10 @@ def _coerce_ewkb_clause_to_hex(wkb_clause, *, literal=False, column_srid=None):
                 unique=True,
             )
         return compile_bin_literal(wkb_clause)
-    return expression.type_coerce(wkb_clause, _SpatialiteEWKBHexBindType())
+    return expression.type_coerce(
+        wkb_clause,
+        _SpatialiteEWKBHexBindType(column_srid=column_srid),
+    )
 
 
 def _compile_GeomFromWKB_SQLite(
