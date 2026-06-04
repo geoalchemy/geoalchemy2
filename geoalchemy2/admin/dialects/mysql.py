@@ -3,13 +3,24 @@
 from sqlalchemy import text
 from sqlalchemy.dialects.mysql.base import ischema_names as _mysql_ischema_names
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql import expression
+from sqlalchemy.sql.elements import BindParameter
+from sqlalchemy.sql.elements import Null
 from sqlalchemy.sql.sqltypes import NullType
+from sqlalchemy.types import LargeBinary
+from sqlalchemy.types import String
+from sqlalchemy.types import TypeDecorator
 
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2 import functions
+from geoalchemy2._wkb_wkt import is_known_srid
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
+from geoalchemy2.admin.dialects.common import unwrap_wkb_constructor_clauses
+from geoalchemy2.elements import WKBElement
+from geoalchemy2.exc import ArgumentError
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 
@@ -181,35 +192,431 @@ def _compile_GeomFromText_MySql(element, compiler, **kw):
     compiled = compiler.process(element.clauses, **kw)
     srid = element.type.srid
 
-    if srid > 0:
+    if is_known_srid(srid):
         return f"{identifier}({compiled}, {srid})"
     else:
         return f"{identifier}({compiled})"
 
 
-def _compile_GeomFromWKB_MySql(element, compiler, **kw):
+def _known_wkb_bindvalue_srids(bindvalue):
+    if isinstance(bindvalue, bytearray):
+        bindvalue = bytes(bindvalue)
+
+    srids = []
+    if isinstance(bindvalue, WKBElement):
+        if is_known_srid(bindvalue.srid):
+            srids.append(bindvalue.srid)
+        bindvalue = bindvalue.data
+
+    if isinstance(bindvalue, (bytes, bytearray, memoryview, str)):
+        srid = _wkb_wkt.wkb_srid(bindvalue)
+        if is_known_srid(srid):
+            srids.append(srid)
+
+    return srids
+
+
+def _validate_wkb_bindvalue_srid(bindvalue, column_srid):
+    if not is_known_srid(column_srid):
+        return
+
+    srids = _known_wkb_bindvalue_srids(bindvalue)
+    for srid in srids:
+        if srid != column_srid:
+            raise ArgumentError(
+                f"The SRID ({srid}) of the supplied value is different "
+                f"from the one of the column ({column_srid})"
+            )
+
+
+class _MySQLEWKBProcessorContext:
+    def __init__(self):
+        self.fixed_srids = set()
+        self.reject_known_srid_without_argument = False
+
+    def add_context(self, *, fixed_srid=None, has_srid_argument=False):
+        if is_known_srid(fixed_srid):
+            self.fixed_srids.add(fixed_srid)
+        elif not has_srid_argument:
+            self.reject_known_srid_without_argument = True
+
+
+def _validate_wkb_bindvalue_context(bindvalue, processor_context):
+    if processor_context is None:
+        return
+
+    srids = _known_wkb_bindvalue_srids(bindvalue)
+    if processor_context.reject_known_srid_without_argument and srids:
+        raise ArgumentError(
+            "Runtime ST_GeomFromEWKB values with an embedded SRID require "
+            "a fixed column SRID or an explicit SRID argument for MySQL/MariaDB compilation"
+        )
+
+    for fixed_srid in sorted(processor_context.fixed_srids):
+        for srid in srids:
+            if srid != fixed_srid:
+                raise ArgumentError(
+                    f"The SRID ({srid}) of the supplied value is different "
+                    f"from the one of the column ({fixed_srid})"
+                )
+
+
+def _ewkb_to_wkb_data(
+    value,
+    *,
+    as_hex=False,
+    fixed_srid=None,
+    has_srid_argument=False,
+    processor_context=None,
+):
+    if value is None:
+        return None
+
+    if processor_context is not None:
+        _validate_wkb_bindvalue_context(value, processor_context)
+    else:
+        _validate_wkb_bindvalue_srid(value, fixed_srid)
+    if processor_context is None and not is_known_srid(fixed_srid) and not has_srid_argument:
+        srids = _known_wkb_bindvalue_srids(value)
+        if srids:
+            raise ArgumentError(
+                "Runtime ST_GeomFromEWKB values with an embedded SRID require "
+                "a fixed column SRID or an explicit SRID argument for MySQL/MariaDB compilation"
+            )
+
+    if isinstance(value, bytearray):
+        value = bytes(value)
+
+    if isinstance(value, WKBElement):
+        value = value.data
+    if as_hex:
+        return _wkb_wkt.to_hex_wkb_no_srid(value).lower()
+    return _wkb_wkt.to_wkb_no_srid(value)
+
+
+class _MySQLEWKBBindType(TypeDecorator):
+    impl = LargeBinary
+    cache_ok = False
+
+    def __init__(
+        self,
+        *,
+        as_hex=False,
+        fixed_srid=None,
+        has_srid_argument=False,
+        processor_context=None,
+    ):
+        super().__init__()
+        self.as_hex = as_hex
+        self.fixed_srid = fixed_srid
+        self.has_srid_argument = has_srid_argument
+        self._processor_context = processor_context
+
+    def load_dialect_impl(self, dialect):
+        impl = String() if self.as_hex else LargeBinary()
+        return dialect.type_descriptor(impl)
+
+    def process_bind_param(self, value, dialect):
+        return _ewkb_to_wkb_data(
+            value,
+            as_hex=self.as_hex,
+            fixed_srid=self.fixed_srid,
+            has_srid_argument=self.has_srid_argument,
+            processor_context=self._processor_context,
+        )
+
+
+def _is_bindparam_clause(clause):
+    return isinstance(clause, BindParameter)
+
+
+def _is_mysql_auto_constructor_bindparam(clause, constructor_name):
+    return (
+        _is_bindparam_clause(clause)
+        and getattr(clause, "unique", False)
+        and getattr(clause, "_orig_key", None) == constructor_name
+    )
+
+
+def _is_user_bindparam_clause(clause, *constructor_names):
+    return _is_bindparam_clause(clause) and not any(
+        _is_mysql_auto_constructor_bindparam(clause, constructor_name)
+        for constructor_name in constructor_names
+    )
+
+
+def _is_runtime_bindparam_clause(clause):
+    return _is_bindparam_clause(clause) and (
+        getattr(clause, "required", False) or getattr(clause, "callable", None) is not None
+    )
+
+
+def _is_effective_srid_clause(srid_clause):
+    if isinstance(srid_clause, Null):
+        return False
+
+    if _is_user_bindparam_clause(
+        srid_clause,
+        "ST_GeomFromEWKB",
+        "ST_GeomFromWKB",
+    ) and _is_runtime_bindparam_clause(srid_clause):
+        return True
+
+    if hasattr(srid_clause, "value"):
+        value = srid_clause.value
+        if value is None:
+            return False
+        try:
+            srid = int(value)
+        except (TypeError, ValueError):
+            return True
+        return is_known_srid(srid)
+    return True
+
+
+def _has_effective_srid_argument(clauses):
+    return len(clauses) > 1 and _is_effective_srid_clause(clauses[1])
+
+
+def _ewkb_processor_fixed_srid(element, clauses, inferred_srid=None):
+    if inferred_srid is not None:
+        return inferred_srid
+    if len(clauses) == 1 and is_known_srid(element.type.srid):
+        return element.type.srid
+    return None
+
+
+def _runtime_bind_identifier(source_bind):
+    return getattr(source_bind, "_identifying_key", source_bind.key)
+
+
+def _runtime_ewkb_processor_context(
+    compiler,
+    source_bind,
+    *,
+    fixed_srid=None,
+    has_srid_argument=False,
+):
+    contexts = getattr(compiler, "_geoalchemy2_mysql_ewkb_processor_contexts", None)
+    if contexts is None:
+        contexts = {}
+        compiler._geoalchemy2_mysql_ewkb_processor_contexts = contexts
+
+    context_key = _runtime_bind_identifier(source_bind)
+    processor_context = contexts.get(context_key)
+    if processor_context is None:
+        processor_context = _MySQLEWKBProcessorContext()
+        contexts[context_key] = processor_context
+
+    processor_context.add_context(
+        fixed_srid=fixed_srid,
+        has_srid_argument=has_srid_argument,
+    )
+    return processor_context
+
+
+def _coerce_ewkb_clause_to_wkb(wkb_clause, *, as_hex=False):
+    try:
+        wkb_data = wkb_clause.value
+    except AttributeError:
+        return wkb_clause, None
+
+    if isinstance(wkb_data, WKBElement):
+        srid = wkb_data.srid if is_known_srid(wkb_data.srid) else None
+        wkb_data = wkb_data.data
+    elif isinstance(wkb_data, (bytes, bytearray, memoryview, str)):
+        srid = _wkb_wkt.wkb_srid(wkb_data)
+        srid = srid if is_known_srid(srid) else None
+    else:
+        return wkb_clause, None
+
+    if as_hex:
+        wkb_data = _wkb_wkt.to_hex_wkb_no_srid(wkb_data).lower()
+    else:
+        wkb_data = _wkb_wkt.to_wkb_no_srid(wkb_data)
+
+    bindparam_args = {
+        "key": wkb_clause.key,
+        "value": wkb_data,
+        "unique": True,
+    }
+    if not as_hex:
+        bindparam_args["type_"] = wkb_clause.type
+
+    return expression.bindparam(**bindparam_args), srid
+
+
+def _coerce_ewkb_bind_clause_to_wkb(
+    wkb_clause,
+    *,
+    as_hex=False,
+    literal=False,
+    fixed_srid=None,
+    has_srid_argument=False,
+    processor_context=None,
+):
+    if not hasattr(wkb_clause, "value"):
+        return wkb_clause
+
+    if literal:
+        wkb_clause, _ = _coerce_ewkb_clause_to_wkb(wkb_clause, as_hex=as_hex)
+        return wkb_clause
+
+    return expression.type_coerce(
+        wkb_clause,
+        _MySQLEWKBBindType(
+            as_hex=as_hex,
+            fixed_srid=fixed_srid,
+            has_srid_argument=has_srid_argument,
+            processor_context=processor_context,
+        ),
+    )
+
+
+def _coerce_known_ewkb_clause_to_wkb(
+    element,
+    compiler,
+    original_wkb_clause,
+    clauses,
+    *,
+    as_hex=False,
+    preserve_user_bind=True,
+):
+    wkb_value_clause, inferred_srid = _coerce_ewkb_clause_to_wkb(
+        original_wkb_clause,
+        as_hex=as_hex,
+    )
+    if (
+        not preserve_user_bind
+        or wkb_value_clause is original_wkb_clause
+        or not _is_user_bindparam_clause(original_wkb_clause, "ST_GeomFromEWKB")
+    ):
+        return wkb_value_clause, inferred_srid
+
+    has_srid_argument = _has_effective_srid_argument(clauses)
+    fixed_srid = None
+    if not has_srid_argument:
+        fixed_srid = _ewkb_processor_fixed_srid(
+            element,
+            clauses,
+            inferred_srid=inferred_srid,
+        )
+    processor_context = _runtime_ewkb_processor_context(
+        compiler,
+        original_wkb_clause,
+        fixed_srid=fixed_srid,
+        has_srid_argument=has_srid_argument,
+    )
+    wkb_value_clause = _coerce_ewkb_bind_clause_to_wkb(
+        original_wkb_clause,
+        as_hex=as_hex,
+        fixed_srid=fixed_srid,
+        has_srid_argument=has_srid_argument,
+        processor_context=processor_context,
+    )
+    return wkb_value_clause, inferred_srid
+
+
+def _compile_srid_clause(srid_clause, compiler, **kw):
+    if isinstance(srid_clause, Null):
+        return None
+
+    is_user_bindparam = _is_user_bindparam_clause(
+        srid_clause,
+        "ST_GeomFromEWKB",
+        "ST_GeomFromWKB",
+    )
+    if is_user_bindparam and _is_runtime_bindparam_clause(srid_clause):
+        return compiler.process(srid_clause, **kw)
+
+    if hasattr(srid_clause, "value"):
+        value = srid_clause.value
+        if value is None:
+            return None
+        try:
+            srid = int(value)
+        except (TypeError, ValueError):
+            return compiler.process(srid_clause, **kw)
+        if not is_known_srid(srid):
+            return None
+        return compiler.process(srid_clause, **kw) if is_user_bindparam else str(srid)
+    return compiler.process(srid_clause, **kw)
+
+
+def _compile_srid_arg(element, clauses, inferred_srid, compiler, **kw):
+    if len(clauses) > 1:
+        compiled_srid = _compile_srid_clause(clauses[1], compiler, **kw)
+        if compiled_srid is not None:
+            return compiled_srid
+        return str(inferred_srid) if inferred_srid is not None else None
+
+    srid = inferred_srid if inferred_srid is not None else element.type.srid
+    return str(srid) if is_known_srid(srid) else None
+
+
+def _compile_GeomFromWKB_MySql(element, compiler, *, identifier=None, coerce_ewkb=False, **kw):
+    identifier = identifier or element.identifier
+
     # Store the SRID
     clauses = list(element.clauses)
-    try:
-        srid = clauses[1].value
-    except (IndexError, TypeError, ValueError):
-        srid = element.type.srid
+    if kw.get("literal_binds", False):
+        clauses, _ = unwrap_wkb_constructor_clauses(clauses)
+
+    inferred_srid = None
+    if coerce_ewkb:
+        original_wkb_clause = clauses[0]
+        should_process_at_runtime = (
+            _is_bindparam_clause(original_wkb_clause)
+            and not kw.get("literal_binds", False)
+            and (
+                getattr(original_wkb_clause, "value", None) is None
+                or getattr(original_wkb_clause, "callable", None) is not None
+            )
+        )
+        if should_process_at_runtime:
+            has_srid_argument = _has_effective_srid_argument(clauses)
+            fixed_srid = None
+            if not has_srid_argument:
+                fixed_srid = _ewkb_processor_fixed_srid(element, clauses)
+            processor_context = _runtime_ewkb_processor_context(
+                compiler,
+                original_wkb_clause,
+                fixed_srid=fixed_srid,
+                has_srid_argument=has_srid_argument,
+            )
+            wkb_value_clause = _coerce_ewkb_bind_clause_to_wkb(
+                original_wkb_clause,
+                fixed_srid=fixed_srid,
+                has_srid_argument=has_srid_argument,
+                processor_context=processor_context,
+            )
+        else:
+            wkb_value_clause, inferred_srid = _coerce_known_ewkb_clause_to_wkb(
+                element,
+                compiler,
+                original_wkb_clause,
+                clauses,
+                preserve_user_bind=not kw.get("literal_binds", False),
+            )
+    else:
+        wkb_value_clause = clauses[0]
 
     if kw.get("literal_binds", False):
-        wkb_clause = compile_bin_literal(clauses[0])
+        wkb_clause = compile_bin_literal(wkb_value_clause)
         prefix = "unhex("
         suffix = ")"
     else:
-        wkb_clause = clauses[0]
+        wkb_clause = wkb_value_clause
         prefix = ""
         suffix = ""
 
     compiled = compiler.process(wkb_clause, **kw)
+    compiled_srid = _compile_srid_arg(element, clauses, inferred_srid, compiler, **kw)
 
-    if srid > 0:
-        return f"{element.identifier}({prefix}{compiled}{suffix}, {srid})"
+    if compiled_srid is not None:
+        return f"{identifier}({prefix}{compiled}{suffix}, {compiled_srid})"
     else:
-        return f"{element.identifier}({prefix}{compiled}{suffix})"
+        return f"{identifier}({prefix}{compiled}{suffix})"
 
 
 @compiles(functions.ST_GeomFromText, "mysql")  # type: ignore
@@ -229,4 +636,6 @@ def _MySQL_ST_GeomFromWKB(element, compiler, **kw):
 
 @compiles(functions.ST_GeomFromEWKB, "mysql")  # type: ignore
 def _MySQL_ST_GeomFromEWKB(element, compiler, **kw):
-    return _compile_GeomFromWKB_MySql(element, compiler, **kw)
+    return _compile_GeomFromWKB_MySql(
+        element, compiler, identifier="ST_GeomFromWKB", coerce_ewkb=True, **kw
+    )

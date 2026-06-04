@@ -5,8 +5,10 @@ from packaging import version
 from sqlalchemy import Column
 from sqlalchemy import String
 from sqlalchemy.sql import expression
+from sqlalchemy.sql.elements import BindParameter
 from sqlalchemy.types import TypeDecorator
 
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.types import Geometry
 
@@ -108,8 +110,13 @@ def after_drop(table, bind, **kw):
 
 def compile_bin_literal(wkb_clause):
     """Compile a binary literal for WKBElement."""
+    if not hasattr(wkb_clause, "value"):
+        return wkb_clause
+
     wkb_data = wkb_clause.value
-    if isinstance(wkb_data, (bytes, memoryview, WKBElement)):
+    if isinstance(wkb_data, (bytes, bytearray, memoryview, WKBElement)):
+        if isinstance(wkb_data, bytearray):
+            wkb_data = bytes(wkb_data)
         if isinstance(wkb_data, memoryview):
             wkb_data = wkb_data.tobytes()
         if isinstance(wkb_data, bytes):
@@ -124,3 +131,44 @@ def compile_bin_literal(wkb_clause):
             unique=True,
         )
     return wkb_clause
+
+
+def _is_auto_constructor_bindparam(clause, constructor_name):
+    return (
+        isinstance(clause, BindParameter)
+        and getattr(clause, "unique", False)
+        and getattr(clause, "_orig_key", None) == constructor_name
+    )
+
+
+def _has_known_literal_srid(clause):
+    if not hasattr(clause, "value"):
+        return True
+
+    try:
+        return _wkb_wkt.is_known_srid(int(clause.value))
+    except (TypeError, ValueError):
+        return True
+
+
+def unwrap_wkb_constructor_clauses(clauses):
+    if len(clauses) != 1:
+        return clauses, None
+
+    from geoalchemy2 import functions
+
+    inner_constructor = clauses[0]
+    constructor_names = (
+        ("ST_GeomFromWKB", functions.ST_GeomFromWKB),
+        ("ST_GeomFromEWKB", functions.ST_GeomFromEWKB),
+    )
+    for constructor_name, constructor_class in constructor_names:
+        if not isinstance(inner_constructor, constructor_class):
+            continue
+        inner_clauses = list(inner_constructor.clauses)
+        if inner_clauses and _is_auto_constructor_bindparam(inner_clauses[0], constructor_name):
+            if len(inner_clauses) > 1 and not _has_known_literal_srid(inner_clauses[1]):
+                inner_clauses = inner_clauses[:1]
+            return inner_clauses, inner_constructor
+
+    return clauses, None
