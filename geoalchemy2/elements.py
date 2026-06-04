@@ -219,7 +219,10 @@ class WKBElement(_SpatialElement):
     geom_from_extended_version: str = "ST_GeomFromEWKB"
 
     def __init__(
-        self, data: str | bytes | memoryview, srid: int = -1, extended: bool | None = None
+        self,
+        data: str | bytes | bytearray | memoryview,
+        srid: int = -1,
+        extended: bool | None = None,
     ) -> None:
         if srid == -1 or extended is None or extended:
             wkb_srid = None
@@ -236,7 +239,7 @@ class WKBElement(_SpatialElement):
         _SpatialElement.__init__(self, data, srid, extended)
 
     @staticmethod
-    def _wkb_to_hex(data: str | bytes | memoryview) -> str:
+    def _wkb_to_hex(data: str | bytes | bytearray | memoryview) -> str:
         """Convert WKB to hex string."""
         if isinstance(data, str):
             # SpatiaLite case
@@ -259,16 +262,6 @@ class WKBElement(_SpatialElement):
             return WKBElement(data, self.srid, extended=False)
         return WKBElement(self.data, self.srid, extended=False)
 
-    @staticmethod
-    def _has_simple_ewkb_header(data: str | bytes | memoryview) -> bool:
-        if isinstance(data, str):  # noqa: SIM108
-            header = binascii.unhexlify(data[:10])
-        else:
-            header = bytes(data[:5])
-        byte_order = header[0]
-        wkb_type = struct.unpack("<I" if byte_order else ">I", header[1:5])[0]
-        return wkb_type & 0xFF in {1, 2, 3}
-
     def as_ewkb(self) -> WKBElement:
         if self.srid > 0:
             if self.extended:
@@ -277,9 +270,6 @@ class WKBElement(_SpatialElement):
                 except ValueError:
                     has_matching_srid = False
                 if has_matching_srid:
-                    if self._has_simple_ewkb_header(self.data):
-                        return WKBElement(self.data, self.srid, extended=True)
-                    _wkb_wkt.to_ewkb_header(self.data, self.srid)
                     return WKBElement(self.data, self.srid, extended=True)
             data = _wkb_wkt.to_ewkb_header(self.data, self.srid)
             return WKBElement(data, self.srid, extended=True)

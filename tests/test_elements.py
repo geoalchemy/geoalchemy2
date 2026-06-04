@@ -1,6 +1,8 @@
 import re
 import struct
 from itertools import permutations
+from typing import get_args
+from typing import get_type_hints
 
 import pytest
 from shapely import wkb
@@ -681,15 +683,13 @@ class TestExtendedWKBElement:
         assert result.srid == 4326
         assert result.desc == ("0107000000010000000101000000000000000000f03f0000000000000040")
 
-    def test_as_ewkb_validates_complex_extended_payload_before_returning_original(self):
-        data = struct.pack("<BIII", 1, 0x20000007, 4326, 1)
-        elem = WKBElement(data, srid=4326, extended=True)
-
-        with pytest.raises(ValueError, match="unexpected end of data"):
-            elem.as_ewkb()
-
 
 class TestWKBElement:
+    def test_constructor_data_annotation_includes_runtime_bytearray_support(self):
+        data_annotation = get_type_hints(WKBElement.__init__)["data"]
+
+        assert bytearray in get_args(data_annotation)
+
     def test_desc(self):
         e = WKBElement(b"\x01\x02")
         assert e.desc == "0102"

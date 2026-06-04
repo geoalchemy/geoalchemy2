@@ -20,6 +20,8 @@ from geoalchemy2.elements import WKTElement
 def _cast(param):
     if isinstance(param, memoryview):
         param = param.tobytes()
+    if isinstance(param, bytearray):
+        param = bytes(param)
     if isinstance(param, bytes):
         param = WKBElement(param)
     if isinstance(param, WKBElement):

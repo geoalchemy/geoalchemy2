@@ -1283,6 +1283,16 @@ class TestMariaDBWKBConstructors:
     def normalize_sql(sql):
         return re.sub(r"\s+", " ", str(sql)).strip()
 
+    @pytest.mark.parametrize(
+        "bindvalue",
+        [
+            bytes.fromhex(WKB_HEX),
+            bytes.fromhex(EWKB_HEX),
+        ],
+    )
+    def test_cast_converts_bytearray_to_hex_wkb_for_unhex_parameters(self, bindvalue):
+        assert _mariadb_admin._cast(bytearray(bindvalue)) == WKB_HEX
+
     def test_geom_from_ewkb_compiles_to_supported_wkb_constructor(self):
         expr = func.ST_GeomFromEWKB(bytes.fromhex(EWKB_HEX), type_=Geometry(srid=4326))
 
