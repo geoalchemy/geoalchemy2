@@ -1,5 +1,8 @@
 import re
+import struct
 from itertools import permutations
+from typing import get_args
+from typing import get_type_hints
 
 import pytest
 from shapely import wkb
@@ -9,6 +12,7 @@ from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import func
 
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2.elements import CompositeElement
 from geoalchemy2.elements import DynamicWKBElement
 from geoalchemy2.elements import DynamicWKTElement
@@ -119,6 +123,138 @@ class TestWKTElement:
 
         assert e3.as_wkt() == e3.as_wkt().as_wkt() == e1
         assert e4.as_wkt() == e4.as_wkt().as_wkt() == e2
+
+    def test_as_wkb_as_ewkb(self):
+        e1 = WKTElement(self._wkt)
+        e2 = WKTElement(self._wkt, srid=self._srid)
+        e3 = WKTElement(self._ewkt, extended=True)
+
+        # No SRID — SRID preserved as attribute
+        r1 = e1.as_wkb()
+        assert isinstance(r1, WKBElement)
+        assert r1.extended is False
+        assert r1.srid == -1
+
+        # With SRID — SRID preserved as attribute
+        r2 = e2.as_wkb()
+        assert isinstance(r2, WKBElement)
+        assert r2.extended is False
+        assert r2.srid == self._srid
+
+        # With SRID — SRID embedded in binary
+        r3 = e2.as_ewkb()
+        assert isinstance(r3, WKBElement)
+        assert r3.extended is True
+        assert r3.srid == self._srid
+
+        # EWKT input
+        r4 = e3.as_ewkb()
+        assert isinstance(r4, WKBElement)
+        assert r4.extended is True
+        assert r4.srid == self._srid
+
+        # No SRID → falls back to plain WKB (no SRID to embed)
+        r5 = e1.as_ewkb()
+        assert isinstance(r5, WKBElement)
+        assert r5.extended is False
+        assert r5.srid == -1
+
+        # Roundtrip: WKT → WKB → WKT
+        assert r2.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+
+    @pytest.mark.parametrize("method_name", ["as_wkb", "as_ewkb"])
+    def test_as_wkb_as_ewkb_raise_for_unsupported_wkt_geometry_type(self, method_name):
+        element = WKTElement("CIRCULARSTRING(0 0, 1 1, 2 0)", srid=self._srid)
+
+        with pytest.raises(ValueError):
+            getattr(element, method_name)()
+
+    def test_as_ewkt_as_ewkb_treats_zero_srid_as_no_embedded_srid(self):
+        e = WKTElement(f"SRID=0;{self._wkt}", extended=True)
+
+        assert e.srid == 0
+
+        wkt = e.as_wkt()
+        assert wkt.desc == self._wkt
+        assert wkt.srid == 0
+        assert wkt.extended is False
+
+        ewkt = e.as_ewkt()
+        assert ewkt.desc == self._wkt
+        assert ewkt.srid == 0
+        assert ewkt.extended is False
+
+        wkb = e.as_wkb()
+        ewkb = e.as_ewkb()
+        assert ewkb.desc == wkb.desc
+        assert ewkb.srid == 0
+        assert ewkb.extended is False
+
+    def test_plain_as_wkt_as_ewkt_use_wkt_only_fast_paths(self, monkeypatch):
+        def fail(*args, **kwargs):
+            raise AssertionError("WKT-only conversion should not use the WKB/WKT converter")
+
+        monkeypatch.setattr(_wkb_wkt, "to_wkt", fail)
+        monkeypatch.setattr(_wkb_wkt, "to_wkt_no_srid", fail)
+
+        wkt = WKTElement(self._wkt, srid=self._srid)
+        zero_srid_wkt = WKTElement(self._wkt, srid=0)
+        no_srid_wkt = WKTElement(self._wkt)
+
+        assert wkt.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+        assert wkt.as_ewkt() == WKTElement(self._ewkt, extended=True)
+        assert zero_srid_wkt.as_ewkt() == WKTElement(self._wkt, srid=0, extended=False)
+        assert no_srid_wkt.as_ewkt() == WKTElement(self._wkt, srid=-1, extended=False)
+
+    def test_extended_as_wkt_uses_converter(self, monkeypatch):
+        calls = []
+
+        def to_wkt_no_srid(value):
+            calls.append(value)
+            return self._wkt
+
+        def fail_to_wkt(*args, **kwargs):
+            raise AssertionError("as_wkt() should use the no-SRID converter")
+
+        monkeypatch.setattr(_wkb_wkt, "to_wkt_no_srid", to_wkt_no_srid)
+        monkeypatch.setattr(_wkb_wkt, "to_wkt", fail_to_wkt)
+
+        ewkt = WKTElement(self._ewkt, extended=True)
+
+        assert ewkt.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+        assert calls == [self._ewkt]
+
+    def test_extended_as_ewkt_with_positive_srid_uses_converter(self, monkeypatch):
+        calls = []
+
+        def to_wkt(value, srid=None):
+            calls.append((value, srid))
+            return f"SRID={srid};{self._wkt}"
+
+        def fail_to_wkt_no_srid(*args, **kwargs):
+            raise AssertionError("positive-SRID as_ewkt() should keep the SRID converter")
+
+        monkeypatch.setattr(_wkb_wkt, "to_wkt", to_wkt)
+        monkeypatch.setattr(_wkb_wkt, "to_wkt_no_srid", fail_to_wkt_no_srid)
+
+        ewkt = WKTElement(self._ewkt, srid=4326, extended=True)
+
+        assert ewkt.as_ewkt() == WKTElement(f"SRID=4326;{self._wkt}", extended=True)
+        assert calls == [(self._ewkt, 4326)]
+
+    def test_extended_as_wkt_as_ewkt_semantics(self):
+        ewkt = WKTElement(self._ewkt, extended=True)
+        spaced_ewkt = WKTElement(f"SRID={self._srid}; {self._wkt}", extended=True)
+        forced_srid_ewkt = WKTElement(self._ewkt, srid=4326, extended=True)
+        zero_srid_ewkt = WKTElement(f"SRID=0;{self._wkt}", extended=True)
+
+        assert ewkt.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+        assert ewkt.as_ewkt() == WKTElement(self._ewkt, extended=True)
+        assert spaced_ewkt.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
+        assert spaced_ewkt.as_ewkt() == WKTElement(self._ewkt, extended=True)
+        assert forced_srid_ewkt.as_ewkt() == WKTElement(f"SRID=4326;{self._wkt}", extended=True)
+        assert zero_srid_ewkt.as_wkt() == WKTElement(self._wkt, srid=0, extended=False)
+        assert zero_srid_ewkt.as_ewkt() == WKTElement(self._wkt, srid=0, extended=False)
 
 
 class TestExtendedWKTElement:
@@ -291,6 +427,7 @@ class TestExtendedWKBElement:
         b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\x00@"
     )
     _hex_ewkb = "010100002003000000000000000000f03f0000000000000040"
+    _hex_zero_srid_ewkb = "010100002000000000000000000000f03f0000000000000040"
     _hex_wkb = "0101000000000000000000f03f0000000000000040"
     _srid = 3  # expected srid
     _wkt = "POINT (1 2)"  # expected wkt
@@ -353,6 +490,17 @@ class TestExtendedWKBElement:
         assert e.srid == self._srid
         assert wkb.loads(e.data, hex=True).wkt == self._wkt
 
+    def test_zero_srid_ewkb_auto_detects_extended_header(self):
+        e = WKBElement(self._hex_zero_srid_ewkb)
+
+        assert e.extended is True
+        assert e.srid == -1
+
+        plain_wkb = e.as_wkb()
+        assert plain_wkb.desc == self._hex_wkb
+        assert plain_wkb.srid == -1
+        assert plain_wkb.extended is False
+
     def test_eq(self):
         a = WKBElement(self._bin_ewkb, extended=True)
         b = WKBElement(self._bin_ewkb, extended=True)
@@ -408,8 +556,159 @@ class TestExtendedWKBElement:
         e8_ewkb.data = e8_ewkb.data[:11] + "4" + e8_ewkb.data[12:]
         assert e8.as_ewkb() == e8_ewkb
 
+    def test_as_wkt_as_ewkt_cross(self):
+        e1 = WKBElement(self._bin_ewkb)
+        e2 = WKBElement(self._hex_ewkb)
+        e3 = WKBElement(self._hex_wkb)
+        e4 = WKBElement(self._hex_wkb, srid=0)
+
+        # Binary EWKB — SRID preserved as attribute
+        r1 = e1.as_wkt()
+        assert isinstance(r1, WKTElement)
+        assert r1.extended is False
+        assert r1.srid == self._srid
+        assert r1.desc == self._wkt
+
+        # Binary EWKB — SRID in WKT string
+        r2 = e1.as_ewkt()
+        assert isinstance(r2, WKTElement)
+        assert r2.extended is True
+        assert r2.srid == self._srid
+        assert r2.desc == f"SRID={self._srid};{self._wkt}"
+
+        # Hex EWKB plain
+        r3 = e2.as_wkt()
+        assert isinstance(r3, WKTElement)
+        assert r3.extended is False
+        assert r3.srid == self._srid
+        assert r3.desc == self._wkt
+
+        # Hex EWKB extended
+        r4 = e2.as_ewkt()
+        assert isinstance(r4, WKTElement)
+        assert r4.extended is True
+        assert r4.srid == self._srid
+        assert r4.desc == f"SRID={self._srid};{self._wkt}"
+
+        # Plain WKB (no SRID) → falls back to plain WKT
+        r5 = e3.as_ewkt()
+        assert isinstance(r5, WKTElement)
+        assert r5.extended is False
+        assert r5.srid == -1
+
+        # Plain WKB with SRID 0 keeps SRID as an attribute but does not emit EWKT.
+        r6 = e4.as_ewkt()
+        assert isinstance(r6, WKTElement)
+        assert r6.extended is False
+        assert r6.srid == 0
+        assert r6.desc == self._wkt
+        assert e4.as_ewkb().extended is False
+
+    def test_as_ewkb_preserves_already_extended_big_endian_data(self):
+        data = memoryview(struct.pack(">BII2d", 0, 0x20000001, self._srid, 1.0, 2.0))
+        elem = WKBElement(data, extended=True)
+
+        assert elem.srid == self._srid
+        assert elem.as_ewkb().desc == elem.desc
+
+    def test_as_ewkb_overrides_already_extended_binary_srid(self):
+        arbitrary_srid = self._srid + 1
+        elem = WKBElement(self._bin_ewkb, srid=arbitrary_srid, extended=True)
+        result = elem.as_ewkb()
+
+        assert result.extended is True
+        assert result.srid == arbitrary_srid
+        assert result.desc == "010100002004000000000000000000f03f0000000000000040"
+
+    def test_as_ewkb_overrides_already_extended_hex_srid(self):
+        arbitrary_srid = self._srid + 1
+        elem = WKBElement(self._hex_ewkb, srid=arbitrary_srid, extended=True)
+        result = elem.as_ewkb()
+
+        assert result.extended is True
+        assert result.srid == arbitrary_srid
+        assert result.desc == "010100002004000000000000000000f03f0000000000000040"
+
+    def test_as_ewkb_overrides_already_extended_big_endian_srid(self):
+        arbitrary_srid = self._srid + 1
+        data = memoryview(struct.pack(">BII2d", 0, 0x20000001, self._srid, 1.0, 2.0))
+        elem = WKBElement(data, srid=arbitrary_srid, extended=True)
+        result = elem.as_ewkb()
+
+        assert result.extended is True
+        assert result.srid == arbitrary_srid
+        assert result.desc == "0020000001000000043ff00000000000004000000000000000"
+
+    def test_as_wkb_uses_explicit_plain_wkb_state_for_plain_values(self):
+        elem = WKBElement(self._bin_wkb, srid=self._srid, extended=False)
+        result = elem.as_wkb()
+
+        assert result.data is self._bin_wkb
+        assert result.extended is False
+        assert result.srid == self._srid
+
+    def test_as_wkb_and_as_ewkb_support_memoryview_bytearray_and_hex(self):
+        binary_elem = WKBElement(memoryview(bytearray(self._bin_ewkb)), extended=True)
+        plain_binary = binary_elem.as_wkb()
+        assert plain_binary.desc == self._hex_wkb
+        assert plain_binary.as_ewkb().desc == self._hex_ewkb
+
+        hex_elem = WKBElement(self._hex_ewkb, extended=True)
+        plain_hex = hex_elem.as_wkb()
+        assert plain_hex.desc == self._hex_wkb
+        assert plain_hex.as_ewkb().desc == self._hex_ewkb
+
+    def test_as_wkb_short_header_preserves_current_failure_behavior(self):
+        elem = WKBElement(b"\x01", srid=self._srid, extended=True)
+
+        with pytest.raises(ValueError, match="too short"):
+            elem.as_wkb()
+
+    def test_as_ewkb_matching_simple_header_uses_header_only_noop(self, monkeypatch):
+        data = struct.pack("<BII", 1, 0x20000001, self._srid)
+        elem = WKBElement(data, srid=self._srid, extended=True)
+
+        def to_ewkb_header(value, srid):
+            raise AssertionError("simple no-op should not rewrite the EWKB header")
+
+        def split_wkb_srid(value):
+            raise AssertionError("simple no-op should not full-parse WKB")
+
+        monkeypatch.setattr(_wkb_wkt, "to_ewkb_header", to_ewkb_header)
+        monkeypatch.setattr(_wkb_wkt, "split_wkb_srid", split_wkb_srid)
+
+        result = elem.as_ewkb()
+
+        assert result.extended is True
+        assert result.srid == self._srid
+        assert result.desc == data.hex()
+
+    def test_as_ewkb_falls_back_for_iso_dimensional_wkb(self):
+        data = struct.pack("<BI3d", 1, 1001, 1.0, 2.0, 3.0)
+        elem = WKBElement(data, srid=4326, extended=False)
+        result = elem.as_ewkb()
+
+        assert result.extended is True
+        assert result.srid == 4326
+        assert result.desc == ("01010000a0e6100000000000000000f03f00000000000000400000000000000840")
+
+    def test_as_wkb_falls_back_for_nested_collection_headers(self):
+        child = struct.pack("<BIIdd", 1, 0x20000001, 3857, 1.0, 2.0)
+        data = struct.pack("<BIII", 1, 0x20000007, 4326, 1) + child
+        elem = WKBElement(data, srid=4326, extended=True)
+        result = elem.as_wkb()
+
+        assert result.extended is False
+        assert result.srid == 4326
+        assert result.desc == ("0107000000010000000101000000000000000000f03f0000000000000040")
+
 
 class TestWKBElement:
+    def test_constructor_data_annotation_includes_runtime_bytearray_support(self):
+        data_annotation = get_type_hints(WKBElement.__init__)["data"]
+
+        assert bytearray in get_args(data_annotation)
+
     def test_desc(self):
         e = WKBElement(b"\x01\x02")
         assert e.desc == "0102"

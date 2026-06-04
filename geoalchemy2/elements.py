@@ -10,6 +10,7 @@ from sqlalchemy.sql import functions
 from sqlalchemy.sql.functions import FunctionElement
 from sqlalchemy.types import to_instance
 
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2.exc import ArgumentError
 
 BinasciiError = binascii.Error
@@ -152,16 +153,37 @@ class WKTElement(_SpatialElement):
 
     def as_wkt(self) -> WKTElement:
         if self.extended:
-            srid_match = self._REMOVE_SRID.match(self.data)
-            assert srid_match is not None
-            return WKTElement(srid_match.group(3), self.srid, extended=False)
+            wkt = _wkb_wkt.to_wkt_no_srid(self.data)
+            return WKTElement(wkt, self.srid, extended=False)
         return WKTElement(self.data, self.srid, self.extended)
 
     def as_ewkt(self) -> WKTElement:
-        if not self.extended and self.srid != -1:
-            data = f"SRID={self.srid};" + self.data
-            return WKTElement(data, extended=True)
-        return WKTElement(self.data, self.srid, self.extended)
+        if self.srid > 0:
+            if self.extended:
+                wkt = _wkb_wkt.to_wkt(self.data, srid=self.srid)
+                return WKTElement(wkt, extended=True)
+            return WKTElement(f"SRID={self.srid};{self.data}", extended=True)
+        return self.as_wkt()
+
+    def as_wkb(self) -> WKBElement:
+        """Return this element as a plain :class:`WKBElement` (no SRID embedded).
+
+        The SRID is preserved as a Python attribute on the returned element.
+        Unsupported WKT geometry types raise ``ValueError`` from the converter.
+        """
+        wkb_bytes = _wkb_wkt.to_wkb_no_srid(self.data)
+        return WKBElement(wkb_bytes, srid=self.srid, extended=False)
+
+    def as_ewkb(self) -> WKBElement:
+        """Return this element as an extended :class:`WKBElement` (SRID embedded).
+
+        If the element has no valid SRID, the result is equivalent to :meth:`as_wkb`.
+        Unsupported WKT geometry types raise ``ValueError`` from the converter.
+        """
+        if self.srid > 0:
+            wkb_bytes = _wkb_wkt.to_wkb(self.data, srid=self.srid)
+            return WKBElement(wkb_bytes, extended=True)
+        return self.as_wkb()
 
 
 class DynamicWKTElement(WKTElement):
@@ -199,41 +221,29 @@ class WKBElement(_SpatialElement):
     geom_from_extended_version: str = "ST_GeomFromEWKB"
 
     def __init__(
-        self, data: str | bytes | memoryview, srid: int = -1, extended: bool | None = None
+        self,
+        data: str | bytes | bytearray | memoryview,
+        srid: int = -1,
+        extended: bool | None = None,
     ) -> None:
         if srid == -1 or extended is None or extended:
-            # read srid from the EWKB
-            #
-            # WKB struct {
-            #    byte    byteOrder;
-            #    uint32  wkbType;
-            #    uint32  SRID;
-            #    struct  geometry;
-            # }
-            # byteOrder enum {
-            #     WKB_XDR = 0,  // Most Significant Byte First
-            #     WKB_NDR = 1,  // Least Significant Byte First
-            # }
-            # See https://trac.osgeo.org/postgis/browser/branches/3.0/doc/ZMSgeoms.txt
-            # for more details about WKB/EWKB specifications.
-
-            # SpatiaLite case: assume that the string is an hex value
-            header = binascii.unhexlify(data[:18]) if isinstance(data, str) else data[:9]
-            byte_order, wkb_type, wkb_srid = header[0], header[1:5], header[5:]
-            byte_order_marker = "<I" if byte_order else ">I"
-            wkb_type_int = (
-                int(struct.unpack(byte_order_marker, wkb_type)[0]) if len(wkb_type) == 4 else 0
-            )
+            wkb_srid = None
+            has_srid_header = False
+            if (extended is True and srid == -1) or (extended is None and len(data) >= 5):
+                try:
+                    has_srid_header = _wkb_wkt.wkb_has_srid_header(data)
+                    wkb_srid = _wkb_wkt.wkb_srid(data)
+                except ValueError:
+                    if extended is True:
+                        raise
             if extended is None:
-                # Check SRID bit
-                extended = False if not wkb_type_int else extended or bool(wkb_type_int & 536870912)
-            if extended and srid == -1:
-                wkb_srid = struct.unpack(byte_order_marker, wkb_srid)[0]
-                srid = int(wkb_srid)
+                extended = has_srid_header
+            if extended and srid == -1 and wkb_srid is not None:
+                srid = wkb_srid
         _SpatialElement.__init__(self, data, srid, extended)
 
     @staticmethod
-    def _wkb_to_hex(data: str | bytes | memoryview) -> str:
+    def _wkb_to_hex(data: str | bytes | bytearray | memoryview) -> str:
         """Convert WKB to hex string."""
         if isinstance(data, str):
             # SpatiaLite case
@@ -252,75 +262,41 @@ class WKBElement(_SpatialElement):
 
     def as_wkb(self) -> WKBElement:
         if self.extended:
-            if isinstance(self.data, str):
-                # SpatiaLite case
-                # assume that the string is an hex value
-                is_hex = True
-                header = binascii.unhexlify(self.data[:10])
-                byte_order, wkb_type = header[0], header[1:5]
-            else:
-                is_hex = False
-                byte_order, wkb_type = self.data[0], self.data[1:5]
-
-            byte_order_marker = "<I" if byte_order else ">I"
-            wkb_type_int = (
-                int(struct.unpack(byte_order_marker, wkb_type)[0]) if len(wkb_type) == 4 else 0
-            )
-            wkb_type_int &= 3758096383  # Set SRID bit to 0 and keep all other bits
-
-            if is_hex:
-                wkb_type_hex = binascii.hexlify(
-                    wkb_type_int.to_bytes(4, "little" if byte_order else "big")
-                )
-                data = self.data[:2] + wkb_type_hex.decode("ascii") + self.data[18:]
-            else:
-                buffer = bytearray()
-                buffer.extend(self.data[:1])
-                buffer.extend(struct.pack(byte_order_marker, wkb_type_int))
-                buffer.extend(self.data[9:])
-                data = memoryview(buffer)
+            data = _wkb_wkt.to_wkb_no_srid_header(self.data)
             return WKBElement(data, self.srid, extended=False)
-        return WKBElement(self.data, self.srid)
+        return WKBElement(self.data, self.srid, extended=False)
 
     def as_ewkb(self) -> WKBElement:
-        if not self.extended and self.srid != -1:
-            if isinstance(self.data, str):
-                # SpatiaLite case
-                # assume that the string is an hex value
-                header = binascii.unhexlify(self.data[:10])
-                byte_order, wkb_type = header[0], header[1:5]
-            else:
-                byte_order, wkb_type = self.data[0], self.data[1:5]
-            byte_order_marker = "<I" if byte_order else ">I"
-            wkb_type_int = int(
-                struct.unpack(byte_order_marker, wkb_type)[0] if len(wkb_type) == 4 else 0
-            )
-            wkb_type_int |= 536870912  # Set SRID bit to 1 and keep all other bits
-
-            data: str | memoryview
-            if isinstance(self.data, str):
-                wkb_type_hex = binascii.hexlify(
-                    wkb_type_int.to_bytes(4, "little" if byte_order else "big")
-                )
-                wkb_srid_hex = binascii.hexlify(
-                    self.srid.to_bytes(4, "little" if byte_order else "big")
-                )
-                data = (
-                    self.data[:2]
-                    + wkb_type_hex.decode("ascii")
-                    + wkb_srid_hex.decode("ascii")
-                    + self.data[10:]
-                )
-            else:
-                buffer = bytearray()
-                buffer.extend(self.data[:1])
-                buffer.extend(struct.pack(byte_order_marker, wkb_type_int))
-                buffer.extend(struct.pack(byte_order_marker, self.srid))
-                buffer.extend(self.data[5:])
-                data = memoryview(buffer)
-
+        if self.srid > 0:
+            if self.extended:
+                try:
+                    has_matching_srid = _wkb_wkt.wkb_srid(self.data) == self.srid
+                except ValueError:
+                    has_matching_srid = False
+                if has_matching_srid:
+                    return WKBElement(self.data, self.srid, extended=True)
+            data = _wkb_wkt.to_ewkb_header(self.data, self.srid)
             return WKBElement(data, self.srid, extended=True)
-        return WKBElement(self.data, self.srid)
+        return self.as_wkb()
+
+    def as_wkt(self) -> WKTElement:
+        """Return this element as a plain :class:`WKTElement` (no SRID prefix).
+
+        The SRID is preserved as a Python attribute on the returned element.
+        """
+        wkt = _wkb_wkt.to_wkt_no_srid(self.data)
+        return WKTElement(wkt, srid=self.srid, extended=False)
+
+    def as_ewkt(self) -> WKTElement:
+        """Return this element as an extended :class:`WKTElement` (``SRID=N;WKT``).
+
+        If the element has no valid SRID, the result is equivalent to :meth:`as_wkt`.
+        """
+        if self.srid > 0:
+            wkt = _wkb_wkt.to_wkt(self.data, srid=self.srid)
+            return WKTElement(wkt, extended=True)
+        wkt = _wkb_wkt.to_wkt_no_srid(self.data)
+        return WKTElement(wkt, srid=self.srid, extended=False)
 
 
 class DynamicWKBElement(WKBElement):
