@@ -29,6 +29,10 @@ def filter_tables(name, type_, parent_names):
     return type_ != "table" or name in ["lake", "alembic_table"]
 
 
+def test_sqlalchemy_integer_repr_is_safe_after_alembic_helper_import():
+    assert repr(Integer()) == "Integer()"
+
+
 class TestAutogenerate:
     def test_no_diff(self, conn, Lake, setup_tables, use_alembic_monkeypatch, dialect_name):
         """Check that the autogeneration detects spatial types properly."""

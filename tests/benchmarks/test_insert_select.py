@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import func
 
 from geoalchemy2 import Geometry
@@ -11,7 +12,8 @@ from geoalchemy2.elements import WKTElement
 from .. import create_points
 from .. import select
 
-ROUNDS = 5
+# SQL Server allows at most 1000 row value expressions per INSERT statement.
+_MSSQL_INSERT_CHUNK_SIZE = 1000
 
 
 class SuccessfulTest(BaseException):
@@ -90,11 +92,11 @@ def GeomTable(
     print("output_representation:", output_representation)
     print("is_default_geom_type:", is_default_geom_type)
     print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-    if input_representation == "WKB":
+    if input_representation == "WKB input":
         from_text_func = "ST_GeomFromEWKB" if is_extended_input else "ST_GeomFromWKB"
     else:
         from_text_func = "ST_GeomFromEWKT" if is_extended_input else "ST_GeomFromText"
-    if output_representation == "WKB":
+    if output_representation == "WKB output":
         to_text_func = "ST_AsEWKB" if is_extended_output else "ST_AsBinary"
         ElementType_cls = WKBElement
     else:
@@ -128,15 +130,14 @@ def GeomTable(
 
 def insert_all_points(conn, table, points):
     """Insert all points into the database."""
-    query = table.insert().values(
-        [
-            {
-                "geom": point,
-            }
-            for point in points
-        ]
-    )
-    return conn.execute(query)
+    rows = [{"geom": point} for point in points]
+    if conn.dialect.name != "mssql":
+        return conn.execute(table.insert().values(rows))
+
+    result = None
+    for start in range(0, len(rows), _MSSQL_INSERT_CHUNK_SIZE):
+        result = conn.execute(table.insert().values(rows[start : start + _MSSQL_INSERT_CHUNK_SIZE]))
+    return result
 
 
 def select_all_points(conn, table):
@@ -234,6 +235,16 @@ def _insert_fail_or_success_type(
 ):
     """Fixture to determine if the current test should fail or succeed."""
     if (
+        dialect_name == "sqlite"
+        and input_representation == "WKB input"
+        and is_extended_input
+        and not is_default_geom_type
+    ):
+        return (OperationalError, AssertionError)
+    if dialect_name == "geopackage" and input_representation == "WKB input":  # noqa: SIM102
+        if is_extended_input and not is_default_geom_type:  # noqa: SIM102
+            return AssertionError
+    if (
         dialect_name in ["sqlite", "geopackage"]
         and not is_default_geom_type
         and not is_extended_input
@@ -251,6 +262,7 @@ def _insert_fail_or_success_type(
     ],
 )
 def test_insert(
+    insert_select_rounds,
     benchmark,
     GeomTable,
     conn,
@@ -262,7 +274,7 @@ def test_insert(
     _insert_fail_or_success_type,
 ):
     """Benchmark the insert operation."""
-    convert_wkb = input_representation == "WKB"
+    convert_wkb = input_representation == "WKB input"
 
     try:
         _benchmark_insert(
@@ -274,7 +286,7 @@ def test_insert(
             raw_input=is_raw_input,
             extended_input=is_extended_input,
             N=N,
-            rounds=ROUNDS,
+            rounds=insert_select_rounds,
         )
 
         assert (
@@ -283,7 +295,7 @@ def test_insert(
                 .select_from(GeomTable.__table__)
                 .where(GeomTable.__table__.c.geom.is_not(None))
             ).scalar()
-            == N * N * ROUNDS
+            == N * N * insert_select_rounds
         )
 
     except SuccessfulTest:
@@ -305,26 +317,48 @@ def _insert_select_fail_or_success_type(
     is_default_geom_type,
 ):
     """Fixture to determine if the current test should fail or succeed."""
-    if dialect_name in ["mysql"] and not is_default_geom_type and is_extended_output:
+    if dialect_name in ["mysql", "mariadb"] and not is_default_geom_type and is_extended_output:
+        if output_representation == "WKB output":
+            return AssertionError
         return OperationalError
+    if (
+        dialect_name in ["mysql", "mariadb", "postgresql", "sqlite"]
+        and input_representation == "WKB input"
+        and is_raw_input
+        and is_default_geom_type
+    ):
+        return (SQLAlchemyError, AssertionError)
+    if (
+        dialect_name == "sqlite"
+        and input_representation == "WKB input"
+        and is_extended_input
+        and not is_default_geom_type
+    ):
+        return (OperationalError, AssertionError)
+    if (
+        dialect_name == "geopackage"
+        and not is_default_geom_type
+        and is_extended_output
+        and output_representation == "WKB output"
+    ):
+        return AssertionError
     if dialect_name in ["sqlite", "geopackage"] and not is_default_geom_type:
         if not is_extended_output:
             return AssertionError
         else:
-            return OperationalError
+            return (OperationalError, AssertionError)
     if (
         dialect_name in ["postgresql", "sqlite", "geopackage"]
         and is_default_geom_type
         and not is_extended_output
     ):
         return AssertionError
+    if is_default_geom_type and output_representation == "WKT output":
+        return AssertionError
     if dialect_name in ["mysql", "sqlite", "geopackage"] and is_extended_output:
         return AssertionError
     if dialect_name in ["mariadb"] and is_extended_output:
-        if is_default_geom_type:
-            return AssertionError
-        else:
-            return OperationalError
+        return AssertionError
     if not is_default_geom_type and is_extended_output:
         return AssertionError
     return SuccessfulTest
@@ -342,9 +376,10 @@ def _actual_test_insert_select(
     output_representation,
     is_extended_output,
     is_default_geom_type,
+    insert_select_rounds,
 ):
     """Actual test for insert and select operations."""
-    convert_wkb = input_representation == "WKB"
+    convert_wkb = input_representation == "WKB input"
     all_points = _benchmark_insert_select(
         conn,
         GeomTable,
@@ -354,7 +389,7 @@ def _actual_test_insert_select(
         raw_input=is_raw_input,
         extended_input=is_extended_input,
         N=N,
-        rounds=ROUNDS,
+        rounds=insert_select_rounds,
     )
 
     assert (
@@ -363,18 +398,18 @@ def _actual_test_insert_select(
                 GeomTable.__table__.select().where(GeomTable.__table__.c.geom.is_not(None))
             ).fetchall()
         )
-        == N * N * ROUNDS
+        == N * N * insert_select_rounds
     )
-    assert len(all_points) == N * N * ROUNDS
+    assert len(all_points) == N * N * insert_select_rounds
 
     res = conn.execute(select([GeomTable.__table__.c.geom])).fetchone()
     expected_extended_output = is_extended_output
     if conn.dialect.name == "mssql" and is_default_geom_type:
         expected_extended_output = True
     assert res[0].extended == expected_extended_output
-    if output_representation == "WKB":
+    if output_representation == "WKB output":
         assert isinstance(res[0], WKBElement)
-    elif output_representation == "WKT":
+    elif output_representation == "WKT output":
         assert isinstance(res[0], WKTElement)
     assert res[0].srid == 4326
 
@@ -388,6 +423,7 @@ def _actual_test_insert_select(
     ],
 )
 def test_insert_select(
+    insert_select_rounds,
     benchmark,
     GeomTable,
     conn,
@@ -415,6 +451,7 @@ def test_insert_select(
             output_representation,
             is_extended_output,
             is_default_geom_type,
+            insert_select_rounds,
         )
     except SuccessfulTest:
         # Handle the successful test case

@@ -3,6 +3,30 @@ FROM ubuntu:24.04
 COPY ./helpers/install_requirements.sh /
 RUN /install_requirements.sh
 
+ARG PYPY_VERSION=7.3.22
+ARG PYPY_DIST=pypy3.11-v7.3.22-linux64
+ARG PYPY_SHA256=c0c239a6b0d381338bcccf852d0690b9daca632e0216389a3796f8817fd66e0e
+RUN set -eux; \
+    apt-get update; \
+    apt-get install --no-install-recommends -y bzip2; \
+    curl -fsSLo "/tmp/${PYPY_DIST}.tar.bz2" \
+        "https://downloads.python.org/pypy/${PYPY_DIST}.tar.bz2"; \
+    echo "${PYPY_SHA256}  /tmp/${PYPY_DIST}.tar.bz2" | sha256sum -c -; \
+    tar -xjf "/tmp/${PYPY_DIST}.tar.bz2" -C /opt; \
+    for binary in pypy pypy3 pypy3.11 pypy3-config pypy3.11-config; do \
+        if [ -x "/opt/${PYPY_DIST}/bin/${binary}" ]; then \
+            ln -sf "/opt/${PYPY_DIST}/bin/${binary}" "/usr/local/bin/${binary}"; \
+        fi; \
+    done; \
+    if [ ! -x /usr/local/bin/pypy3 ]; then \
+        ln -sf "/opt/${PYPY_DIST}/bin/pypy3.11" /usr/local/bin/pypy3; \
+    fi; \
+    test "$(command -v pypy3)" = "/usr/local/bin/pypy3"; \
+    pypy3 -c "import sys; assert sys.pypy_version_info[:3] == tuple(map(int, '${PYPY_VERSION}'.split('.')))"; \
+    rm "/tmp/${PYPY_DIST}.tar.bz2"; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*
+
 ENV SPATIALITE_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu/mod_spatialite.so"
 
 # Install MSSQL tools and drivers

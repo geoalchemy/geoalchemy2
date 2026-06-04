@@ -19,11 +19,16 @@ When you are finished the containers and associated data can be removed.
 Install and run the container::
 
     $ ./test_container/build.sh
+    $ ./test_container/start.sh
     $ ./test_container/run.sh
 
 Or run a command directly in the runner container::
 
     $ ./test_container/run.sh tox --workdir /output -v run
+
+The ``run.sh`` script automatically starts the database services first when they
+are not already running. If the services are already running, it only starts a
+temporary ``runner`` container for the requested command.
 
 Run the tests inside the container::
 
@@ -41,6 +46,10 @@ or inside an interactive shell::
 You can combine `py310`, `py311`, `py312`, `py313`, or `pypy3` with `sqla14` or
 `sqlalatest` to run the tests for Python 3.10, 3.11, 3.12, 3.13, or PyPy with
 SQLAlchemy 1.4 or 2.*.
+
+Stop the database services while keeping the containers and cached test output::
+
+    $ ./test_container/stop.sh
 
 Remove the container and associated data::
 
@@ -85,6 +94,9 @@ Install the Python dependencies::
 
     $ pip install -r requirements.txt -r requirements-mypy.txt
     $ pip install psycopg2-binary pyodbc "Shapely>=1.3.0"
+
+The manual requirements include ``wkb-wkt-converter>=0.6.1``, which provides
+the WKB/EWKB conversion helpers used by the tests and runtime bind processors.
 
 The tox environments also install these full-suite dependencies from ``tox.ini``:
 ``psycopg2-binary`` and ``pyodbc`` on CPython, ``psycopg2cffi`` on PyPy, and
