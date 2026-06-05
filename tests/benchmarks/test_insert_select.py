@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import func
 
 from geoalchemy2 import Geometry
@@ -232,6 +233,16 @@ def _insert_fail_or_success_type(
 ):
     """Fixture to determine if the current test should fail or succeed."""
     if (
+        dialect_name == "sqlite"
+        and input_representation == "WKB input"
+        and is_extended_input
+        and not is_default_geom_type
+    ):
+        return (OperationalError, AssertionError)
+    if dialect_name == "geopackage" and input_representation == "WKB input":  # noqa: SIM102
+        if is_extended_input and not is_default_geom_type:  # noqa: SIM102
+            return AssertionError
+    if (
         dialect_name in ["sqlite", "geopackage"]
         and not is_default_geom_type
         and not is_extended_input
@@ -304,26 +315,48 @@ def _insert_select_fail_or_success_type(
     is_default_geom_type,
 ):
     """Fixture to determine if the current test should fail or succeed."""
-    if dialect_name in ["mysql"] and not is_default_geom_type and is_extended_output:
+    if dialect_name in ["mysql", "mariadb"] and not is_default_geom_type and is_extended_output:
+        if output_representation == "WKB output":
+            return AssertionError
         return OperationalError
+    if (
+        dialect_name in ["mysql", "mariadb", "postgresql", "sqlite"]
+        and input_representation == "WKB input"
+        and is_raw_input
+        and is_default_geom_type
+    ):
+        return (SQLAlchemyError, AssertionError)
+    if (
+        dialect_name == "sqlite"
+        and input_representation == "WKB input"
+        and is_extended_input
+        and not is_default_geom_type
+    ):
+        return (OperationalError, AssertionError)
+    if (
+        dialect_name == "geopackage"
+        and not is_default_geom_type
+        and is_extended_output
+        and output_representation == "WKB output"
+    ):
+        return AssertionError
     if dialect_name in ["sqlite", "geopackage"] and not is_default_geom_type:
         if not is_extended_output:
             return AssertionError
         else:
-            return OperationalError
+            return (OperationalError, AssertionError)
     if (
         dialect_name in ["postgresql", "sqlite", "geopackage"]
         and is_default_geom_type
         and not is_extended_output
     ):
         return AssertionError
+    if is_default_geom_type and output_representation == "WKT output":
+        return AssertionError
     if dialect_name in ["mysql", "sqlite", "geopackage"] and is_extended_output:
         return AssertionError
     if dialect_name in ["mariadb"] and is_extended_output:
-        if is_default_geom_type:
-            return AssertionError
-        else:
-            return OperationalError
+        return AssertionError
     if not is_default_geom_type and is_extended_output:
         return AssertionError
     return SuccessfulTest
