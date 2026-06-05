@@ -490,16 +490,11 @@ class TestExtendedWKBElement:
         assert e.srid == self._srid
         assert wkb.loads(e.data, hex=True).wkt == self._wkt
 
-    def test_zero_srid_ewkb_auto_detects_extended_header(self):
+    def test_zero_srid_ewkb_auto_detects_as_non_extended(self):
         e = WKBElement(self._hex_zero_srid_ewkb)
 
-        assert e.extended is True
+        assert e.extended is False
         assert e.srid == -1
-
-        plain_wkb = e.as_wkb()
-        assert plain_wkb.desc == self._hex_wkb
-        assert plain_wkb.srid == -1
-        assert plain_wkb.extended is False
 
     def test_eq(self):
         a = WKBElement(self._bin_ewkb, extended=True)

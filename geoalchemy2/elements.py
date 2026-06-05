@@ -228,16 +228,14 @@ class WKBElement(_SpatialElement):
     ) -> None:
         if srid == -1 or extended is None or extended:
             wkb_srid = None
-            has_srid_header = False
             if (extended is True and srid == -1) or (extended is None and len(data) >= 5):
                 try:
-                    has_srid_header = _wkb_wkt.wkb_has_srid_header(data)
                     wkb_srid = _wkb_wkt.wkb_srid(data)
                 except ValueError:
                     if extended is True:
                         raise
             if extended is None:
-                extended = has_srid_header
+                extended = wkb_srid is not None
             if extended and srid == -1 and wkb_srid is not None:
                 srid = wkb_srid
         _SpatialElement.__init__(self, data, srid, extended)

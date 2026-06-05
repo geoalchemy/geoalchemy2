@@ -21,6 +21,7 @@ from sqlalchemy.types import LargeBinary
 from sqlalchemy.types import TypeDecorator
 from sqlalchemy.types import UnicodeText
 
+from geoalchemy2 import _wkb_wkt
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
@@ -625,11 +626,11 @@ def _process_wkb_value(value, extended=False):
     if value is None:
         return None
     if isinstance(value, WKBElement):
-        value = value.as_wkb().data if extended else value.data
-    elif extended:
-        value = WKBElement(value, extended=None).as_wkb().data
+        value = value.data
     if isinstance(value, memoryview):
         value = value.tobytes()
+    if extended:
+        value = _wkb_wkt.to_wkb_no_srid(value)
 
     return value
 

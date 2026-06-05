@@ -324,6 +324,17 @@ class TestMSSQLCompilation:
         assert compiled == expected
         assert "STGeomFromWKB(geometry::STGeomFromWKB" not in compiled
 
+    def test_constructor_zero_srid_ewkb_literal_uses_plain_wkb_hex(self):
+        ewkb = bytes.fromhex("010100002000000000000000000000f03f0000000000000040")
+        expected = "geometry::STGeomFromWKB(0x0101000000000000000000f03f0000000000000040, 4326)"
+        expr = func.ST_GeomFromEWKB(ewkb, 4326)
+        compiled = normalize_sql(
+            expr.compile(dialect=self.dialect, compile_kwargs={"literal_binds": True})
+        )
+
+        assert compiled == expected
+        assert "0101000020" not in compiled
+
     def test_as_ewkb_compiles_to_ewkb_expression(self, geometry_table):
         stmt = select([geometry_table.c.geom.ST_AsEWKB()])
         compiled = normalize_sql(stmt.compile(dialect=self.dialect))
@@ -1213,6 +1224,9 @@ class TestMSSQLBindAndResultProcessing:
         runtime_wkb = WKBElement(plain_wkb, srid=3857, extended=False)
         assert bytes(wkb_processor(runtime_wkb)) == bytes(plain_wkb)
         assert srid_processor(runtime_wkb) == 3857
+        zero_srid_ewkb = bytes.fromhex("010100002000000000000000000000f03f0000000000000040")
+        assert bytes(wkb_processor(zero_srid_ewkb)) == bytes(plain_wkb)
+        assert srid_processor(zero_srid_ewkb) == 0
         assert wkb_processor(None) is None
         assert srid_processor(None) == 0
 
