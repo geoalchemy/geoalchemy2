@@ -6,6 +6,8 @@ from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import bindparam
 from sqlalchemy.dialects import mysql
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects import sqlite
 from sqlalchemy.dialects.mysql import mariadb as mariadb_dialect
 from sqlalchemy.sql import func
 from sqlalchemy.sql import insert
@@ -33,6 +35,10 @@ WKB_HEX = "0101000000000000000000f03f0000000000000040"
 EWKB_HEX = "0101000020e6100000000000000000f03f0000000000000040"
 WEB_MERCATOR_EWKB_HEX = "0101000020110f0000000000000000f03f0000000000000040"
 ZERO_SRID_EWKB_HEX = "010100002000000000000000000000f03f0000000000000040"
+
+
+class _GeoPackageDialect:
+    name = "geopackage"
 
 
 def eq_sql(a, b):
@@ -147,6 +153,41 @@ def test_validate_wkb_srid_ignores_unknown_srid_values():
     validate_wkb_srid(None, 4326)
     validate_wkb_srid(3857, 0)
     validate_wkb_srid(3857, -1)
+
+
+@pytest.mark.parametrize(
+    ("dialect", "bindvalue", "expected"),
+    [
+        (mysql.dialect(), bytes.fromhex(EWKB_HEX), bytes.fromhex(WKB_HEX)),
+        (mariadb_dialect.MariaDBDialect(), memoryview(bytes.fromhex(EWKB_HEX)), WKB_HEX),
+        (postgresql.dialect(), WKB_HEX, bytes.fromhex(EWKB_HEX)),
+        (sqlite.dialect(), bytes.fromhex(WKB_HEX), EWKB_HEX),
+        (_GeoPackageDialect(), WKB_HEX, EWKB_HEX),
+    ],
+    ids=["mysql", "mariadb", "postgresql", "sqlite", "geopackage"],
+)
+def test_ewkb_constructor_bind_processors_use_shared_helpers(dialect, bindvalue, expected):
+    bind_processor = Geometry(srid=4326, from_text="ST_GeomFromEWKB").bind_processor(dialect)
+
+    assert bind_processor(bindvalue) == expected
+
+
+@pytest.mark.parametrize(
+    "dialect",
+    [
+        mysql.dialect(),
+        mariadb_dialect.MariaDBDialect(),
+        postgresql.dialect(),
+        sqlite.dialect(),
+        _GeoPackageDialect(),
+    ],
+    ids=["mysql", "mariadb", "postgresql", "sqlite", "geopackage"],
+)
+def test_ewkb_constructor_bind_processors_validate_shared_helper_srid(dialect):
+    bind_processor = Geometry(srid=4326, from_text="ST_GeomFromEWKB").bind_processor(dialect)
+
+    with pytest.raises(ArgumentError, match=r"column \(4326\)"):
+        bind_processor(bytes.fromhex(WEB_MERCATOR_EWKB_HEX))
 
 
 @pytest.fixture
