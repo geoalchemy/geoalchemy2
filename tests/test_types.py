@@ -19,6 +19,13 @@ from geoalchemy2.exc import ArgumentError
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import Raster
+from geoalchemy2.types.dialects.common import as_binary_ewkb
+from geoalchemy2.types.dialects.common import as_binary_wkb
+from geoalchemy2.types.dialects.common import as_ewkb_hex
+from geoalchemy2.types.dialects.common import as_wkb_hex
+from geoalchemy2.types.dialects.common import is_ewkb_constructor
+from geoalchemy2.types.dialects.common import is_wkb_constructor
+from geoalchemy2.types.dialects.common import validate_wkb_srid
 
 from . import select
 
@@ -31,6 +38,115 @@ ZERO_SRID_EWKB_HEX = "010100002000000000000000000000f03f0000000000000040"
 def eq_sql(a, b):
     a = re.sub(r"[\n\t]", "", str(a))
     assert a == b
+
+
+@pytest.mark.parametrize(
+    ("spatial_type", "expected_wkb", "expected_ewkb"),
+    [
+        (Geometry(), False, False),
+        (Geometry(from_text="ST_GeomFromWKB"), True, False),
+        (Geometry(from_text="ST_GeomFromEWKB"), True, True),
+    ],
+)
+def test_wkb_constructor_helpers(spatial_type, expected_wkb, expected_ewkb):
+    assert is_wkb_constructor(spatial_type) is expected_wkb
+    assert is_ewkb_constructor(spatial_type) is expected_ewkb
+
+
+@pytest.mark.parametrize(
+    "bindvalue",
+    [
+        bytes.fromhex(EWKB_HEX),
+        bytearray(bytes.fromhex(EWKB_HEX)),
+        memoryview(bytes.fromhex(EWKB_HEX)),
+        EWKB_HEX,
+        WKBElement(bytes.fromhex(EWKB_HEX), extended=True),
+    ],
+)
+def test_as_binary_wkb_strips_or_validates_srid(bindvalue):
+    assert as_binary_wkb(bindvalue, strip_srid=True, column_srid=4326) == bytes.fromhex(WKB_HEX)
+
+
+def test_as_binary_wkb_validates_column_srid():
+    with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+        as_binary_wkb(bytes.fromhex(EWKB_HEX), strip_srid=True, column_srid=3857)
+
+
+@pytest.mark.parametrize(
+    "bindvalue",
+    [
+        bytes.fromhex(EWKB_HEX),
+        memoryview(bytes.fromhex(EWKB_HEX)),
+        EWKB_HEX,
+        WKBElement(bytes.fromhex(EWKB_HEX), extended=True),
+    ],
+)
+def test_as_wkb_hex_strips_or_validates_srid(bindvalue):
+    assert as_wkb_hex(bindvalue, column_srid=4326) == WKB_HEX
+
+
+def test_as_wkb_hex_validates_column_srid():
+    with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+        as_wkb_hex(bytes.fromhex(EWKB_HEX), column_srid=3857)
+
+
+@pytest.mark.parametrize(
+    ("bindvalue", "column_srid", "expected"),
+    [
+        (WKBElement(bytes.fromhex(WKB_HEX), srid=4326), None, bytes.fromhex(EWKB_HEX)),
+        (bytes.fromhex(WKB_HEX), 4326, bytes.fromhex(EWKB_HEX)),
+        (memoryview(bytes.fromhex(WKB_HEX)), 4326, bytes.fromhex(EWKB_HEX)),
+        (bytes.fromhex(EWKB_HEX), None, bytes.fromhex(EWKB_HEX)),
+    ],
+)
+def test_as_binary_ewkb_embeds_or_preserves_known_srid(bindvalue, column_srid, expected):
+    assert as_binary_ewkb(bindvalue, column_srid=column_srid) == expected
+
+
+def test_as_binary_ewkb_respects_wkbelement_srid_override_for_ewkb():
+    bindvalue = WKBElement(bytes.fromhex(EWKB_HEX), srid=3857, extended=True)
+    expected = bindvalue.as_ewkb().data
+
+    assert expected == bytes.fromhex(WEB_MERCATOR_EWKB_HEX)
+    assert as_binary_ewkb(bindvalue) == expected
+
+
+@pytest.mark.parametrize(
+    ("bindvalue", "column_srid", "expected"),
+    [
+        (bytes.fromhex(WKB_HEX), 4326, EWKB_HEX),
+        (memoryview(bytes.fromhex(WKB_HEX)), 4326, EWKB_HEX),
+        (WKB_HEX, 4326, EWKB_HEX),
+        (None, 4326, None),
+    ],
+)
+def test_as_ewkb_hex_embeds_or_preserves_known_srid(bindvalue, column_srid, expected):
+    assert as_ewkb_hex(bindvalue, column_srid=column_srid) == expected
+
+
+def test_as_ewkb_hex_respects_wkbelement_srid_override_for_ewkb():
+    bindvalue = WKBElement(bytes.fromhex(EWKB_HEX), srid=3857, extended=True)
+
+    assert as_ewkb_hex(bindvalue) == WEB_MERCATOR_EWKB_HEX
+
+
+@pytest.mark.parametrize(
+    "bindvalue",
+    [
+        WKBElement(bytes.fromhex(WKB_HEX), srid=4326),
+        bytes.fromhex(EWKB_HEX),
+    ],
+)
+def test_as_binary_ewkb_validates_column_srid(bindvalue):
+    with pytest.raises(ArgumentError, match=r"column \(3857\)"):
+        as_binary_ewkb(bindvalue, column_srid=3857)
+
+
+def test_validate_wkb_srid_ignores_unknown_srid_values():
+    validate_wkb_srid(3857, 4326, has_fixed_srid=False)
+    validate_wkb_srid(None, 4326)
+    validate_wkb_srid(3857, 0)
+    validate_wkb_srid(3857, -1)
 
 
 @pytest.fixture
