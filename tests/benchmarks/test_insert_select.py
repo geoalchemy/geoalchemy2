@@ -88,11 +88,11 @@ def GeomTable(
     print("output_representation:", output_representation)
     print("is_default_geom_type:", is_default_geom_type)
     print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-    if input_representation == "WKB":
+    if input_representation == "WKB input":
         from_text_func = "ST_GeomFromEWKB" if is_extended_input else "ST_GeomFromWKB"
     else:
         from_text_func = "ST_GeomFromEWKT" if is_extended_input else "ST_GeomFromText"
-    if output_representation == "WKB":
+    if output_representation == "WKB output":
         to_text_func = "ST_AsEWKB" if is_extended_output else "ST_AsBinary"
         ElementType_cls = WKBElement
     else:
@@ -261,7 +261,7 @@ def test_insert(
     _insert_fail_or_success_type,
 ):
     """Benchmark the insert operation."""
-    convert_wkb = input_representation == "WKB"
+    convert_wkb = input_representation == "WKB input"
 
     try:
         _benchmark_insert(
@@ -344,7 +344,7 @@ def _actual_test_insert_select(
     insert_select_rounds,
 ):
     """Actual test for insert and select operations."""
-    convert_wkb = input_representation == "WKB"
+    convert_wkb = input_representation == "WKB input"
     all_points = _benchmark_insert_select(
         conn,
         GeomTable,
@@ -372,9 +372,9 @@ def _actual_test_insert_select(
     if conn.dialect.name == "mssql" and is_default_geom_type:
         expected_extended_output = True
     assert res[0].extended == expected_extended_output
-    if output_representation == "WKB":
+    if output_representation == "WKB output":
         assert isinstance(res[0], WKBElement)
-    elif output_representation == "WKT":
+    elif output_representation == "WKT output":
         assert isinstance(res[0], WKTElement)
     assert res[0].srid == 4326
 
