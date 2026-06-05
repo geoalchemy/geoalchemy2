@@ -11,8 +11,6 @@ from geoalchemy2.elements import WKTElement
 from .. import create_points
 from .. import select
 
-ROUNDS = 5
-
 
 class SuccessfulTest(BaseException):
     """A custom exception used to mark the successful test."""
@@ -251,6 +249,7 @@ def _insert_fail_or_success_type(
     ],
 )
 def test_insert(
+    insert_select_rounds,
     benchmark,
     GeomTable,
     conn,
@@ -274,7 +273,7 @@ def test_insert(
             raw_input=is_raw_input,
             extended_input=is_extended_input,
             N=N,
-            rounds=ROUNDS,
+            rounds=insert_select_rounds,
         )
 
         assert (
@@ -283,7 +282,7 @@ def test_insert(
                 .select_from(GeomTable.__table__)
                 .where(GeomTable.__table__.c.geom.is_not(None))
             ).scalar()
-            == N * N * ROUNDS
+            == N * N * insert_select_rounds
         )
 
     except SuccessfulTest:
@@ -342,6 +341,7 @@ def _actual_test_insert_select(
     output_representation,
     is_extended_output,
     is_default_geom_type,
+    insert_select_rounds,
 ):
     """Actual test for insert and select operations."""
     convert_wkb = input_representation == "WKB"
@@ -354,7 +354,7 @@ def _actual_test_insert_select(
         raw_input=is_raw_input,
         extended_input=is_extended_input,
         N=N,
-        rounds=ROUNDS,
+        rounds=insert_select_rounds,
     )
 
     assert (
@@ -363,9 +363,9 @@ def _actual_test_insert_select(
                 GeomTable.__table__.select().where(GeomTable.__table__.c.geom.is_not(None))
             ).fetchall()
         )
-        == N * N * ROUNDS
+        == N * N * insert_select_rounds
     )
-    assert len(all_points) == N * N * ROUNDS
+    assert len(all_points) == N * N * insert_select_rounds
 
     res = conn.execute(select([GeomTable.__table__.c.geom])).fetchone()
     expected_extended_output = is_extended_output
@@ -388,6 +388,7 @@ def _actual_test_insert_select(
     ],
 )
 def test_insert_select(
+    insert_select_rounds,
     benchmark,
     GeomTable,
     conn,
@@ -415,6 +416,7 @@ def test_insert_select(
             output_representation,
             is_extended_output,
             is_default_geom_type,
+            insert_select_rounds,
         )
     except SuccessfulTest:
         # Handle the successful test case
