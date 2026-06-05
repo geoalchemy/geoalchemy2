@@ -590,8 +590,7 @@ def _process_wkt_value(value, strip_srid=False):
     elif isinstance(value, (WKBElement, bytes, bytearray, memoryview)):
         value = _to_mssql_wkt(value)
     if isinstance(value, str) and strip_srid:
-        wkt_match = WKTElement._REMOVE_SRID.match(value)
-        value = wkt_match.group(3)
+        value = _wkb_wkt.to_wkt_no_srid(value)
     if isinstance(value, str):
         value = _normalize_wkt_for_mssql(value)
 

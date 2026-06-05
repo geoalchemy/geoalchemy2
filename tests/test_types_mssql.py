@@ -1206,6 +1206,8 @@ class TestMSSQLBindAndResultProcessing:
         assert f"geometry::STGeomFromText(:{text_key}, :{srid_key})" in compiled_sql
         assert text_processor("SRID=4326;POINT ZM (1 2 3 4)") == "POINT (1 2 3 4)"
         assert srid_processor("SRID=4326;POINT ZM (1 2 3 4)") == 4326
+        assert text_processor("SRID=-1;POINT ZM (1 2 3 4)") == "POINT (1 2 3 4)"
+        assert srid_processor("SRID=-1;POINT ZM (1 2 3 4)") == 0
 
     def test_geom_from_ewkb_bindparam_compiles_to_split_wkb_and_srid_binds(self):
         source_bind = bindparam("wkb")
