@@ -152,19 +152,19 @@ def insert_and_select_all_points(conn, table, points):
     return select_all_points(conn, table)
 
 
-def _benchmark_setup(
-    conn, table_class, metadata, convert_wkb=False, extended=False, raw=False, N=50
-):
-    """Setup the database for benchmarking."""
-    # Create the points to insert
-    points = create_points(N, convert_wkb=convert_wkb, extended=extended, raw=raw)
-
-    # Create the table in the database
+def _reset_benchmark_table(conn, table_class, metadata):
+    """Reset the database table for benchmarking."""
     metadata.drop_all(conn, checkfirst=True)
     metadata.create_all(conn)
     print(f"Table {table_class.__tablename__} created")
 
-    return points
+    return table_class.__table__
+
+
+def _benchmark_setup(conn, table_class, metadata, points):
+    """Setup the database for a benchmark round."""
+    table = _reset_benchmark_table(conn, table_class, metadata)
+    return (conn, table, points), {}
 
 
 def _benchmark_insert(
@@ -179,19 +179,12 @@ def _benchmark_insert(
     rounds=5,
 ):
     """Benchmark the insert operation."""
-    points = _benchmark_setup(
-        conn,
-        table_class,
-        metadata,
-        convert_wkb=convert_wkb,
-        raw=raw_input,
-        extended=extended_input,
-        N=N,
-    )
-
-    table = table_class.__table__
+    points = create_points(N, convert_wkb=convert_wkb, raw=raw_input, extended=extended_input)
     return benchmark.pedantic(
-        insert_all_points, args=(conn, table, points), iterations=1, rounds=rounds
+        insert_all_points,
+        setup=lambda: _benchmark_setup(conn, table_class, metadata, points),
+        iterations=1,
+        rounds=rounds,
     )
 
 
@@ -207,19 +200,12 @@ def _benchmark_insert_select(
     rounds=5,
 ):
     """Benchmark the insert and select operations."""
-    points = _benchmark_setup(
-        conn,
-        table_class,
-        metadata,
-        convert_wkb=convert_wkb,
-        raw=raw_input,
-        extended=extended_input,
-        N=N,
-    )
-
-    table = table_class.__table__
+    points = create_points(N, convert_wkb=convert_wkb, raw=raw_input, extended=extended_input)
     return benchmark.pedantic(
-        insert_and_select_all_points, args=(conn, table, points), iterations=1, rounds=rounds
+        insert_and_select_all_points,
+        setup=lambda: _benchmark_setup(conn, table_class, metadata, points),
+        iterations=1,
+        rounds=rounds,
     )
 
 
@@ -295,7 +281,7 @@ def test_insert(
                 .select_from(GeomTable.__table__)
                 .where(GeomTable.__table__.c.geom.is_not(None))
             ).scalar()
-            == N * N * insert_select_rounds
+            == N * N
         )
 
     except SuccessfulTest:
@@ -398,9 +384,9 @@ def _actual_test_insert_select(
                 GeomTable.__table__.select().where(GeomTable.__table__.c.geom.is_not(None))
             ).fetchall()
         )
-        == N * N * insert_select_rounds
+        == N * N
     )
-    assert len(all_points) == N * N * insert_select_rounds
+    assert len(all_points) == N * N
 
     res = conn.execute(select([GeomTable.__table__.c.geom])).fetchone()
     expected_extended_output = is_extended_output
