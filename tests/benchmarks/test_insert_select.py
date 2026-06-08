@@ -12,9 +12,6 @@ from geoalchemy2.elements import WKTElement
 from .. import create_points
 from .. import select
 
-# SQL Server allows at most 1000 row value expressions per INSERT statement.
-_MSSQL_INSERT_CHUNK_SIZE = 1000
-
 
 class SuccessfulTest(BaseException):
     """A custom exception used to mark the successful test."""
@@ -131,13 +128,7 @@ def GeomTable(
 def insert_all_points(conn, table, points):
     """Insert all points into the database."""
     rows = [{"geom": point} for point in points]
-    if conn.dialect.name != "mssql":
-        return conn.execute(table.insert().values(rows))
-
-    result = None
-    for start in range(0, len(rows), _MSSQL_INSERT_CHUNK_SIZE):
-        result = conn.execute(table.insert().values(rows[start : start + _MSSQL_INSERT_CHUNK_SIZE]))
-    return result
+    return conn.execute(table.insert(), rows)
 
 
 def select_all_points(conn, table):
@@ -230,6 +221,13 @@ def _insert_fail_or_success_type(
     if dialect_name == "geopackage" and input_representation == "WKB input":  # noqa: SIM102
         if is_extended_input and not is_default_geom_type:  # noqa: SIM102
             return AssertionError
+    if (
+        dialect_name == "mssql"
+        and input_representation == "WKB input"
+        and not is_extended_input
+        and not is_default_geom_type
+    ):
+        return SQLAlchemyError
     if (
         dialect_name in ["sqlite", "geopackage"]
         and not is_default_geom_type
@@ -328,6 +326,13 @@ def _insert_select_fail_or_success_type(
         and output_representation == "WKB output"
     ):
         return AssertionError
+    if (
+        dialect_name == "mssql"
+        and input_representation == "WKB input"
+        and not is_extended_input
+        and not is_default_geom_type
+    ):
+        return SQLAlchemyError
     if dialect_name in ["sqlite", "geopackage"] and not is_default_geom_type:
         if not is_extended_output:
             return AssertionError
