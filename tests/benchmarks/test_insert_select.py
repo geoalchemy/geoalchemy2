@@ -176,6 +176,7 @@ def _benchmark_insert(
         setup=lambda: _benchmark_setup(conn, table_class, metadata, points),
         iterations=1,
         rounds=rounds,
+        warmup_rounds=2,
     )
 
 
@@ -197,6 +198,7 @@ def _benchmark_insert_select(
         setup=lambda: _benchmark_setup(conn, table_class, metadata, points),
         iterations=1,
         rounds=rounds,
+        warmup_rounds=2,
     )
 
 
