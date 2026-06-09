@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 from typing import Any
+from xml.etree import ElementTree
 
 METRICS = ("min", "max", "mean", "median", "stddev", "iqr")
 TIME_UNITS = {
@@ -41,6 +42,7 @@ class BenchmarkRun:
     path: Path
     data: dict[str, Any]
     benchmarks: dict[str, dict[str, Any]]
+    outcome_filter: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -81,6 +83,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         dest="compare",
         required=True,
         help="Compare saved benchmark name or JSON file path.",
+    )
+    parser.add_argument(
+        "--base-junitxml",
+        type=Path,
+        default=None,
+        help="JUnit XML report for the base benchmark run.",
+    )
+    parser.add_argument(
+        "--compare-junitxml",
+        type=Path,
+        default=None,
+        help="JUnit XML report for the compare benchmark run.",
     )
     parser.add_argument(
         "--output",
@@ -140,7 +154,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Do not export SVG charts.",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if bool(args.base_junitxml) != bool(args.compare_junitxml):
+        parser.error("--base-junitxml and --compare-junitxml must be provided together")
+    return args
 
 
 def find_run_file(storage: Path, label_or_path: str) -> Path:
@@ -179,6 +196,72 @@ def load_run(label: str, path: Path) -> BenchmarkRun:
     data = json.loads(path.read_text(encoding="utf-8"))
     benchmarks = {benchmark["fullname"]: benchmark for benchmark in data.get("benchmarks", [])}
     return BenchmarkRun(label=label, path=path, data=data, benchmarks=benchmarks)
+
+
+def filter_run_by_junitxml(run: BenchmarkRun, junitxml: Path) -> BenchmarkRun:
+    outcomes = load_junit_outcomes(junitxml)
+    excluded = {
+        "failed": 0,
+        "error": 0,
+        "skipped": 0,
+        "missing-outcome": 0,
+    }
+    benchmarks = {}
+    for name, benchmark in run.benchmarks.items():
+        outcome = outcomes.get(name)
+        if outcome == "passed":
+            benchmarks[name] = benchmark
+        elif outcome is None:
+            excluded["missing-outcome"] += 1
+        else:
+            excluded[outcome] += 1
+
+    data = dict(run.data)
+    data["benchmarks"] = [
+        benchmark
+        for benchmark in run.data.get("benchmarks", [])
+        if benchmark.get("fullname") in benchmarks
+    ]
+    return BenchmarkRun(
+        label=run.label,
+        path=run.path,
+        data=data,
+        benchmarks=benchmarks,
+        outcome_filter={
+            "junitxml": str(junitxml),
+            "kept": len(benchmarks),
+            "excluded": excluded,
+        },
+    )
+
+
+def load_junit_outcomes(path: Path) -> dict[str, str]:
+    root = ElementTree.parse(path).getroot()
+    outcomes: dict[str, str] = {}
+    for testcase in root.iter():
+        if _local_name(testcase.tag) != "testcase":
+            continue
+        classname = testcase.attrib.get("classname")
+        name = testcase.attrib.get("name")
+        if not classname or not name:
+            continue
+        nodeid = junit_nodeid(classname, name)
+        outcomes[nodeid] = _merge_outcome(outcomes.get(nodeid), _junit_testcase_outcome(testcase))
+    return outcomes
+
+
+def junit_nodeid(classname: str, name: str) -> str:
+    parts = classname.split(".")
+    module_end = next(
+        (index for index, part in enumerate(parts) if part[:1].isupper()),
+        len(parts),
+    )
+    module_parts = parts[:module_end]
+    class_parts = parts[module_end:]
+    nodeid = f"{'/'.join(module_parts)}.py::{name}"
+    if class_parts:
+        nodeid = f"{'/'.join(module_parts)}.py::{'::'.join(class_parts)}::{name}"
+    return nodeid
 
 
 def compare_runs(
@@ -632,12 +715,24 @@ def main(argv: list[str] | None = None) -> int:
     compare_path = find_run_file(args.storage, args.compare)
     base = load_run(args.base, base_path)
     compare = load_run(args.compare, compare_path)
+    filtering_enabled = False
+    if args.base_junitxml and args.compare_junitxml:
+        filtering_enabled = True
+        base = filter_run_by_junitxml(base, args.base_junitxml)
+        compare = filter_run_by_junitxml(compare, args.compare_junitxml)
+    else:
+        print(
+            "Warning: benchmark outcome filtering is disabled. Pass both "
+            "--base-junitxml and --compare-junitxml to avoid comparing failed, "
+            "errored, skipped, or xfailed benchmark tests.",
+            file=sys.stderr,
+        )
     records = compare_runs(
         base,
         compare,
         metric=args.metric,
         tolerance_percent=args.tolerance_percent,
-        only_common=args.only_common,
+        only_common=args.only_common or filtering_enabled,
     )
     records = sort_records(records, sort_by=args.sort_by, sort_order=args.sort_order)
     exported = export_reports(
@@ -654,6 +749,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Base:    {base.path}")
     print(f"Compare: {compare.path}")
     print(f"Metric:  {args.metric}")
+    print_filter_summary(base)
+    print_filter_summary(compare)
     print()
     print("\n".join(format_table(records, base.label, compare.label, args.metric, unit)))
     print()
@@ -741,13 +838,52 @@ def _row(record: ComparisonRecord, metric: str) -> dict[str, Any]:
 
 
 def _run_summary(run: BenchmarkRun) -> dict[str, Any]:
-    return {
+    summary = {
         "label": run.label,
         "path": str(run.path),
         "commit_info": run.data.get("commit_info", {}),
         "machine_info": run.data.get("machine_info", {}),
         "benchmark_count": len(run.benchmarks),
     }
+    if run.outcome_filter is not None:
+        summary["outcome_filter"] = run.outcome_filter
+    return summary
+
+
+def print_filter_summary(run: BenchmarkRun) -> None:
+    if run.outcome_filter is None:
+        return
+    excluded = run.outcome_filter["excluded"]
+    excluded_total = sum(excluded.values())
+    details = (
+        ", ".join(f"{reason}={count}" for reason, count in excluded.items() if count) or "none"
+    )
+    print(
+        f"{run.label} outcome filter: kept {run.outcome_filter['kept']} "
+        f"benchmark(s), excluded {excluded_total} ({details})"
+    )
+
+
+def _junit_testcase_outcome(testcase: ElementTree.Element) -> str:
+    child_tags = {_local_name(child.tag) for child in testcase}
+    if "error" in child_tags:
+        return "error"
+    if "failure" in child_tags:
+        return "failed"
+    if "skipped" in child_tags:
+        return "skipped"
+    return "passed"
+
+
+def _merge_outcome(existing: str | None, new: str) -> str:
+    if existing is None:
+        return new
+    priority = {"passed": 0, "skipped": 1, "failed": 2, "error": 3}
+    return new if priority[new] > priority[existing] else existing
+
+
+def _local_name(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
 
 
 def _plain_table(headers: list[str], rows: list[list[str]]) -> list[str]:
