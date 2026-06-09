@@ -169,7 +169,6 @@ class WKTElement(_SpatialElement):
         """Return this element as a plain :class:`WKBElement` (no SRID embedded).
 
         The SRID is preserved as a Python attribute on the returned element.
-        Unsupported WKT geometry types raise ``ValueError`` from the converter.
         """
         wkb_bytes = _wkb_wkt.to_wkb_no_srid(self.data)
         return WKBElement(wkb_bytes, srid=self.srid, extended=False)
@@ -178,7 +177,6 @@ class WKTElement(_SpatialElement):
         """Return this element as an extended :class:`WKBElement` (SRID embedded).
 
         If the element has no valid SRID, the result is equivalent to :meth:`as_wkb`.
-        Unsupported WKT geometry types raise ``ValueError`` from the converter.
         """
         if self.srid > 0:
             wkb_bytes = _wkb_wkt.to_wkb(self.data, srid=self.srid)

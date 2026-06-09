@@ -1038,12 +1038,39 @@ class TestMSSQLBindAndResultProcessing:
     def test_bind_processor_validates_srid(self):
         geom = Geometry(geometry_type="LINESTRING", srid=4326)
         bind_processor = geom.bind_processor(self.dialect)
+        wkb = bytes.fromhex(
+            "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"
+        )
 
         with pytest.raises(ArgumentError):
             bind_processor("SRID=2154;LINESTRING(0 0,1 1)")
 
         with pytest.raises(ArgumentError):
             bind_processor(WKTElement("LINESTRING(0 0,1 1)", srid=2154))
+
+        with pytest.raises(ArgumentError):
+            bind_processor(WKBElement(wkb, srid=2154).as_ewkb().data)
+
+    def test_bind_processor_accepts_zero_srid_raw_ewkb_for_fixed_column(self):
+        geom = Geometry(geometry_type="LINESTRING", srid=4326)
+        bind_processor = geom.bind_processor(self.dialect)
+        zero_srid_ewkb = bytes.fromhex(
+            "0102000020000000000200000000000000000000000000000000000000000000000000f03f"
+            "000000000000f03f"
+        )
+
+        assert bind_processor(zero_srid_ewkb) == "LINESTRING (0 0, 1 1)"
+
+    def test_bind_processor_accepts_zero_srid_for_fixed_column(self):
+        geom = Geometry(geometry_type="LINESTRING", srid=4326)
+        bind_processor = geom.bind_processor(self.dialect)
+        wkb = bytes.fromhex(
+            "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"
+        )
+
+        assert bind_processor("SRID=0;LINESTRING(0 0,1 1)") == "LINESTRING(0 0,1 1)"
+        assert bind_processor(WKTElement("LINESTRING(0 0,1 1)", srid=0)) == ("LINESTRING(0 0,1 1)")
+        assert bind_processor(WKBElement(wkb, srid=0)) == "LINESTRING (0 0, 1 1)"
 
     def test_bind_processor_accepts_runtime_srid_for_unconstrained_column(self):
         geom = Geometry(geometry_type="LINESTRING", srid=-1)
@@ -1064,6 +1091,7 @@ class TestMSSQLBindAndResultProcessing:
         wkb = bytes.fromhex(
             "01020000000200000000000000000000000000000000000000000000000000f03f000000000000f03f"
         )
+        ewkb = WKBElement(wkb, srid=4326).as_ewkb().data
 
         with pytest.raises(ArgumentError, match=r"column \(0\)"):
             bind_processor("SRID=4326;LINESTRING(0 0,1 1)")
@@ -1073,6 +1101,9 @@ class TestMSSQLBindAndResultProcessing:
 
         with pytest.raises(ArgumentError, match=r"column \(0\)"):
             bind_processor(WKBElement(wkb, srid=4326))
+
+        with pytest.raises(ArgumentError, match=r"column \(0\)"):
+            bind_processor(ewkb)
 
     def test_bind_processor_resolves_typedecorator_metadata_for_srid_validation(self):
         wrapped_geography = WrappedGeography()
@@ -1124,7 +1155,7 @@ class TestMSSQLBindAndResultProcessing:
             "POINT (0.12345678901234566 123456789.12345679)"
         )
 
-    def test_wkb_parser_handles_hex_empty_and_geometrycollection_inputs(self):
+    def test_converter_handles_hex_empty_and_geometrycollection_inputs(self):
         empty_linestring_z = _pack_iso_wkb(2, struct.pack("<I", 0), has_z=True)
         empty_linestring_m = _pack_iso_wkb(2, struct.pack("<I", 0), has_m=True)
         empty_polygon = _pack_iso_wkb(3, struct.pack("<I", 0))
@@ -1142,7 +1173,23 @@ class TestMSSQLBindAndResultProcessing:
             == "POINT EMPTY"
         )
 
-    def test_wkb_parser_rejects_unsupported_values(self):
+    @pytest.mark.parametrize(
+        ("wkt", "expected"),
+        [
+            ("POINT Z EMPTY", "POINT EMPTY"),
+            ("LINESTRING M EMPTY", "LINESTRING EMPTY"),
+            ("GEOMETRYCOLLECTION ZM EMPTY", "GEOMETRYCOLLECTION EMPTY"),
+            ("POINTZM(1 2 3 4)", "POINT(1 2 3 4)"),
+            (
+                "MULTIPOLYGONZM(((1 2 3 4,1 2 3 4,1 2 3 4,1 2 3 4)))",
+                "MULTIPOLYGON(((1 2 3 4,1 2 3 4,1 2 3 4,1 2 3 4)))",
+            ),
+        ],
+    )
+    def test_normalize_wkt_for_mssql_strips_dimension_suffix_from_empty_forms(self, wkt, expected):
+        assert mssql_type._normalize_wkt_for_mssql(wkt) == expected
+
+    def test_converter_rejects_unsupported_wkb_values(self):
         unsupported_wkb = b"\x01" + struct.pack("<I", 999)
 
         with pytest.raises(ValueError, match="Unsupported WKB geometry type"):
@@ -1152,29 +1199,36 @@ class TestMSSQLBindAndResultProcessing:
         with pytest.raises(TypeError, match="Unsupported WKB value type"):
             mssql_type._wkb_to_mssql_wkt(object())
 
-    def test_to_mssql_wkt_falls_back_to_shape_conversion(self, monkeypatch):
-        class Shape:
-            wkt = "POINT Z (1 2 3)"
+    def test_to_mssql_wkt_normalizes_wkt_elements_without_wkb_conversion(self, monkeypatch):
+        def raise_conversion_error(value):
+            raise ValueError("unsupported converter path")
 
-        shaped_values = []
-
-        def raise_parse_error(value):
-            raise ValueError("unsupported parser path")
-
-        def fake_to_shape(value):
-            shaped_values.append(value)
-            return Shape()
-
-        monkeypatch.setattr(mssql_type, "_wkb_to_mssql_wkt", raise_parse_error)
-        monkeypatch.setattr(mssql_type, "to_shape", fake_to_shape)
+        monkeypatch.setattr(mssql_type, "_wkb_to_mssql_wkt", raise_conversion_error)
 
         assert mssql_type._to_mssql_wkt(WKTElement("POINT Z (1 2 3)", srid=4326)) == (
             "POINT (1 2 3)"
         )
-        assert isinstance(shaped_values[-1], WKTElement)
+        with pytest.raises(ValueError, match="unsupported converter path"):
+            mssql_type._to_mssql_wkt(b"\x01")
 
-        assert mssql_type._to_mssql_wkt(b"\x01") == "POINT (1 2 3)"
-        assert isinstance(shaped_values[-1], WKBElement)
+    def test_bind_processor_reuses_split_wkb_for_raw_text_constructor(self, monkeypatch):
+        geom = Geometry(geometry_type="POINT", srid=4326)
+        bind_processor = geom.bind_processor(self.dialect)
+        bindvalue = bytearray(b"\x01\x01\x00\x00\x00")
+        calls = []
+
+        def split_wkb_srid(value):
+            calls.append(value)
+            return "POINT Z (1 2 3)", 4326
+
+        def to_wkt_no_srid(value):
+            raise AssertionError("raw bind processor should reuse split WKT")
+
+        monkeypatch.setattr(mssql_type._wkb_wkt, "split_wkb_srid", split_wkb_srid)
+        monkeypatch.setattr(mssql_type._wkb_wkt, "to_wkt_no_srid", to_wkt_no_srid)
+
+        assert bind_processor(bindvalue) == "POINT (1 2 3)"
+        assert calls == [bytes(bindvalue)]
 
     def test_bind_coercion_helpers_keep_non_bind_clauses(self):
         table = Table("raw_values", MetaData(), Column("value", Integer))
@@ -1328,6 +1382,130 @@ class TestMSSQLBindAndResultProcessing:
             srid_key_3857: wkb,
         }
         assert calls == ["called"]
+
+    def test_geom_from_ewkb_reused_callable_bind_uses_single_value_for_dynamic_and_fixed_srid(
+        self,
+    ):
+        calls = []
+        wkb = from_shape(Point(1, 2), extended=False).data
+
+        def get_wkb():
+            calls.append("called")
+            return wkb
+
+        source_bind = bindparam("wkb", callable_=get_wkb)
+        stmt = select(
+            [
+                func.ST_GeomFromEWKB(
+                    source_bind,
+                    type_=Geometry(srid=3857),
+                ),
+                func.ST_GeomFromEWKB(source_bind),
+            ]
+        )
+        compiled = stmt.compile(dialect=self.dialect)
+        wkb_key, srid_key = mssql_admin._mssql_dynamic_ewkb_bind_keys(source_bind)
+
+        params = compiled.construct_params()
+        assert set(params) == {"wkb", wkb_key, srid_key}
+        assert params["wkb"] is wkb
+        assert params[wkb_key] is wkb
+        assert params[srid_key] is wkb
+        assert calls == ["called"]
+
+    def test_geom_from_ewkb_distinct_unique_callable_binds_are_not_shared(self):
+        calls = []
+        wkb_values = [
+            from_shape(Point(1, 2), extended=False).data,
+            from_shape(Point(3, 4), extended=False).data,
+        ]
+
+        def get_wkb():
+            value = wkb_values[len(calls)]
+            calls.append(value)
+            return value
+
+        source_bind_1 = bindparam("wkb", callable_=get_wkb, unique=True)
+        source_bind_2 = bindparam("wkb", callable_=get_wkb, unique=True)
+        stmt = select(
+            [
+                func.ST_GeomFromEWKB(source_bind_1, type_=Geometry(srid=3857)),
+                func.ST_GeomFromEWKB(source_bind_1),
+                func.ST_GeomFromEWKB(source_bind_2, type_=Geometry(srid=3857)),
+                func.ST_GeomFromEWKB(source_bind_2),
+            ]
+        )
+        compiled = stmt.compile(dialect=self.dialect)
+        wkb_key_1, srid_key_1 = mssql_admin._mssql_dynamic_ewkb_bind_keys(source_bind_1)
+        wkb_key_2, srid_key_2 = mssql_admin._mssql_dynamic_ewkb_bind_keys(source_bind_2)
+
+        params = compiled.construct_params()
+        assert params[wkb_key_1] is wkb_values[0]
+        assert params[srid_key_1] is wkb_values[0]
+        assert params[wkb_key_2] is wkb_values[1]
+        assert params[srid_key_2] is wkb_values[1]
+        assert calls == wkb_values
+
+    def test_geom_from_ewkt_reused_callable_bind_uses_single_value_for_dynamic_and_fixed_srid(
+        self,
+    ):
+        calls = []
+        ewkt = "SRID=4326;POINT(1 2)"
+
+        def get_wkt():
+            calls.append("called")
+            return ewkt
+
+        source_bind = bindparam("wkt", callable_=get_wkt)
+        stmt = select(
+            [
+                func.ST_GeomFromEWKT(
+                    source_bind,
+                    type_=Geometry(srid=3857),
+                ),
+                func.ST_GeomFromEWKT(source_bind),
+            ]
+        )
+        compiled = stmt.compile(dialect=self.dialect)
+        text_key, srid_key = mssql_admin._mssql_dynamic_ewkt_bind_keys(source_bind)
+
+        params = compiled.construct_params()
+        assert params == {
+            "wkt": ewkt,
+            text_key: ewkt,
+            srid_key: ewkt,
+        }
+        assert calls == ["called"]
+
+    def test_geom_from_ewkt_distinct_unique_callable_binds_are_not_shared(self):
+        calls = []
+        ewkt_values = ["SRID=4326;POINT(1 2)", "SRID=3857;POINT(3 4)"]
+
+        def get_wkt():
+            value = ewkt_values[len(calls)]
+            calls.append(value)
+            return value
+
+        source_bind_1 = bindparam("wkt", callable_=get_wkt, unique=True)
+        source_bind_2 = bindparam("wkt", callable_=get_wkt, unique=True)
+        stmt = select(
+            [
+                func.ST_GeomFromEWKT(source_bind_1, type_=Geometry(srid=3857)),
+                func.ST_GeomFromEWKT(source_bind_1),
+                func.ST_GeomFromEWKT(source_bind_2, type_=Geometry(srid=3857)),
+                func.ST_GeomFromEWKT(source_bind_2),
+            ]
+        )
+        compiled = stmt.compile(dialect=self.dialect)
+        text_key_1, srid_key_1 = mssql_admin._mssql_dynamic_ewkt_bind_keys(source_bind_1)
+        text_key_2, srid_key_2 = mssql_admin._mssql_dynamic_ewkt_bind_keys(source_bind_2)
+
+        params = compiled.construct_params()
+        assert params[text_key_1] == ewkt_values[0]
+        assert params[srid_key_1] == ewkt_values[0]
+        assert params[text_key_2] == ewkt_values[1]
+        assert params[srid_key_2] == ewkt_values[1]
+        assert calls == ewkt_values
 
     def test_mssql_before_execute_expands_dynamic_ewkt_bindparams(self):
         source_bind = bindparam("wkt")

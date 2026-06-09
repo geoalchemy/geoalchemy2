@@ -625,11 +625,11 @@ def _process_wkb_value(value, extended=False):
     if value is None:
         return None
     if isinstance(value, WKBElement):
-        value = value.data
+        value = _wkb_wkt.to_wkb_no_srid(value.data) if extended else value.data
+    elif extended:
+        value = _wkb_wkt.to_wkb_no_srid(value)
     if isinstance(value, memoryview):
         value = value.tobytes()
-    if extended:
-        value = _wkb_wkt.to_wkb_no_srid(value)
 
     return value
 
@@ -739,7 +739,13 @@ class _MSSQLDynamicEWKTCallable:
         return value
 
 
-def _coerce_wkt_bind_clause(wkt_clause, strip_srid=False, literal=False, spatial_type=None):
+def _coerce_wkt_bind_clause(
+    wkt_clause,
+    strip_srid=False,
+    literal=False,
+    spatial_type=None,
+    compiler=None,
+):
     if not hasattr(wkt_clause, "value"):
         return wkt_clause
 
@@ -751,13 +757,21 @@ def _coerce_wkt_bind_clause(wkt_clause, strip_srid=False, literal=False, spatial
             unique=True,
         )
 
+    if compiler is not None and getattr(wkt_clause, "callable", None) is not None:
+        return _make_mssql_callable_bind_clause(
+            wkt_clause,
+            compiler,
+            _MSSQLWKTBindType(strip_srid=strip_srid, spatial_type=spatial_type),
+            _get_mssql_dynamic_ewkt_shared_callable,
+        )
+
     return expression.type_coerce(
         wkt_clause,
         _MSSQLWKTBindType(strip_srid=strip_srid, spatial_type=spatial_type),
     )
 
 
-def _coerce_wkb_bind_clause(wkb_clause, extended=False, literal=False):
+def _coerce_wkb_bind_clause(wkb_clause, extended=False, literal=False, compiler=None):
     if not hasattr(wkb_clause, "value"):
         return wkb_clause
 
@@ -767,6 +781,14 @@ def _coerce_wkb_bind_clause(wkb_clause, extended=False, literal=False):
             value=_process_wkb_value(wkb_clause.value, extended=extended),
             type_=LargeBinary(),
             unique=True,
+        )
+
+    if compiler is not None and getattr(wkb_clause, "callable", None) is not None:
+        return _make_mssql_callable_bind_clause(
+            wkb_clause,
+            compiler,
+            _MSSQLWKBBindType(extended=extended),
+            _get_mssql_dynamic_ewkb_shared_callable,
         )
 
     return expression.type_coerce(wkb_clause, _MSSQLWKBBindType(extended=extended))
@@ -1104,13 +1126,77 @@ def _mssql_dynamic_ewkt_bind_identifier(source_bind):
     return getattr(source_bind, "_identifying_key", source_bind.key)
 
 
-def _make_mssql_dynamic_ewkt_bind_clauses(wkt_clause, default_srid=0):
+def _mssql_dynamic_callable_identifier(source_bind):
+    return (
+        _mssql_dynamic_ewkt_bind_identifier(source_bind),
+        getattr(source_bind, "callable", None),
+    )
+
+
+def _get_mssql_dynamic_ewkt_shared_callable(wkt_clause, compiler, *, consumer_count):
+    callable_cache = getattr(
+        compiler,
+        "_geoalchemy2_mssql_dynamic_ewkt_callable_cache",
+        None,
+    )
+    if callable_cache is None:
+        callable_cache = {}
+        compiler._geoalchemy2_mssql_dynamic_ewkt_callable_cache = callable_cache
+
+    callable_key = _mssql_dynamic_callable_identifier(wkt_clause)
+    shared_callable = callable_cache.get(callable_key)
+    if shared_callable is None:
+        shared_callable = _MSSQLDynamicEWKTCallable(
+            wkt_clause.callable,
+            consumer_count=consumer_count,
+        )
+        callable_cache[callable_key] = shared_callable
+    else:
+        shared_callable.add_consumers(consumer_count)
+    return shared_callable
+
+
+def _get_mssql_dynamic_ewkb_shared_callable(wkb_clause, compiler, *, consumer_count):
+    callable_cache = getattr(
+        compiler,
+        "_geoalchemy2_mssql_dynamic_ewkb_callable_cache",
+        None,
+    )
+    if callable_cache is None:
+        callable_cache = {}
+        compiler._geoalchemy2_mssql_dynamic_ewkb_callable_cache = callable_cache
+
+    callable_key = _mssql_dynamic_callable_identifier(wkb_clause)
+    shared_callable = callable_cache.get(callable_key)
+    if shared_callable is None:
+        shared_callable = _MSSQLDynamicEWKTCallable(
+            wkb_clause.callable,
+            consumer_count=consumer_count,
+        )
+        callable_cache[callable_key] = shared_callable
+    else:
+        shared_callable.add_consumers(consumer_count)
+    return shared_callable
+
+
+def _make_mssql_callable_bind_clause(clause, compiler, bind_type, shared_callable_getter):
+    return expression.bindparam(
+        key=clause.key,
+        callable_=shared_callable_getter(clause, compiler, consumer_count=1),
+        required=clause.required,
+        type_=bind_type,
+        unique=getattr(clause, "unique", False),
+    )
+
+
+def _make_mssql_dynamic_ewkt_bind_clauses(wkt_clause, default_srid=0, shared_callable=None):
     text_key, srid_key = _mssql_dynamic_ewkt_bind_keys(wkt_clause)
     bind_kwargs = {
         "required": wkt_clause.required,
     }
     if getattr(wkt_clause, "callable", None) is not None:
-        shared_callable = _MSSQLDynamicEWKTCallable(wkt_clause.callable)
+        if shared_callable is None:
+            shared_callable = _MSSQLDynamicEWKTCallable(wkt_clause.callable)
         bind_kwargs["callable_"] = shared_callable
     elif not wkt_clause.required:
         bind_kwargs["value"] = getattr(wkt_clause, "value", None)
@@ -1137,9 +1223,17 @@ def _get_mssql_dynamic_ewkt_bind_clauses(wkt_clause, compiler, default_srid=0):
 
     source_identifier = _mssql_dynamic_ewkt_bind_identifier(wkt_clause)
     if source_identifier not in cache:
+        shared_callable = None
+        if getattr(wkt_clause, "callable", None) is not None:
+            shared_callable = _get_mssql_dynamic_ewkt_shared_callable(
+                wkt_clause,
+                compiler,
+                consumer_count=2,
+            )
         cache[source_identifier] = _make_mssql_dynamic_ewkt_bind_clauses(
             wkt_clause,
             default_srid=default_srid,
+            shared_callable=shared_callable,
         )
     return cache[source_identifier]
 
@@ -1191,22 +1285,11 @@ def _get_mssql_dynamic_ewkb_bind_clauses(wkb_clause, compiler, default_srid=0):
     if cache_key not in cache:
         shared_callable = None
         if getattr(wkb_clause, "callable", None) is not None:
-            callable_cache = getattr(
+            shared_callable = _get_mssql_dynamic_ewkb_shared_callable(
+                wkb_clause,
                 compiler,
-                "_geoalchemy2_mssql_dynamic_ewkb_callable_cache",
-                None,
+                consumer_count=2,
             )
-            if callable_cache is None:
-                callable_cache = {}
-                compiler._geoalchemy2_mssql_dynamic_ewkb_callable_cache = callable_cache
-
-            callable_key = _mssql_dynamic_ewkt_bind_identifier(wkb_clause)
-            shared_callable = callable_cache.get(callable_key)
-            if shared_callable is None:
-                shared_callable = _MSSQLDynamicEWKTCallable(wkb_clause.callable)
-                callable_cache[callable_key] = shared_callable
-            else:
-                shared_callable.add_consumers(2)
 
         cache[cache_key] = _make_mssql_dynamic_ewkb_bind_clauses(
             wkb_clause,
@@ -1457,6 +1540,7 @@ def _compile_mssql_geom_from_text(element, compiler, strip_srid=False, **kw):
             strip_srid=strip_srid,
             literal=kw.get("literal_binds", False),
             spatial_type=spatial_type,
+            compiler=compiler,
         )
     compiled_wkt = compiler.process(wkt_clause, **kw)
 
@@ -1526,7 +1610,10 @@ def _compile_mssql_geom_from_wkb(element, compiler, extended=False, **kw):
         or _should_coerce_wkb_bind_clause(clauses[0])
     ):
         wkb_clause = _coerce_wkb_bind_clause(
-            clauses[0], extended=extended, literal=kw.get("literal_binds", False)
+            clauses[0],
+            extended=extended,
+            literal=kw.get("literal_binds", False),
+            compiler=compiler,
         )
 
     if kw.get("literal_binds", False) and hasattr(wkb_clause, "value"):

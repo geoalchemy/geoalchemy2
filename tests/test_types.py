@@ -13,6 +13,8 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql import insert
 from sqlalchemy.sql import text
 
+from geoalchemy2 import _wkb_wkt
+from geoalchemy2._wkb_wkt import is_known_srid
 from geoalchemy2.admin.dialects import mariadb as _mariadb_admin  # noqa: F401
 from geoalchemy2.admin.dialects import mysql as _mysql_admin  # noqa: F401
 from geoalchemy2.elements import WKBElement
@@ -44,6 +46,27 @@ class _GeoPackageDialect:
 def eq_sql(a, b):
     a = re.sub(r"[\n\t]", "", str(a))
     assert a == b
+
+
+def test_split_wkb_srid_treats_strings_as_hex_wkb_only():
+    assert _wkb_wkt.split_wkb_srid(EWKB_HEX) == ("POINT (1 2)", 4326)
+
+    with pytest.raises(ValueError):
+        _wkb_wkt.split_wkb_srid("SRID=4326;POINT (1 2)")
+
+
+@pytest.mark.parametrize(
+    ("srid", "expected"),
+    [
+        (None, False),
+        (-1, False),
+        (0, False),
+        (1, True),
+        (4326, True),
+    ],
+)
+def test_is_known_srid(srid, expected):
+    assert is_known_srid(srid) is expected
 
 
 @pytest.mark.parametrize(
