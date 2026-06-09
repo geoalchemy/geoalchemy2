@@ -55,6 +55,7 @@ echo "GeoAlchemy2 Test Container"
 echo ""
 echo 'run tests with `tox --workdir /output -v run`'
 echo 'run only a specific job, e.g. `py310-sqlalatest`, with `tox --workdir /output -v run -e py310-sqlalatest`'
+echo 'run the PyPy job with `tox --workdir /output -v run -e pypy3-sqlalatest`'
 echo "MSSQL defaults: server=${MSSQL_HOST} db=${MSSQL_TEST_DB} user=${MSSQL_TEST_LOGIN} password=${MSSQL_TEST_PASSWORD}"
 echo "CockroachDB defaults: server=${COCKROACH_HOST}:${COCKROACH_PORT} db=${COCKROACH_DATABASE} user=${COCKROACH_USER}"
 echo "###############################"
