@@ -230,6 +230,7 @@ def _compile_GeomFromWKB_Postgresql(element, compiler, *, include_srid=True, **k
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
+    skip_bind_expression = False
     if kw.get("literal_binds", False):
         if not include_srid and hasattr(clauses[0], "value") and clauses[0].value is not None:
             value = clauses[0].value
@@ -250,7 +251,6 @@ def _compile_GeomFromWKB_Postgresql(element, compiler, *, include_srid=True, **k
         suffix = ", 'hex')"
     else:
         wkb_clause = clauses[0]
-        skip_bind_expression = False
         if (
             not include_srid
             and _wkb_wkt.is_known_srid(srid)

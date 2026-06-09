@@ -1192,10 +1192,24 @@ class TestMSSQLBindAndResultProcessing:
     def test_converter_rejects_unsupported_wkb_values(self):
         unsupported_wkb = b"\x01" + struct.pack("<I", 999)
 
-        with pytest.raises(ValueError, match="Unsupported WKB geometry type"):
-            mssql_type._wkb_to_mssql_wkt(unsupported_wkb)
-        with pytest.raises(ValueError, match="Invalid WKB byte order marker"):
-            mssql_type._wkb_to_mssql_wkt(b"\x02" + struct.pack("<I", 1) + _pack_coords(1, 2))
+        for converter in (mssql_type._wkb_to_mssql_wkt, mssql_type._split_wkb_to_mssql_wkt):
+            with pytest.raises(ValueError) as exc_info:
+                converter(unsupported_wkb)
+            message = str(exc_info.value)
+            assert message.startswith("Unsupported WKB geometry type: ")
+            detail = message[len("Unsupported WKB geometry type: ") :]
+            assert "unsupported geometry type" not in detail.lower()
+            assert "999" in detail
+
+        invalid_byte_order_wkb = b"\x02" + struct.pack("<I", 1) + _pack_coords(1, 2)
+        for converter in (mssql_type._wkb_to_mssql_wkt, mssql_type._split_wkb_to_mssql_wkt):
+            with pytest.raises(ValueError) as exc_info:
+                converter(invalid_byte_order_wkb)
+            message = str(exc_info.value)
+            assert message.startswith("Invalid WKB byte order marker: ")
+            detail = message[len("Invalid WKB byte order marker: ") :]
+            assert "invalid byte order marker" not in detail.lower()
+            assert "2" in detail
         with pytest.raises(TypeError, match="Unsupported WKB value type"):
             mssql_type._wkb_to_mssql_wkt(object())
 

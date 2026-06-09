@@ -22,6 +22,37 @@ def _normalize_wkt_for_mssql(wkt):
     return _WKT_DIMENSION_SUFFIX.sub(r"\1", wkt)
 
 
+def _strip_converter_error_prefix(message, prefixes):
+    message = message.strip()
+    message_lower = message.lower()
+    for prefix in prefixes:
+        if message_lower.startswith(prefix):
+            return message[len(prefix) :].lstrip(": ")
+    return message
+
+
+def _mssql_wkb_converter_error_message(exc):
+    message = str(exc)
+    message_lower = message.lower()
+    if "unsupported geometry type" in message_lower:
+        detail = _strip_converter_error_prefix(message, ("unsupported geometry type",))
+        if detail:
+            return f"Unsupported WKB geometry type: {detail}"
+        return "Unsupported WKB geometry type"
+    if "invalid byte order marker" in message_lower:
+        detail = _strip_converter_error_prefix(
+            message,
+            (
+                "invalid wkb: invalid byte order marker",
+                "invalid byte order marker",
+            ),
+        )
+        if detail:
+            return f"Invalid WKB byte order marker: {detail}"
+        return "Invalid WKB byte order marker"
+    return None
+
+
 def _split_mssql_st_point_args(spec):
     """Split the two top-level args of GeoAlchemy's MSSQL computed-column ST_POINT.
 
@@ -103,12 +134,9 @@ def _wkb_to_mssql_wkt(value):
     try:
         return _normalize_wkt_for_mssql(_wkb_wkt.to_wkt_no_srid(data))
     except ValueError as exc:
-        message = str(exc)
-        message_lower = message.lower()
-        if "unsupported geometry type" in message_lower:
-            raise ValueError(f"Unsupported WKB geometry type: {message}") from None
-        if "invalid byte order marker" in message_lower:
-            raise ValueError(f"Invalid WKB byte order marker: {message}") from None
+        message = _mssql_wkb_converter_error_message(exc)
+        if message is not None:
+            raise ValueError(message) from None
         raise
 
 
@@ -117,12 +145,9 @@ def _split_wkb_to_mssql_wkt(value):
     try:
         wkt, srid = _wkb_wkt.split_wkb_srid(data)
     except ValueError as exc:
-        message = str(exc)
-        message_lower = message.lower()
-        if "unsupported geometry type" in message_lower:
-            raise ValueError(f"Unsupported WKB geometry type: {message}") from None
-        if "invalid byte order marker" in message_lower:
-            raise ValueError(f"Invalid WKB byte order marker: {message}") from None
+        message = _mssql_wkb_converter_error_message(exc)
+        if message is not None:
+            raise ValueError(message) from None
         raise
     return _normalize_wkt_for_mssql(wkt), srid
 
