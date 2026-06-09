@@ -642,8 +642,8 @@ def _process_ewkb_srid_value(value, default_srid=0):
         return value.srid if value.srid >= 0 else default_srid
 
     if isinstance(value, (bytes, bytearray, memoryview, str)):
-        srid = WKBElement(value, extended=None).srid
-        return srid if srid >= 0 else default_srid
+        srid = _wkb_wkt.wkb_srid(value)
+        return srid if srid is not None and srid >= 0 else default_srid
 
     return default_srid
 
@@ -718,9 +718,9 @@ class _MSSQLDynamicEWKBSRIDBindType(TypeDecorator):
 
 
 class _MSSQLDynamicEWKTCallable:
-    def __init__(self, source_callable):
+    def __init__(self, source_callable, *, consumer_count=2):
         self.source_callable = source_callable
-        self._consumer_count = 2
+        self._consumer_count = consumer_count
         self._pending = None
         self._remaining = 0
 
@@ -822,9 +822,9 @@ def _infer_srid_from_wkb_clause(wkb_clause, default_srid, extended=False):
     if isinstance(value, WKBElement):
         return value.srid if value.srid >= 0 else default_srid
 
-    if extended and isinstance(value, (bytes, bytearray, memoryview)):
-        srid = WKBElement(value, extended=None).srid
-        return srid if srid >= 0 else default_srid
+    if extended and isinstance(value, (bytes, bytearray, memoryview, str)):
+        srid = _wkb_wkt.wkb_srid(value)
+        return srid if srid is not None and srid >= 0 else default_srid
 
     return default_srid
 
