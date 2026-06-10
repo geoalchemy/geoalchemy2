@@ -95,7 +95,7 @@ Install the Python dependencies::
     $ pip install -r requirements.txt -r requirements-mypy.txt
     $ pip install psycopg2-binary pyodbc "Shapely>=1.3.0"
 
-The manual requirements include ``wkb-wkt-converter>=0.6.1``, which provides
+The manual requirements include ``wkb-wkt-converter>=0.6.3``, which provides
 the WKB/EWKB conversion helpers used by the tests and runtime bind processors.
 
 The tox environments also install these full-suite dependencies from ``tox.ini``:

@@ -37,6 +37,7 @@ WKB_HEX = "0101000000000000000000f03f0000000000000040"
 EWKB_HEX = "0101000020e6100000000000000000f03f0000000000000040"
 WEB_MERCATOR_EWKB_HEX = "0101000020110f0000000000000000f03f0000000000000040"
 ZERO_SRID_EWKB_HEX = "010100002000000000000000000000f03f0000000000000040"
+UNKNOWN_SRID_EWKB_HEX = "0101000020ffffffff000000000000f03f0000000000000040"
 
 
 class _GeoPackageDialect:
@@ -55,6 +56,13 @@ def test_split_wkb_srid_treats_strings_as_hex_wkb_only():
         _wkb_wkt.split_wkb_srid("SRID=4326;POINT (1 2)")
 
 
+def test_wkb_srid_can_include_unknown_srid_values():
+    assert _wkb_wkt.wkb_srid(ZERO_SRID_EWKB_HEX) is None
+    assert _wkb_wkt.wkb_srid(ZERO_SRID_EWKB_HEX, include_unknown=True) == 0
+    assert _wkb_wkt.wkb_srid(UNKNOWN_SRID_EWKB_HEX) is None
+    assert _wkb_wkt.wkb_srid(UNKNOWN_SRID_EWKB_HEX, include_unknown=True) == -1
+
+
 @pytest.mark.parametrize(
     ("srid", "expected"),
     [
@@ -63,6 +71,7 @@ def test_split_wkb_srid_treats_strings_as_hex_wkb_only():
         (0, False),
         (1, True),
         (4326, True),
+        (0xFFFFFFFF, True),
     ],
 )
 def test_is_known_srid(srid, expected):

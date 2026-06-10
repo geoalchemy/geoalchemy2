@@ -27,9 +27,9 @@ def _srid_arg(srid: int | None) -> int | bool:
     return srid
 
 
-def wkb_srid(source) -> int | None:
+def wkb_srid(source, *, include_unknown: bool = False) -> int | None:
     """Return the embedded EWKB SRID without parsing the full geometry."""
-    return _wkb_header_srid(source)
+    return _wkb_header_srid(source, include_unknown=include_unknown)
 
 
 def to_wkb_no_srid_header(source):
