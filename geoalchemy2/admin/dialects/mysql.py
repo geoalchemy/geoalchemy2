@@ -476,7 +476,7 @@ def _mysql_dynamic_ewkb_source_token(source_bind, compiler=None):
     return f"{source_name}_{ordinal}"
 
 
-def _mysql_dynamic_ewkb_bind_keys(source_bind, *, default_srid=None, source_token=None):
+def _mysql_dynamic_ewkb_bind_keys(source_bind, *, source_token=None):
     source_name = source_token or getattr(source_bind, "_orig_key", None) or source_bind.key
     source_name = str(source_name)
     key_token = re.sub(r"[^0-9A-Za-z_]+", "_", source_name).strip("_") or "param"
@@ -495,7 +495,6 @@ def _make_mysql_dynamic_ewkb_bind_clauses(
 ):
     wkb_key, srid_key = _mysql_dynamic_ewkb_bind_keys(
         wkb_clause,
-        default_srid=default_srid,
         source_token=source_token,
     )
     wkb_bind_kwargs = {
@@ -876,7 +875,6 @@ def _get_mysql_dynamic_ewkb_bind_mappings(clauseelement, dialect):
 
         wkb_key, srid_key = _mysql_dynamic_ewkb_bind_keys(
             source_bind,
-            default_srid=default_srid,
             source_token=source_token,
         )
         dynamic_bind_mappings.append(

@@ -633,7 +633,6 @@ class TestMySQLWKBConstructors:
         compiled_expr = expr.compile(dialect=mysql.dialect())
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             source_bind,
-            default_srid=4326,
         )
         wkb_processor = compiled_expr._bind_processors[wkb_key]
         srid_processor = compiled_expr._bind_processors[srid_key]
@@ -656,7 +655,6 @@ class TestMySQLWKBConstructors:
         stmt = select([func.ST_GeomFromEWKB(source_bind)])
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             source_bind,
-            default_srid=4326,
         )
         override = bytes.fromhex(WEB_MERCATOR_EWKB_HEX)
 
@@ -689,7 +687,6 @@ class TestMySQLWKBConstructors:
         compiled_expr = expr.compile(dialect=mysql.dialect())
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             source_bind,
-            default_srid=0,
         )
 
         assert self.normalize_sql(compiled_expr) == "ST_GeomFromWKB(%s, %s)"
@@ -946,7 +943,6 @@ class TestMariaDBWKBConstructors:
         compiled_expr = expr.compile(dialect=self.dialect())
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             source_bind,
-            default_srid=4326,
         )
         wkb_processor = compiled_expr._bind_processors[wkb_key]
         srid_processor = compiled_expr._bind_processors[srid_key]
@@ -969,7 +965,6 @@ class TestMariaDBWKBConstructors:
         stmt = select([func.ST_GeomFromEWKB(source_bind)])
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             source_bind,
-            default_srid=4326,
         )
         override = bytes.fromhex(WEB_MERCATOR_EWKB_HEX)
 
@@ -1002,7 +997,6 @@ class TestMariaDBWKBConstructors:
         compiled_expr = expr.compile(dialect=self.dialect())
         wkb_key, srid_key = _mysql_admin._mysql_dynamic_ewkb_bind_keys(
             source_bind,
-            default_srid=0,
         )
 
         assert self.normalize_sql(compiled_expr) == "ST_GeomFromWKB(unhex(%s), %s)"

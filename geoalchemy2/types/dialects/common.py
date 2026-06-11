@@ -37,6 +37,8 @@ def _validate_wkb_bindvalue_srid(bindvalue, column_srid):
 
 
 def as_binary_wkb(bindvalue, *, strip_srid=False, column_srid=None):
+    if bindvalue is None:
+        return None
     if strip_srid:
         _validate_wkb_bindvalue_srid(bindvalue, column_srid)
         if isinstance(bindvalue, WKBElement):
