@@ -158,7 +158,7 @@ class WKTElement(_SpatialElement):
         return WKTElement(self.data, self.srid, self.extended)
 
     def as_ewkt(self) -> WKTElement:
-        if self.srid > 0:
+        if _wkb_wkt.is_known_srid(self.srid):
             if self.extended:
                 wkt = _wkb_wkt.to_wkt(self.data, srid=self.srid)
                 return WKTElement(wkt, extended=True)
@@ -169,7 +169,6 @@ class WKTElement(_SpatialElement):
         """Return this element as a plain :class:`WKBElement` (no SRID embedded).
 
         The SRID is preserved as a Python attribute on the returned element.
-        Unsupported WKT geometry types raise ``ValueError`` from the converter.
         """
         wkb_bytes = _wkb_wkt.to_wkb_no_srid(self.data)
         return WKBElement(wkb_bytes, srid=self.srid, extended=False)
@@ -178,9 +177,8 @@ class WKTElement(_SpatialElement):
         """Return this element as an extended :class:`WKBElement` (SRID embedded).
 
         If the element has no valid SRID, the result is equivalent to :meth:`as_wkb`.
-        Unsupported WKT geometry types raise ``ValueError`` from the converter.
         """
-        if self.srid > 0:
+        if _wkb_wkt.is_known_srid(self.srid):
             wkb_bytes = _wkb_wkt.to_wkb(self.data, srid=self.srid)
             return WKBElement(wkb_bytes, extended=True)
         return self.as_wkb()
@@ -228,18 +226,16 @@ class WKBElement(_SpatialElement):
     ) -> None:
         if srid == -1 or extended is None or extended:
             wkb_srid = None
-            has_srid_header = False
             if (extended is True and srid == -1) or (extended is None and len(data) >= 5):
                 try:
-                    has_srid_header = _wkb_wkt.wkb_has_srid_header(data)
-                    wkb_srid = _wkb_wkt.wkb_srid(data)
+                    wkb_srid = _wkb_wkt.wkb_srid(data, include_unknown=extended is None)
                 except ValueError:
                     if extended is True:
                         raise
             if extended is None:
-                extended = has_srid_header
-            if extended and srid == -1 and wkb_srid is not None:
-                srid = wkb_srid
+                extended = wkb_srid is not None
+            if extended and srid == -1 and _wkb_wkt.is_known_srid(wkb_srid):
+                srid = wkb_srid  # type: ignore[assignment]
         _SpatialElement.__init__(self, data, srid, extended)
 
     @staticmethod
@@ -267,7 +263,7 @@ class WKBElement(_SpatialElement):
         return WKBElement(self.data, self.srid, extended=False)
 
     def as_ewkb(self) -> WKBElement:
-        if self.srid > 0:
+        if _wkb_wkt.is_known_srid(self.srid):
             if self.extended:
                 try:
                     has_matching_srid = _wkb_wkt.wkb_srid(self.data) == self.srid
@@ -292,7 +288,7 @@ class WKBElement(_SpatialElement):
 
         If the element has no valid SRID, the result is equivalent to :meth:`as_wkt`.
         """
-        if self.srid > 0:
+        if _wkb_wkt.is_known_srid(self.srid):
             wkt = _wkb_wkt.to_wkt(self.data, srid=self.srid)
             return WKTElement(wkt, extended=True)
         wkt = _wkb_wkt.to_wkt_no_srid(self.data)

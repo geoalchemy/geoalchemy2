@@ -1,35 +1,56 @@
 """This module defines specific functions for MSSQL dialect."""
 
-import binascii
-import math
 import re
-import struct
 
 from sqlalchemy.types import TypeDecorator
 
+from geoalchemy2 import _wkb_wkt
+from geoalchemy2._wkb_wkt import is_known_srid
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
 from geoalchemy2.exc import ArgumentError
-from geoalchemy2.shape import to_shape
 
 _WKT_DIMENSION_SUFFIX = re.compile(
-    r"^([A-Z]+?)\s*(ZM|Z|M)(\s*\(.*)$",
+    r"\b(POINT|LINESTRING|POLYGON|MULTIPOINT|MULTILINESTRING|MULTIPOLYGON|"
+    r"GEOMETRYCOLLECTION)\s*(ZM|Z|M)(?=\s*(?:\(|EMPTY))",
     re.IGNORECASE | re.DOTALL,
 )
-_WKB_TYPE_NAMES = {
-    1: "POINT",
-    2: "LINESTRING",
-    3: "POLYGON",
-    4: "MULTIPOINT",
-    5: "MULTILINESTRING",
-    6: "MULTIPOLYGON",
-    7: "GEOMETRYCOLLECTION",
-}
 
 
 def _normalize_wkt_for_mssql(wkt):
-    return _WKT_DIMENSION_SUFFIX.sub(r"\1\3", wkt)
+    return _WKT_DIMENSION_SUFFIX.sub(r"\1", wkt)
+
+
+def _strip_converter_error_prefix(message, prefixes):
+    message = message.strip()
+    message_lower = message.lower()
+    for prefix in prefixes:
+        if message_lower.startswith(prefix):
+            return message[len(prefix) :].lstrip(": ")
+    return message
+
+
+def _mssql_wkb_converter_error_message(exc):
+    message = str(exc)
+    message_lower = message.lower()
+    if "unsupported geometry type" in message_lower:
+        detail = _strip_converter_error_prefix(message, ("unsupported geometry type",))
+        if detail:
+            return f"Unsupported WKB geometry type: {detail}"
+        return "Unsupported WKB geometry type"
+    if "invalid byte order marker" in message_lower:
+        detail = _strip_converter_error_prefix(
+            message,
+            (
+                "invalid wkb: invalid byte order marker",
+                "invalid byte order marker",
+            ),
+        )
+        if detail:
+            return f"Invalid WKB byte order marker: {detail}"
+        return "Invalid WKB byte order marker"
+    return None
 
 
 def _split_mssql_st_point_args(spec):
@@ -96,12 +117,6 @@ def _split_mssql_st_point_args(spec):
     return None
 
 
-def _format_wkb_number(value):
-    if value == 0:
-        value = 0.0
-    return format(value, ".17g")
-
-
 def _coerce_wkb_data(value):
     if isinstance(value, WKBElement):
         value = value.data
@@ -110,119 +125,45 @@ def _coerce_wkb_data(value):
     if isinstance(value, (bytes, bytearray)):
         return bytes(value)
     if isinstance(value, str):
-        return binascii.unhexlify(value)
+        return value
     raise TypeError("Unsupported WKB value type")
-
-
-def _decode_wkb_type(raw_type):
-    has_srid = bool(raw_type & 0x20000000)
-    has_z = bool(raw_type & 0x80000000)
-    has_m = bool(raw_type & 0x40000000)
-    base_type = raw_type & 0x1FFFFFFF
-
-    if base_type not in _WKB_TYPE_NAMES:
-        if base_type >= 3000:
-            base_type -= 3000
-            has_z = True
-            has_m = True
-        elif base_type >= 2000:
-            base_type -= 2000
-            has_m = True
-        elif base_type >= 1000:
-            base_type -= 1000
-            has_z = True
-
-    type_name = _WKB_TYPE_NAMES.get(base_type)
-    if type_name is None:
-        raise ValueError(f"Unsupported WKB geometry type: {raw_type}")
-
-    return type_name, 2 + int(has_z) + int(has_m), has_srid
-
-
-def _read_uint32(data, offset, byte_order):
-    return struct.unpack_from(f"{byte_order}I", data, offset)[0], offset + 4
-
-
-def _read_coord(data, offset, byte_order, dimension):
-    values = struct.unpack_from(f"{byte_order}{'d' * dimension}", data, offset)
-    coord = " ".join(_format_wkb_number(value) for value in values)
-    return coord, values, offset + (8 * dimension)
-
-
-def _read_coords(data, offset, byte_order, dimension, count):
-    coords = []
-    for _ in range(count):
-        coord, _, offset = _read_coord(data, offset, byte_order, dimension)
-        coords.append(coord)
-    return coords, offset
-
-
-def _parse_wkb_geometry(data, offset=0):
-    byte_order_marker = data[offset]
-    if byte_order_marker not in (0, 1):
-        raise ValueError(f"Invalid WKB byte order marker: {byte_order_marker}")
-    byte_order = "<" if byte_order_marker == 1 else ">"
-    offset += 1
-
-    raw_type, offset = _read_uint32(data, offset, byte_order)
-    type_name, dimension, has_srid = _decode_wkb_type(raw_type)
-
-    if has_srid:
-        _, offset = _read_uint32(data, offset, byte_order)
-
-    if type_name == "POINT":
-        coord, values, offset = _read_coord(data, offset, byte_order, dimension)
-        if all(math.isnan(value) for value in values):
-            return type_name, " EMPTY", offset
-        return type_name, f" ({coord})", offset
-
-    if type_name == "LINESTRING":
-        point_count, offset = _read_uint32(data, offset, byte_order)
-        if point_count == 0:
-            return type_name, " EMPTY", offset
-        coords, offset = _read_coords(data, offset, byte_order, dimension, point_count)
-        return type_name, f" ({', '.join(coords)})", offset
-
-    if type_name == "POLYGON":
-        ring_count, offset = _read_uint32(data, offset, byte_order)
-        if ring_count == 0:
-            return type_name, " EMPTY", offset
-        rings = []
-        for _ in range(ring_count):
-            point_count, offset = _read_uint32(data, offset, byte_order)
-            coords, offset = _read_coords(data, offset, byte_order, dimension, point_count)
-            rings.append(f"({', '.join(coords)})")
-        return type_name, f" ({', '.join(rings)})", offset
-
-    if type_name in {"MULTIPOINT", "MULTILINESTRING", "MULTIPOLYGON", "GEOMETRYCOLLECTION"}:
-        geometry_count, offset = _read_uint32(data, offset, byte_order)
-        if geometry_count == 0:
-            return type_name, " EMPTY", offset
-        geometries = []
-        for _ in range(geometry_count):
-            child_type, child_text, offset = _parse_wkb_geometry(data, offset)
-            if type_name == "GEOMETRYCOLLECTION":
-                geometries.append(f"{child_type}{child_text}")
-            else:
-                geometries.append(child_text.strip())
-        return type_name, f" ({', '.join(geometries)})", offset
-
-    raise ValueError(f"Unsupported WKB geometry type: {type_name}")
 
 
 def _wkb_to_mssql_wkt(value):
     data = _coerce_wkb_data(value)
-    type_name, body, _ = _parse_wkb_geometry(data)
-    return f"{type_name}{body}"
+    try:
+        return _normalize_wkt_for_mssql(_wkb_wkt.to_wkt_no_srid(data))
+    except ValueError as exc:
+        message = _mssql_wkb_converter_error_message(exc)
+        if message is not None:
+            raise ValueError(message) from None
+        raise
+
+
+def _split_wkb_to_mssql_wkt(value):
+    data = _coerce_wkb_data(value)
+    try:
+        wkt, srid = _wkb_wkt.split_wkb_srid(data)
+    except ValueError as exc:
+        message = _mssql_wkb_converter_error_message(exc)
+        if message is not None:
+            raise ValueError(message) from None
+        raise
+    return _normalize_wkt_for_mssql(wkt), srid
 
 
 def _to_mssql_wkt(value):
-    try:
-        return _wkb_to_mssql_wkt(value)
-    except (TypeError, ValueError, struct.error, binascii.Error, IndexError):
-        if isinstance(value, (bytes, bytearray, memoryview)):
-            value = WKBElement(value)
-        return _normalize_wkt_for_mssql(to_shape(value).wkt)
+    if isinstance(value, WKTElement):
+        return _normalize_wkt_for_mssql(_wkb_wkt.to_wkt_no_srid(value.data))
+    return _wkb_to_mssql_wkt(value)
+
+
+def _validate_wkb_srid(column_srid, has_fixed_srid, srid):
+    if has_fixed_srid and is_known_srid(srid) and srid != column_srid:
+        raise ArgumentError(
+            f"The SRID ({srid}) of the supplied value is different "
+            f"from the one of the column ({column_srid})"
+        )
 
 
 def _resolve_mssql_spatial_type(spatial_type, dialect):
@@ -246,29 +187,21 @@ def bind_processor_process(spatial_type, bindvalue, dialect=None):
                 f"The SRID ({srid}) of the supplied value can not be casted to integer"
             ) from None
 
-        if has_fixed_srid and srid is not None and srid != column_srid:
-            raise ArgumentError(
-                f"The SRID ({srid}) of the supplied value is different "
-                f"from the one of the column ({column_srid})"
-            )
+        _validate_wkb_srid(column_srid, has_fixed_srid, srid)
         return _normalize_wkt_for_mssql(wkt_match.group(3))
 
-    if (
-        isinstance(bindvalue, _SpatialElement)
-        and has_fixed_srid
-        and bindvalue.srid != -1
-        and bindvalue.srid != column_srid
-    ):
-        raise ArgumentError(
-            f"The SRID ({bindvalue.srid}) of the supplied value is different "
-            f"from the one of the column ({column_srid})"
-        )
+    if isinstance(bindvalue, _SpatialElement):
+        _validate_wkb_srid(column_srid, has_fixed_srid, bindvalue.srid)
 
     if isinstance(bindvalue, WKTElement):
         bindvalue = bindvalue.as_wkt()
-        if bindvalue.srid <= 0:
+        if not is_known_srid(bindvalue.srid):
             bindvalue.srid = spatial_type.srid
         return _normalize_wkt_for_mssql(bindvalue.data)
-    elif isinstance(bindvalue, (bytes, bytearray, memoryview, WKBElement)):
+    elif isinstance(bindvalue, WKBElement):
         return _to_mssql_wkt(bindvalue)
+    elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
+        wkt, srid = _split_wkb_to_mssql_wkt(bindvalue)
+        _validate_wkb_srid(column_srid, has_fixed_srid, srid)
+        return wkt
     return bindvalue

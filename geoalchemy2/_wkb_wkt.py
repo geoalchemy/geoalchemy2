@@ -7,8 +7,6 @@ but centralising the mapping keeps that policy explicit for callers.
 
 from __future__ import annotations
 
-import struct
-
 from wkb_wkt_converter import to_ewkb_header as _to_ewkb_header
 from wkb_wkt_converter import to_hex_wkb as _to_hex_wkb
 from wkb_wkt_converter import to_wkb as _to_wkb
@@ -17,8 +15,6 @@ from wkb_wkt_converter import to_wkt as _to_wkt
 from wkb_wkt_converter import wkb_header_srid as _wkb_header_srid
 from wkb_wkt_converter import wkb_to_wkt_split_srid
 from wkb_wkt_converter import wkt_to_wkb_split_srid
-
-_EWKB_SRID_FLAG = 0x20000000
 
 
 def is_known_srid(srid: int | None) -> bool:
@@ -31,27 +27,9 @@ def _srid_arg(srid: int | None) -> int | bool:
     return srid
 
 
-def wkb_srid(source) -> int | None:
+def wkb_srid(source, *, include_unknown: bool = False) -> int | None:
     """Return the embedded EWKB SRID without parsing the full geometry."""
-    return _wkb_header_srid(source)
-
-
-def wkb_has_srid_header(source) -> bool:
-    """Return whether a WKB/EWKB header has the EWKB SRID flag set."""
-    header = bytes.fromhex(source[:10]) if isinstance(source, str) else bytes(source[:5])
-    if len(header) < 5:
-        raise ValueError("WKB value is too short to read header")
-
-    byte_order = header[0]
-    if byte_order == 0:
-        byte_order_marker = ">I"
-    elif byte_order == 1:
-        byte_order_marker = "<I"
-    else:
-        raise ValueError(f"Invalid WKB byte order marker: {byte_order}")
-
-    wkb_type_int = struct.unpack(byte_order_marker, header[1:5])[0]
-    return bool(wkb_type_int & _EWKB_SRID_FLAG)
+    return _wkb_header_srid(source, include_unknown=include_unknown)
 
 
 def to_wkb_no_srid_header(source):

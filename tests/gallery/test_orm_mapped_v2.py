@@ -52,10 +52,11 @@ def test_ORM_mapping(session, conn, schema) -> None:
     # Insert point
     session.add(p)
     session.flush()
+    point_id = p.id
     session.expire(p)
 
     # Query the point and check the result
     pt = session.query(Lake).one()
-    assert pt.id == 1
+    assert pt.id == point_id
     assert pt.mapped_geom.srid == 4326
     check_wkb(pt.mapped_geom, 5, 45)

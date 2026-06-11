@@ -5,8 +5,11 @@ import os
 from sqlalchemy import text
 from sqlalchemy.dialects.sqlite.base import ischema_names as _sqlite_ischema_names
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql import expression
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
+from sqlalchemy.types import String
+from sqlalchemy.types import TypeDecorator
 
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
@@ -14,10 +17,13 @@ from geoalchemy2.admin.dialects.common import _format_select_args
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
+from geoalchemy2.admin.dialects.common import unwrap_wkb_constructor_clauses
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
 from geoalchemy2.types import Raster
 from geoalchemy2.types import _DummyGeometry
+from geoalchemy2.types.dialects.common import as_binary_ewkb
+from geoalchemy2.types.dialects.common import as_ewkb_hex
 from geoalchemy2.utils import authorized_values_in_docstring
 
 # Register Geometry, Geography and Raster to SQLAlchemy's reflection subsystems.
@@ -400,18 +406,62 @@ def register_sqlite_mapping(mapping):
 register_sqlite_mapping(_SQLITE_FUNCTIONS)
 
 
-def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, **kw):
+class _SpatialiteEWKBHexBindType(TypeDecorator):
+    """Bind EWKB as HEXEWKB text for SpatiaLite's GeomFromEWKB."""
+
+    impl = String
+    cache_ok = True
+
+    def __init__(self, column_srid=None):
+        super().__init__()
+        self.column_srid = column_srid
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        return as_ewkb_hex(value, column_srid=self.column_srid)
+
+
+def _coerce_ewkb_clause_to_hex(wkb_clause, *, literal=False, column_srid=None):
+    if literal:
+        if hasattr(wkb_clause, "value") and wkb_clause.value is not None:
+            wkb_clause = expression.bindparam(
+                key=wkb_clause.key,
+                value=as_binary_ewkb(wkb_clause.value, column_srid=column_srid),
+                unique=True,
+            )
+        return compile_bin_literal(wkb_clause)
+    return expression.type_coerce(
+        wkb_clause,
+        _SpatialiteEWKBHexBindType(column_srid=column_srid),
+    )
+
+
+def _compile_GeomFromWKB_SQLite(
+    element, compiler, *, identifier, include_srid=True, coerce_ewkb=False, **kw
+):
     element.identifier = identifier
 
     # Store the SRID
     clauses = list(element.clauses)
+    literal_binds = kw.get("literal_binds", False)
+    if literal_binds:
+        clauses, _ = unwrap_wkb_constructor_clauses(clauses)
     try:
         srid = clauses[1].value
         element.type.srid = srid
     except (IndexError, TypeError, ValueError):
         srid = element.type.srid
 
-    if kw.get("literal_binds", False):
+    if coerce_ewkb:
+        wkb_clause = _coerce_ewkb_clause_to_hex(
+            clauses[0],
+            literal=literal_binds,
+            column_srid=srid,
+        )
+        prefix = ""
+        suffix = ""
+    elif literal_binds:
         wkb_clause = compile_bin_literal(clauses[0])
         prefix = "unhex("
         suffix = ")"
@@ -422,7 +472,7 @@ def _compile_GeomFromWKB_SQLite(element, compiler, *, identifier, **kw):
 
     compiled = compiler.process(wkb_clause, **kw)
 
-    if srid > 0:
+    if include_srid and srid > 0:
         return f"{identifier}({prefix}{compiled}{suffix}, {srid})"
     else:
         return f"{identifier}({prefix}{compiled}{suffix})"
@@ -435,4 +485,11 @@ def _SQLite_ST_GeomFromWKB(element, compiler, **kw):
 
 @compiles(functions.ST_GeomFromEWKB, "sqlite")  # type: ignore
 def _SQLite_ST_GeomFromEWKB(element, compiler, **kw):
-    return _compile_GeomFromWKB_SQLite(element, compiler, identifier="GeomFromEWKB", **kw)
+    return _compile_GeomFromWKB_SQLite(
+        element,
+        compiler,
+        identifier="GeomFromEWKB",
+        include_srid=False,
+        coerce_ewkb=True,
+        **kw,
+    )

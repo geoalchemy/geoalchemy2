@@ -16,9 +16,9 @@ from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _format_select_args
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
-from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.admin.dialects.sqlite import _SQLITE_FUNCTIONS
+from geoalchemy2.admin.dialects.sqlite import _compile_GeomFromWKB_SQLite
 from geoalchemy2.admin.dialects.sqlite import get_col_dim
 from geoalchemy2.admin.dialects.sqlite import load_spatialite_driver
 from geoalchemy2.types import Geography
@@ -380,36 +380,27 @@ def create_spatial_ref_sys_view(bind):
     )
 
 
-def _compile_GeomFromWKB_gpkg(element, compiler, *, identifier, **kw):
-    # Store the SRID
-    clauses = list(element.clauses)
-    try:
-        srid = clauses[1].value
-    except (IndexError, TypeError, ValueError):
-        srid = element.type.srid
-
-    if kw.get("literal_binds", False):
-        wkb_clause = compile_bin_literal(clauses[0])
-        prefix = "unhex("
-        suffix = ")"
-    else:
-        wkb_clause = clauses[0]
-        prefix = ""
-        suffix = ""
-
-    compiled = compiler.process(wkb_clause, **kw)
-
-    if srid > 0:
-        return f"{identifier}({prefix}{compiled}{suffix}, {srid})"
-    else:
-        return f"{identifier}({prefix}{compiled}{suffix})"
-
-
 @compiles(functions.ST_GeomFromWKB, "geopackage")  # type: ignore
 def _gpkg_ST_GeomFromWKB(element, compiler, **kw):
-    return _compile_GeomFromWKB_gpkg(element, compiler, identifier="GeomFromWKB", **kw)
+    return _compile_GeomFromWKB_SQLite(element, compiler, identifier="GeomFromWKB", **kw)
 
 
 @compiles(functions.ST_GeomFromEWKB, "geopackage")  # type: ignore
 def _gpkg_ST_GeomFromEWKB(element, compiler, **kw):
-    return _compile_GeomFromWKB_gpkg(element, compiler, identifier="GeomFromEWKB", **kw)
+    wkb_clause = next(iter(element.clauses), None)
+    wkb_type = getattr(wkb_clause, "type", None)
+    # Geometry bind expressions already use the GeoPackage bind processor for EWKB hex.
+    use_geometry_ewkb_processor = (
+        isinstance(wkb_type, Geometry)
+        and "ewkb" in (getattr(wkb_type, "from_text", "") or "").lower()
+    )
+    coerce_ewkb = kw.get("literal_binds", False) or not use_geometry_ewkb_processor
+
+    return _compile_GeomFromWKB_SQLite(
+        element,
+        compiler,
+        identifier="GeomFromEWKB",
+        include_srid=False,
+        coerce_ewkb=coerce_ewkb,
+        **kw,
+    )
