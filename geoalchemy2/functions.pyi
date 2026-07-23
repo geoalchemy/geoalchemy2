@@ -4581,3 +4581,784 @@ class ST_Distance_Sphere(GenericFunction):
     """
 
     type = sqlalchemy.sql.sqltypes.Float()
+
+class ST_3DConvexHull(GenericFunction):
+    """
+    Computes the 3D convex hull of a geometry.
+
+    see https://postgis.net/docs/ST_3DConvexHull.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_AlphaShape(GenericFunction):
+    """
+    Computes an Alpha-shape enclosing a geometry.
+
+    see https://postgis.net/docs/ST_AlphaShape.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_ApproxCount(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/RT_ST_ApproxCount.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
+
+class ST_ApproxHistogram(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/RT_ST_ApproxHistogram.html
+    """
+
+class ST_ApproxQuantile(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/RT_ST_ApproxQuantile.html
+    """
+
+class ST_ApproxSummaryStats(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/RT_ST_ApproxSummaryStats.html
+
+    Return type: :class:`geoalchemy2.types.SummaryStats`.
+    """
+
+    type = geoalchemy2.types.SummaryStats()
+
+class ST_Area2D(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_Area2D.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Float()
+
+class ST_AsFlatGeobuf(GenericFunction):
+    """
+    Return a FlatGeobuf representation of a set of rows.
+
+    see https://postgis.net/docs/ST_AsFlatGeobuf.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.LargeBinary`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.LargeBinary()
+
+class ST_AsMARC21(GenericFunction):
+    """
+    Returns geometry as a MARC21/XML record with a geographic datafield (034).
+
+    see https://postgis.net/docs/ST_AsMARC21.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.String`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.String()
+
+class ST_AsRasterAgg(GenericFunction):
+    """
+    Aggregate. Renders PostGIS geometries into a new raster.
+
+    see https://postgis.net/docs/RT_ST_AsRasterAgg.html
+
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
+
+    type = geoalchemy2.types.Raster()
+
+class ST_CleanGeometry(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_CleanGeometry.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_ClusterIntersectingWin(GenericFunction):
+    """
+    Window function that returns a cluster id for each input geometry, clustering input geometries into
+    connected sets.
+
+    see https://postgis.net/docs/ST_ClusterIntersectingWin.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
+
+class ST_ClusterWithinWin(GenericFunction):
+    """
+    Window function that returns a cluster id for each input geometry, clustering using separation
+    distance.
+
+    see https://postgis.net/docs/ST_ClusterWithinWin.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
+
+class ST_CombineBBox(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_CombineBBox.html
+    """
+
+class ST_Contour(GenericFunction):
+    """
+    Generates a set of vector contours from the provided raster band, using the GDAL contouring
+    algorithm.
+
+    see https://postgis.net/docs/RT_ST_Contour.html
+    """
+
+class ST_CoverageClean(GenericFunction):
+    """
+    Computes a clean (edge matched, non-overlapping, gap-cleared) polygonal coverage, given a non-clean
+    input.
+
+    see https://postgis.net/docs/ST_CoverageClean.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_CoverageInvalidEdges(GenericFunction):
+    """
+    Window function that finds locations where polygons fail to form a valid coverage.
+
+    see https://postgis.net/docs/ST_CoverageInvalidEdges.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_CoverageSimplify(GenericFunction):
+    """
+    Window function that simplifies the edges of a polygonal coverage.
+
+    see https://postgis.net/docs/ST_CoverageSimplify.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_CoverageUnion(GenericFunction):
+    """
+    Computes the union of a set of polygons forming a coverage by removing shared edges.
+
+    see https://postgis.net/docs/ST_CoverageUnion.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_CreateOverview(GenericFunction):
+    """
+    Create an reduced resolution version of a given raster coverage.
+
+    see https://postgis.net/docs/ST_CreateOverview.html
+    """
+
+class ST_CurveN(GenericFunction):
+    """
+    Returns the Nth component curve geometry of a CompoundCurve.
+
+    see https://postgis.net/docs/ST_CurveN.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_DumpSegments(GenericFunction):
+    """
+    Returns a set of geometry_dump rows for the segments in a geometry.
+
+    see https://postgis.net/docs/ST_DumpSegments.html
+
+    Return type: :class:`geoalchemy2.types.GeometryDump`.
+    """
+
+    type = geoalchemy2.types.GeometryDump()
+
+class ST_FindExtent(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_FindExtent.html
+    """
+
+class ST_FromFlatGeobuf(GenericFunction):
+    """
+    Reads FlatGeobuf data.
+
+    see https://postgis.net/docs/ST_FromFlatGeobuf.html
+    """
+
+class ST_FromFlatGeobufToTable(GenericFunction):
+    """
+    Creates a table based on the structure of FlatGeobuf data.
+
+    see https://postgis.net/docs/ST_FromFlatGeobufToTable.html
+    """
+
+class ST_GDALDrivers(GenericFunction):
+    """
+    Returns a list of raster formats supported by PostGIS through GDAL. Only those formats with
+    can_write=True can be used by ST_AsGDALRaster.
+
+    see https://postgis.net/docs/ST_GDALDrivers.html
+    """
+
+class ST_GeomCollFromWKB(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_GeomCollFromWKB.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_GeomFromMARC21(GenericFunction):
+    """
+    Takes MARC21/XML geographic data as input and returns a PostGIS geometry object.
+
+    see https://postgis.net/docs/ST_GeomFromMARC21.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_GeoTransform(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/RT_ST_GeoTransform.html
+    """
+
+class ST_HasM(GenericFunction):
+    """
+    Checks if a geometry has an M (measure) dimension.
+
+    see https://postgis.net/docs/ST_HasM.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
+
+class ST_HasZ(GenericFunction):
+    """
+    Checks if a geometry has a Z dimension.
+
+    see https://postgis.net/docs/ST_HasZ.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
+
+class ST_Hexagon(GenericFunction):
+    """
+    Returns a single hexagon, using the provided edge size and cell coordinate within the hexagon grid
+    space.
+
+    see https://postgis.net/docs/ST_Hexagon.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_HexagonGrid(GenericFunction):
+    """
+    Returns a set of hexagons and cell indices that completely cover the bounds of the geometry
+    argument.
+
+    see https://postgis.net/docs/ST_HexagonGrid.html
+    """
+
+class ST_InterpolateRaster(GenericFunction):
+    """
+    Interpolates a gridded surface based on an input set of 3-d points, using the X- and Y-values to
+    position the points on the grid and the Z-value of the points as the surface elevation.
+
+    see https://postgis.net/docs/RT_ST_InterpolateRaster.html
+
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
+
+    type = geoalchemy2.types.Raster()
+
+class ST_IntersectionFractions(GenericFunction):
+    """
+    Calculates the fraction of each raster cell that is covered by a given geometry.
+
+    see https://postgis.net/docs/RT_ST_IntersectionFractions.html
+
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
+
+    type = geoalchemy2.types.Raster()
+
+class ST_InverseTransformPipeline(GenericFunction):
+    """
+    Return a new geometry with coordinates transformed to a different spatial reference system using the
+    inverse of a defined coordinate transformation pipeline.
+
+    see https://postgis.net/docs/ST_InverseTransformPipeline.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_IsCoverageTile(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/RT_ST_IsCoverageTile.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Boolean`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Boolean()
+
+class ST_LargestEmptyCircle(GenericFunction):
+    """
+    Computes the largest circle not overlapping a geometry.
+
+    see https://postgis.net/docs/ST_LargestEmptyCircle.html
+    """
+
+class ST_Length2DSpheroid(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_Length2DSpheroid.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Float`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Float()
+
+class ST_Letters(GenericFunction):
+    """
+    Returns the input letters rendered as geometry with a default start position at the origin and
+    default text height of 100.
+
+    see https://postgis.net/docs/ST_Letters.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_LineExtend(GenericFunction):
+    """
+    Returns a line extended forwards and backwards by specified distances.
+
+    see https://postgis.net/docs/ST_LineExtend.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_MaximumInscribedCircle(GenericFunction):
+    """
+    Computes the largest circle contained within a geometry.
+
+    see https://postgis.net/docs/ST_MaximumInscribedCircle.html
+    """
+
+class ST_MemCollect(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_MemCollect.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_MLineFromWKB(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_MLineFromWKB.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_MPointFromWKB(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_MPointFromWKB.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_MPolyFromWKB(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_MPolyFromWKB.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_MultiLineFromWKB(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_MultiLineFromWKB.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_MultiLineStringFromText(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_MultiLineStringFromText.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_MultiPointFromText(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_MultiPointFromText.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_MultiPointFromWKB(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_MultiPointFromWKB.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_MultiPolyFromWKB(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_MultiPolyFromWKB.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_MultiPolygonFromText(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_MultiPolygonFromText.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_NumCurves(GenericFunction):
+    """
+    Return the number of component curves in a CompoundCurve.
+
+    see https://postgis.net/docs/ST_NumCurves.html
+
+    Return type: :class:`sqlalchemy.sql.sqltypes.Integer`.
+    """
+
+    type = sqlalchemy.sql.sqltypes.Integer()
+
+class ST_OptimalAlphaShape(GenericFunction):
+    """
+    Computes an Alpha-shape enclosing a geometry using an "optimal" alpha value.
+
+    see https://postgis.net/docs/ST_OptimalAlphaShape.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_PointM(GenericFunction):
+    """
+    Creates a Point with X, Y, M and SRID values.
+
+    see https://postgis.net/docs/ST_PointM.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_PointZ(GenericFunction):
+    """
+    Creates a Point with X, Y, Z and SRID values.
+
+    see https://postgis.net/docs/ST_PointZ.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_PointZM(GenericFunction):
+    """
+    Creates a Point with X, Y, Z, M and SRID values.
+
+    see https://postgis.net/docs/ST_PointZM.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_PolyFromText(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_PolyFromText.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_PolyFromWKB(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_PolyFromWKB.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_PolygonFromWKB(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_PolygonFromWKB.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_ReclassExact(GenericFunction):
+    """
+    Creates a new raster composed of bands reclassified from original, using a 1:1 mapping from values
+    in the original band to new values in the destination band.
+
+    see https://postgis.net/docs/RT_ST_ReclassExact.html
+
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
+
+    type = geoalchemy2.types.Raster()
+
+class ST_ReducePrecision(GenericFunction):
+    """
+    Returns a valid geometry with points rounded to a grid tolerance.
+
+    see https://postgis.net/docs/ST_ReducePrecision.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_RemoveIrrelevantPointsForView(GenericFunction):
+    """
+    Removes points that are irrelevant for rendering a specific rectangular view of a geometry.
+
+    see https://postgis.net/docs/ST_RemoveIrrelevantPointsForView.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_RemoveSmallParts(GenericFunction):
+    """
+    Removes small parts (polygon rings or linestrings) of a geometry.
+
+    see https://postgis.net/docs/ST_RemoveSmallParts.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_Scroll(GenericFunction):
+    """
+    Change start point of a closed LineString.
+
+    see https://postgis.net/docs/ST_Scroll.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_SetGeoTransform(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/RT_ST_SetGeoTransform.html
+
+    Return type: :class:`geoalchemy2.types.Raster`.
+    """
+
+    type = geoalchemy2.types.Raster()
+
+class ST_SetM(GenericFunction):
+    """
+    Returns a geometry with the same X/Y coordinates as the input geometry, and values from the raster
+    copied into the M dimension using the requested resample algorithm.
+
+    see https://postgis.net/docs/RT_ST_SetM.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_SetZ(GenericFunction):
+    """
+    Returns a geometry with the same X/Y coordinates as the input geometry, and values from the raster
+    copied into the Z dimension using the requested resample algorithm.
+
+    see https://postgis.net/docs/RT_ST_SetZ.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_SimplifyPolygonHull(GenericFunction):
+    """
+    Computes a simplified topology-preserving outer or inner hull of a polygonal geometry.
+
+    see https://postgis.net/docs/ST_SimplifyPolygonHull.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_Square(GenericFunction):
+    """
+    Returns a single square, using the provided edge size and cell coordinate within the square grid
+    space.
+
+    see https://postgis.net/docs/ST_Square.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_SquareGrid(GenericFunction):
+    """
+    Returns a set of grid squares and cell indices that completely cover the bounds of the geometry
+    argument.
+
+    see https://postgis.net/docs/ST_SquareGrid.html
+    """
+
+class ST_SymmetricDifference(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_SymmetricDifference.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_TransformPipeline(GenericFunction):
+    """
+    Return a new geometry with coordinates transformed to a different spatial reference system using a
+    defined coordinate transformation pipeline.
+
+    see https://postgis.net/docs/ST_TransformPipeline.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_TriangulatePolygon(GenericFunction):
+    """
+    Computes the constrained Delaunay triangulation of polygons.
+
+    see https://postgis.net/docs/ST_TriangulatePolygon.html
+
+    Return type: :class:`geoalchemy2.types.Geometry`.
+    """
+
+    type = geoalchemy2.types.Geometry()
+
+class ST_ValuePercent(GenericFunction):
+    """
+    Not documented by PostGIS.
+
+    see https://postgis.net/docs/ST_ValuePercent.html
+    """

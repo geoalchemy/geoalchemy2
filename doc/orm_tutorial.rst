@@ -378,11 +378,10 @@ measurement functions can be applied to
 Use Raster functions
 --------------------
 
-A few functions (`ST_SetSRID()`, `ST_SnapToGrid()`, `ST_Transform()`, `ST_Union()` and
-`ST_Intersection()`) can be used on both :class:`geoalchemy2.types.Geometry` and
-:class:`geoalchemy2.types.Raster` types (and, for some of them,
-:class:`geoalchemy2.types.Geography` too), and GeoAlchemy2 detects the right return type
-automatically from the arguments passed:
+Some functions (e.g. `ST_Transform()`, `ST_Buffer()`, `ST_Intersection()`) can be used on
+both :class:`geoalchemy2.types.Geometry` and :class:`geoalchemy2.types.Raster` types (and,
+for some of them, :class:`geoalchemy2.types.Geography` too), and GeoAlchemy2 detects the
+right return type automatically from the arguments passed:
 
     >>> query = session.query(Lake.raster.ST_Transform(2154))
 

@@ -377,10 +377,13 @@ class TestGeography:
         assert i.compile().params == {"geom": "POINT(1 2)"}
 
     def test_function_call(self, geography_table):
+        # ST_Buffer is polymorphic (see _FUNCTION_OVERLOADS): called on a Geography column it
+        # returns a Geography (ST_AsBinary wrapping), not the Geometry default (ST_AsEWKB).
         s = select([geography_table.c.geom.ST_Buffer(2)])
         eq_sql(
             s,
-            'SELECT ST_AsEWKB(ST_Buffer("table".geom, :ST_Buffer_2)) AS "ST_Buffer_1" FROM "table"',
+            'SELECT ST_AsBinary(ST_Buffer("table".geom, :ST_Buffer_2)) '
+            'AS "ST_Buffer_1" FROM "table"',
         )
 
     def test_non_ST_function_call(self, geography_table):
@@ -1174,6 +1177,81 @@ class TestPolymorphicFunctions:
             s,
             'SELECT raster(ST_Intersection("table".rast, "table".rast)) '
             'AS "ST_Intersection_1" FROM "table"',
+        )
+
+    # These functions are also Geometry/Geography-polymorphic: PostGIS defines a distinct
+    # Geography overload for each (return Geography, not Geometry), unlike the plain
+    # Geometry-only functions where a Geography column falls back to the Geometry default.
+    @pytest.mark.parametrize(
+        "func_name,args",
+        [
+            ("ST_Buffer", (2,)),
+            ("ST_Centroid", ()),
+            ("ST_LineInterpolatePoint", (0.5,)),
+            ("ST_LineInterpolatePoints", (0.5,)),
+            ("ST_LineSubstring", (0.2, 0.8)),
+            ("ST_Segmentize", (2,)),
+        ],
+    )
+    def test_geometry_geography_single_arg_functions(
+        self, geometry_table, geography_table, func_name, args
+    ):
+        params = "".join(f", :{func_name}_{i + 2}" for i in range(len(args)))
+
+        geom_sql = select([getattr(geometry_table.c.geom, func_name)(*args)])
+        eq_sql(
+            geom_sql,
+            f'SELECT ST_AsEWKB({func_name}("table".geom{params})) AS "{func_name}_1" FROM "table"',
+        )
+
+        geog_sql = select([getattr(geography_table.c.geom, func_name)(*args)])
+        eq_sql(
+            geog_sql,
+            f'SELECT ST_AsBinary({func_name}("table".geom{params})) '
+            f'AS "{func_name}_1" FROM "table"',
+        )
+
+    @pytest.fixture
+    def two_geometry_table(self):
+        return Table("table", MetaData(), Column("geom", Geometry), Column("geom2", Geometry))
+
+    @pytest.fixture
+    def two_geography_table(self):
+        return Table("table", MetaData(), Column("geom", Geography), Column("geom2", Geography))
+
+    @pytest.mark.parametrize(
+        "func_name,extra_args",
+        [
+            ("ST_ClosestPoint", ()),
+            ("ST_ShortestLine", ()),
+            ("ST_Project", (45.0,)),
+        ],
+    )
+    def test_geometry_geography_two_arg_functions(
+        self, two_geometry_table, two_geography_table, func_name, extra_args
+    ):
+        params = "".join(f", :{func_name}_{i + 2}" for i in range(len(extra_args)))
+
+        geom_sql = select(
+            [getattr(two_geometry_table.c.geom, func_name)(two_geometry_table.c.geom2, *extra_args)]
+        )
+        eq_sql(
+            geom_sql,
+            f'SELECT ST_AsEWKB({func_name}("table".geom, "table".geom2{params})) '
+            f'AS "{func_name}_1" FROM "table"',
+        )
+
+        geog_sql = select(
+            [
+                getattr(two_geography_table.c.geom, func_name)(
+                    two_geography_table.c.geom2, *extra_args
+                )
+            ]
+        )
+        eq_sql(
+            geog_sql,
+            f'SELECT ST_AsBinary({func_name}("table".geom, "table".geom2{params})) '
+            f'AS "{func_name}_1" FROM "table"',
         )
 
 
