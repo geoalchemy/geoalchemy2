@@ -1,6 +1,9 @@
 import re
 from pathlib import Path
 
+from sqlalchemy import Column
+from sqlalchemy import MetaData
+from sqlalchemy import Table
 from sqlalchemy import select
 from sqlalchemy.sql import func
 
@@ -871,6 +874,19 @@ def test_ST_Reskew():
 # ST_SnapToGrid already exists for Geometry type so it can not be duplicated
 def test_ST_SnapToGrid_raster():
     _test_raster_returning_func("ST_SnapToGrid", type_=Raster)
+
+
+def test_ST_Transform_raster_detected_without_type_override():
+    # Called through func.* (rather than the column-attribute syntax) with a real Raster
+    # column, the Raster return type must be detected automatically: no `type_=Raster`
+    # needed, unlike the literal-argument case above where there is no column to detect
+    # a type from.
+    raster_table = Table("table", MetaData(), Column("rast", Raster))
+    eq_sql(
+        func.ST_Transform(raster_table.c.rast, 2154).select(),
+        'SELECT raster(ST_Transform("table".rast, :ST_Transform_2)) AS "ST_Transform_1" '
+        'FROM "table"',
+    )
 
 
 def test_ST_Resize():

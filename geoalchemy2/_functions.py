@@ -832,7 +832,7 @@ _FUNCTIONS: List[Tuple[str, Optional[type], Union[None, str, Tuple[str, str]]]] 
      ('''Returns a raster with the calculated Topographic Position Index.''', 'RT_ST_TPI')),
     ('ST_TRI', types.Raster,
      ('''Returns a raster with the calculated Terrain Ruggedness Index.''', 'RT_ST_TRI')),
-    ('ST_DumpAsPolygons', None,
+    ('ST_DumpAsPolygons', types.GeomVal,
      ('''Returns a set of geomval (geom,val) rows, from a given raster band. If no band number is specified, band num defaults to 1.''', 'RT_ST_DumpAsPolygons')),
     ('ST_MinConvexHull', types.Geometry,
      ('''Return the convex hull geometry of the raster excluding NODATA pixels.''', 'RT_ST_MinConvexHull')),
@@ -844,3 +844,40 @@ _FUNCTIONS: List[Tuple[str, Optional[type], Union[None, str, Tuple[str, str]]]] 
      '''Returns minimum distance in meters between two lon/lat geometries. Uses a spherical earth and radius of 6370986 meters. Faster than ``ST_Distance_Spheroid``, but less accurate. PostGIS versions prior to 1.5 only implemented for points.'''),
 ]
 # fmt: on
+
+# A handful of PostGIS functions are polymorphic: the same SQL function name accepts
+# Geometry, Geography and/or Raster arguments, and its actual return type depends on which
+# ones were passed (e.g. ``ST_Transform`` returns a Geometry when called on a Geometry
+# column, but a Raster when called on a Raster column). Each entry in `_FUNCTIONS` above can
+# only carry a single default return type, so these functions are recorded here separately,
+# keyed by the GIS type of each of their spatial arguments in order (non-spatial arguments,
+# such as an SRID integer or a resampling algorithm string, are ignored/skipped when matching
+# a signature - they never affect which of these variants applies). See
+# `geoalchemy2.functions._resolve_overload_type`, which consults this table at call time to
+# pick the right return type automatically, without requiring the caller to pass `type_=`.
+_FUNCTION_OVERLOADS: dict = {
+    "st_setsrid": {
+        (types.Geometry,): types.Geometry,
+        (types.Geography,): types.Geography,
+        (types.Raster,): types.Raster,
+    },
+    "st_snaptogrid": {
+        (types.Geometry,): types.Geometry,
+        (types.Raster,): types.Raster,
+    },
+    "st_transform": {
+        (types.Geometry,): types.Geometry,
+        (types.Raster,): types.Raster,
+    },
+    "st_union": {
+        (types.Geometry,): types.Geometry,
+        (types.Raster,): types.Raster,
+    },
+    "st_intersection": {
+        (types.Geometry, types.Geometry): types.Geometry,
+        (types.Geography, types.Geography): types.Geography,
+        (types.Geometry, types.Raster): types.GeomVal,
+        (types.Raster, types.Geometry): types.GeomVal,
+        (types.Raster, types.Raster): types.Raster,
+    },
+}
