@@ -4529,7 +4529,11 @@ class ST_DumpAsPolygons(GenericFunction):
     band num defaults to 1.
 
     see https://postgis.net/docs/RT_ST_DumpAsPolygons.html
+
+    Return type: :class:`geoalchemy2.types.GeomVal`.
     """
+
+    type = geoalchemy2.types.GeomVal()
 
 class ST_MinConvexHull(GenericFunction):
     """

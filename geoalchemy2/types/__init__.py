@@ -481,12 +481,29 @@ class SummaryStats(CompositeType):
     """ Enable cache for this type. """
 
 
+class GeomVal(CompositeType):
+    """The composite type returned by ``ST_DumpAsPolygons`` and some raster ``ST_Intersection``.
+
+    A ``geomval`` pairs a geometry (the ``geom`` field) with the pixel value at that location
+    (the ``val`` field) when exploding a raster band into geometry polygons.
+    """
+
+    typemap = {
+        "geom": Geometry,
+        "val": Float,
+    }
+
+    cache_ok = True
+    """ Enable cache for this type. """
+
+
 __all__ = [
     "_GISType",
     "CompositeType",
     "Geography",
     "Geometry",
     "GeometryDump",
+    "GeomVal",
     "Raster",
     "SummaryStats",
     "dialects",
