@@ -216,6 +216,29 @@ def _compile_table_row_thing(element, compiler, **kw):
     return compiled.split(".")[0]
 
 
+# Exact-type lookup tables backing `_spatial_arg_type` below. Keyed by `type(...)` rather
+# than checked via a chain of `isinstance()` calls, so classifying an argument is a couple of
+# dict lookups regardless of how many GIS types/element classes exist. Every concrete
+# subclass that can show up here has to be listed explicitly (dict lookups don't follow
+# inheritance the way `isinstance` does), which is why both the plain and "Dynamic" element
+# variants are present.
+_GIS_COLUMN_TYPE_MARKERS: dict[type, type] = {
+    types.Geometry: types.Geometry,
+    types._DummyGeometry: types.Geometry,
+    types.Geography: types.Geography,
+    types.Raster: types.Raster,
+}
+
+_SPATIAL_ELEMENT_MARKERS: dict[type, type] = {
+    elements.WKTElement: types.Geometry,
+    elements.DynamicWKTElement: types.Geometry,
+    elements.WKBElement: types.Geometry,
+    elements.DynamicWKBElement: types.Geometry,
+    elements.RasterElement: types.Raster,
+    elements.DynamicRasterElement: types.Raster,
+}
+
+
 def _spatial_arg_type(value) -> type | None:
     """Best-effort classification of a function-call argument's GIS type.
 
@@ -226,18 +249,10 @@ def _spatial_arg_type(value) -> type | None:
     skipped when matching a signature in :data:`geoalchemy2._functions._FUNCTION_OVERLOADS` -
     only the relative order of the *spatial* arguments matters.
     """
-    value_type = getattr(value, "type", None)
-    if isinstance(value_type, types.Raster):
-        return types.Raster
-    if isinstance(value_type, types.Geography):
-        return types.Geography
-    if isinstance(value_type, types.Geometry):
-        return types.Geometry
-    if isinstance(value, elements.RasterElement):
-        return types.Raster
-    if isinstance(value, elements._SpatialElement):
-        return types.Geometry
-    return None
+    marker = _GIS_COLUMN_TYPE_MARKERS.get(type(getattr(value, "type", None)))
+    if marker is not None:
+        return marker
+    return _SPATIAL_ELEMENT_MARKERS.get(type(value))
 
 
 def _resolve_overload_type(name: str, args) -> type | None:
