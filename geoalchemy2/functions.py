@@ -47,13 +47,14 @@ in several ways:
 
 .. warning::
 
-    A few functions (`ST_SetSRID()`, `ST_SnapToGrid()`, `ST_Transform()`, `ST_Union()` and
-    `ST_Intersection()`) can be used on several spatial types
-    (:class:`geoalchemy2.types.Geometry`, :class:`geoalchemy2.types.Geography` and / or
-    :class:`geoalchemy2.types.Raster`), and their return type depends on which type they were
-    actually called with (e.g. ``ST_Transform`` returns a Geometry when called on a Geometry
-    column but a Raster when called on a Raster column). GeoAlchemy2 detects this
-    automatically from the arguments you pass, so no extra step is needed::
+    Some functions (e.g. `ST_Transform()`, `ST_Buffer()`, `ST_Intersection()` - see
+    :data:`geoalchemy2._functions._FUNCTION_OVERLOADS` for the full list) can be used on
+    several spatial types (:class:`geoalchemy2.types.Geometry`,
+    :class:`geoalchemy2.types.Geography` and / or :class:`geoalchemy2.types.Raster`), and
+    their return type depends on which type they were actually called with (e.g.
+    ``ST_Transform`` returns a Geometry when called on a Geometry column but a Raster when
+    called on a Raster column). GeoAlchemy2 detects this automatically from the arguments you
+    pass, so no extra step is needed::
 
         s = select(
             func.ST_Transform(
@@ -63,8 +64,8 @@ in several ways:
         )
 
     You can still pass an explicit `type_=` argument to override the detected type, which is
-    also the only option for functions not in the list above that happen to support more than
-    one spatial type.
+    also the only option for functions not in that list that happen to support more than one
+    spatial type.
 
 Reference
 ---------
