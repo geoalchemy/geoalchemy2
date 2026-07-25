@@ -1,5 +1,18 @@
 from textwrap import TextWrapper
 
+# Maps a PostgreSQL/PostGIS type name (as returned by pg_get_function_result /
+# pg_get_function_identity_arguments) to the name of the GeoAlchemy2 GIS type it corresponds
+# to. Anything not in this table is treated as non-spatial (an SRID integer, an algorithm
+# name string, etc.) and is irrelevant to polymorphic return-type resolution.
+_PG_TYPE_TO_GIS_MARKER: dict[str, str] = {
+    "geometry": "Geometry",
+    "geography": "Geography",
+    "raster": "Raster",
+    "geomval": "GeomVal",
+    "box2d": "Geometry",
+    "box3d": "Geometry",
+}
+
 
 def _wrap_docstring(docstring: str) -> str:
     wrapper = TextWrapper(width=100)
@@ -80,3 +93,193 @@ class {name}(GenericFunction):
         stub_file_parts.append(signature)
 
     return "\n".join(stub_file_parts)
+
+
+def _parse_pg_type(type_desc: str) -> str | None:
+    """Map a single PostgreSQL type description to a GIS marker name, or ``None``.
+
+    ``type_desc`` is one element of the comma-separated string returned by
+    ``pg_get_function_identity_arguments``/``pg_get_function_result`` for a scalar (non
+    ``SETOF``/``TABLE`` returning) argument or return type, e.g. ``"geom geometry"``,
+    ``"raster"``, ``"integer"``, ``"double precision[]"``.
+    """
+    type_desc = type_desc.strip()
+    if type_desc.startswith("VARIADIC "):
+        type_desc = type_desc[len("VARIADIC ") :]
+
+    # Arguments may be named ("geom geometry") or anonymous ("geometry"). PostgreSQL type
+    # names never contain a space themselves, except "double precision", so stripping
+    # everything up to (and including) the first space reliably drops a parameter name
+    # while leaving "double precision" intact (there is nothing before its own first space
+    # to strip in that case).
+    if " " in type_desc and type_desc != "double precision":
+        type_desc = type_desc[type_desc.index(" ") + 1 :]
+
+    if type_desc.endswith("[]"):
+        type_desc = type_desc[:-2]
+
+    return _PG_TYPE_TO_GIS_MARKER.get(type_desc)
+
+
+def _parse_pg_return_type(return_type_desc: str) -> str | None:
+    """Map a ``pg_get_function_result`` string to a GIS marker name, or ``None``.
+
+    Strips a leading ``SETOF`` (set-returning functions) before delegating to
+    :func:`_parse_pg_type`. Composite ``TABLE(...)`` returns are out of scope (``None``) -
+    they already return more than a single GIS-typed value and are not relevant to
+    resolving a polymorphic *scalar* return type.
+    """
+    return_type_desc = return_type_desc.strip()
+    if return_type_desc.startswith("TABLE("):
+        return None
+    if return_type_desc.startswith("SETOF "):
+        return_type_desc = return_type_desc[len("SETOF ") :]
+    return _parse_pg_type(return_type_desc)
+
+
+def _introspect_postgis_functions(dsn: str, schema: str = "public") -> dict[str, list]:
+    """Query a live PostGIS database for every ``st_*`` function's overloads.
+
+    Returns ``{lowercase_name: [(arg_markers_tuple, return_marker_or_None, description), ...]}``
+    where ``arg_markers_tuple`` only records the GIS type marker (``"Geometry"``,
+    ``"Geography"``, ``"Raster"``, ``"GeomVal"``) of each argument, in order, or ``None`` for
+    non-spatial arguments (SRIDs, algorithm names, etc.) - matching the granularity that
+    :data:`geoalchemy2._functions._FUNCTION_OVERLOADS` is keyed on.
+
+    Requires ``psycopg2`` (a test/dev-only dependency, not a runtime one) and a reachable
+    Postgres+PostGIS instance, e.g. ``postgis/postgis`` via Docker.
+    """
+    import psycopg2
+
+    with psycopg2.connect(dsn) as conn, conn.cursor() as cursor:
+        cursor.execute(_PG_PROC_QUERY, (schema,))
+        rows = cursor.fetchall()
+
+    return _process_pg_function_rows(rows)
+
+
+_PG_PROC_QUERY = """
+    SELECT
+        p.proname AS function_name,
+        pg_catalog.pg_get_function_result(p.oid) AS return_type,
+        pg_catalog.pg_get_function_identity_arguments(p.oid) AS argument_types,
+        pg_catalog.obj_description(p.oid, 'pg_proc') AS description
+    FROM pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+    WHERE p.proname LIKE 'st\\_%%' AND n.nspname = %s
+    ORDER BY p.proname
+"""
+
+
+def _process_pg_function_rows(rows) -> dict[str, list]:
+    """Parse ``(name, return_type, argument_types, description)`` rows from `_PG_PROC_QUERY`.
+
+    Split out from :func:`_introspect_postgis_functions` so the parsing logic can be
+    exercised in tests (or against a manually-fetched CSV dump) without a live DB connection.
+    """
+    functions: dict[str, list] = {}
+    for name, return_type, argument_types, description in rows:
+        arg_markers = tuple(_parse_pg_type(arg) for arg in argument_types.split(", ") if arg)
+        return_marker = _parse_pg_return_type(return_type)
+        functions.setdefault(name, []).append((arg_markers, return_marker, description))
+
+    return functions
+
+
+def _compute_polymorphic_overloads(
+    introspected: dict[str, list],
+) -> dict[str, dict[tuple, str]]:
+    """Reduce introspected overloads down to candidate ``_FUNCTION_OVERLOADS`` entries.
+
+    For each function, collapses every overload's argument signature to just its GIS-typed
+    positions (dropping non-spatial ones, as ``geoalchemy2.functions._spatial_arg_type``
+    does at call time) and keeps only the ones whose return type is itself GIS-typed. A
+    function is only "polymorphic" - i.e. worth an entry - if it ends up with more than one
+    distinct (collapsed signature -> return type) mapping, or a mapping that disagrees with
+    another overload sharing the same collapsed signature.
+    """
+    candidates: dict[str, dict[tuple, str]] = {}
+    for name, overloads in introspected.items():
+        signatures: dict[tuple, str] = {}
+        for arg_markers, return_marker, _description in overloads:
+            if return_marker is None:
+                continue
+            collapsed = tuple(m for m in arg_markers if m is not None)
+            signatures[collapsed] = return_marker
+        # A function only needs an override table entry if calling it on different GIS
+        # types actually yields different return types - if every overload agrees (or there
+        # is only one), the function's single static default in `_FUNCTIONS` already covers
+        # it correctly.
+        if len(set(signatures.values())) > 1:
+            candidates[name] = signatures
+    return candidates
+
+
+def _diff_function_catalog(dsn: str, schema: str = "public") -> str:
+    """Compare a live PostGIS instance against `_FUNCTIONS`/`_FUNCTION_OVERLOADS`.
+
+    Produces a human-reviewable report (never a direct rewrite of either table) covering:
+    functions PostGIS has that GeoAlchemy2 doesn't expose at all, functions GeoAlchemy2
+    tracks that this PostGIS instance doesn't have (renamed/removed/version mismatch), and
+    polymorphic functions the live catalog reveals that aren't yet reflected in
+    `_FUNCTION_OVERLOADS` (or disagree with it).
+    """
+    from geoalchemy2._functions import _FUNCTION_OVERLOADS
+    from geoalchemy2._functions import _FUNCTIONS
+
+    introspected = _introspect_postgis_functions(dsn, schema=schema)
+    live_names = set(introspected)
+    known_names = {name.lower() for name, _type, _doc in _FUNCTIONS}
+    # ST_AsGeoJSON is hand-written as a special-cased class rather than a _FUNCTIONS entry.
+    known_names.add("st_asgeojson")
+
+    missing_from_geoalchemy2 = sorted(live_names - known_names)
+    missing_from_postgis = sorted(known_names - live_names)
+
+    candidates = _compute_polymorphic_overloads(introspected)
+    new_overloads = {}
+    changed_overloads = {}
+    for name, signatures in candidates.items():
+        current = _FUNCTION_OVERLOADS.get(name)
+        if current is None:
+            new_overloads[name] = signatures
+            continue
+        current_by_marker = {
+            tuple(t.__name__ for t in sig): ret.__name__ for sig, ret in current.items()
+        }
+        if current_by_marker != signatures:
+            changed_overloads[name] = (current_by_marker, signatures)
+
+    lines = [
+        f"PostGIS functions introspected from schema '{schema}': {len(live_names)}",
+        f"Functions known to geoalchemy2 (_FUNCTIONS + ST_AsGeoJSON): {len(known_names)}",
+        "",
+        f"## In PostGIS but missing from geoalchemy2's _FUNCTIONS "
+        f"({len(missing_from_geoalchemy2)}):",
+    ]
+    lines.extend(f"  {name}" for name in missing_from_geoalchemy2)
+    lines.append("")
+    lines.append(
+        f"## In geoalchemy2's _FUNCTIONS but not found on this PostGIS instance "
+        f"({len(missing_from_postgis)}):"
+    )
+    lines.extend(f"  {name}" for name in missing_from_postgis)
+    lines.append("")
+    lines.append(
+        f"## New polymorphic-function candidates for _FUNCTION_OVERLOADS ({len(new_overloads)}):"
+    )
+    for name, signatures in sorted(new_overloads.items()):
+        lines.append(f"  {name}:")
+        for sig, ret in signatures.items():
+            lines.append(f"    {sig or '()'} -> {ret}")
+    lines.append("")
+    lines.append(
+        f"## _FUNCTION_OVERLOADS entries that disagree with live introspection "
+        f"({len(changed_overloads)}):"
+    )
+    for name, (current, live) in sorted(changed_overloads.items()):
+        lines.append(f"  {name}:")
+        lines.append(f"    current:  {current}")
+        lines.append(f"    live:     {live}")
+
+    return "\n".join(lines)

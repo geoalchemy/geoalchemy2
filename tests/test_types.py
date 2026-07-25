@@ -377,15 +377,29 @@ class TestGeography:
         assert i.compile().params == {"geom": "POINT(1 2)"}
 
     def test_function_call(self, geography_table):
+        # ST_Buffer is polymorphic (see _FUNCTION_OVERLOADS): called on a Geography column it
+        # returns a Geography (ST_AsBinary wrapping), not the Geometry default (ST_AsEWKB).
         s = select([geography_table.c.geom.ST_Buffer(2)])
         eq_sql(
             s,
-            'SELECT ST_AsEWKB(ST_Buffer("table".geom, :ST_Buffer_2)) AS "ST_Buffer_1" FROM "table"',
+            'SELECT ST_AsBinary(ST_Buffer("table".geom, :ST_Buffer_2)) '
+            'AS "ST_Buffer_1" FROM "table"',
         )
 
     def test_non_ST_function_call(self, geography_table):
         with pytest.raises(AttributeError):
             geography_table.c.geom.Buffer(2)
+
+    def test_function_call_polymorphic_return_type(self, geography_table):
+        # ST_SetSRID is also defined for Geometry and Raster, with Geometry as its default
+        # return type. Called on a Geography column, GeoAlchemy2 must detect that the result
+        # is a Geography (wrapped in `ST_AsBinary(...)`), not a Geometry.
+        s = select([geography_table.c.geom.ST_SetSRID(4326)])
+        eq_sql(
+            s,
+            'SELECT ST_AsBinary(ST_SetSRID("table".geom, :ST_SetSRID_2)) '
+            'AS "ST_SetSRID_1" FROM "table"',
+        )
 
     def test_subquery(self, geography_table):
         # test for geography columns not delivered to the result
@@ -1081,6 +1095,164 @@ class TestRaster:
     def test_non_ST_function_call(self, raster_table):
         with pytest.raises(AttributeError):
             raster_table.c.geom.Height()
+
+    @pytest.mark.parametrize(
+        "func_name,args",
+        [
+            ("ST_Transform", (2154,)),
+            ("ST_Union", ()),
+            ("ST_SetSRID", (4326,)),
+            ("ST_SnapToGrid", (1.0,)),
+        ],
+    )
+    def test_function_call_polymorphic_return_type(self, raster_table, func_name, args):
+        # These functions are also defined for Geometry, with Geometry as their default
+        # return type. Called on a Raster column without an explicit `type_=`, GeoAlchemy2
+        # must still detect that the result is a Raster (wrapped in `raster(...)`), not a
+        # Geometry (which would be wrapped in `ST_AsEWKB(...)`).
+        s = select([getattr(raster_table.c.rast, func_name)(*args)])
+        eq_sql(
+            s,
+            f'SELECT raster({func_name}("table".rast'
+            + (", " + ", ".join(f":{func_name}_{i + 2}" for i in range(len(args))) if args else "")
+            + f')) AS "{func_name}_1" FROM "table"',
+        )
+
+    def test_function_call_explicit_type_override_wins(self, raster_table):
+        # An explicit `type_=` must still take precedence over the auto-detected one.
+        s = select([raster_table.c.rast.ST_Transform(2154, type_=Geometry)])
+        eq_sql(
+            s,
+            'SELECT ST_AsEWKB(ST_Transform("table".rast, :ST_Transform_2)) '
+            'AS "ST_Transform_1" FROM "table"',
+        )
+
+
+class TestPolymorphicFunctions:
+    # ST_Intersection's return type depends on BOTH of its spatial arguments, not just the
+    # receiver: geometry+geometry stays a Geometry, but geometry+raster (in either order)
+    # explodes into GeomVal rows, and raster+raster stays a Raster.
+
+    def test_geometry_geometry_returns_geometry(self, geometry_table):
+        s = select([geometry_table.c.geom.ST_Intersection(geometry_table.c.geom)])
+        eq_sql(
+            s,
+            'SELECT ST_AsEWKB(ST_Intersection("table".geom, "table".geom)) '
+            'AS "ST_Intersection_1" FROM "table"',
+        )
+
+    def test_geography_geography_returns_geography(self, geography_table):
+        s = select([geography_table.c.geom.ST_Intersection(geography_table.c.geom)])
+        eq_sql(
+            s,
+            'SELECT ST_AsBinary(ST_Intersection("table".geom, "table".geom)) '
+            'AS "ST_Intersection_1" FROM "table"',
+        )
+
+    @pytest.fixture
+    def mixed_table(self):
+        return Table("table", MetaData(), Column("rast", Raster), Column("geom", Geometry))
+
+    def test_raster_geometry_returns_geomval(self, mixed_table):
+        s = select([mixed_table.c.rast.ST_Intersection(mixed_table.c.geom)])
+        # GeomVal is a CompositeType: it isn't wrapped in ST_AsEWKB/raster() like the
+        # scalar Geometry/Raster types are.
+        eq_sql(
+            s,
+            'SELECT ST_Intersection("table".rast, "table".geom) AS "ST_Intersection_1" '
+            'FROM "table"',
+        )
+
+    def test_geometry_raster_returns_geomval(self, mixed_table):
+        s = select([mixed_table.c.geom.ST_Intersection(mixed_table.c.rast)])
+        eq_sql(
+            s,
+            'SELECT ST_Intersection("table".geom, "table".rast) AS "ST_Intersection_1" '
+            'FROM "table"',
+        )
+
+    def test_raster_raster_returns_raster(self, raster_table):
+        s = select([raster_table.c.rast.ST_Intersection(raster_table.c.rast)])
+        eq_sql(
+            s,
+            'SELECT raster(ST_Intersection("table".rast, "table".rast)) '
+            'AS "ST_Intersection_1" FROM "table"',
+        )
+
+    # These functions are also Geometry/Geography-polymorphic: PostGIS defines a distinct
+    # Geography overload for each (return Geography, not Geometry), unlike the plain
+    # Geometry-only functions where a Geography column falls back to the Geometry default.
+    @pytest.mark.parametrize(
+        "func_name,args",
+        [
+            ("ST_Buffer", (2,)),
+            ("ST_Centroid", ()),
+            ("ST_LineInterpolatePoint", (0.5,)),
+            ("ST_LineInterpolatePoints", (0.5,)),
+            ("ST_LineSubstring", (0.2, 0.8)),
+            ("ST_Segmentize", (2,)),
+        ],
+    )
+    def test_geometry_geography_single_arg_functions(
+        self, geometry_table, geography_table, func_name, args
+    ):
+        params = "".join(f", :{func_name}_{i + 2}" for i in range(len(args)))
+
+        geom_sql = select([getattr(geometry_table.c.geom, func_name)(*args)])
+        eq_sql(
+            geom_sql,
+            f'SELECT ST_AsEWKB({func_name}("table".geom{params})) AS "{func_name}_1" FROM "table"',
+        )
+
+        geog_sql = select([getattr(geography_table.c.geom, func_name)(*args)])
+        eq_sql(
+            geog_sql,
+            f'SELECT ST_AsBinary({func_name}("table".geom{params})) '
+            f'AS "{func_name}_1" FROM "table"',
+        )
+
+    @pytest.fixture
+    def two_geometry_table(self):
+        return Table("table", MetaData(), Column("geom", Geometry), Column("geom2", Geometry))
+
+    @pytest.fixture
+    def two_geography_table(self):
+        return Table("table", MetaData(), Column("geom", Geography), Column("geom2", Geography))
+
+    @pytest.mark.parametrize(
+        "func_name,extra_args",
+        [
+            ("ST_ClosestPoint", ()),
+            ("ST_ShortestLine", ()),
+            ("ST_Project", (45.0,)),
+        ],
+    )
+    def test_geometry_geography_two_arg_functions(
+        self, two_geometry_table, two_geography_table, func_name, extra_args
+    ):
+        params = "".join(f", :{func_name}_{i + 2}" for i in range(len(extra_args)))
+
+        geom_sql = select(
+            [getattr(two_geometry_table.c.geom, func_name)(two_geometry_table.c.geom2, *extra_args)]
+        )
+        eq_sql(
+            geom_sql,
+            f'SELECT ST_AsEWKB({func_name}("table".geom, "table".geom2{params})) '
+            f'AS "{func_name}_1" FROM "table"',
+        )
+
+        geog_sql = select(
+            [
+                getattr(two_geography_table.c.geom, func_name)(
+                    two_geography_table.c.geom2, *extra_args
+                )
+            ]
+        )
+        eq_sql(
+            geog_sql,
+            f'SELECT ST_AsBinary({func_name}("table".geom, "table".geom2{params})) '
+            f'AS "{func_name}_1" FROM "table"',
+        )
 
 
 class TestCompositeType:

@@ -47,22 +47,25 @@ in several ways:
 
 .. warning::
 
-    A few functions (like `ST_Transform()`, `ST_Union()`, `ST_SnapToGrid()`, ...) can be used on
+    Some functions (e.g. `ST_Transform()`, `ST_Buffer()`, `ST_Intersection()` - see
+    :data:`geoalchemy2._functions._FUNCTION_OVERLOADS` for the full list) can be used on
     several spatial types (:class:`geoalchemy2.types.Geometry`,
-    :class:`geoalchemy2.types.Geography` and / or :class:`geoalchemy2.types.Raster` types). In
-    GeoAlchemy2, these functions are only defined for the :class:`geoalchemy2.types.Geometry` type,
-    as it can not be defined for several types at the same time. Therefore, using these functions on
-    :class:`geoalchemy2.types.Geography` or :class:`geoalchemy2.types.Raster` requires minor
-    tweaking to enforce the type by passing the `type_=Geography` or `type_=Raster` argument to the
-    function::
+    :class:`geoalchemy2.types.Geography` and / or :class:`geoalchemy2.types.Raster`), and
+    their return type depends on which type they were actually called with (e.g.
+    ``ST_Transform`` returns a Geometry when called on a Geometry column but a Raster when
+    called on a Raster column). GeoAlchemy2 detects this automatically from the arguments you
+    pass, so no extra step is needed::
 
         s = select(
             func.ST_Transform(
                 lake_table.c.raster,
                 2154,
-                type_=Raster,
             ).label("transformed_raster")
         )
+
+    You can still pass an explicit `type_=` argument to override the detected type, which is
+    also the only option for functions not in that list that happen to support more than one
+    spatial type.
 
 Reference
 ---------
@@ -79,6 +82,8 @@ from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.sql.selectable import FromClause
 
 from geoalchemy2 import elements
+from geoalchemy2 import types
+from geoalchemy2._functions import _FUNCTION_OVERLOADS
 from geoalchemy2._functions import _FUNCTIONS
 from geoalchemy2._functions_helpers import _get_docstring
 
@@ -211,6 +216,59 @@ def _compile_table_row_thing(element, compiler, **kw):
     return compiled.split(".")[0]
 
 
+# Exact-type lookup tables backing `_spatial_arg_type` below. Keyed by `type(...)` rather
+# than checked via a chain of `isinstance()` calls, so classifying an argument is a couple of
+# dict lookups regardless of how many GIS types/element classes exist. Every concrete
+# subclass that can show up here has to be listed explicitly (dict lookups don't follow
+# inheritance the way `isinstance` does), which is why both the plain and "Dynamic" element
+# variants are present.
+_GIS_COLUMN_TYPE_MARKERS: dict[type, type] = {
+    types.Geometry: types.Geometry,
+    types._DummyGeometry: types.Geometry,
+    types.Geography: types.Geography,
+    types.Raster: types.Raster,
+}
+
+_SPATIAL_ELEMENT_MARKERS: dict[type, type] = {
+    elements.WKTElement: types.Geometry,
+    elements.DynamicWKTElement: types.Geometry,
+    elements.WKBElement: types.Geometry,
+    elements.DynamicWKBElement: types.Geometry,
+    elements.RasterElement: types.Raster,
+    elements.DynamicRasterElement: types.Raster,
+}
+
+
+def _spatial_arg_type(value) -> type | None:
+    """Best-effort classification of a function-call argument's GIS type.
+
+    Returns ``types.Geometry``/``types.Geography``/``types.Raster`` when confidently
+    identifiable (either a bound column/expression carrying one of those types, or a
+    :class:`geoalchemy2.elements._SpatialElement` value), or ``None`` for anything else
+    (plain literals like an SRID integer or an algorithm name string). ``None`` results are
+    skipped when matching a signature in :data:`geoalchemy2._functions._FUNCTION_OVERLOADS` -
+    only the relative order of the *spatial* arguments matters.
+    """
+    marker = _GIS_COLUMN_TYPE_MARKERS.get(type(getattr(value, "type", None)))
+    if marker is not None:
+        return marker
+    return _SPATIAL_ELEMENT_MARKERS.get(type(value))
+
+
+def _resolve_overload_type(name: str, args) -> type | None:
+    """Return the return type override for calling function ``name`` with ``args``.
+
+    Only returns a non-``None`` value if ``name`` is a known polymorphic function (see
+    :data:`geoalchemy2._functions._FUNCTION_OVERLOADS`) and its spatial argument signature is
+    recognized.
+    """
+    overloads = _FUNCTION_OVERLOADS.get(name.lower())
+    if not overloads:
+        return None
+    signature = tuple(t for t in (_spatial_arg_type(a) for a in args) if t is not None)
+    return overloads.get(signature)
+
+
 class GenericFunction(_GeoFunctionBase):  # type: ignore
     """The base class for GeoAlchemy functions.
 
@@ -247,6 +305,12 @@ class GenericFunction(_GeoFunctionBase):  # type: ignore
         args_list = list(args)
         if expr is not None:
             args_list = [expr] + args_list
+
+        if "type_" not in kwargs:
+            override = _resolve_overload_type(self.name, args_list)
+            if override is not None:
+                kwargs["type_"] = override
+
         for idx, elem in enumerate(args_list):
             if isinstance(elem, elements._SpatialElement):
                 if elem.extended:

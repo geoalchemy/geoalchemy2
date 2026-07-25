@@ -378,13 +378,15 @@ measurement functions can be applied to
 Use Raster functions
 --------------------
 
-A few functions (like `ST_Transform()`, `ST_Union()`, `ST_SnapToGrid()`, ...) can be
-used on both :class:`geoalchemy2.types.Geometry` and :class:`geoalchemy2.types.Raster`
-types. In GeoAlchemy2, these functions are only defined for
-:class:`Geometry` as it can not be defined for several types at the
-same time. Thus using these functions on :class:`Raster` requires
-minor tweaking to enforce the type by passing the `type_=Raster` argument to the
-function:
+Some functions (e.g. `ST_Transform()`, `ST_Buffer()`, `ST_Intersection()`) can be used on
+both :class:`geoalchemy2.types.Geometry` and :class:`geoalchemy2.types.Raster` types (and,
+for some of them, :class:`geoalchemy2.types.Geography` too), and GeoAlchemy2 detects the
+right return type automatically from the arguments passed::
+
+    >>> query = session.query(Lake.raster.ST_Transform(2154))
+
+For any other function that happens to support more than one spatial type, or to override
+the detected type, pass an explicit `type_=` argument to the function::
 
     >>> query = session.query(Lake.raster.ST_Transform(2154, type_=Raster))
 
