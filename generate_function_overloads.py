@@ -1,18 +1,16 @@
-import os
-import sys
+r"""Generates function overloads by comparing to a live PostGIS instance pg_proc catalog.
 
-from geoalchemy2._functions_helpers import _diff_function_catalog
-
-"""
 Compares a live PostGIS instance's pg_proc catalog against geoalchemy2's `_FUNCTIONS` and
-`_FUNCTION_OVERLOADS` tables (in geoalchemy2/_functions.py), and prints a report: functions
-PostGIS has that geoalchemy2 doesn't expose, functions geoalchemy2 tracks that this instance
+`_FUNCTION_OVERLOADS` tables (in geoalchemy2/_functions.py), and prints a report: functions PostGIS
+has that geoalchemy2 doesn't expose, functions geoalchemy2 tracks that this instance
 doesn't have, and polymorphic functions (return type depends on the GIS type of the
 arguments) that aren't yet reflected in `_FUNCTION_OVERLOADS`.
+
 
 This is a read-only report for manual review - it never writes to `_functions.py` itself.
 Re-run it whenever a new PostGIS release ships, to catch drift between what PostGIS actually
 offers and what this library tracks.
+
 
 1. Start a disposable PostGIS instance
 ----------------------------------------
@@ -21,9 +19,9 @@ Docker/Podman, matching the PostGIS version you want to check against (see
 https://hub.docker.com/r/postgis/postgis/tags for available tags - they combine a Postgres
 major version with a PostGIS version, e.g. ``18-3.6``, not a bare PostGIS patch version)::
 
-    docker run -d --name geoalchemy2-postgis-test \\
-        -e POSTGRES_PASSWORD=postgres \\
-        -p 5432:5432 \\
+    docker run -d --name geoalchemy2-postgis-test \
+        -e POSTGRES_PASSWORD=postgres \
+        -p 5432:5432 \
         postgis/postgis:18-3.6
 
 If ``docker run`` fails with a netavark/bridge-creation error (seen in some rootless
@@ -39,7 +37,7 @@ run it live end-to-end, via `docker exec`, without needing psycopg2 connectivity
                pg_catalog.obj_description(p.oid, 'pg_proc')
         FROM pg_catalog.pg_proc p
         JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-        WHERE p.proname LIKE 'st\\_%' AND n.nspname = 'public'
+        WHERE p.proname LIKE 'st\_%' AND n.nspname = 'public'
         ORDER BY p.proname
     " > pg_functions.csv
 
@@ -60,7 +58,7 @@ will make this script wrongly report hundreds of real functions as "missing from
 3. Run this script
 ---------------------
 
-    GEOALCHEMY2_TEST_PG_DSN="dbname=postgres user=postgres password=postgres host=localhost" \\
+    GEOALCHEMY2_TEST_PG_DSN="dbname=postgres user=postgres password=postgres host=localhost" \
         python generate_function_overloads.py
 
 The report has four sections: functions PostGIS has that `_FUNCTIONS` doesn't track at all
@@ -72,6 +70,11 @@ callers may still target an older PostGIS version); new polymorphic-function can
 `_FUNCTION_OVERLOADS`; and any existing `_FUNCTION_OVERLOADS` entries that disagree with what
 this instance actually reports.
 """
+
+import os
+import sys
+
+from geoalchemy2._functions_helpers import _diff_function_catalog
 
 if __name__ == "__main__":
     dsn = os.environ.get("GEOALCHEMY2_TEST_PG_DSN")
