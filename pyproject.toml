@@ -33,11 +33,11 @@ classifiers = [
 dependencies = [
     "SQLAlchemy>=1.4",
     "packaging",
-    "wkb-wkt-converter>=0.6.3",
 ]
 
 [project.optional-dependencies]
 shapely = ["Shapely>=1.7"]
+wkb-wkt-converter = ["wkb-wkt-converter>=0.6.3"]
 
 [project.urls]
 Homepage = "https://geoalchemy-2.readthedocs.io/en/stable/"

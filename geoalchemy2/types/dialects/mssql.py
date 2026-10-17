@@ -10,6 +10,8 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.elements import _SpatialElement
 from geoalchemy2.exc import ArgumentError
+from geoalchemy2.types.dialects.common import wkb_bytes_to_wkt
+from geoalchemy2.types.dialects.common import wkb_bytes_to_wkt_split_srid
 
 _WKT_DIMENSION_SUFFIX = re.compile(
     r"\b(POINT|LINESTRING|POLYGON|MULTIPOINT|MULTILINESTRING|MULTIPOLYGON|"
@@ -132,7 +134,7 @@ def _coerce_wkb_data(value):
 def _wkb_to_mssql_wkt(value):
     data = _coerce_wkb_data(value)
     try:
-        return _normalize_wkt_for_mssql(_wkb_wkt.to_wkt_no_srid(data))
+        return _normalize_wkt_for_mssql(wkb_bytes_to_wkt(data))
     except ValueError as exc:
         message = _mssql_wkb_converter_error_message(exc)
         if message is not None:
@@ -143,7 +145,7 @@ def _wkb_to_mssql_wkt(value):
 def _split_wkb_to_mssql_wkt(value):
     data = _coerce_wkb_data(value)
     try:
-        wkt, srid = _wkb_wkt.split_wkb_srid(data)
+        wkt, srid = wkb_bytes_to_wkt_split_srid(data)
     except ValueError as exc:
         message = _mssql_wkb_converter_error_message(exc)
         if message is not None:
@@ -154,7 +156,7 @@ def _split_wkb_to_mssql_wkt(value):
 
 def _to_mssql_wkt(value):
     if isinstance(value, WKTElement):
-        return _normalize_wkt_for_mssql(_wkb_wkt.to_wkt_no_srid(value.data))
+        return _normalize_wkt_for_mssql(_wkb_wkt.wkt_strip_srid(value.data))
     return _wkb_to_mssql_wkt(value)
 
 

@@ -3,7 +3,6 @@
 import re
 import warnings
 
-from geoalchemy2 import _wkb_wkt
 from geoalchemy2.elements import RasterElement
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
@@ -11,6 +10,8 @@ from geoalchemy2.types.dialects.common import as_binary_wkb
 from geoalchemy2.types.dialects.common import as_ewkb_hex
 from geoalchemy2.types.dialects.common import is_ewkb_constructor
 from geoalchemy2.types.dialects.common import is_wkb_constructor
+from geoalchemy2.types.dialects.common import wkb_bytes_to_wkt
+from geoalchemy2.types.dialects.common import wkb_bytes_to_wkt_split_srid
 
 
 def format_geom_type(wkt, default_srid=None):
@@ -50,7 +51,7 @@ def bind_processor_process(spatial_type, bindvalue):
                 return as_ewkb_hex(bindvalue, column_srid=spatial_type.srid)
             return as_binary_wkb(bindvalue)
         res = format_geom_type(
-            _wkb_wkt.to_wkt_no_srid(bindvalue.data),
+            wkb_bytes_to_wkt(bindvalue.data),
             default_srid=bindvalue.srid if bindvalue.srid >= 0 else spatial_type.srid,
         )
         return res
@@ -67,7 +68,7 @@ def bind_processor_process(spatial_type, bindvalue):
             if use_ewkb_constructor:
                 return as_ewkb_hex(bindvalue, column_srid=spatial_type.srid)
             return as_binary_wkb(bindvalue)
-        wkt, srid = _wkb_wkt.split_wkb_srid(bindvalue)
+        wkt, srid = wkb_bytes_to_wkt_split_srid(bindvalue)
         return format_geom_type(
             wkt,
             default_srid=srid if srid is not None and srid >= 0 else spatial_type.srid,

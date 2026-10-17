@@ -1,6 +1,5 @@
 """This module defines specific functions for MySQL dialect."""
 
-from geoalchemy2 import _wkb_wkt
 from geoalchemy2._wkb_wkt import is_known_srid
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
@@ -9,6 +8,8 @@ from geoalchemy2.exc import ArgumentError
 from geoalchemy2.types.dialects.common import as_wkb_hex
 from geoalchemy2.types.dialects.common import is_wkb_constructor
 from geoalchemy2.types.dialects.common import validate_wkb_srid
+from geoalchemy2.types.dialects.common import wkb_bytes_to_wkt
+from geoalchemy2.types.dialects.common import wkb_bytes_to_wkt_split_srid
 
 
 def _normalize_mariadb_wkt(wkt):
@@ -54,13 +55,13 @@ def bind_processor_process(spatial_type, bindvalue):
         return bindvalue
     elif isinstance(bindvalue, WKBElement):
         if not is_wkb_constructor(spatial_type):
-            return _normalize_mariadb_wkt(_wkb_wkt.to_wkt_no_srid(bindvalue.data))
+            return _normalize_mariadb_wkt(wkb_bytes_to_wkt(bindvalue.data))
         # MariaDB does not support raw binary data so we use the hex representation
         return as_wkb_hex(bindvalue, column_srid=spatial_type.srid)
     elif isinstance(bindvalue, (bytes, bytearray, memoryview)):
         if is_wkb_constructor(spatial_type):
             return as_wkb_hex(bindvalue, column_srid=spatial_type.srid)
-        wkt, srid = _wkb_wkt.split_wkb_srid(bindvalue)
+        wkt, srid = wkb_bytes_to_wkt_split_srid(bindvalue)
         validate_wkb_srid(spatial_type.srid, srid)
         return _normalize_mariadb_wkt(wkt)
     return bindvalue

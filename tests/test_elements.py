@@ -209,15 +209,15 @@ class TestWKTElement:
     def test_extended_as_wkt_uses_converter(self, monkeypatch):
         calls = []
 
-        def to_wkt_no_srid(value):
+        def wkt_strip_srid(value):
             calls.append(value)
             return self._wkt
 
-        def fail_to_wkt(*args, **kwargs):
-            raise AssertionError("as_wkt() should use the no-SRID converter")
+        def fail_wkt_add_srid(*args, **kwargs):
+            raise AssertionError("as_wkt() should use the SRID-stripping helper")
 
-        monkeypatch.setattr(_wkb_wkt, "to_wkt_no_srid", to_wkt_no_srid)
-        monkeypatch.setattr(_wkb_wkt, "to_wkt", fail_to_wkt)
+        monkeypatch.setattr(_wkb_wkt, "wkt_strip_srid", wkt_strip_srid)
+        monkeypatch.setattr(_wkb_wkt, "wkt_add_srid", fail_wkt_add_srid)
 
         ewkt = WKTElement(self._ewkt, extended=True)
 
@@ -227,15 +227,15 @@ class TestWKTElement:
     def test_extended_as_ewkt_with_positive_srid_uses_converter(self, monkeypatch):
         calls = []
 
-        def to_wkt(value, srid=None):
+        def wkt_add_srid(value, srid=None):
             calls.append((value, srid))
             return f"SRID={srid};{self._wkt}"
 
-        def fail_to_wkt_no_srid(*args, **kwargs):
-            raise AssertionError("positive-SRID as_ewkt() should keep the SRID converter")
+        def fail_wkt_strip_srid(*args, **kwargs):
+            raise AssertionError("positive-SRID as_ewkt() should keep the SRID-adding helper")
 
-        monkeypatch.setattr(_wkb_wkt, "to_wkt", to_wkt)
-        monkeypatch.setattr(_wkb_wkt, "to_wkt_no_srid", fail_to_wkt_no_srid)
+        monkeypatch.setattr(_wkb_wkt, "wkt_add_srid", wkt_add_srid)
+        monkeypatch.setattr(_wkb_wkt, "wkt_strip_srid", fail_wkt_strip_srid)
 
         ewkt = WKTElement(self._ewkt, srid=4326, extended=True)
 

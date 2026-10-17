@@ -95,8 +95,10 @@ Install the Python dependencies::
     $ pip install -r requirements.txt -r requirements-mypy.txt
     $ pip install psycopg2-binary pyodbc "Shapely>=1.3.0"
 
-The manual requirements include ``wkb-wkt-converter>=0.6.3``, which provides
-the WKB/EWKB conversion helpers used by the tests and runtime bind processors.
+``wkb-wkt-converter`` is an optional runtime dependency (``geoalchemy2[wkb-wkt-converter]``)
+that provides WKB/EWKB conversion helpers; ``requirements.txt`` installs it
+unconditionally so the test suite exercises the converter-backed code paths
+by default.
 
 The tox environments also install these full-suite dependencies from ``tox.ini``:
 ``psycopg2-binary`` and ``pyodbc`` on CPython, ``psycopg2cffi`` on PyPy, and

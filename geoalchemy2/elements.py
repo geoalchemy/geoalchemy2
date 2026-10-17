@@ -153,14 +153,14 @@ class WKTElement(_SpatialElement):
 
     def as_wkt(self) -> WKTElement:
         if self.extended:
-            wkt = _wkb_wkt.to_wkt_no_srid(self.data)
+            wkt = _wkb_wkt.wkt_strip_srid(self.data)
             return WKTElement(wkt, self.srid, extended=False)
         return WKTElement(self.data, self.srid, self.extended)
 
     def as_ewkt(self) -> WKTElement:
         if _wkb_wkt.is_known_srid(self.srid):
             if self.extended:
-                wkt = _wkb_wkt.to_wkt(self.data, srid=self.srid)
+                wkt = _wkb_wkt.wkt_add_srid(self.data, self.srid)
                 return WKTElement(wkt, extended=True)
             return WKTElement(f"SRID={self.srid};{self.data}", extended=True)
         return self.as_wkt()
@@ -170,7 +170,7 @@ class WKTElement(_SpatialElement):
 
         The SRID is preserved as a Python attribute on the returned element.
         """
-        wkb_bytes = _wkb_wkt.to_wkb_no_srid(self.data)
+        wkb_bytes = _wkb_wkt.wkt_to_wkb(self.data)
         return WKBElement(wkb_bytes, srid=self.srid, extended=False)
 
     def as_ewkb(self) -> WKBElement:
@@ -179,7 +179,7 @@ class WKTElement(_SpatialElement):
         If the element has no valid SRID, the result is equivalent to :meth:`as_wkb`.
         """
         if _wkb_wkt.is_known_srid(self.srid):
-            wkb_bytes = _wkb_wkt.to_wkb(self.data, srid=self.srid)
+            wkb_bytes = _wkb_wkt.wkt_to_wkb(self.data, srid=self.srid)
             return WKBElement(wkb_bytes, extended=True)
         return self.as_wkb()
 
