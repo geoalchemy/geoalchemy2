@@ -13,6 +13,7 @@ from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.orm import declarative_base
 
 from geoalchemy2 import Raster
@@ -90,8 +91,8 @@ class TestSTSummaryStatsAgg:
             stats_agg_alias.c.stats.max.label("max"),
         )
 
-        # Check the query
-        assert str(query.compile(dialect=session.bind.dialect)) == (
+        # Check the query, with the psycopg2 dialect, which does not add bind casts
+        assert str(query.compile(dialect=PGDialect_psycopg2())) == (
             "SELECT "
             "(stats_agg.stats).count AS count, "
             "(stats_agg.stats).sum AS sum, "

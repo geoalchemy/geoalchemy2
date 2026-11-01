@@ -1101,7 +1101,8 @@ class TestShapely:
             data_type = str
         elif dialect_name in ["mysql", "mariadb"]:
             data_type = bytes
-        elif dialect_name == "mssql":
+        elif dialect_name in ["mssql", "postgresql"]:
+            # The PostgreSQL driver returns bytes with psycopg and memoryview with psycopg2
             data_type = (bytes, memoryview)
         else:
             data_type = memoryview

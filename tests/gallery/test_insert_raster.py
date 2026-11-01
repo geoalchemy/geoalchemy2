@@ -209,7 +209,7 @@ class TestInsertRaster:
         ).scalar()
         filename = tmpdir / "image.tiff"
         with open(filename, "wb") as f:
-            f.write(data.tobytes())
+            f.write(bytes(data))
         return filename, pixel_type
 
     def test_insert_raster(self, session, conn, input_img):
