@@ -18,7 +18,6 @@ from geoalchemy2._wkb_wkt import is_known_srid
 from geoalchemy2.admin.dialects import mariadb as _mariadb_admin  # noqa: F401
 from geoalchemy2.admin.dialects import mysql as _mysql_admin  # noqa: F401
 from geoalchemy2.elements import WKBElement
-from geoalchemy2.elements import WKTElement
 from geoalchemy2.exc import ArgumentError
 from geoalchemy2.types import Geography
 from geoalchemy2.types import Geometry
@@ -32,6 +31,7 @@ from geoalchemy2.types.dialects.common import is_wkb_constructor
 from geoalchemy2.types.dialects.common import validate_wkb_srid
 
 from . import select
+from . import skip_without_wkb_wkt_converter
 
 WKB_HEX = "0101000000000000000000f03f0000000000000040"
 EWKB_HEX = "0101000020e6100000000000000000f03f0000000000000040"
@@ -49,6 +49,7 @@ def eq_sql(a, b):
     assert a == b
 
 
+@skip_without_wkb_wkt_converter()
 def test_split_wkb_srid_treats_strings_as_hex_wkb_only():
     assert _wkb_wkt.split_wkb_srid(EWKB_HEX) == ("POINT (1 2)", 4326)
 
@@ -481,8 +482,8 @@ class TestMySQLWKBConstructors:
         "value",
         [
             WKBElement(bytes.fromhex(WKB_HEX)),
-            WKTElement("POINT (1 2)", srid=4326).as_wkb(),
-            WKTElement("POINT (1 2)", srid=4326).as_ewkb(),
+            WKBElement(bytes.fromhex(WKB_HEX), srid=4326),
+            WKBElement(bytes.fromhex(EWKB_HEX), extended=True),
         ],
     )
     def test_geom_from_ewkb_literal_compile_unwraps_wkbelement_constructor(self, value):
@@ -793,8 +794,8 @@ class TestMariaDBWKBConstructors:
         "value",
         [
             WKBElement(bytes.fromhex(WKB_HEX)),
-            WKTElement("POINT (1 2)", srid=4326).as_wkb(),
-            WKTElement("POINT (1 2)", srid=4326).as_ewkb(),
+            WKBElement(bytes.fromhex(WKB_HEX), srid=4326),
+            WKBElement(bytes.fromhex(EWKB_HEX), extended=True),
         ],
     )
     def test_geom_from_ewkb_literal_compile_unwraps_wkbelement_constructor(self, value):

@@ -16,6 +16,9 @@ see :mod:`geoalchemy2.types.dialects.common`.
 
 from __future__ import annotations
 
+import binascii
+from typing import NoReturn
+
 from geoalchemy2 import _wkb_wkt_fallback as _fallback
 
 try:
@@ -45,21 +48,23 @@ def _srid_arg(srid: int | None) -> int | bool:
     return srid
 
 
-def _raise_missing_converter():
+def _raise_missing_converter() -> NoReturn:
     raise ImportError(
         "This feature needs the optional wkb-wkt-converter dependency. "
         "Please install it with 'pip install geoalchemy2[wkb-wkt-converter]'."
     ) from _wkb_wkt_converter_exc
 
 
-def wkb_srid(source, *, include_unknown: bool = False) -> int | None:
+def wkb_srid(
+    source: str | bytes | bytearray | memoryview, *, include_unknown: bool = False
+) -> int | None:
     """Return the embedded EWKB SRID without parsing the full geometry."""
     if not HAS_WKB_WKT_CONVERTER:
         return _fallback.wkb_header_srid(source, include_unknown=include_unknown)
     return _wkb_header_srid(source, include_unknown=include_unknown)
 
 
-def to_wkb_no_srid_header(source):
+def to_wkb_no_srid_header(source: str | bytes | bytearray | memoryview) -> str | bytes:
     """Strip the EWKB SRID with native header rewrite/full-conversion fallback."""
     if not HAS_WKB_WKT_CONVERTER:
         return _fallback.to_wkb_no_srid_header(source)
@@ -71,7 +76,7 @@ def to_wkb_no_srid_header(source):
         raise
 
 
-def to_ewkb_header(source, srid: int):
+def to_ewkb_header(source: str | bytes | bytearray | memoryview, srid: int) -> str | bytes:
     """Embed or replace an EWKB SRID with native header rewrite/full-conversion fallback."""
     if not is_known_srid(srid):
         return to_wkb_no_srid_header(source)
@@ -80,14 +85,17 @@ def to_ewkb_header(source, srid: int):
     return _to_ewkb_header(source, srid)
 
 
-def to_wkb_no_srid(source) -> bytes:
+def to_wkb_no_srid(source: str | bytes | bytearray | memoryview) -> bytes:
     """Convert WKB/EWKB source to plain WKB, stripping any embedded SRID.
 
     ``source`` must already be WKB/EWKB (bytes or a SpatiaLite-style hex
     string); for converting WKT text to WKB, use :func:`wkt_to_wkb`.
     """
     if not HAS_WKB_WKT_CONVERTER:
-        return _fallback.to_wkb_no_srid_header(source)
+        res = _fallback.to_wkb_no_srid_header(source)
+        if isinstance(res, str):
+            return binascii.unhexlify(res)
+        return bytes(res)
     return _to_wkb(source, srid=False)
 
 
@@ -154,7 +162,7 @@ def wkt_strip_srid(source: str) -> str:
     return _to_wkt(source, srid=False)
 
 
-def to_hex_wkb_no_srid(source) -> str:
+def to_hex_wkb_no_srid(source: str | bytes | bytearray | memoryview) -> str:
     """Convert to plain hex WKB, stripping any embedded SRID."""
     if not HAS_WKB_WKT_CONVERTER:
         return _fallback.to_hex_wkb_no_srid(source)

@@ -1,6 +1,17 @@
 GeoAlchemy 2 Changelog
 ======================
 
+0.21.0
+------
+
+* Feat: Make the wkb-wkt-converter dependency optional (geoalchemy2[wkb-wkt-converter]).
+  When wkb-wkt-converter is not installed, header-only EWKB/WKT SRID operations use a
+  pure-Python fallback, and dialect bind processors fall back to Shapely (matching pre-0.21
+  behavior, e.g. MSSQL WKB bind formatting and 0.20.0-style ISO 3D / nested collection header
+  rewriting).
+  WKBElement.as_wkt()/as_ewkt() and WKTElement.as_wkb()/as_ewkb() require the optional converter
+  dependency. (@adrien-berchet)
+
 0.20.0
 ------
 

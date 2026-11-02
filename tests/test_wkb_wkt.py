@@ -15,6 +15,7 @@ in ``tests/test_shape.py`` for Shapely) and check that:
 
 import contextlib
 import importlib
+import os
 import sys
 
 import pytest
@@ -26,6 +27,8 @@ from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.types.dialects.common import wkb_bytes_to_wkt
 from geoalchemy2.types.dialects.common import wkb_bytes_to_wkt_split_srid
+
+from . import skip_without_wkb_wkt_converter
 
 WKB_HEX = "0101000000000000000000f03f0000000000000040"
 EWKB_HEX = "0101000020e6100000000000000000f03f0000000000000040"
@@ -78,13 +81,18 @@ def shapely_disabled(monkeypatch):
 
 def test_import_without_wkb_wkt_converter(monkeypatch):
     """Ensure geoalchemy2._wkb_wkt can be imported when the converter is absent."""
+    initial_has = geoalchemy2._wkb_wkt.HAS_WKB_WKT_CONVERTER
     with wkb_wkt_converter_disabled(monkeypatch):
         assert not geoalchemy2._wkb_wkt.HAS_WKB_WKT_CONVERTER
         with pytest.raises(ImportError, match="wkb-wkt-converter"):
             _wkb_wkt.wkt_to_wkb("POINT (1 2)")
 
+    assert geoalchemy2._wkb_wkt.HAS_WKB_WKT_CONVERTER is initial_has
+
+
+@skip_without_wkb_wkt_converter()
+def test_import_with_wkb_wkt_converter():
     assert geoalchemy2._wkb_wkt.HAS_WKB_WKT_CONVERTER
-    # Should not raise once restored.
     assert _wkb_wkt.wkt_to_wkb("POINT (1 2)") is not None
 
 
@@ -108,16 +116,13 @@ def test_fallback_wkb_srid_matches_converter(monkeypatch):
         assert _wkb_wkt.wkb_srid(EWKB_BYTES) == 4326
 
 
-def test_fallback_unknown_srid_diverges_from_converter(monkeypatch):
-    """The 0xffffffff sentinel is interpreted as signed by the native converter.
-
-    The pure-Python fallback restores 0.20.0 behavior, which read it as an
-    unsigned 32-bit integer. This is a documented, acceptable gap between the
-    converter-backed and fallback code paths for this pathological value.
-    """
+def test_fallback_unknown_srid_matches_converter(monkeypatch):
+    """The 0xffffffff sentinel is interpreted as signed (-1) by both backends."""
     assert _wkb_wkt.wkb_srid(UNKNOWN_SRID_EWKB_HEX, include_unknown=True) == -1
+    assert _wkb_wkt.wkb_srid(UNKNOWN_SRID_EWKB_HEX, include_unknown=False) is None
     with wkb_wkt_converter_disabled(monkeypatch):
-        assert _wkb_wkt.wkb_srid(UNKNOWN_SRID_EWKB_HEX, include_unknown=True) == 0xFFFFFFFF
+        assert _wkb_wkt.wkb_srid(UNKNOWN_SRID_EWKB_HEX, include_unknown=True) == -1
+        assert _wkb_wkt.wkb_srid(UNKNOWN_SRID_EWKB_HEX, include_unknown=False) is None
 
 
 def test_fallback_header_rewrite_matches_converter(monkeypatch):
@@ -235,11 +240,16 @@ def test_wkb_element_as_wkb_ewkb_works_without_converter(monkeypatch):
 
 
 def test_wkb_bytes_to_wkt_falls_back_to_shapely(monkeypatch):
-    expected_wkt = _wkb_wkt.to_wkt_no_srid(EWKB_BYTES)
-    expected_wkt_srid = _wkb_wkt.split_wkb_srid(EWKB_HEX)
     with wkb_wkt_converter_disabled(monkeypatch):
-        assert wkb_bytes_to_wkt(EWKB_BYTES) == expected_wkt
-        assert wkb_bytes_to_wkt_split_srid(EWKB_HEX) == expected_wkt_srid
+        assert wkb_bytes_to_wkt(EWKB_BYTES) == "POINT (1 2)"
+        assert wkb_bytes_to_wkt_split_srid(EWKB_HEX) == ("POINT (1 2)", 4326)
+
+
+def test_converter_presence_matches_tox_env():
+    expected = os.environ.get("GEOALCHEMY2_EXPECT_WKB_WKT_CONVERTER")
+    if expected is None:
+        pytest.skip("not running under tox")
+    assert _wkb_wkt.HAS_WKB_WKT_CONVERTER is (expected == "1")
 
 
 def test_wkb_bytes_to_wkt_raises_when_both_missing(monkeypatch):
@@ -249,3 +259,22 @@ def test_wkb_bytes_to_wkt_raises_when_both_missing(monkeypatch):
             wkb_bytes_to_wkt(EWKB_BYTES)
         with pytest.raises(ImportError, match=combined_error):
             wkb_bytes_to_wkt_split_srid(EWKB_HEX)
+
+
+def test_to_wkb_no_srid_returns_bytes_for_hex(monkeypatch):
+    with wkb_wkt_converter_disabled(monkeypatch):
+        res = _wkb_wkt.to_wkb_no_srid(EWKB_HEX)
+        assert isinstance(res, bytes)
+        assert res == WKB_BYTES
+
+
+def test_mysql_bind_processor_with_hex_wkb_in_fallback(monkeypatch):
+    from geoalchemy2.types import Geometry
+    from geoalchemy2.types.dialects import mysql
+
+    t = Geometry("POINT", srid=4326, from_text="ST_GeomFromWKB")
+    v = WKBElement(EWKB_HEX, extended=True)
+    with wkb_wkt_converter_disabled(monkeypatch):
+        processed = mysql.bind_processor_process(t, v)
+        assert isinstance(processed, bytes)
+        assert processed == WKB_BYTES

@@ -23,6 +23,7 @@ from geoalchemy2.exc import ArgumentError
 from geoalchemy2.types import Geometry
 
 from . import create_points
+from . import skip_without_wkb_wkt_converter
 
 
 @pytest.fixture
@@ -124,6 +125,7 @@ class TestWKTElement:
         assert e3.as_wkt() == e3.as_wkt().as_wkt() == e1
         assert e4.as_wkt() == e4.as_wkt().as_wkt() == e2
 
+    @skip_without_wkb_wkt_converter()
     def test_as_wkb_as_ewkb(self):
         e1 = WKTElement(self._wkt)
         e2 = WKTElement(self._wkt, srid=self._srid)
@@ -162,6 +164,7 @@ class TestWKTElement:
         # Roundtrip: WKT → WKB → WKT
         assert r2.as_wkt() == WKTElement(self._wkt, srid=self._srid, extended=False)
 
+    @skip_without_wkb_wkt_converter()
     @pytest.mark.parametrize("method_name", ["as_wkb", "as_ewkb"])
     def test_as_wkb_as_ewkb_raise_for_unsupported_wkt_geometry_type(self, method_name):
         element = WKTElement("CIRCULARSTRING(0 0, 1 1, 2 0)", srid=self._srid)
@@ -169,6 +172,7 @@ class TestWKTElement:
         with pytest.raises(ValueError):
             getattr(element, method_name)()
 
+    @skip_without_wkb_wkt_converter()
     def test_as_ewkt_as_ewkb_treats_zero_srid_as_no_embedded_srid(self):
         e = WKTElement(f"SRID=0;{self._wkt}", extended=True)
 
@@ -568,6 +572,7 @@ class TestExtendedWKBElement:
         e8_ewkb.data = e8_ewkb.data[:11] + "4" + e8_ewkb.data[12:]
         assert e8.as_ewkb() == e8_ewkb
 
+    @skip_without_wkb_wkt_converter()
     def test_as_wkt_as_ewkt_cross(self):
         e1 = WKBElement(self._bin_ewkb)
         e2 = WKBElement(self._hex_ewkb)
@@ -695,6 +700,7 @@ class TestExtendedWKBElement:
         assert result.srid == self._srid
         assert result.desc == data.hex()
 
+    @skip_without_wkb_wkt_converter()
     def test_as_ewkb_falls_back_for_iso_dimensional_wkb(self):
         data = struct.pack("<BI3d", 1, 1001, 1.0, 2.0, 3.0)
         elem = WKBElement(data, srid=4326, extended=False)
@@ -704,6 +710,7 @@ class TestExtendedWKBElement:
         assert result.srid == 4326
         assert result.desc == ("01010000a0e6100000000000000000f03f00000000000000400000000000000840")
 
+    @skip_without_wkb_wkt_converter()
     def test_as_wkb_falls_back_for_nested_collection_headers(self):
         child = struct.pack("<BIIdd", 1, 0x20000001, 3857, 1.0, 2.0)
         data = struct.pack("<BIII", 1, 0x20000007, 4326, 1) + child

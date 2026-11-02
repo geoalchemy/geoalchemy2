@@ -33,6 +33,7 @@ from geoalchemy2.types import select_dialect as select_type_dialect
 from geoalchemy2.types.dialects import mssql as mssql_type
 
 from . import select
+from . import skip_without_wkb_wkt_converter
 
 
 def normalize_sql(sql):
@@ -1146,6 +1147,7 @@ class TestMSSQLBindAndResultProcessing:
         )
         assert bind_processor(WKBElement(wkb, srid=4326)) == "LINESTRING (0 0, 1 1)"
 
+    @skip_without_wkb_wkt_converter()
     def test_bind_processor_preserves_wkb_coordinate_precision(self):
         geom = Geometry(geometry_type="POINT", srid=4326)
         bind_processor = geom.bind_processor(self.dialect)
@@ -1189,6 +1191,7 @@ class TestMSSQLBindAndResultProcessing:
     def test_normalize_wkt_for_mssql_strips_dimension_suffix_from_empty_forms(self, wkt, expected):
         assert mssql_type._normalize_wkt_for_mssql(wkt) == expected
 
+    @skip_without_wkb_wkt_converter()
     def test_converter_rejects_unsupported_wkb_values(self):
         unsupported_wkb = b"\x01" + struct.pack("<I", 999)
 

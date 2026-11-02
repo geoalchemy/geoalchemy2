@@ -114,6 +114,8 @@ module = [
     "pymysql",
     "rasterio",
     "shapely",
-    "shapely.*"
+    "shapely.*",
+    "wkb_wkt_converter",
+    "wkb_wkt_converter.*",
 ]
 ignore_missing_imports = true

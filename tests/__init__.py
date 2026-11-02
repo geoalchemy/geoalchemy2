@@ -98,6 +98,15 @@ def skip_pypy(msg=None):
         pytest.skip(msg if msg is not None else "Incompatible with PyPy")
 
 
+def skip_without_wkb_wkt_converter(msg=None):
+    from geoalchemy2 import _wkb_wkt
+
+    return pytest.mark.skipif(
+        not _wkb_wkt.HAS_WKB_WKT_CONVERTER,
+        reason=msg if msg is not None else "requires wkb-wkt-converter",
+    )
+
+
 def select(args):
     if parse_version(SA_VERSION) < parse_version("1.4"):
         return raw_select(args)

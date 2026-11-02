@@ -132,6 +132,12 @@ def _coerce_wkb_data(value):
 
 
 def _wkb_to_mssql_wkt(value):
+    """Convert WKB to MSSQL WKT.
+
+    Note: When ``wkb-wkt-converter`` is not installed, conversions fall back to
+    Shapely, which may raise ``GEOSException`` instead of ``ValueError`` on
+    malformed WKB.
+    """
     data = _coerce_wkb_data(value)
     try:
         return _normalize_wkt_for_mssql(wkb_bytes_to_wkt(data))
@@ -143,6 +149,12 @@ def _wkb_to_mssql_wkt(value):
 
 
 def _split_wkb_to_mssql_wkt(value):
+    """Split WKB into (MSSQL WKT, srid).
+
+    Note: When ``wkb-wkt-converter`` is not installed, conversions fall back to
+    Shapely, which may raise ``GEOSException`` instead of ``ValueError`` on
+    malformed WKB.
+    """
     data = _coerce_wkb_data(value)
     try:
         wkt, srid = wkb_bytes_to_wkt_split_srid(data)

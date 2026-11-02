@@ -20,18 +20,23 @@ import struct
 _HAS_SRID_BIT = 0x20000000
 _CLEAR_SRID_BIT_MASK = 0xDFFFFFFF
 
-_WKT_SRID_PREFIX = re.compile("(SRID=([0-9]+); ?)?(.*)", re.DOTALL)
+_WKT_SRID_PREFIX = re.compile(r"(SRID=(-?[0-9]+); ?)?(.*)", re.IGNORECASE | re.DOTALL)
 
 
-def _byte_order_marker(byte_order: int) -> str:
+def _byte_order_marker(byte_order: int, *, signed: bool = False) -> str:
+    if signed:
+        return "<i" if byte_order else ">i"
     return "<I" if byte_order else ">I"
 
 
-def wkb_header_srid(source, *, include_unknown: bool = False) -> int | None:
+def wkb_header_srid(
+    source: str | bytes | bytearray | memoryview,
+    *,
+    include_unknown: bool = False,
+) -> int | None:
     """Sniff the embedded EWKB SRID from the header without parsing the geometry."""
     try:
-        is_hex = isinstance(source, str)
-        header = binascii.unhexlify(source[:18]) if is_hex else bytes(source[:9])
+        header = binascii.unhexlify(source[:18]) if isinstance(source, str) else bytes(source[:9])
         if len(header) < 5:
             return None
         byte_order, wkb_type = header[0], header[1:5]
@@ -43,40 +48,59 @@ def wkb_header_srid(source, *, include_unknown: bool = False) -> int | None:
         wkb_srid_bytes = header[5:9]
         if len(wkb_srid_bytes) != 4:
             return None
-        srid = struct.unpack(_byte_order_marker(byte_order), wkb_srid_bytes)[0]
+        srid = struct.unpack(_byte_order_marker(byte_order, signed=True), wkb_srid_bytes)[0]
     except (struct.error, binascii.Error, IndexError, TypeError) as exc:
         raise ValueError(str(exc)) from exc
-    if srid == 0 and not include_unknown:
+    if (srid == 0 or srid == -1) and not include_unknown:
         return None
     return int(srid)
 
 
-def to_wkb_no_srid_header(source):
+def to_wkb_no_srid_header(source: str | bytes | bytearray | memoryview) -> str | bytes:
     """Strip the SRID bit and 4-byte SRID field from an EWKB header, if present."""
-    is_hex = isinstance(source, str)
-    if is_hex:
-        full = source
-        header = binascii.unhexlify(source[:18])
-    else:
-        full = bytes(source)
-        header = full[:9]
+    if isinstance(source, str):
+        try:
+            header = binascii.unhexlify(source[:18])
+        except (binascii.Error, TypeError) as exc:
+            raise ValueError(str(exc)) from exc
+
+        if len(header) < 5:
+            raise ValueError("WKB value is too short to read header")
+
+        byte_order = header[0]
+        wkb_type = header[1:5]
+        wkb_type_int = struct.unpack(_byte_order_marker(byte_order), wkb_type)[0]
+
+        if not wkb_type_int & _HAS_SRID_BIT:
+            return source
+
+        if len(header) < 9:
+            raise ValueError("WKB value is too short to read header")
+
+        wkb_type_int &= _CLEAR_SRID_BIT_MASK
+        little_endian = bool(byte_order)
+        wkb_type_bytes = wkb_type_int.to_bytes(4, "little" if little_endian else "big")
+        return source[:2] + binascii.hexlify(wkb_type_bytes).decode("ascii") + source[18:]
+
+    full = bytes(source)
+    header = full[:9]
+    if len(header) < 5:
+        raise ValueError("WKB value is too short to read header")
 
     byte_order = header[0]
     wkb_type = header[1:5]
-    wkb_type_int = (
-        struct.unpack(_byte_order_marker(byte_order), wkb_type)[0] if len(wkb_type) == 4 else 0
-    )
+    wkb_type_int = struct.unpack(_byte_order_marker(byte_order), wkb_type)[0]
 
     if not wkb_type_int & _HAS_SRID_BIT:
-        # No SRID embedded, nothing to strip.
         return full
+
+    if len(header) < 9:
+        raise ValueError("WKB value is too short to read header")
 
     wkb_type_int &= _CLEAR_SRID_BIT_MASK
     little_endian = bool(byte_order)
     wkb_type_bytes = wkb_type_int.to_bytes(4, "little" if little_endian else "big")
 
-    if is_hex:
-        return full[:2] + binascii.hexlify(wkb_type_bytes).decode("ascii") + full[18:]
     buffer = bytearray()
     buffer.extend(full[:1])
     buffer.extend(wkb_type_bytes)
@@ -84,46 +108,66 @@ def to_wkb_no_srid_header(source):
     return bytes(buffer)
 
 
-def to_ewkb_header(source, srid: int):
+def to_ewkb_header(source: str | bytes | bytearray | memoryview, srid: int) -> str | bytes:
     """Embed or replace the EWKB SRID header for WKB/EWKB ``source``."""
-    is_hex = isinstance(source, str)
-    if is_hex:
-        full = source
-        header = binascii.unhexlify(source[:18])
-    else:
-        full = bytes(source)
-        header = full[:9]
+    if isinstance(source, str):
+        try:
+            header = binascii.unhexlify(source[:18])
+        except (binascii.Error, TypeError) as exc:
+            raise ValueError(str(exc)) from exc
+
+        if len(header) < 5:
+            raise ValueError("WKB value is too short to read header")
+
+        byte_order = header[0]
+        wkb_type = header[1:5]
+        wkb_type_int = struct.unpack(_byte_order_marker(byte_order), wkb_type)[0]
+        has_srid = bool(wkb_type_int & _HAS_SRID_BIT)
+        if has_srid and len(header) < 9:
+            raise ValueError("WKB value is too short to read header")
+
+        wkb_type_int |= _HAS_SRID_BIT
+
+        little_endian = bool(byte_order)
+        wkb_type_bytes = wkb_type_int.to_bytes(4, "little" if little_endian else "big")
+        srid_bytes = int(srid).to_bytes(4, "little" if little_endian else "big", signed=True)
+
+        rest_str = source[18:] if has_srid else source[10:]
+        return (
+            source[:2]
+            + binascii.hexlify(wkb_type_bytes).decode("ascii")
+            + binascii.hexlify(srid_bytes).decode("ascii")
+            + rest_str
+        )
+
+    full = bytes(source)
+    header = full[:9]
+    if len(header) < 5:
+        raise ValueError("WKB value is too short to read header")
 
     byte_order = header[0]
     wkb_type = header[1:5]
-    wkb_type_int = (
-        struct.unpack(_byte_order_marker(byte_order), wkb_type)[0] if len(wkb_type) == 4 else 0
-    )
+    wkb_type_int = struct.unpack(_byte_order_marker(byte_order), wkb_type)[0]
     has_srid = bool(wkb_type_int & _HAS_SRID_BIT)
+    if has_srid and len(header) < 9:
+        raise ValueError("WKB value is too short to read header")
+
     wkb_type_int |= _HAS_SRID_BIT
 
     little_endian = bool(byte_order)
     wkb_type_bytes = wkb_type_int.to_bytes(4, "little" if little_endian else "big")
-    srid_bytes = int(srid).to_bytes(4, "little" if little_endian else "big")
+    srid_bytes = int(srid).to_bytes(4, "little" if little_endian else "big", signed=True)
 
-    if is_hex:
-        rest = full[18:] if has_srid else full[10:]
-        return (
-            full[:2]
-            + binascii.hexlify(wkb_type_bytes).decode("ascii")
-            + binascii.hexlify(srid_bytes).decode("ascii")
-            + rest
-        )
-    rest = full[9:] if has_srid else full[5:]
+    rest_bytes = full[9:] if has_srid else full[5:]
     buffer = bytearray()
     buffer.extend(full[:1])
     buffer.extend(wkb_type_bytes)
     buffer.extend(srid_bytes)
-    buffer.extend(rest)
+    buffer.extend(rest_bytes)
     return bytes(buffer)
 
 
-def to_hex_wkb_no_srid(source) -> str:
+def to_hex_wkb_no_srid(source: str | bytes | bytearray | memoryview) -> str:
     """Strip the SRID header and return the remaining WKB as a lowercase hex string."""
     stripped = to_wkb_no_srid_header(source)
     if isinstance(stripped, str):
