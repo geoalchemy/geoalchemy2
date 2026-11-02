@@ -232,7 +232,8 @@ def _cached_dynamic_ewkb_srid(dialect_module, dialect, stmt, cache, params=None)
         params or {},
         {},
     )
-    compiled, extracted_params, cache_hit = clauseelement._compile_w_cache(
+    # SQLAlchemy >= 2.1 also returns the parameter dict before the cache hit status
+    compiled, extracted_params, *_, cache_hit = clauseelement._compile_w_cache(
         dialect,
         compiled_cache=cache,
         column_keys=[],
@@ -1071,7 +1072,7 @@ class TestRaster:
 
     def test_insert_bind_expression(self, raster_table):
         i = insert(raster_table).values(rast=b"\x01\x02")
-        eq_sql(i, 'INSERT INTO "table" (rast) VALUES (raster(:rast))')
+        eq_sql(i, 'INSERT INTO "table" (rast) VALUES (raster(CAST(:rast AS TEXT)))')
         assert i.compile().params == {"rast": b"\x01\x02"}
 
     def test_function_call(self, raster_table):

@@ -565,6 +565,12 @@ datefmt = %%H:%%M:%%S
     return cfg
 
 
+def _commit_conn_trans(connection):
+    trans = connection.get_transaction()
+    if trans is not None and trans.is_active:
+        trans.commit()
+
+
 @test_only_with_dialects("postgresql", "sqlite-spatialite4", "mssql")
 def test_migration_revision(
     conn,
@@ -581,6 +587,7 @@ def test_migration_revision(
         autogenerate=True,
         rev_id="initial",
     )
+    _commit_conn_trans(conn)
     command.upgrade(alembic_config, initial_rev.revision)
 
     # Add a new table in metadata
@@ -646,6 +653,7 @@ new_table = Table(
     )
 
     # Apply the upgrade script
+    _commit_conn_trans(conn)
     command.upgrade(alembic_config, rev_table.revision)
 
     check_indexes(
@@ -699,7 +707,7 @@ new_table = Table(
         """
         )
     )
-    conn.execute(text("COMMIT"))
+    _commit_conn_trans(conn)
 
     # Remove spatial columns and add new ones
     with test_script_path.open(mode="w", encoding="utf8") as f:
@@ -774,6 +782,7 @@ new_table = Table(
     )
 
     # Apply the upgrade script
+    _commit_conn_trans(conn)
     command.upgrade(alembic_config, rev_cols.revision)
 
     check_indexes(
@@ -812,6 +821,7 @@ new_table = Table(
     )
 
     # Apply the downgrade script for columns
+    _commit_conn_trans(conn)
     command.downgrade(alembic_config, rev_table.revision)
 
     check_indexes(
@@ -845,6 +855,7 @@ new_table = Table(
     )
 
     # Apply the downgrade script for tables
+    _commit_conn_trans(conn)
     command.downgrade(alembic_config, initial_rev.revision)
 
     check_indexes(

@@ -126,7 +126,8 @@ jobs:
     - name: Install SpatiaLite
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsqlite3-mod-spatialite libgdal-dev gdal-bin rasterio
+        sudo apt-get install --no-install-recommends -y libsqlite3-mod-spatialite libgdal-dev
+        sudo apt-get remove -y python3-numpy || true
 
     # Install MSSQL tools and drivers
     - name: Install MSSQL tools and drivers

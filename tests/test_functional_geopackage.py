@@ -24,36 +24,42 @@ class TestAdmin:
         engine = create_engine(
             db_url, echo=_engine_echo, execution_options={"schema_translate_map": {"gis": None}}
         )
+        try:
+            # Check that the DB is empty
+            with engine.connect() as raw_conn:
+                assert not raw_conn.execute(
+                    text("PRAGMA main.table_info('gpkg_geometry_columns');")
+                ).fetchall()
+                raw_conn.connection.dbapi_connection.enable_load_extension(True)
+                raw_conn.connection.dbapi_connection.load_extension(
+                    os.getenv("SPATIALITE_LIBRARY_PATH")
+                )
+                raw_conn.connection.dbapi_connection.enable_load_extension(False)
+                assert not raw_conn.execute(
+                    text("PRAGMA main.table_info('gpkg_geometry_columns');")
+                ).fetchall()
+                assert raw_conn.execute(text("SELECT HasGeoPackage();")).scalar()
+                assert not raw_conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar()
 
-        # Check that the DB is empty
-        raw_conn = engine.connect()
-        assert not raw_conn.execute(
-            text("PRAGMA main.table_info('gpkg_geometry_columns');")
-        ).fetchall()
-        raw_conn.connection.dbapi_connection.enable_load_extension(True)
-        raw_conn.connection.dbapi_connection.load_extension(os.getenv("SPATIALITE_LIBRARY_PATH"))
-        raw_conn.connection.dbapi_connection.enable_load_extension(False)
-        assert not raw_conn.execute(
-            text("PRAGMA main.table_info('gpkg_geometry_columns');")
-        ).fetchall()
-        assert raw_conn.execute(text("SELECT HasGeoPackage();")).scalar()
-        assert not raw_conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar()
+            engine.dispose()
 
-        # Check that the DB is properly initialized using load_spatialite_gpkg
-        listen(engine, "connect", load_spatialite_gpkg)
-        conn = engine.connect()
-        assert conn.execute(text("SELECT HasGeoPackage();")).scalar()
-        assert conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar()
+            # Check that the DB is properly initialized using load_spatialite_gpkg
+            listen(engine, "connect", load_spatialite_gpkg)
+            with engine.connect() as conn:
+                assert conn.execute(text("SELECT HasGeoPackage();")).scalar()
+                assert conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar()
 
-        # Create a new table in this manually created GeoPackage
-        t = Table(
-            "a_table",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("geom", Geometry(srid=2154)),
-        )
-        t.create(conn)
-        t.drop(conn)
+                # Create a new table in this manually created GeoPackage
+                t = Table(
+                    "a_table",
+                    MetaData(),
+                    Column("id", Integer, primary_key=True),
+                    Column("geom", Geometry(srid=2154)),
+                )
+                t.create(conn)
+                t.drop(conn)
+        finally:
+            engine.dispose()
 
     def test_manual_initialization(self, tmpdir, _engine_echo, check_spatialite):
         """Test GeoPackage creation."""
@@ -63,69 +69,77 @@ class TestAdmin:
         engine = create_engine(
             db_url, echo=_engine_echo, execution_options={"schema_translate_map": {"gis": None}}
         )
+        try:
+            with engine.connect() as raw_conn:
+                # Check that the DB is empty
+                assert not raw_conn.execute(
+                    text("PRAGMA main.table_info('gpkg_geometry_columns');")
+                ).fetchall()
+                raw_conn.connection.dbapi_connection.enable_load_extension(True)
+                raw_conn.connection.dbapi_connection.load_extension(
+                    os.environ["SPATIALITE_LIBRARY_PATH"]
+                )
+                raw_conn.connection.dbapi_connection.enable_load_extension(False)
+                assert not raw_conn.execute(
+                    text("PRAGMA main.table_info('gpkg_geometry_columns');")
+                ).fetchall()
+                assert raw_conn.execute(text("SELECT HasGeoPackage();")).scalar()
+                assert not raw_conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar()
 
-        # Check that the DB is empty
-        raw_conn = engine.connect()
-        assert not raw_conn.execute(
-            text("PRAGMA main.table_info('gpkg_geometry_columns');")
-        ).fetchall()
-        raw_conn.connection.dbapi_connection.enable_load_extension(True)
-        raw_conn.connection.dbapi_connection.load_extension(os.environ["SPATIALITE_LIBRARY_PATH"])
-        raw_conn.connection.dbapi_connection.enable_load_extension(False)
-        assert not raw_conn.execute(
-            text("PRAGMA main.table_info('gpkg_geometry_columns');")
-        ).fetchall()
-        assert raw_conn.execute(text("SELECT HasGeoPackage();")).scalar()
-        assert not raw_conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar()
+                # Create a new table in this manually created GeoPackage
+                t = Table(
+                    "a_table",
+                    MetaData(),
+                    Column("id", Integer, primary_key=True),
+                )
+                t.create(raw_conn)
 
-        # Create a new table in this manually created GeoPackage
-        t = Table(
-            "a_table",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-        )
-        t.create(raw_conn)
+                # Check that the table was properly created
+                res = raw_conn.execute(text("PRAGMA main.table_info(a_table)")).fetchall()
+                assert res == [
+                    (0, "id", "INTEGER", 1, None, 1),
+                ]
 
-        # Check that the table was properly created
-        res = raw_conn.execute(text("PRAGMA main.table_info(a_table)")).fetchall()
-        assert res == [
-            (0, "id", "INTEGER", 1, None, 1),
-        ]
+                t.drop(raw_conn)
 
-        t.drop(raw_conn)
+                # Manual initialization
+                raw_conn.execute(text("SELECT gpkgCreateBaseTables();"))
 
-        # Manual initialization
-        raw_conn.execute(text("SELECT gpkgCreateBaseTables();"))
+                # Create again a new table in this manually created GeoPackage
+                t = Table(
+                    "a_table",
+                    MetaData(),
+                    Column("id", Integer, primary_key=True),
+                    Column("geom", Geometry(srid=2154)),
+                )
+                t.create(raw_conn)
 
-        # Create again a new table in this manually created GeoPackage
-        t = Table(
-            "a_table",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("geom", Geometry(srid=2154)),
-        )
-        t.create(raw_conn)
+                # Check that the table and the spatial indexes were properly created
+                res = raw_conn.execute(text("PRAGMA main.table_info(a_table)")).fetchall()
+                assert res == [
+                    (0, "id", "INTEGER", 1, None, 1),
+                    (1, "geom", "GEOMETRY", 0, None, 0),
+                ]
+                res = raw_conn.execute(
+                    text("PRAGMA main.table_info(rtree_a_table_geom)")
+                ).fetchall()
+                assert len(res) > 0
 
-        # Check that the table and the spatial indexes were properly created
-        res = raw_conn.execute(text("PRAGMA main.table_info(a_table)")).fetchall()
-        assert res == [
-            (0, "id", "INTEGER", 1, None, 1),
-            (1, "geom", "GEOMETRY", 0, None, 0),
-        ]
-        res = raw_conn.execute(text("PRAGMA main.table_info(rtree_a_table_geom)")).fetchall()
-        assert len(res) > 0
+                t.drop(raw_conn)
 
-        t.drop(raw_conn)
+                # Check that the table and the spatial indexes were properly removed
+                res = raw_conn.execute(text("PRAGMA main.table_info(a_table)")).fetchall()
+                assert res == []
+                res = raw_conn.execute(
+                    text("PRAGMA main.table_info(rtree_a_table_geom)")
+                ).fetchall()
+                assert res == []
 
-        # Check that the table and the spatial indexes were properly removed
-        res = raw_conn.execute(text("PRAGMA main.table_info(a_table)")).fetchall()
-        assert res == []
-        res = raw_conn.execute(text("PRAGMA main.table_info(rtree_a_table_geom)")).fetchall()
-        assert res == []
-
-        # Check that the DB is properly initialized
-        assert raw_conn.execute(text("SELECT HasGeoPackage();")).scalar()
-        assert raw_conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar()
+                # Check that the DB is properly initialized
+                assert raw_conn.execute(text("SELECT HasGeoPackage();")).scalar()
+                assert raw_conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar()
+        finally:
+            engine.dispose()
 
     def test_multi_geom_cols_fail(self, conn):
         t = Table(
@@ -197,20 +211,30 @@ class TestMiscellaneous:
         engine = create_engine(
             db_url, echo=_engine_echo, execution_options={"schema_translate_map": {"gis": None}}
         )
-        conn = engine.connect()
+        try:
+            with engine.connect() as conn:
+                assert not conn.execute(
+                    text("PRAGMA main.table_info('gpkg_geometry_columns')")
+                ).fetchall()
+                assert not conn.execute(
+                    text("PRAGMA main.table_info('gpkg_spatial_ref_sys')")
+                ).fetchall()
 
-        assert not conn.execute(text("PRAGMA main.table_info('gpkg_geometry_columns')")).fetchall()
-        assert not conn.execute(text("PRAGMA main.table_info('gpkg_spatial_ref_sys')")).fetchall()
+                load_spatialite_gpkg(conn.connection.dbapi_connection, None)
 
-        load_spatialite_gpkg(conn.connection.dbapi_connection, None)
+                assert conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar() == 1
+                assert conn.execute(
+                    text("PRAGMA main.table_info('gpkg_geometry_columns')")
+                ).fetchall()
+                assert conn.execute(
+                    text("PRAGMA main.table_info('gpkg_spatial_ref_sys')")
+                ).fetchall()
 
-        assert conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar() == 1
-        assert conn.execute(text("PRAGMA main.table_info('gpkg_geometry_columns')")).fetchall()
-        assert conn.execute(text("PRAGMA main.table_info('gpkg_spatial_ref_sys')")).fetchall()
-
-        # Check that spatial_ref_sys table was properly populated
-        nb_srid = conn.execute(text("SELECT COUNT(*) FROM gpkg_spatial_ref_sys;")).scalar()
-        assert nb_srid == 3
+                # Check that spatial_ref_sys table was properly populated
+                nb_srid = conn.execute(text("SELECT COUNT(*) FROM gpkg_spatial_ref_sys;")).scalar()
+                assert nb_srid == 3
+        finally:
+            engine.dispose()
 
     def test_load_spatialite_no_env_variable(self, monkeypatch, conn):
         monkeypatch.delenv("SPATIALITE_LIBRARY_PATH")

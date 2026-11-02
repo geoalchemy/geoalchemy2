@@ -111,6 +111,7 @@ testpaths = [
 module = [
     "importlib.*",
     "psycopg2cffi",
+    "pymysql",
     "rasterio",
     "shapely",
     "shapely.*"

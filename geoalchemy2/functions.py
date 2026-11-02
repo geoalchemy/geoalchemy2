@@ -71,12 +71,14 @@ Reference
 
 import re
 
+from sqlalchemy import bindparam
 from sqlalchemy import inspect
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import annotation
 from sqlalchemy.sql import functions
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.sql.selectable import FromClause
+from sqlalchemy.types import NullType
 
 from geoalchemy2 import elements
 from geoalchemy2._functions import _FUNCTIONS
@@ -248,7 +250,11 @@ class GenericFunction(_GeoFunctionBase):  # type: ignore
         if expr is not None:
             args_list = [expr] + args_list
         for idx, elem in enumerate(args_list):
-            if isinstance(elem, elements._SpatialElement):
+            if isinstance(elem, str):
+                # Send raw strings untyped, so that PostgreSQL resolves them from the function
+                # signature, as it does for string literals (SQLAlchemy would bind them as VARCHAR)
+                args_list[idx] = bindparam(self.name, elem, type_=NullType(), unique=True)
+            elif isinstance(elem, elements._SpatialElement):
                 if elem.extended:
                     func_name = elem.geom_from_extended_version
                     func_args = [elem.data]

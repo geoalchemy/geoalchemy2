@@ -10,11 +10,13 @@ import warnings
 from typing import Any
 
 from sqlalchemy import Computed
+from sqlalchemy import cast
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
 from sqlalchemy.types import Float
 from sqlalchemy.types import Integer
+from sqlalchemy.types import Text
 from sqlalchemy.types import TypeDecorator
 from sqlalchemy.types import UserDefinedType
 
@@ -411,6 +413,10 @@ class Raster(_GISType):
             _spatial_index_reflected=_spatial_index_reflected,
         )
         self.extended = None
+
+    def bind_expression(self, bindvalue):
+        """Cast the bound value to text, so that ``raster()`` accepts it whatever the driver."""
+        return getattr(func, self.from_text)(cast(bindvalue, Text), type_=self)
 
     @staticmethod
     def check_ctor_args(*args, **kwargs):
