@@ -239,46 +239,52 @@ class TestMiscellaneous:
         engine = create_engine(
             db_url, echo=_engine_echo, execution_options={"schema_translate_map": {"gis": None}}
         )
-        conn = engine.connect()
+        try:
+            with engine.connect() as conn:
+                assert not conn.execute(
+                    text("PRAGMA main.table_info('geometry_columns')")
+                ).fetchall()
+                assert not conn.execute(
+                    text("PRAGMA main.table_info('spatial_ref_sys')")
+                ).fetchall()
+                assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
 
-        assert not conn.execute(text("PRAGMA main.table_info('geometry_columns')")).fetchall()
-        assert not conn.execute(text("PRAGMA main.table_info('spatial_ref_sys')")).fetchall()
-        assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
+                load_spatialite(
+                    conn.connection.dbapi_connection,
+                    transaction=transaction,
+                    init_mode=init_mode,
+                    journal_mode=journal_mode,
+                )
 
-        load_spatialite(
-            conn.connection.dbapi_connection,
-            transaction=transaction,
-            init_mode=init_mode,
-            journal_mode=journal_mode,
-        )
+                assert conn.execute(text("SELECT CheckSpatialMetaData();")).scalar() == 3
+                assert conn.execute(text("PRAGMA main.table_info('geometry_columns')")).fetchall()
+                assert conn.execute(text("PRAGMA main.table_info('spatial_ref_sys')")).fetchall()
 
-        assert conn.execute(text("SELECT CheckSpatialMetaData();")).scalar() == 3
-        assert conn.execute(text("PRAGMA main.table_info('geometry_columns')")).fetchall()
-        assert conn.execute(text("PRAGMA main.table_info('spatial_ref_sys')")).fetchall()
+                assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
 
-        assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
+                # Check that spatial_ref_sys table was properly populated
+                nb_srid = conn.execute(text("""SELECT COUNT(*) FROM spatial_ref_sys;""")).scalar()
+                if init_mode is None:
+                    assert nb_srid > 1000
+                elif init_mode == "WGS84":
+                    assert nb_srid in [129, 131]
+                elif init_mode == "EMPTY":
+                    assert nb_srid == 0
 
-        # Check that spatial_ref_sys table was properly populated
-        nb_srid = conn.execute(text("""SELECT COUNT(*) FROM spatial_ref_sys;""")).scalar()
-        if init_mode is None:
-            assert nb_srid > 1000
-        elif init_mode == "WGS84":
-            assert nb_srid in [129, 131]
-        elif init_mode == "EMPTY":
-            assert nb_srid == 0
+                # Check that the journal mode is properly reset even when an error is returned by
+                # the InitSpatialMetaData() function
+                assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
 
-        # Check that the journal mode is properly reset even when an error is returned by the
-        # InitSpatialMetaData() function
-        assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
+                load_spatialite(
+                    conn.connection.dbapi_connection,
+                    transaction=transaction,
+                    init_mode=init_mode,
+                    journal_mode=journal_mode,
+                )
 
-        load_spatialite(
-            conn.connection.dbapi_connection,
-            transaction=transaction,
-            init_mode=init_mode,
-            journal_mode=journal_mode,
-        )
-
-        assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
+                assert conn.execute(text("PRAGMA journal_mode")).fetchone()[0].upper() == "DELETE"
+        finally:
+            engine.dispose()
 
     @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
     def test_load_spatialite_unknown_transaction(self, conn):
