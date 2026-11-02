@@ -10,4 +10,3 @@ pytest-html
 pytest-mypy;implementation_name!='pypy'
 pytest-timeout
 rasterio;implementation_name!='pypy'
-wkb-wkt-converter>=0.6.3

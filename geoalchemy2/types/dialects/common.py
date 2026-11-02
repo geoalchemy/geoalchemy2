@@ -106,6 +106,47 @@ def as_wkb_hex(bindvalue, *, column_srid=None):
     return _wkb_wkt.to_hex_wkb_no_srid(bindvalue).lower()
 
 
+def _wkb_bytes_to_wkt_via_shapely(data, *, srid=None):
+    from geoalchemy2.shape import to_shape
+
+    try:
+        wkt = to_shape(WKBElement(data)).wkt
+    except ImportError as exc:
+        raise ImportError(
+            "Converting WKB to WKT text requires either the optional "
+            "'wkb-wkt-converter' or 'shapely' dependency. Install one of them, e.g. "
+            "'pip install geoalchemy2[wkb-wkt-converter]' or 'pip install geoalchemy2[shapely]'."
+        ) from exc
+    if is_known_srid(srid):
+        return f"SRID={srid};{wkt}"
+    return wkt
+
+
+def wkb_bytes_to_wkt(data, *, srid=None):
+    """Convert WKB/EWKB ``data`` to WKT/EWKT text.
+
+    Uses ``wkb-wkt-converter`` when installed; otherwise falls back to
+    Shapely, restoring GeoAlchemy2's pre-0.21 behavior.
+    """
+    try:
+        return _wkb_wkt.to_wkt(data, srid=srid)
+    except ImportError:
+        return _wkb_bytes_to_wkt_via_shapely(data, srid=srid)
+
+
+def wkb_bytes_to_wkt_split_srid(data):
+    """Return ``(wkt, srid)`` for WKB/EWKB ``data``.
+
+    Uses ``wkb-wkt-converter`` when installed; otherwise falls back to
+    Shapely for the WKT text and header-only SRID sniffing for the SRID,
+    restoring GeoAlchemy2's pre-0.21 behavior.
+    """
+    try:
+        return _wkb_wkt.split_wkb_srid(data)
+    except ImportError:
+        return _wkb_bytes_to_wkt_via_shapely(data), _wkb_wkt.wkb_srid(data)
+
+
 def validate_wkb_srid(column_srid, srid, *, has_fixed_srid=True):
     if (
         has_fixed_srid
