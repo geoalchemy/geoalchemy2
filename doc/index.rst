@@ -24,11 +24,6 @@ GeoAlchemy 2 aims to be simpler than its predecessor, `GeoAlchemy
 <https://pypi.python.org/pypi/GeoAlchemy>`_. Simpler to use, and simpler
 to maintain.
 
-.. toctree::
-   :hidden:
-
-   changelog
-
 The current version of this documentation applies to the version |version| of GeoAlchemy 2. See the
 :ref:`changelog` page for details on recent changes.
 
@@ -79,11 +74,6 @@ What's New in GeoAlchemy 2
 * GeoAlchemy 2 adds :func:`~geoalchemy2.shape.to_shape`, :func:`~geoalchemy2.shape.from_shape` functions for a better
   integration with `Shapely <https://shapely.readthedocs.io/>`_.
 
-.. toctree::
-   :hidden:
-
-   migrate
-
 See the :ref:`migrate` page for details on how to migrate a GeoAlchemy
 application to GeoAlchemy 2.
 
@@ -96,31 +86,24 @@ GeoAlchemy 2 works with both SQLAlchemy's *Object Relational Mapping* (ORM) and
 system. If you're new to GeoAlchemy 2 start with this.
 
 .. toctree::
+   :caption: Tutorials & Guides
    :maxdepth: 1
 
    orm_tutorial
    core_tutorial
    dialect_specific_features
+   gallery/index
+   alembic
 
 
 Gallery
 ---------
-
-.. toctree::
-   :hidden:
-
-   gallery/index
 
 The :ref:`gallery` page shows examples of the GeoAlchemy 2's functionalities.
 
 
 Use with Alembic
 ----------------
-
-.. toctree::
-   :hidden:
-
-   alembic
 
 The GeoAlchemy 2 package is compatible with the migration tool
 `Alembic <https://alembic.sqlalchemy.org/en/latest/>`_. The :ref:`alembic_use` page
@@ -131,6 +114,7 @@ Reference Documentation
 -----------------------
 
 .. toctree::
+   :caption: API Reference
    :maxdepth: 1
 
    admin
@@ -141,6 +125,17 @@ Reference Documentation
    spatial_operators
    shape
    alembic_helpers
+
+
+Migration & Changes
+-------------------
+
+.. toctree::
+   :caption: Migration & Changes
+   :maxdepth: 1
+
+   migrate
+   changelog
 
 Development
 -----------

@@ -21,7 +21,7 @@ import geoalchemy2
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath(".."))
-sys.path.append(os.path.abspath("_themes"))
+# sys.path.append(os.path.abspath("_themes"))
 
 # -- General configuration -----------------------------------------------------
 
@@ -104,26 +104,30 @@ autodoc_inherit_docstrings = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "flask"
+html_theme = "furo"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-# html_theme_options = {}
+html_theme_options = {
+    "source_repository": "https://github.com/geoalchemy/geoalchemy2",
+    "source_branch": "main",
+    "source_directory": "doc/",
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = ["_themes"]
+# html_theme_path = ["_themes"]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-# html_title = None
+html_title = f"{project} v{release}"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 # html_short_title = None
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-# html_logo = None
+html_logo = "_static/geoalchemy_small.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -144,10 +148,7 @@ html_static_path = ["_static"]
 # html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-html_sidebars = {
-    "index": ["sidebar-about.html", "sidebar-links.html", "searchbox.html"],
-    "**": ["sidebar-logo.html", "relations.html", "searchbox.html"],
-}
+# html_sidebars = {}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -240,3 +241,18 @@ sphinx_gallery_conf = {
     "min_reported_time": 999,
     "write_computation_times": False,
 }
+
+
+def replace_nbsp(app, docname, source):
+    source[0] = source[0].replace("GeoAlchemy 2", "GeoAlchemy\u00a02")
+
+
+def replace_docstring_nbsp(app, what, name, obj, options, lines):
+    for i, line in enumerate(lines):
+        if "GeoAlchemy 2" in line:
+            lines[i] = line.replace("GeoAlchemy 2", "GeoAlchemy\u00a02")
+
+
+def setup(app):
+    app.connect("source-read", replace_nbsp)
+    app.connect("autodoc-process-docstring", replace_docstring_nbsp)

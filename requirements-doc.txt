@@ -1,6 +1,7 @@
 # Additional requirements for building the documentation
 alembic
+furo
+pillow
 shapely
 sphinx
 sphinx-gallery
-pillow

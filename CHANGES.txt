@@ -1,5 +1,5 @@
-GeoAlchemy 2 Changelog
-======================
+Changelog
+=========
 
 0.21.0
 ------
