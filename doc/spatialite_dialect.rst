@@ -40,7 +40,7 @@ variable before using the ``load_spatialite`` function.
 
 At this point you can test that you are able to connect to the database::
 
-     >> conn = engine.connect()
+     >>> conn = engine.connect()
 
 Note that this call will internally call the ``load_spatialite`` function, which can take some time
 to execute on a new database because it actually calls the ``InitSpatialMetaData`` function from
@@ -109,7 +109,7 @@ GeoPackage format
 Starting from the version ``4.2`` of Spatialite, it is possible to use GeoPackage files as DB
 containers. GeoAlchemy 2 is able to handle most of the GeoPackage features automatically if the
 GeoPackage dialect is used (i.e. the DB URL starts with ``gpkg:///``) and the SpatiaLite extension
-is loaded. Usually, this extension should be loaded using the the ``GeoAlchemy2`` plugin (see :ref:`connect <spatialite_connect>` section) or by attaching the ``load_spatialite_gpkg`` listener to the engine::
+is loaded. Usually, this extension should be loaded using the ``GeoAlchemy2`` plugin (see :ref:`connect <spatialite_connect>` section) or by attaching the ``load_spatialite_gpkg`` listener to the engine::
 
     >>> from geoalchemy2 import load_spatialite_gpkg
     >>> from sqlalchemy import create_engine
@@ -142,7 +142,7 @@ user:
 Further Reference
 -----------------
 
-* GeoAlchemy 2 ORM Tutotial: :ref:`orm_tutorial`
+* GeoAlchemy 2 ORM Tutorial: :ref:`orm_tutorial`
 * GeoAlchemy 2 Spatial Functions Reference: :ref:`spatial_functions`
 * GeoAlchemy 2 Spatial Operators Reference: :ref:`spatial_operators`
 * GeoAlchemy 2 Elements Reference: :ref:`elements`

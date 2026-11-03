@@ -7,7 +7,7 @@ Core Tutorial
 Tutorial`_, which is recommended reading, eventually.)
 
 .. _SQLAlchemy SQL Expression Language Tutorial:
-    http://docs.sqlalchemy.org/en/latest/core/tutorial.html
+    https://docs.sqlalchemy.org/en/latest/core/
 
 This tutorial shows how to use the SQLAlchemy Expression Language (a.k.a.
 SQLAlchemy Core) with GeoAlchemy. As defined by the SQLAlchemy documentation
@@ -17,7 +17,7 @@ Expression Language provides a schema-centric usage paradigm.
 Connect to the DB
 -----------------
 
-For this tutorial we will use a PostGIS 2 database. To connect we use
+For this tutorial we will use a PostGIS database. To connect we use
 SQLAlchemy's ``create_engine()`` function::
 
     >>> from sqlalchemy import create_engine
@@ -135,14 +135,11 @@ can be used::
 
 Up to now we've created an ``INSERT`` query but we haven't sent this query to
 the database yet. Before being able to send it to the database we need
-a database ``Connection``. We can get a ``Connection`` from the ``Engine``
-object we created earlier::
+a database ``Connection``. We can obtain a connection and manage transactions using
+``engine.begin()``, which commits automatically when the block exits successfully::
 
-    >>> conn = engine.connect()
-
-We're now ready to execute our ``INSERT`` statement::
-
-    >>> result = conn.execute(ins)
+    >>> with engine.begin() as conn:
+    ...     result = conn.execute(ins)
 
 This is what the logging system should output::
 
@@ -155,7 +152,7 @@ a SQLAlchemy ``Result`` object. In the case of an ``INSERT`` we can
 get the primary key value which was generated from our statement::
 
     >>> result.inserted_primary_key
-    [1]
+    (1,)
 
 Instead of using ``values()`` to specify our ``INSERT`` data, we can send
 the data to the ``execute()`` method on ``Connection``. So we could rewrite
@@ -171,8 +168,7 @@ Now let's use another form, allowing to insert multiple rows at once::
     >>> conn.execute(lake_table.insert(), [
     ...     {'name': 'Garde', 'geom': 'POLYGON((1 0,3 0,3 2,1 2,1 0))'},
     ...     {'name': 'Orta', 'geom': 'POLYGON((3 0,6 0,6 3,3 3,3 0))'}
-    ...     ])
-    ...
+    ... ])
 
 .. tip::
 
@@ -184,8 +180,8 @@ Selections
 ----------
 
 Inserting involved creating an ``Insert`` object, so it'd come to no surprise
-that Selecting involves creating a ``Select`` object.  The primary construct to
-generate ``SELECT`` statements is SQLAlchemy`s ``select()`` function::
+that Selecting involves creating a ``Select`` object. The primary construct to
+generate ``SELECT`` statements is SQLAlchemy's ``select()`` function::
 
     >>> from sqlalchemy import select
     >>> s = select(lake_table)
@@ -196,7 +192,7 @@ generate ``SELECT`` statements is SQLAlchemy`s ``select()`` function::
 The ``geom`` column being a ``Geometry`` it is wrapped in a ``ST_AsEWKB``
 call when specified as a column in a ``SELECT`` statement.
 
-We can now execute the statement and look at the results::
+We can now execute the statement to look at the results::
 
     >>> result = conn.execute(s)
     >>> for row in result:
@@ -251,7 +247,7 @@ GeoAlchemy allows rewriting this more concisely::
     FROM lake
     WHERE ST_Contains(lake.geom, :ST_Contains_1)
 
-Here the ``ST_Contains`` function is applied to ``lake.c.geom``. And the
+Here the ``ST_Contains`` function is applied to ``lake_table.c.geom``. And in the
 generated SQL the ``lake.geom`` column is actually passed to the
 ``ST_Contains`` function as the first argument.
 
@@ -268,7 +264,7 @@ Here's another spatial query, based on ``ST_Intersects``::
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
 
- This query selects lakes whose geometries intersect ``LINESTRING(2 1,4 1)``.
+This query selects lakes whose geometries intersect ``LINESTRING(2 1,4 1)``.
 
 The GeoAlchemy functions all start with ``ST_``. Operators are also called as
 functions, but the names of operator functions don't include the ``ST_``
@@ -344,11 +340,18 @@ types. In GeoAlchemy2, these functions are only defined for
 :class:`Geometry` as it can not be defined for several types at the
 same time. Thus using these functions on :class:`Raster` requires
 minor tweaking to enforce the type by passing the `type_=Raster` argument to the
-function:
+function::
 
+    >>> from geoalchemy2 import Raster
+    >>> ocean_table = Table(
+    ...     'ocean',
+    ...     metadata,
+    ...     Column('id', Integer, primary_key=True),
+    ...     Column('rast', Raster),
+    ... )
     >>> s = select(
     ...     func.ST_Transform(
-    ...         lake_table.c.raster,
+    ...         ocean_table.c.rast,
     ...         2154,
     ...         type_=Raster,
     ...     ).label('transformed_raster')

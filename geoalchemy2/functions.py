@@ -241,15 +241,15 @@ class GenericFunction(_GeoFunctionBase):  # type: ignore
     is actually called.
 
     If you need to use a function that GeoAlchemy does not provide you will
-    certainly want to subclass this class. For example, if you need the
-    ``ST_TransScale`` spatial function, which isn't (currently) natively
-    supported by GeoAlchemy, you will write this::
+    certainly want to subclass this class. For example, if you need a custom
+    spatial function that isn't natively supported by GeoAlchemy, you can
+    define it like this::
 
         from geoalchemy2 import Geometry
         from geoalchemy2.functions import GenericFunction
 
-        class ST_TransScale(GenericFunction):
-            name = 'ST_TransScale'
+        class ST_CustomFunction(GenericFunction):
+            name = 'ST_CustomFunction'
             type = Geometry
     """
 

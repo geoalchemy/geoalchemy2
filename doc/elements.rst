@@ -13,12 +13,26 @@ Elements
    :undoc-members:
    :show-inheritance:
 
+.. autoclass:: geoalchemy2.elements.DynamicWKTElement
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. autoclass:: geoalchemy2.elements.WKBElement
    :members:
    :undoc-members:
    :show-inheritance:
 
+.. autoclass:: geoalchemy2.elements.DynamicWKBElement
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. autoclass:: geoalchemy2.elements.RasterElement
+   :members:
+   :show-inheritance:
+
+.. autoclass:: geoalchemy2.elements.DynamicRasterElement
    :members:
    :show-inheritance:
 

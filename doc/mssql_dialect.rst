@@ -55,10 +55,21 @@ GeoAlchemy does not currently rewrite arbitrary ``func.ST_Point(...)`` expressio
 
 Use a WKT value or ``WKTElement`` when inserting values through a spatial column::
 
-    from geoalchemy2 import WKTElement
+    from sqlalchemy import Column, Integer, MetaData, String, Table
+    from geoalchemy2 import Geography, WKTElement
+
+    metadata = MetaData()
+
+    landmarks = Table(
+        "landmarks",
+        metadata,
+        Column("id", Integer, primary_key=True),
+        Column("name", String),
+        Column("geom", Geography(geometry_type="POINT", srid=4326)),
+    )
 
     conn.execute(
-        places.insert(),
+        landmarks.insert(),
         {
             "name": "Eiffel Tower",
             "geom": WKTElement("POINT(2.2945 48.8584)", srid=4326),
@@ -69,7 +80,7 @@ Use SQL Server's WKT constructor for SQL expressions::
 
     from sqlalchemy import bindparam, func, insert
 
-    stmt = insert(places).values(
+    stmt = insert(landmarks).values(
         name=bindparam("name"),
         geom=func.ST_GeogFromText(bindparam("wkt"), bindparam("srid")),
     )

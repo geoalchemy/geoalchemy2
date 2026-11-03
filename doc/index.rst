@@ -36,16 +36,28 @@ The current version of this documentation applies to the version |version| of Ge
 Requirements
 ------------
 
-GeoAlchemy 2 requires `SQLAlchemy <http://sqlalchemy.org>`_ >= 1.4.
+GeoAlchemy 2 requires:
+
+* Python >= 3.10
+* `SQLAlchemy <https://www.sqlalchemy.org>`_ >= 1.4
 
 Installation
 ------------
 
 GeoAlchemy 2 is `available on the Python Package Index
-<https://pypi.python.org/pypi/GeoAlchemy2/>`_. So it can be installed
-with the standard `pip <http://www.pip-installer.org>`_ or
-`easy_install <http://peak.telecommunity.com/DevCenter/EasyInstall>`_
-tools.
+<https://pypi.org/project/GeoAlchemy2/>`_. It can be installed with ``pip``::
+
+    pip install GeoAlchemy2
+
+Optional dependencies can be installed as extras:
+
+* `Shapely <https://shapely.readthedocs.io/>`_ integration (for ``to_shape`` and ``from_shape``)::
+
+    pip install "GeoAlchemy2[shapely]"
+
+* Fast WKB/WKT conversions (for ``as_wkb``/``as_ewkb`` on ``WKTElement`` and ``as_wkt``/``as_ewkt`` on ``WKBElement``)::
+
+    pip install "GeoAlchemy2[wkb-wkt-converter]"
 
 What's New in GeoAlchemy 2
 --------------------------
