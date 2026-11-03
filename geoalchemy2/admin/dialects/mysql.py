@@ -9,7 +9,9 @@ from sqlalchemy import text
 from sqlalchemy.dialects.mysql.base import ischema_names as _mysql_ischema_names
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import expression
+from sqlalchemy.sql import operators
 from sqlalchemy.sql import visitors
+from sqlalchemy.sql.elements import AsBoolean
 from sqlalchemy.sql.elements import BindParameter
 from sqlalchemy.sql.elements import Null
 from sqlalchemy.sql.sqltypes import NullType
@@ -1061,3 +1063,23 @@ def _MySQL_ST_GeomFromEWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_MySql(
         element, compiler, identifier="ST_GeomFromWKB", coerce_ewkb=True, **kw
     )
+
+
+def _compile_AsBoolean_MySql(element, compiler, **kw):
+    """Compile the boolean functions (e.g. spatial predicates) used as filters without comparison.
+
+    MySQL and MariaDB can not use spatial indexes for predicates compared to a value (see
+    https://bugs.mysql.com/bug.php?id=76384), so ``ST_Contains(...)`` must be rendered instead of
+    ``ST_Contains(...) = 1``.
+    """
+    if not isinstance(element.element, functions.GenericFunction):
+        return compiler.visit_unary(element, **kw)
+    predicate = compiler.process(element.element, **kw)
+    if element.operator is operators.is_true:
+        return predicate
+    return f"NOT {predicate}"
+
+
+@compiles(AsBoolean, "mysql")
+def _MySQL_AsBoolean(element, compiler, **kw):
+    return _compile_AsBoolean_MySql(element, compiler, **kw)

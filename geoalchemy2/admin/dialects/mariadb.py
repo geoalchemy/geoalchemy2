@@ -1,6 +1,7 @@
 """This module defines specific functions for MariaDB dialect."""
 
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.elements import AsBoolean
 
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import compile_bin_literal
@@ -8,6 +9,7 @@ from geoalchemy2.admin.dialects.common import unwrap_wkb_constructor_clauses
 from geoalchemy2.admin.dialects.mysql import _coerce_ewkb_bind_clause_to_wkb
 from geoalchemy2.admin.dialects.mysql import _coerce_ewkb_clause_to_wkb
 from geoalchemy2.admin.dialects.mysql import _coerce_known_ewkb_clause_to_wkb
+from geoalchemy2.admin.dialects.mysql import _compile_AsBoolean_MySql
 from geoalchemy2.admin.dialects.mysql import _compile_srid_arg
 from geoalchemy2.admin.dialects.mysql import _dynamic_ewkb_default_srid
 from geoalchemy2.admin.dialects.mysql import _dynamic_ewkb_split_disabled
@@ -215,3 +217,8 @@ def _MariaDB_ST_GeomFromWKB(element, compiler, **kw):
 @compiles(functions.ST_GeomFromEWKB, "mariadb")  # type: ignore
 def _MariaDB_ST_GeomFromEWKB(element, compiler, **kw):
     return _compile_GeomFromWKB_MariaDB(element, compiler, coerce_ewkb=True, **kw)
+
+
+@compiles(AsBoolean, "mariadb")
+def _MariaDB_AsBoolean(element, compiler, **kw):
+    return _compile_AsBoolean_MySql(element, compiler, **kw)

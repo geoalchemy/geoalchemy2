@@ -2,12 +2,14 @@ import re
 from pathlib import Path
 
 import pytest
+from sqlalchemy import Boolean
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
+from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy import text
 from sqlalchemy.dialects import mssql
@@ -1007,3 +1009,82 @@ def test_str_argument_in_ddl():
         "CREATE INDEX lake_partial_idx ON lake (id) "
         "WHERE ST_Intersects(geom, ST_GeomFromText('POINT(0 0)', 4326))",
     )
+
+
+#
+# Spatial predicates used as filters
+#
+@pytest.mark.parametrize(
+    "dialect,predicate,negation,boolean_column,boolean_column_negation",
+    [
+        pytest.param(
+            mysql.dialect(),
+            "ST_Contains(zone.geom, zone.point)",
+            "NOT ST_Contains(zone.geom, zone.point)",
+            "zone.flag = 1",
+            "zone.flag = 0",
+            id="mysql",
+        ),
+        pytest.param(
+            mysql.dialect(is_mariadb=True),
+            "ST_Contains(zone.geom, zone.point)",
+            "NOT ST_Contains(zone.geom, zone.point)",
+            "zone.flag = 1",
+            "zone.flag = 0",
+            id="mariadb",
+        ),
+        pytest.param(
+            postgresql.dialect(),
+            "ST_Contains(zone.geom, zone.point)",
+            "NOT ST_Contains(zone.geom, zone.point)",
+            "zone.flag",
+            "NOT zone.flag",
+            id="postgresql",
+        ),
+        pytest.param(
+            sqlite.dialect(),
+            "ST_Contains(zone.geom, zone.point) = 1",
+            "ST_Contains(zone.geom, zone.point) = 0",
+            "zone.flag = 1",
+            "zone.flag = 0",
+            id="sqlite",
+        ),
+        pytest.param(
+            mssql.dialect(),
+            "zone.geom.STContains(zone.point) = 1",
+            "zone.geom.STContains(zone.point) = 0",
+            "zone.flag = 1",
+            "zone.flag = 0",
+            id="mssql",
+        ),
+    ],
+)
+def test_spatial_predicate_as_filter(
+    dialect, predicate, negation, boolean_column, boolean_column_negation
+):
+    # MySQL and MariaDB can only use a spatial index for a bare predicate, while the comparison to 1
+    # is required by MSSQL and SQLite (where predicates return -1 for NULL arguments)
+    zone = Table(
+        "zone",
+        MetaData(),
+        Column("id", Integer, primary_key=True),
+        Column("geom", Geometry("POLYGON", srid=4326, nullable=False)),
+        Column("point", Geometry("POINT", srid=4326)),
+        Column("flag", Boolean),
+    )
+
+    def where(*clauses):
+        compiled = str(select(zone.c.id).where(*clauses).compile(dialect=dialect))
+        return re.sub(r"\s+", " ", compiled).split(" WHERE ", 1)[1]
+
+    contains = func.ST_Contains(zone.c.geom, zone.c.point)
+
+    assert where(contains) == predicate
+    assert where(zone.c.geom.ST_Contains(zone.c.point)) == predicate
+    assert where(~contains) == negation
+    assert where(contains, zone.c.id.is_(None)) == f"{predicate} AND zone.id IS NULL"
+    assert where(or_(~contains, zone.c.id.is_(None))) == f"{negation} OR zone.id IS NULL"
+
+    # Other boolean expressions are not affected
+    assert where(zone.c.flag) == boolean_column
+    assert where(~zone.c.flag) == boolean_column_negation

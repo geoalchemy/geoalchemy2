@@ -3,9 +3,12 @@ from json import loads
 import pytest
 from packaging.version import parse as parse_version
 from shapely.geometry import LineString
+from sqlalchemy import Column
+from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy import __version__ as SA_VERSION
+from sqlalchemy import and_
 from sqlalchemy import bindparam
 from sqlalchemy import create_engine
 from sqlalchemy import text
@@ -308,6 +311,56 @@ class TestCallFunction:
         assert isinstance(r7, WKBElement)
 
         assert r1.data == r2.data == r3.data == r4.data == r5.data == r6.data == r7.data
+
+
+class TestSpatialPredicates:
+    @pytest.fixture
+    def Zone(self, base):
+        class Zone(base):
+            __tablename__ = "zone"
+            id = Column(Integer, primary_key=True)
+            # The geometry column must not be nullable to get a spatial index
+            geom = Column(Geometry("POLYGON", srid=4326, nullable=False))
+
+        return Zone
+
+    @pytest.fixture
+    def setup_zones(self, conn, Zone, setup_tables):
+        # Squares of 0.5 degrees
+        corners = [(n / 2, n / 2 + 0.5) for n in range(20)]
+        conn.execute(
+            Zone.__table__.insert(),
+            [
+                {"geom": f"POLYGON(({x0} {y0},{x0} {y1},{x1} {y1},{x1} {y0},{x0} {y0}))"}
+                for x0, x1 in corners
+                for y0, y1 in corners
+            ],
+        )
+        return len(corners) ** 2
+
+    def test_spatial_index_is_used(self, conn, Zone, setup_zones, dialect_name):
+        nb_zones = setup_zones
+        point = func.ST_GeomFromText("POINT(5.25 5.25)", 4326)
+        explain = "EXPLAIN FORMAT=TRADITIONAL" if dialect_name == "mysql" else "EXPLAIN"
+
+        for predicate in [
+            func.ST_Contains(Zone.geom, point),
+            Zone.geom.ST_Contains(point),
+            and_(func.ST_Contains(Zone.geom, point), Zone.id > 0),
+        ]:
+            query = select(Zone.id).where(predicate)
+            sql = query.compile(conn, compile_kwargs={"literal_binds": True})
+            plan = conn.execute(text(f"{explain} {sql}")).mappings().one()
+            assert plan["type"] == "range"
+            assert plan["key"] == "geom"
+            assert len(conn.execute(query).all()) == 1
+
+        # The negation and the selected value are still consistent
+        query = select(Zone.id).where(~func.ST_Contains(Zone.geom, point))
+        assert len(conn.execute(query).all()) == nb_zones - 1
+        assert isinstance(
+            conn.execute(select(func.ST_Contains(Zone.geom, point)).limit(1)).scalar(), bool
+        )
 
 
 class TestNullable:
