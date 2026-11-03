@@ -70,7 +70,7 @@ done
 cd /geoalchemy2
 
 # remove links that would cause issues if they are present and read-only
-rm -f .mypy_cache .eggs *.egg-info .git .gitignore doc reports
+rm -rf .mypy_cache .ruff_cache .pytest_cache .eggs *.egg-info .git .gitignore doc reports
 
 # copy these items instead of symlinking
 cp -r /geoalchemy2_read_only/doc /geoalchemy2/doc
@@ -89,6 +89,7 @@ git add --all
 git commit -m "dummy commit" > /dev/null
 
 export MYPY_CACHE_DIR=/output/.mypy_cache
+export RUFF_CACHE_DIR=/output/.ruff_cache
 
 ###############################
 

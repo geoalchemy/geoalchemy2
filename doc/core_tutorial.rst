@@ -158,17 +158,19 @@ Instead of using ``values()`` to specify our ``INSERT`` data, we can send
 the data to the ``execute()`` method on ``Connection``. So we could rewrite
 things as follows::
 
-    >>> conn.execute(
-    ...     lake_table.insert(),
-    ...     {"name": "Majeur", "geom": "POLYGON((0 0,1 0,1 1,0 1,0 0))"},
-    ... )
+    >>> with engine.begin() as conn:
+    ...     conn.execute(
+    ...         lake_table.insert(),
+    ...         {"name": "Majeur", "geom": "POLYGON((0 0,1 0,1 1,0 1,0 0))"},
+    ...     )
 
 Now let's use another form, allowing to insert multiple rows at once::
 
-    >>> conn.execute(lake_table.insert(), [
-    ...     {'name': 'Garde', 'geom': 'POLYGON((1 0,3 0,3 2,1 2,1 0))'},
-    ...     {'name': 'Orta', 'geom': 'POLYGON((3 0,6 0,6 3,3 3,3 0))'}
-    ... ])
+    >>> with engine.begin() as conn:
+    ...     conn.execute(lake_table.insert(), [
+    ...         {'name': 'Garde', 'geom': 'POLYGON((1 0,3 0,3 2,1 2,1 0))'},
+    ...         {'name': 'Orta', 'geom': 'POLYGON((3 0,6 0,6 3,3 3,3 0))'}
+    ...     ])
 
 .. tip::
 
@@ -194,10 +196,11 @@ call when specified as a column in a ``SELECT`` statement.
 
 We can now execute the statement to look at the results::
 
-    >>> result = conn.execute(s)
-    >>> for row in result:
-    ...     row = row._mapping
-    ...     print("name:", row["name"], "; geom:", row["geom"].desc)
+    >>> with engine.connect() as conn:
+    ...     result = conn.execute(s)
+    ...     for row in result:
+    ...         row = row._mapping
+    ...         print("name:", row["name"], "; geom:", row["geom"].desc)
     ...
     name: Majeur ; geom: 0103...
     name: Garde ; geom: 0103...
@@ -232,10 +235,11 @@ we can use this::
     SELECT lake.id, lake.name, ST_AsEWKB(lake.geom) AS geom
     FROM lake
     WHERE ST_Contains(lake.geom, :ST_Contains_1)
-    >>> result = conn.execute(s)
-    >>> for row in result:
-    ...     row = row._mapping
-    ...     print("name:", row["name"], "; geom:", row["geom"].desc)
+    >>> with engine.connect() as conn:
+    ...     result = conn.execute(s)
+    ...     for row in result:
+    ...         row = row._mapping
+    ...         print("name:", row["name"], "; geom:", row["geom"].desc)
     ...
     name: Orta ; geom: 0103...
 
@@ -256,10 +260,11 @@ Here's another spatial query, based on ``ST_Intersects``::
     >>> s = select(lake_table).where(
     ...     lake_table.c.geom.ST_Intersects('LINESTRING(2 1,4 1)')
     ... )
-    >>> result = conn.execute(s)
-    >>> for row in result:
-    ...     row = row._mapping
-    ...     print("name:", row["name"], "; geom:", row["geom"].desc)
+    >>> with engine.connect() as conn:
+    ...     result = conn.execute(s)
+    ...     for row in result:
+    ...         row = row._mapping
+    ...         print("name:", row["name"], "; geom:", row["geom"].desc)
     ...
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
@@ -277,10 +282,11 @@ whether the bounding boxes of geometries intersect. GeoAlchemy provides the
     >>> s = select(lake_table).where(
     ...     lake_table.c.geom.intersects('LINESTRING(2 1,4 1)')
     ... )
-    >>> result = conn.execute(s)
-    >>> for row in result:
-    ...     row = row._mapping
-    ...     print("name:", row["name"], "; geom:", row["geom"].desc)
+    >>> with engine.connect() as conn:
+    ...     result = conn.execute(s)
+    ...     for row in result:
+    ...         row = row._mapping
+    ...         print("name:", row["name"], "; geom:", row["geom"].desc)
     ...
     name: Garde ; geom: 0103...
     name: Orta ; geom: 0103...
@@ -297,10 +303,12 @@ Here's a ``Select`` that calculates the areas of buffers for our lakes::
     >>> str(s)
     SELECT lake.name, ST_Area(ST_Buffer(lake.geom, :ST_Buffer_1)) AS bufferarea
     FROM lake
-    >>> result = conn.execute(s)
-    >>> for row in result:
-    ...     row = row._mapping
-    ...     print("%s: %f" % (row["name"], row["bufferarea"]))
+    >>> with engine.connect() as conn:
+    ...     result = conn.execute(s)
+    ...     for row in result:
+    ...         row = row._mapping
+    ...         print("%s: %f" % (row["name"], row["bufferarea"]))
+    ...
     Majeur: 21.485781
     Garde: 32.485781
     Orta: 45.485781
@@ -315,9 +323,11 @@ clauses. For example::
     SELECT lake.name
     FROM lake
     WHERE ST_Area(ST_Buffer(lake.geom, :ST_Buffer_1)) > :ST_Area_1
-    >>> result = conn.execute(s)
-    >>> for row in result:
-    ...     print(row._mapping["name"])
+    >>> with engine.connect() as conn:
+    ...     result = conn.execute(s)
+    ...     for row in result:
+    ...         print(row._mapping["name"])
+    ...
     Orta
 
 And, like any other functions supported by GeoAlchemy, processing and
@@ -325,10 +335,12 @@ measurement functions can be applied to
 :class:`geoalchemy2.elements.WKBElement`. For example::
 
     >>> s = select(lake_table).where(lake_table.c.name == 'Majeur')
-    >>> result = conn.execute(s)
-    >>> lake = result.fetchone()
-    >>> bufferarea = conn.scalar(lake._mapping["geom"].ST_Buffer(2).ST_Area())
-    >>> print("%s: %f" % (lake._mapping["name"], bufferarea))
+    >>> with engine.connect() as conn:
+    ...     result = conn.execute(s)
+    ...     lake = result.fetchone()
+    ...     bufferarea = conn.scalar(lake._mapping["geom"].ST_Buffer(2).ST_Area())
+    ...     print("%s: %f" % (lake._mapping["name"], bufferarea))
+    ...
     Majeur: 21.485781
 
 Use Raster functions

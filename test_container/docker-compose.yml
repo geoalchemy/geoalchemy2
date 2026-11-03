@@ -43,6 +43,7 @@ services:
     volumes:
       - ..:/geoalchemy2_read_only:ro
       - ./output:/output
+      - ./helpers/entrypoint.sh:/entrypoint.sh:ro
 
   postgres:
     image: postgis/postgis:18-3.6
