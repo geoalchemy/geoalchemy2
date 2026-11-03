@@ -13,15 +13,21 @@ else:
 
 from packaging.version import parse as parse_version
 from shapely.geometry import Point
+from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
+from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import String
+from sqlalchemy import Table
 from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import bindparam
+from sqlalchemy import create_engine
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import InternalError
+from sqlalchemy.exc import NoSuchModuleError
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import type_coerce
@@ -568,6 +574,72 @@ class TestCallFunction:
         res = session.execute(query).fetchall()
 
         assert bool(res) == expected_assert
+
+
+class TestStrArguments:
+    @pytest.fixture(params=["psycopg2", "psycopg"])
+    def driver_engine(self, request, engine):
+        """Provide an engine to the test database using the requested driver."""
+        try:
+            current_engine = create_engine(
+                engine.url.set(drivername=f"postgresql+{request.param}"), plugins=["geoalchemy2"]
+            )
+        except (ImportError, NoSuchModuleError) as exc:
+            pytest.skip(f"The {request.param} driver is not available: {exc}")
+        try:
+            yield current_engine
+        finally:
+            current_engine.dispose()
+
+    def test_str_argument_as_geometry(self, driver_engine):
+        with driver_engine.connect() as conn:
+            res = conn.execute(
+                select([func.ST_Within("POINT(0 0)", func.ST_Buffer("POINT(0 0)", 2))])
+            ).scalar()
+        assert res is True
+
+    def test_str_argument_in_ddl(self, driver_engine):
+        metadata = MetaData()
+        table = Table(
+            "str_arguments_in_ddl",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry("POINT", srid=4326),
+                server_default=func.ST_GeomFromText("POINT(0 0)", 4326),
+            ),
+            CheckConstraint(
+                func.ST_Intersects(
+                    text("geom"),
+                    func.ST_GeomFromText("POLYGON((-1 -1,-1 1,1 1,1 -1,-1 -1))", 4326),
+                ),
+                name="str_arguments_in_ddl_geom_check",
+            ),
+        )
+        Index(
+            "str_arguments_in_ddl_partial_idx",
+            table.c.id,
+            postgresql_where=func.ST_Intersects(
+                table.c.geom, func.ST_GeomFromText("POINT(0 0)", 4326)
+            ),
+        )
+
+        metadata.drop_all(driver_engine)
+        try:
+            metadata.create_all(driver_engine)
+
+            with driver_engine.begin() as conn:
+                conn.execute(table.insert().values(id=1))
+                assert conn.execute(select([table.c.geom.ST_AsText()])).scalar() == "POINT(0 0)"
+                assert "str_arguments_in_ddl_partial_idx" in [
+                    idx["name"] for idx in get_inspector(conn).get_indexes(table.name)
+                ]
+
+            with pytest.raises(IntegrityError), driver_engine.begin() as conn:
+                conn.execute(table.insert().values(id=2, geom="SRID=4326;POINT(5 5)"))
+        finally:
+            metadata.drop_all(driver_engine)
 
 
 class TestShapely:

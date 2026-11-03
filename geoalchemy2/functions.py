@@ -79,6 +79,7 @@ from sqlalchemy.sql import functions
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.sql.selectable import FromClause
 from sqlalchemy.types import NullType
+from sqlalchemy.types import String
 
 from geoalchemy2 import elements
 from geoalchemy2._functions import _FUNCTIONS
@@ -213,6 +214,18 @@ def _compile_table_row_thing(element, compiler, **kw):
     return compiled.split(".")[0]
 
 
+class _UntypedString(NullType):
+    """Type of the raw strings given to functions.
+
+    These strings are sent untyped, so that PostgreSQL resolves them from the function signature, as
+    it does for string literals (SQLAlchemy would bind them as VARCHAR), but they can still be
+    rendered as string literals (e.g. in DDL or with ``literal_binds``).
+    """
+
+    def literal_processor(self, dialect):
+        return String().literal_processor(dialect)
+
+
 class GenericFunction(_GeoFunctionBase):  # type: ignore
     """The base class for GeoAlchemy functions.
 
@@ -251,9 +264,7 @@ class GenericFunction(_GeoFunctionBase):  # type: ignore
             args_list = [expr] + args_list
         for idx, elem in enumerate(args_list):
             if isinstance(elem, str):
-                # Send raw strings untyped, so that PostgreSQL resolves them from the function
-                # signature, as it does for string literals (SQLAlchemy would bind them as VARCHAR)
-                args_list[idx] = bindparam(self.name, elem, type_=NullType(), unique=True)
+                args_list[idx] = bindparam(self.name, elem, type_=_UntypedString(), unique=True)
             elif isinstance(elem, elements._SpatialElement):
                 if elem.extended:
                     func_name = elem.geom_from_extended_version
