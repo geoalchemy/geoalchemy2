@@ -1,10 +1,25 @@
 import re
 from pathlib import Path
 
+import pytest
+from sqlalchemy import CheckConstraint
+from sqlalchemy import Column
+from sqlalchemy import Index
+from sqlalchemy import Integer
+from sqlalchemy import MetaData
+from sqlalchemy import Table
 from sqlalchemy import select
+from sqlalchemy import text
+from sqlalchemy.dialects import mssql
+from sqlalchemy.dialects import mysql
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects import sqlite
+from sqlalchemy.schema import CreateIndex
+from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql import func
 
 import geoalchemy2.functions
+from geoalchemy2 import Geometry
 from geoalchemy2._functions_helpers import _generate_stubs
 from geoalchemy2.types import Raster  # NOQA
 
@@ -907,3 +922,88 @@ def test_ST_ValueCount():
 #
 def test_ST_HillShade():
     _test_raster_returning_func("ST_HillShade")
+
+
+#
+# Raw string arguments
+#
+@pytest.mark.parametrize(
+    "dialect",
+    [
+        postgresql.dialect(),
+        mysql.dialect(),
+        mysql.dialect(is_mariadb=True),
+        sqlite.dialect(),
+        mssql.dialect(),
+    ],
+    ids=["postgresql", "mysql", "mariadb", "sqlite", "mssql"],
+)
+def test_str_argument_literal_binds(dialect):
+    stmt = select(func.ST_Within("POINT(0 0)", func.ST_GeomFromText("POINT(1 1)", 4326)))
+    compiled = str(stmt.compile(dialect=dialect, compile_kwargs={"literal_binds": True}))
+    assert "'POINT(0 0)'" in compiled
+    assert "'POINT(1 1)'" in compiled
+
+
+def test_str_argument_literal_binds_escaped():
+    stmt = select(func.ST_GeomFromText("POINT(0 0)'); DROP TABLE lake; --"))
+    eq_sql(
+        stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}),
+        "SELECT ST_AsEWKB(ST_GeomFromText('POINT(0 0)''); DROP TABLE lake; --')) "
+        'AS "ST_GeomFromText_1"',
+    )
+
+
+@skip_sqla_lt_2()
+def test_str_argument_without_bind_cast_with_psycopg():
+    from sqlalchemy.dialects.postgresql.psycopg import PGDialect_psycopg
+
+    # PostgreSQL must resolve raw strings from the function signature, as it does for string
+    # literals, so they must not be cast to VARCHAR
+    stmt = select(func.ST_Within("POINT(0 0)", func.ST_GeomFromText("POINT(1 1)", 4326)))
+    eq_sql(
+        stmt.compile(dialect=PGDialect_psycopg()),
+        "SELECT ST_Within(%(ST_Within_2)s, "
+        "ST_GeomFromText(%(ST_GeomFromText_1)s, %(ST_GeomFromText_2)s::INTEGER)) "
+        'AS "ST_Within_1"',
+    )
+
+
+def test_str_argument_in_ddl():
+    table = Table(
+        "lake",
+        MetaData(),
+        Column("id", Integer, primary_key=True),
+        Column(
+            "geom",
+            Geometry("POINT", srid=4326, spatial_index=False),
+            server_default=func.ST_GeomFromText("POINT(0 0)", 4326),
+        ),
+        CheckConstraint(
+            func.ST_Intersects(
+                text("geom"), func.ST_GeomFromText("POLYGON((0 0,0 1,1 1,0 0))", 4326)
+            ),
+            name="geom_check",
+        ),
+    )
+    index = Index(
+        "lake_partial_idx",
+        table.c.id,
+        postgresql_where=func.ST_Intersects(table.c.geom, func.ST_GeomFromText("POINT(0 0)", 4326)),
+    )
+
+    eq_sql(
+        CreateTable(table).compile(dialect=postgresql.dialect()),
+        "CREATE TABLE lake ("
+        "id SERIAL NOT NULL, "
+        "geom geometry(POINT,4326) DEFAULT ST_GeomFromText('POINT(0 0)', 4326), "
+        "PRIMARY KEY (id), "
+        "CONSTRAINT geom_check CHECK "
+        "(ST_Intersects(geom, ST_GeomFromText('POLYGON((0 0,0 1,1 1,0 0))', 4326)))"
+        ")",
+    )
+    eq_sql(
+        CreateIndex(index).compile(dialect=postgresql.dialect()),
+        "CREATE INDEX lake_partial_idx ON lake (id) "
+        "WHERE ST_Intersects(geom, ST_GeomFromText('POINT(0 0)', 4326))",
+    )
