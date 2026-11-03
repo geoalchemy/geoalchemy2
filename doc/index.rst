@@ -51,19 +51,19 @@ GeoAlchemy 2 is `available on the Python Package Index
 
 Optional dependencies can be installed as extras:
 
-* `Shapely <https://shapely.readthedocs.io/>`_ integration (for ``to_shape`` and ``from_shape``)::
+* `Shapely <https://shapely.readthedocs.io/>`_ integration (for :func:`~geoalchemy2.shape.to_shape` and :func:`~geoalchemy2.shape.from_shape`)::
 
     pip install "GeoAlchemy2[shapely]"
 
-* Fast WKB/WKT conversions (for ``as_wkb``/``as_ewkb`` on ``WKTElement`` and ``as_wkt``/``as_ewkt`` on ``WKBElement``)::
+* Fast WKB/WKT conversions (for :meth:`~geoalchemy2.elements.WKTElement.as_wkb`/:meth:`~geoalchemy2.elements.WKTElement.as_ewkb` on :class:`~geoalchemy2.elements.WKTElement` and :meth:`~geoalchemy2.elements.WKBElement.as_wkt`/:meth:`~geoalchemy2.elements.WKBElement.as_ewkt` on :class:`~geoalchemy2.elements.WKBElement`)::
 
     pip install "GeoAlchemy2[wkb-wkt-converter]"
 
 What's New in GeoAlchemy 2
 --------------------------
 
-* GeoAlchemy 2 supports PostGIS' ``geometry`` type, as well as the ``geography``
-  and ``raster`` types.
+* GeoAlchemy 2 supports PostGIS' :class:`~geoalchemy2.types.Geometry` type, as well as the :class:`~geoalchemy2.types.Geography`
+  and :class:`~geoalchemy2.types.Raster` types.
 * The first series had its own namespace for spatial functions. With GeoAlchemy
   2, spatial functions are called like any other SQLAlchemy function, using
   ``func``, which is SQLAlchemy's `standard way
@@ -75,9 +75,9 @@ What's New in GeoAlchemy 2
   <http://docs.sqlalchemy.org/en/latest/core/types.html?highlight=comparator_factory#types-operators>`_.)
 * GeoAlchemy 2 supports `reflection
   <http://docs.sqlalchemy.org/en/latest/core/schema.html#metadata-reflection>`_
-  of geometry and geography columns.
-* GeoAlchemy 2 adds ``to_shape``, ``from_shape`` functions for a better
-  integration with `Shapely <http://pypi.python.org/pypi/Shapely>`_.
+  of :class:`~geoalchemy2.types.Geometry` and :class:`~geoalchemy2.types.Geography` columns.
+* GeoAlchemy 2 adds :func:`~geoalchemy2.shape.to_shape`, :func:`~geoalchemy2.shape.from_shape` functions for a better
+  integration with `Shapely <https://shapely.readthedocs.io/>`_.
 
 .. toctree::
    :hidden:

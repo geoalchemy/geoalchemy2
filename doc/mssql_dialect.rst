@@ -20,7 +20,7 @@ GeoAlchemy-facing WKT values should still use standard ``X Y`` order::
     POINT(longitude latitude)
 
 For MSSQL computed columns, GeoAlchemy also treats ``ST_POINT(x, y)`` as standard ``X Y``
-input when rewriting it to SQL Server constructor syntax. For a ``Geography`` computed column this
+input when rewriting it to SQL Server constructor syntax. For a :class:`~geoalchemy2.types.Geography` computed column this
 means::
 
     from sqlalchemy import Column, Computed, Float, Integer, MetaData, Table
@@ -53,7 +53,7 @@ Constructing points in INSERT or SELECT statements
 GeoAlchemy does not currently rewrite arbitrary ``func.ST_Point(...)`` expressions in ``INSERT`` or
 ``SELECT`` statements for MSSQL. In those contexts, use one of the explicit MSSQL-compatible forms.
 
-Use a WKT value or ``WKTElement`` when inserting values through a spatial column::
+Use a WKT value or :class:`~geoalchemy2.elements.WKTElement` when inserting values through a spatial column::
 
     from sqlalchemy import Column, Integer, MetaData, String, Table
     from geoalchemy2 import Geography, WKTElement

@@ -111,8 +111,8 @@ an ``Insert`` object. SQLAlchemy provides multiple constructs for creating an
     >>> str(ins)
     INSERT INTO lake (id, name, geom) VALUES (:id, :name, ST_GeomFromEWKT(:geom))
 
-The ``geom`` column being a ``Geometry`` column, the ``:geom`` bind value is
-wrapped in a ``ST_GeomFromEWKT`` call.
+The ``geom`` column being a :class:`~geoalchemy2.types.Geometry` column, the ``:geom`` bind value is
+wrapped in a :class:`~geoalchemy2.functions.ST_GeomFromEWKT` call.
 
 To limit the columns named in the ``INSERT`` query the ``values()`` method
 can be used::
@@ -191,7 +191,7 @@ generate ``SELECT`` statements is SQLAlchemy's ``select()`` function::
     SELECT lake.id, lake.name, ST_AsEWKB(lake.geom) AS geom
     FROM lake
 
-The ``geom`` column being a ``Geometry`` it is wrapped in a ``ST_AsEWKB``
+The ``geom`` column being a :class:`~geoalchemy2.types.Geometry` it is wrapped in a :class:`~geoalchemy2.functions.ST_AsEWKB`
 call when specified as a column in a ``SELECT`` statement.
 
 We can now execute the statement to look at the results::
@@ -251,11 +251,11 @@ GeoAlchemy allows rewriting this more concisely::
     FROM lake
     WHERE ST_Contains(lake.geom, :ST_Contains_1)
 
-Here the ``ST_Contains`` function is applied to ``lake_table.c.geom``. And in the
+Here the :class:`~geoalchemy2.functions.ST_Contains` function is applied to ``lake_table.c.geom``. And in the
 generated SQL the ``lake.geom`` column is actually passed to the
-``ST_Contains`` function as the first argument.
+:class:`~geoalchemy2.functions.ST_Contains` function as the first argument.
 
-Here's another spatial query, based on ``ST_Intersects``::
+Here's another spatial query, based on :class:`~geoalchemy2.functions.ST_Intersects`::
 
     >>> s = select(lake_table).where(
     ...     lake_table.c.geom.ST_Intersects('LINESTRING(2 1,4 1)')
@@ -277,7 +277,7 @@ prefix.
 
 As an example let's use PostGIS' ``&&`` operator, which allows testing
 whether the bounding boxes of geometries intersect. GeoAlchemy provides the
-``intersects`` function for that::
+:meth:`~geoalchemy2.comparator.BaseComparator.intersects` function for that::
 
     >>> s = select(lake_table).where(
     ...     lake_table.c.geom.intersects('LINESTRING(2 1,4 1)')
@@ -346,12 +346,12 @@ measurement functions can be applied to
 Use Raster functions
 --------------------
 
-A few functions (like `ST_Transform()`, `ST_Union()`, `ST_SnapToGrid()`, ...) can be
-used on both :class:`geoalchemy2.types.Geometry` and :class:`geoalchemy2.types.Raster`
+A few functions (like :class:`~geoalchemy2.functions.ST_Transform`, :class:`~geoalchemy2.functions.ST_Union`, :class:`~geoalchemy2.functions.ST_SnapToGrid`, ...) can be
+used on both :class:`~geoalchemy2.types.Geometry` and :class:`~geoalchemy2.types.Raster`
 types. In GeoAlchemy2, these functions are only defined for
-:class:`Geometry` as it can not be defined for several types at the
-same time. Thus using these functions on :class:`Raster` requires
-minor tweaking to enforce the type by passing the `type_=Raster` argument to the
+:class:`~geoalchemy2.types.Geometry` as it can not be defined for several types at the
+same time. Thus using these functions on :class:`~geoalchemy2.types.Raster` requires
+minor tweaking to enforce the type by passing the ``type_=Raster`` argument to the
 function::
 
     >>> from geoalchemy2 import Raster

@@ -222,11 +222,11 @@ GeoAlchemy allows rewriting this ``Query`` more concisely::
     ...
     Orta
 
-Here the ``ST_Contains`` function is applied to the ``Lake.geom`` column
+Here the :class:`~geoalchemy2.functions.ST_Contains` function is applied to the ``Lake.geom`` column
 property. In that case the column property is actually passed to the function,
 as its first argument.
 
-Here's another spatial filtering query, based on ``ST_Intersects``::
+Here's another spatial filtering query, based on :class:`~geoalchemy2.functions.ST_Intersects`::
 
     >>> query = session.query(Lake).filter(
     ...             Lake.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
@@ -254,7 +254,7 @@ The GeoAlchemy functions all start with ``ST_``. Operators are also called as
 functions, but the function names don't include the ``ST_`` prefix. As an
 example let's use PostGIS' ``&&`` operator, which allows testing
 whether the bounding boxes of geometries intersect. GeoAlchemy provides
-the ``intersects`` function for that::
+the :meth:`~geoalchemy2.comparator.BaseComparator.intersects` function for that::
 
     >>> query = session.query(Lake).filter(
     ...             Lake.geom.intersects('LINESTRING(2 1,4 1)'))
@@ -293,7 +293,7 @@ contained by each lake::
     ... )
 
 Note the use of the ``as_comparison`` function. It is required for using an SQL function
-(``ST_Contains`` here) in a ``primaryjoin`` condition. See the `Custom operators based on SQL function
+(:class:`~geoalchemy2.functions.ST_Contains` here) in a ``primaryjoin`` condition. See the `Custom operators based on SQL function
 <https://docs.sqlalchemy.org/en/latest/orm/join_conditions.html#custom-operators-based-on-sql-functions>`_
 section of the SQLAlchemy documentation for more information.
 
@@ -332,7 +332,7 @@ Here's a ``Query`` that calculates the areas of buffers for our lakes::
     Garde: 32.485781
     Orta: 45.485781
 
-This ``Query`` applies the PostGIS ``ST_Buffer`` function to the geometry
+This ``Query`` applies the PostGIS :class:`~geoalchemy2.functions.ST_Buffer` function to the geometry
 column of every row of the ``lake`` table. The return value is a list of rows,
 where each row is actually a tuple of two values: the lake name, and the area
 of a buffer of the lake. Each tuple is an SQLAlchemy ``Row`` object, which
@@ -370,12 +370,12 @@ measurement functions can be applied to
 Use Raster functions
 --------------------
 
-A few functions (like `ST_Transform()`, `ST_Union()`, `ST_SnapToGrid()`, ...) can be
-used on both :class:`geoalchemy2.types.Geometry` and :class:`geoalchemy2.types.Raster`
+A few functions (like :class:`~geoalchemy2.functions.ST_Transform`, :class:`~geoalchemy2.functions.ST_Union`, :class:`~geoalchemy2.functions.ST_SnapToGrid`, ...) can be
+used on both :class:`~geoalchemy2.types.Geometry` and :class:`~geoalchemy2.types.Raster`
 types. In GeoAlchemy2, these functions are only defined for
-:class:`Geometry` as it can not be defined for several types at the
-same time. Thus using these functions on :class:`Raster` requires
-minor tweaking to enforce the type by passing the `type_=Raster` argument to the
+:class:`~geoalchemy2.types.Geometry` as it can not be defined for several types at the
+same time. Thus using these functions on :class:`~geoalchemy2.types.Raster` requires
+minor tweaking to enforce the type by passing the ``type_=Raster`` argument to the
 function::
 
     >>> from geoalchemy2 import Raster
