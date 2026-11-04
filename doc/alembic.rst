@@ -150,8 +150,8 @@ As one can see, there are 3 specific functions to pass to the context:
 After running the ``alembic revision --autogenerate -m <msg>`` command, the migration script should
 be properly generated and should not need to be manually edited.
 
-In this migration script you will notice specific spatial operation like `create_geospatial_table`,
-`drop_geospatial_table`, `add_geospatial_column`, `drop_geospatial_column`, etc. These operations
+In this migration script you will notice specific spatial operations like :func:`~geoalchemy2.alembic_helpers.create_geospatial_table`,
+:func:`~geoalchemy2.alembic_helpers.drop_geospatial_table`, :func:`~geoalchemy2.alembic_helpers.add_geospatial_column`, :func:`~geoalchemy2.alembic_helpers.drop_geospatial_column`, etc. These operations
 can of course be edited manually in the migration scripts if you don't want to use auto-generation.
 All specific operations can be found in :ref:`geoalchemy2.alembic_helpers <alembic_helpers>`.
 
@@ -169,7 +169,7 @@ With ``SQLAlchemy``, users are able to define custom types, as shown in
 `dedicated page of Alembic's documentation <https://alembic.sqlalchemy.org/en/latest/autogenerate.html#controlling-the-module-prefix>`_
 for the details.
 
-A simple solution for this case is to create a new ``render_item`` function to add specific imports
+A simple solution for this case is to create a new :func:`~geoalchemy2.alembic_helpers.render_item` function to add specific imports
 for these custom types. For example, if your custom type is called ``TheCustomType`` and is defined
 in ``my_package.custom_types``, you just have to edit the ``env.py`` file like the following:
 

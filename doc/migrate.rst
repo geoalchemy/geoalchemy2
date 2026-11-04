@@ -22,7 +22,7 @@ is now defined like this::
     geom = Column(Geometry('POLYGON'))
 
 This change is related to GeoAlchemy 2 supporting the
-`geoalchemy2.types.Geography` type.
+:class:`geoalchemy2.types.Geography` type.
 
 Calling Spatial Functions
 -------------------------
@@ -44,7 +44,7 @@ would be rewritten to this with GeoAlchemy 2::
 Also, as the previous example hinted it, the names of spatial functions are now
 all prefixed with ``ST_``. (This is to be consistent with PostGIS and the
 ``SQL-MM`` standard.) The ``ST_`` prefix should be used even when applying
-spatial functions to columns, :class:`geoalchemy2.elements.WKTElement`,
+spatial functions to columns, :class:`geoalchemy2.elements.WKBElement`,
 or :class:`geoalchemy2.elements.WKTElement` objects::
 
     Lake.geom.ST_Buffer(10, 2)
@@ -66,7 +66,7 @@ where a geometry with a specific SRID should be specified. For example::
 
     Lake.geom.ST_Touches(WKTElement('POINT(1 1)', srid=4326))
 
-If no SRID need be specified, a string can used directly::
+If no SRID need be specified, a string can be used directly::
 
     Lake.geom.ST_Touches('POINT(1 1)')
 

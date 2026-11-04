@@ -20,7 +20,7 @@ GeoAlchemy-facing WKT values should still use standard ``X Y`` order::
     POINT(longitude latitude)
 
 For MSSQL computed columns, GeoAlchemy also treats ``ST_POINT(x, y)`` as standard ``X Y``
-input when rewriting it to SQL Server constructor syntax. For a ``Geography`` computed column this
+input when rewriting it to SQL Server constructor syntax. For a :class:`~geoalchemy2.types.Geography` computed column this
 means::
 
     from sqlalchemy import Column, Computed, Float, Integer, MetaData, Table
@@ -53,12 +53,23 @@ Constructing points in INSERT or SELECT statements
 GeoAlchemy does not currently rewrite arbitrary ``func.ST_Point(...)`` expressions in ``INSERT`` or
 ``SELECT`` statements for MSSQL. In those contexts, use one of the explicit MSSQL-compatible forms.
 
-Use a WKT value or ``WKTElement`` when inserting values through a spatial column::
+Use a WKT value or :class:`~geoalchemy2.elements.WKTElement` when inserting values through a spatial column::
 
-    from geoalchemy2 import WKTElement
+    from sqlalchemy import Column, Integer, MetaData, String, Table
+    from geoalchemy2 import Geography, WKTElement
+
+    metadata = MetaData()
+
+    landmarks = Table(
+        "landmarks",
+        metadata,
+        Column("id", Integer, primary_key=True),
+        Column("name", String),
+        Column("geom", Geography(geometry_type="POINT", srid=4326)),
+    )
 
     conn.execute(
-        places.insert(),
+        landmarks.insert(),
         {
             "name": "Eiffel Tower",
             "geom": WKTElement("POINT(2.2945 48.8584)", srid=4326),
@@ -69,7 +80,7 @@ Use SQL Server's WKT constructor for SQL expressions::
 
     from sqlalchemy import bindparam, func, insert
 
-    stmt = insert(places).values(
+    stmt = insert(landmarks).values(
         name=bindparam("name"),
         geom=func.ST_GeogFromText(bindparam("wkt"), bindparam("srid")),
     )

@@ -36,13 +36,13 @@ The call to ``create_engine`` creates an engine bound to the database file ``gis
 a ``connect`` listener is registered on the engine. The listener is responsible for loading the
 SpatiaLite extension, which is a necessary operation for using SpatiaLite through SQL. The path to
 the ``mod_spatialite`` file should be stored in the ``SPATIALITE_LIBRARY_PATH`` environment
-variable before using the ``load_spatialite`` function.
+variable before using the :func:`~geoalchemy2.admin.dialects.sqlite.load_spatialite` function.
 
 At this point you can test that you are able to connect to the database::
 
-     >> conn = engine.connect()
+     >>> conn = engine.connect()
 
-Note that this call will internally call the ``load_spatialite`` function, which can take some time
+Note that this call will internally call the :func:`~geoalchemy2.admin.dialects.sqlite.load_spatialite` function, which can take some time
 to execute on a new database because it actually calls the ``InitSpatialMetaData`` function from
 SpatiaLite (it is possible to reduce this time by loading only the required SRIDs, see
 :func:`geoalchemy2.admin.dialects.sqlite.load_spatialite`).
@@ -85,21 +85,21 @@ Function mapping
 
 Several functions have different names in SpatiaLite than in PostGIS. The GeoAlchemy 2 package is
 based on the PostGIS syntax but it is possible to automatically translate the queries into
-SpatiaLite ones. For example, the function ``ST_GeomFromEWKT`` is automatically translated into
+SpatiaLite ones. For example, the function :class:`~geoalchemy2.functions.ST_GeomFromEWKT` is automatically translated into
 ``GeomFromEWKT``. Unfortunately, only a few functions are automatically mapped (mainly the ones
 internally used by GeoAlchemy 2). Nevertheless, it is possible to define new mappings in order to
 translate the queries automatically with
 :func:`geoalchemy2.admin.dialects.sqlite.register_sqlite_mapping`. Here is an example to register a
-mapping for the ``ST_Buffer`` function::
+mapping for the :class:`~geoalchemy2.functions.ST_Buffer` function::
 
     >>> from geoalchemy2.admin.dialects.sqlite import register_sqlite_mapping
     >>> register_sqlite_mapping({"ST_Buffer": "Buffer"})
 
-After this command, all ``ST_Buffer`` calls in the queries will be translated to ``Buffer`` calls
+After this command, all :class:`~geoalchemy2.functions.ST_Buffer` calls in the queries will be translated to ``Buffer`` calls
 when the query is executed on a SQLite DB.
 
 A more complex example is provided for when the PostGIS function should be mapped depending on
-the given parameters. For example, the ``ST_Buffer`` function can actually be translate into either
+the given parameters. For example, the :class:`~geoalchemy2.functions.ST_Buffer` function can actually be translate into either
 the ``Buffer`` function or the ``SingleSidedBuffer`` function (only when ``side=right`` or ``side=left``
 is passed). See the :ref:`sphx_glr_gallery_test_specific_compilation.py` example in the gallery.
 
@@ -109,7 +109,7 @@ GeoPackage format
 Starting from the version ``4.2`` of Spatialite, it is possible to use GeoPackage files as DB
 containers. GeoAlchemy 2 is able to handle most of the GeoPackage features automatically if the
 GeoPackage dialect is used (i.e. the DB URL starts with ``gpkg:///``) and the SpatiaLite extension
-is loaded. Usually, this extension should be loaded using the the ``GeoAlchemy2`` plugin (see :ref:`connect <spatialite_connect>` section) or by attaching the ``load_spatialite_gpkg`` listener to the engine::
+is loaded. Usually, this extension should be loaded using the ``GeoAlchemy2`` plugin (see :ref:`connect <spatialite_connect>` section) or by attaching the :func:`~geoalchemy2.admin.dialects.geopackage.load_spatialite_gpkg` listener to the engine::
 
     >>> from geoalchemy2 import load_spatialite_gpkg
     >>> from sqlalchemy import create_engine
@@ -118,7 +118,7 @@ is loaded. Usually, this extension should be loaded using the the ``GeoAlchemy2`
     >>> engine = create_engine("gpkg:///gis.gpkg", echo=True)
     >>> listen(engine, "connect", load_spatialite_gpkg)
 
-When using the ``load_spatialite_gpkg`` listener on a DB recognized as a GeoPackage, specific
+When using the :func:`~geoalchemy2.admin.dialects.geopackage.load_spatialite_gpkg` listener on a DB recognized as a GeoPackage, specific
 processes are activated:
 
 * the base tables are created if they are missing,
@@ -136,13 +136,13 @@ user:
 
 .. Note::
 
-    If you want to use the ``ST_Transform`` function you should call the
+    If you want to use the :class:`~geoalchemy2.functions.ST_Transform` function you should call the
     :func:`geoalchemy2.admin.dialects.geopackage.create_spatial_ref_sys_view` first.
 
 Further Reference
 -----------------
 
-* GeoAlchemy 2 ORM Tutotial: :ref:`orm_tutorial`
+* GeoAlchemy 2 ORM Tutorial: :ref:`orm_tutorial`
 * GeoAlchemy 2 Spatial Functions Reference: :ref:`spatial_functions`
 * GeoAlchemy 2 Spatial Operators Reference: :ref:`spatial_operators`
 * GeoAlchemy 2 Elements Reference: :ref:`elements`

@@ -152,12 +152,20 @@ class WKTElement(_SpatialElement):
         return desc
 
     def as_wkt(self) -> WKTElement:
+        """Return this element as a plain :class:`WKTElement` (no SRID prefix).
+
+        The SRID is preserved as a Python attribute on the returned element.
+        """
         if self.extended:
             wkt = _wkb_wkt.wkt_strip_srid(self.data)
             return WKTElement(wkt, self.srid, extended=False)
         return WKTElement(self.data, self.srid, self.extended)
 
     def as_ewkt(self) -> WKTElement:
+        """Return this element as an extended :class:`WKTElement` (``SRID=N;WKT``).
+
+        If the element has no valid SRID, the result is equivalent to :meth:`as_wkt`.
+        """
         if _wkb_wkt.is_known_srid(self.srid):
             if self.extended:
                 wkt = _wkb_wkt.wkt_add_srid(self.data, self.srid)
@@ -169,6 +177,11 @@ class WKTElement(_SpatialElement):
         """Return this element as a plain :class:`WKBElement` (no SRID embedded).
 
         The SRID is preserved as a Python attribute on the returned element.
+
+        Note:
+            Requires the optional ``wkb-wkt-converter`` dependency
+            (``pip install geoalchemy2[wkb-wkt-converter]``).
+            Raises :exc:`ImportError` if it is not installed.
         """
         wkb_bytes = _wkb_wkt.wkt_to_wkb(self.data)
         return WKBElement(wkb_bytes, srid=self.srid, extended=False)
@@ -177,6 +190,11 @@ class WKTElement(_SpatialElement):
         """Return this element as an extended :class:`WKBElement` (SRID embedded).
 
         If the element has no valid SRID, the result is equivalent to :meth:`as_wkb`.
+
+        Note:
+            Requires the optional ``wkb-wkt-converter`` dependency
+            (``pip install geoalchemy2[wkb-wkt-converter]``).
+            Raises :exc:`ImportError` if it is not installed.
         """
         if _wkb_wkt.is_known_srid(self.srid):
             wkb_bytes = _wkb_wkt.wkt_to_wkb(self.data, srid=self.srid)
@@ -257,12 +275,20 @@ class WKBElement(_SpatialElement):
         return binascii.unhexlify(desc)
 
     def as_wkb(self) -> WKBElement:
+        """Return this element as a plain :class:`WKBElement` (no SRID embedded).
+
+        The SRID is preserved as a Python attribute on the returned element.
+        """
         if self.extended:
             data = _wkb_wkt.to_wkb_no_srid_header(self.data)
             return WKBElement(data, self.srid, extended=False)
         return WKBElement(self.data, self.srid, extended=False)
 
     def as_ewkb(self) -> WKBElement:
+        """Return this element as an extended :class:`WKBElement` (SRID embedded).
+
+        If the element has no valid SRID, the result is equivalent to :meth:`as_wkb`.
+        """
         if _wkb_wkt.is_known_srid(self.srid):
             if self.extended:
                 try:
@@ -279,6 +305,11 @@ class WKBElement(_SpatialElement):
         """Return this element as a plain :class:`WKTElement` (no SRID prefix).
 
         The SRID is preserved as a Python attribute on the returned element.
+
+        Note:
+            Requires the optional ``wkb-wkt-converter`` dependency
+            (``pip install geoalchemy2[wkb-wkt-converter]``).
+            Raises :exc:`ImportError` if it is not installed.
         """
         wkt = _wkb_wkt.to_wkt_no_srid(self.data)
         return WKTElement(wkt, srid=self.srid, extended=False)
@@ -287,6 +318,11 @@ class WKBElement(_SpatialElement):
         """Return this element as an extended :class:`WKTElement` (``SRID=N;WKT``).
 
         If the element has no valid SRID, the result is equivalent to :meth:`as_wkt`.
+
+        Note:
+            Requires the optional ``wkb-wkt-converter`` dependency
+            (``pip install geoalchemy2[wkb-wkt-converter]``).
+            Raises :exc:`ImportError` if it is not installed.
         """
         if _wkb_wkt.is_known_srid(self.srid):
             wkt = _wkb_wkt.to_wkt(self.data, srid=self.srid)

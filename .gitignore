@@ -67,6 +67,9 @@ doc/gallery/
 .dmypy.json
 dmypy.json
 
+# Ruff
+.ruff_cache/
+
 # Miscellaneous
 *.csv
 *.sh

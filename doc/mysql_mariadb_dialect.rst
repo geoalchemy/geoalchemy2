@@ -40,4 +40,8 @@ It is also possible to create a raw engine and attach the listener manually::
     >>> from sqlalchemy.event import listen
     >>>
     >>> engine = create_engine("mysql://user:password@host:port/dbname", echo=True)
-    >>> listen(engine, "before_cursor_execute", before_cursor_execute)
+    >>> listen(engine, "before_cursor_execute", before_cursor_execute, retval=True)
+
+Note that when using MariaDB, import :func:`~geoalchemy2.admin.dialects.mariadb.before_cursor_execute` from
+:mod:`geoalchemy2.admin.dialects.mariadb` instead. The ``retval=True`` argument is required so
+SQLAlchemy uses the converted parameters returned by the listener.

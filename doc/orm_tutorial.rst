@@ -7,7 +7,7 @@ ORM Tutorial
 recommended reading, eventually.)
 
 .. _SQLAlchemy ORM Tutorial:
-    http://docs.sqlalchemy.org/en/latest/orm/tutorial.html
+    https://docs.sqlalchemy.org/en/latest/orm/
 
 GeoAlchemy does not provide an Object Relational Mapper (ORM), but works well
 with the SQLAlchemy ORM. This tutorial shows how to use the SQLAlchemy ORM with
@@ -16,7 +16,7 @@ spatial tables, using GeoAlchemy.
 Connect to the DB
 -----------------
 
-For this tutorial we will use a PostGIS 2 database. To connect we use
+For this tutorial we will use a PostGIS database. To connect we use
 SQLAlchemy's ``create_engine()`` function::
 
     >>> from sqlalchemy import create_engine
@@ -53,7 +53,7 @@ database table they will be mapped to.
 
 ::
 
-    >>> from sqlalchemy.ext.declarative import declarative_base
+    >>> from sqlalchemy.orm import declarative_base
     >>> from sqlalchemy import Column, Integer, String
     >>> from geoalchemy2 import Geometry
     >>>
@@ -72,6 +72,32 @@ the name of the table denoted by ``__tablename__``, and three columns ``id``,
 The ``geom`` column is a :class:`geoalchemy2.types.Geometry` column whose
 ``geometry_type`` is ``POLYGON``.
 
+.. note::
+
+    **SQLAlchemy 2.0 Declarative Mapping Style**
+
+    If you are using SQLAlchemy 2.0 or newer, you can also use the class-based
+    ``DeclarativeBase`` superclass with type annotations (:class:`~geoalchemy2.elements.WKBElement`
+    or other GeoAlchemy 2 element types) and ``mapped_column()``::
+
+        from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+        from geoalchemy2 import Geometry, WKBElement
+
+
+        class Base(DeclarativeBase):
+            pass
+
+
+        class Lake(Base):
+            __tablename__ = "lake"
+
+            id: Mapped[int] = mapped_column(primary_key=True)
+            name: Mapped[str]
+            geom: Mapped[WKBElement] = mapped_column(Geometry("POLYGON"))
+
+    See the :ref:`sphx_glr_gallery_test_orm_mapped_v2.py` example in the gallery for a complete example.
+
+
 Create the Table in the Database
 --------------------------------
 
@@ -80,9 +106,9 @@ the database table. This ``Table`` object was created automatically
 by SQLAlchemy, it is referenced to by the ``Lake.__table__`` property::
 
     >>> Lake.__table__
-    Table('lake', MetaData(bind=None), Column('id', Integer(), table=<lake>,
+    Table('lake', MetaData(), Column('id', Integer(), table=<lake>,
     primary_key=True, nullable=False), Column('name', String(), table=<lake>),
-    Column('geom', Polygon(srid=4326), table=<lake>), schema=None)
+    Column('geom', Geometry(geometry_type='POLYGON', ...), table=<lake>), schema=None)
 
 To create the ``lake`` table in the database::
 
@@ -110,7 +136,7 @@ to persist the ``lake`` object, its ``id`` is ``None``.
 
 The EWKT (Extended WKT) format is also supported. So, for example, if the
 spatial reference system for the geometry column were ``4326``, the string
-``SRID=4326;POLYGON((0 0,1 0,1,0 1,0 0))`` could be used as the geometry
+``SRID=4326;POLYGON((0 0,1 0,1 1,0 1,0 0))`` could be used as the geometry
 representation.
 
 
@@ -139,7 +165,6 @@ To persist our ``Lake`` object, we ``add()`` it to the ``Session``::
 
     >>> lake = Lake(name="Majeur", geom="POLYGON((0 0,1 0,1 1,0 1,0 0))")
     >>> session.add(lake)
-    >>> session.commit()
 
 At this point the ``lake`` object has been added to the ``Session``, but no SQL
 has been issued to the database. The object is in a *pending* state. To persist
@@ -151,7 +176,7 @@ We can now query the database for ``Majeur``::
 
     >>> our_lake = session.query(Lake).filter_by(name='Majeur').first()
     >>> our_lake.name
-    u'Majeur'
+    'Majeur'
     >>> our_lake.geom
     <WKBElement at 0x9af594c; '0103000000010000000500000000000000000000000000000000000000000000000000f03f0000000000000000000000000000f03f000000000000f03f0000000000000000000000000000f03f00000000000000000000000000000000'>
     >>> our_lake.id
@@ -193,7 +218,7 @@ calling ``all()`` on the ``Query``::
     >>> lakes = session.query(Lake).order_by(Lake.name).all()
 
 The SQLAlchemy ORM Tutorial's `Querying section
-<http://docs.sqlalchemy.org/en/latest/orm/tutorial.html#querying>`_ provides
+<https://docs.sqlalchemy.org/en/latest/orm/queryguide/>`_ provides
 more examples of queries.
 
 Make Spatial Queries
@@ -223,11 +248,11 @@ GeoAlchemy allows rewriting this ``Query`` more concisely::
     ...
     Orta
 
-Here the ``ST_Contains`` function is applied to the ``Lake.geom`` column
+Here the :class:`~geoalchemy2.functions.ST_Contains` function is applied to the ``Lake.geom`` column
 property. In that case the column property is actually passed to the function,
 as its first argument.
 
-Here's another spatial filtering query, based on ``ST_Intersects``::
+Here's another spatial filtering query, based on :class:`~geoalchemy2.functions.ST_Intersects`::
 
     >>> query = session.query(Lake).filter(
     ...             Lake.geom.ST_Intersects('LINESTRING(2 1,4 1)'))
@@ -248,16 +273,15 @@ We can also apply relationship functions to
 ``session.scalar`` allows executing a clause and returning a scalar
 value (a boolean value in this case).
 
-The value ``True`` indicates that the lake "Garde" does intersects the ``LINESTRING(2 1,4 1)``
-geometry. See the SpatiaLite SQL functions reference list for more information.
+The value ``True`` indicates that the lake "Garde" does intersect the ``LINESTRING(2 1,4 1)``
+geometry.
 
 The GeoAlchemy functions all start with ``ST_``. Operators are also called as
 functions, but the function names don't include the ``ST_`` prefix. As an
 example let's use PostGIS' ``&&`` operator, which allows testing
 whether the bounding boxes of geometries intersect. GeoAlchemy provides
-the ``intersects`` function for that::
+the :meth:`~geoalchemy2.comparator.BaseComparator.intersects` function for that::
 
-    >>> query = session.query
     >>> query = session.query(Lake).filter(
     ...             Lake.geom.intersects('LINESTRING(2 1,4 1)'))
     ...
@@ -286,22 +310,16 @@ We can now add a ``relationship`` to the ``Lake`` table to automatically load th
 contained by each lake::
 
     >>> from sqlalchemy.orm import relationship, backref
-    >>> class Lake(Base):
-    ...     __tablename__ = 'lake'
-    ...     id = Column(Integer, primary_key=True)
-    ...     name = Column(String)
-    ...     geom = Column(Geometry('POLYGON'))
-    ...     treasures = relationship(
-    ...         'Treasure',
-    ...         primaryjoin='func.ST_Contains(foreign(Lake.geom), Treasure.geom).as_comparison(1, 2)',
-    ...         backref=backref('lake', uselist=False),
-    ...         viewonly=True,
-    ...         uselist=True,
-    ...     )
+    >>> Lake.treasures = relationship(
+    ...     'Treasure',
+    ...     primaryjoin='func.ST_Contains(foreign(Lake.geom), Treasure.geom).as_comparison(1, 2)',
+    ...     backref=backref('lake', uselist=False),
+    ...     viewonly=True,
+    ...     uselist=True,
+    ... )
 
 Note the use of the ``as_comparison`` function. It is required for using an SQL function
-(``ST_Contains`` here) in a ``primaryjoin`` condition. This only works with SQLAlchemy 1.3, as the
-``as_comparison`` function did not exist before that version. See the `Custom operators based on SQL function
+(:class:`~geoalchemy2.functions.ST_Contains` here) in a ``primaryjoin`` condition. See the `Custom operators based on SQL function
 <https://docs.sqlalchemy.org/en/latest/orm/join_conditions.html#custom-operators-based-on-sql-functions>`_
 section of the SQLAlchemy documentation for more information.
 
@@ -340,11 +358,11 @@ Here's a ``Query`` that calculates the areas of buffers for our lakes::
     Garde: 32.485781
     Orta: 45.485781
 
-This ``Query`` applies the PostGIS ``ST_Buffer`` function to the geometry
+This ``Query`` applies the PostGIS :class:`~geoalchemy2.functions.ST_Buffer` function to the geometry
 column of every row of the ``lake`` table. The return value is a list of rows,
 where each row is actually a tuple of two values: the lake name, and the area
-of a buffer of the lake. Each tuple is actually an SQLAlchemy ``KeyedTuple``
-object, which provides property type accessors.
+of a buffer of the lake. Each tuple is an SQLAlchemy ``Row`` object, which
+provides property type accessors.
 
 Again, the ``Query`` can written more concisely::
 
@@ -378,15 +396,20 @@ measurement functions can be applied to
 Use Raster functions
 --------------------
 
-A few functions (like `ST_Transform()`, `ST_Union()`, `ST_SnapToGrid()`, ...) can be
-used on both :class:`geoalchemy2.types.Geometry` and :class:`geoalchemy2.types.Raster`
+A few functions (like :class:`~geoalchemy2.functions.ST_Transform`, :class:`~geoalchemy2.functions.ST_Union`, :class:`~geoalchemy2.functions.ST_SnapToGrid`, ...) can be
+used on both :class:`~geoalchemy2.types.Geometry` and :class:`~geoalchemy2.types.Raster`
 types. In GeoAlchemy2, these functions are only defined for
-:class:`Geometry` as it can not be defined for several types at the
-same time. Thus using these functions on :class:`Raster` requires
-minor tweaking to enforce the type by passing the `type_=Raster` argument to the
-function:
+:class:`~geoalchemy2.types.Geometry` as it can not be defined for several types at the
+same time. Thus using these functions on :class:`~geoalchemy2.types.Raster` requires
+minor tweaking to enforce the type by passing the ``type_=Raster`` argument to the
+function::
 
-    >>> query = session.query(Lake.raster.ST_Transform(2154, type_=Raster))
+    >>> from geoalchemy2 import Raster
+    >>> class Ocean(Base):
+    ...     __tablename__ = "ocean"
+    ...     id = Column(Integer, primary_key=True)
+    ...     rast = Column(Raster)
+    >>> query = session.query(Ocean.rast.ST_Transform(2154, type_=Raster))
 
 Further Reference
 -----------------

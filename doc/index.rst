@@ -24,11 +24,6 @@ GeoAlchemy 2 aims to be simpler than its predecessor, `GeoAlchemy
 <https://pypi.python.org/pypi/GeoAlchemy>`_. Simpler to use, and simpler
 to maintain.
 
-.. toctree::
-   :hidden:
-
-   changelog
-
 The current version of this documentation applies to the version |version| of GeoAlchemy 2. See the
 :ref:`changelog` page for details on recent changes.
 
@@ -36,22 +31,34 @@ The current version of this documentation applies to the version |version| of Ge
 Requirements
 ------------
 
-GeoAlchemy 2 requires `SQLAlchemy <http://sqlalchemy.org>`_ >= 1.4.
+GeoAlchemy 2 requires:
+
+* Python >= 3.10
+* `SQLAlchemy <https://www.sqlalchemy.org>`_ >= 1.4
 
 Installation
 ------------
 
 GeoAlchemy 2 is `available on the Python Package Index
-<https://pypi.python.org/pypi/GeoAlchemy2/>`_. So it can be installed
-with the standard `pip <http://www.pip-installer.org>`_ or
-`easy_install <http://peak.telecommunity.com/DevCenter/EasyInstall>`_
-tools.
+<https://pypi.org/project/GeoAlchemy2/>`_. It can be installed with ``pip``::
+
+    pip install GeoAlchemy2
+
+Optional dependencies can be installed as extras:
+
+* `Shapely <https://shapely.readthedocs.io/>`_ integration (for :func:`~geoalchemy2.shape.to_shape` and :func:`~geoalchemy2.shape.from_shape`)::
+
+    pip install "GeoAlchemy2[shapely]"
+
+* Fast WKB/WKT conversions (for :meth:`~geoalchemy2.elements.WKTElement.as_wkb`/:meth:`~geoalchemy2.elements.WKTElement.as_ewkb` on :class:`~geoalchemy2.elements.WKTElement` and :meth:`~geoalchemy2.elements.WKBElement.as_wkt`/:meth:`~geoalchemy2.elements.WKBElement.as_ewkt` on :class:`~geoalchemy2.elements.WKBElement`)::
+
+    pip install "GeoAlchemy2[wkb-wkt-converter]"
 
 What's New in GeoAlchemy 2
 --------------------------
 
-* GeoAlchemy 2 supports PostGIS' ``geometry`` type, as well as the ``geography``
-  and ``raster`` types.
+* GeoAlchemy 2 supports PostGIS' :class:`~geoalchemy2.types.Geometry` type, as well as the :class:`~geoalchemy2.types.Geography`
+  and :class:`~geoalchemy2.types.Raster` types.
 * The first series had its own namespace for spatial functions. With GeoAlchemy
   2, spatial functions are called like any other SQLAlchemy function, using
   ``func``, which is SQLAlchemy's `standard way
@@ -63,14 +70,9 @@ What's New in GeoAlchemy 2
   <http://docs.sqlalchemy.org/en/latest/core/types.html?highlight=comparator_factory#types-operators>`_.)
 * GeoAlchemy 2 supports `reflection
   <http://docs.sqlalchemy.org/en/latest/core/schema.html#metadata-reflection>`_
-  of geometry and geography columns.
-* GeoAlchemy 2 adds ``to_shape``, ``from_shape`` functions for a better
-  integration with `Shapely <http://pypi.python.org/pypi/Shapely>`_.
-
-.. toctree::
-   :hidden:
-
-   migrate
+  of :class:`~geoalchemy2.types.Geometry` and :class:`~geoalchemy2.types.Geography` columns.
+* GeoAlchemy 2 adds :func:`~geoalchemy2.shape.to_shape`, :func:`~geoalchemy2.shape.from_shape` functions for a better
+  integration with `Shapely <https://shapely.readthedocs.io/>`_.
 
 See the :ref:`migrate` page for details on how to migrate a GeoAlchemy
 application to GeoAlchemy 2.
@@ -81,23 +83,22 @@ Tutorials
 
 GeoAlchemy 2 works with both SQLAlchemy's *Object Relational Mapping* (ORM) and
 *SQL Expression Language*. This documentation provides a tutorial for each
-system. If you're new to GeoAlchemy 2 start with this.
+system. If you're new to GeoAlchemy 2 start with the :ref:`orm_tutorial` page. If you are already familiar with SQLAlchemy's ORM, you may want to start with the :ref:`core_tutorial` page.
 
 .. toctree::
+   :caption: Tutorials & Guides
+   :hidden:
    :maxdepth: 1
 
    orm_tutorial
    core_tutorial
    dialect_specific_features
+   gallery/index
+   alembic
 
 
 Gallery
 ---------
-
-.. toctree::
-   :hidden:
-
-   gallery/index
 
 The :ref:`gallery` page shows examples of the GeoAlchemy 2's functionalities.
 
@@ -105,20 +106,14 @@ The :ref:`gallery` page shows examples of the GeoAlchemy 2's functionalities.
 Use with Alembic
 ----------------
 
-.. toctree::
-   :hidden:
-
-   alembic
-
 The GeoAlchemy 2 package is compatible with the migration tool
 `Alembic <https://alembic.sqlalchemy.org/en/latest/>`_. The :ref:`alembic_use` page
 provides more details on this topic.
 
 
-Reference Documentation
------------------------
-
 .. toctree::
+   :caption: API Reference
+   :hidden:
    :maxdepth: 1
 
    admin
@@ -129,6 +124,15 @@ Reference Documentation
    spatial_operators
    shape
    alembic_helpers
+
+
+.. toctree::
+   :caption: Migration & Changes
+   :hidden:
+   :maxdepth: 1
+
+   migrate
+   changelog
 
 Development
 -----------
@@ -172,4 +176,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
