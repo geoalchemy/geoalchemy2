@@ -4,13 +4,16 @@ Changelog
 0.21.0
 ------
 
-* Feat: Make the wkb-wkt-converter dependency optional (geoalchemy2[wkb-wkt-converter]).
-  When wkb-wkt-converter is not installed, header-only EWKB/WKT SRID operations use a
-  pure-Python fallback, and dialect bind processors fall back to Shapely (matching pre-0.21
-  behavior, e.g. MSSQL WKB bind formatting and 0.20.0-style ISO 3D / nested collection header
-  rewriting).
-  WKBElement.as_wkt()/as_ewkt() and WKTElement.as_wkb()/as_ewkb() require the optional converter
-  dependency. (@adrien-berchet)
+* Docs: Update the docs and use Furo theme @adrien-berchet (#626)
+* Fix: Render boolean functions bare in MySQL and MariaDB filters @adrien-berchet (#625)
+* Fix: Allow raw string function arguments to be rendered as literals @adrien-berchet (#624)
+* Feat: Make the wkb-wkt-converter dependency optional (geoalchemy2[wkb-wkt-converter]) @adrien-berchet (#623)
+* CI: Fix deps and freezes @adrien-berchet (#622)
+* Refactor: Share spatial bind conversion helpers across dialects @adrien-berchet (#614)
+* Chore: Add CI, container, and Alembic maintenance @adrien-berchet (#613)
+* Feat: Add benchmark tooling @adrien-berchet (#612)
+* Fix: Add MySQL and MariaDB constructor compilation fixes @adrien-berchet (#611)
+* Feat: Add converter-backed spatial element conversions @adrien-berchet (#610)
 
 0.20.0
 ------
