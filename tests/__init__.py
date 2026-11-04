@@ -8,6 +8,7 @@ import shapely
 from packaging.version import parse as parse_version
 from shapely.wkb import dumps
 from sqlalchemy import __version__ as SA_VERSION
+from sqlalchemy import bindparam
 from sqlalchemy import create_engine
 from sqlalchemy import select as raw_select
 from sqlalchemy import text
@@ -268,6 +269,18 @@ def check_indexes(conn, dialect_name, expected, table_name):
         print("###############################################")
 
         raise exc
+
+
+def get_gpkg_contents(conn, *table_names):
+    """Get the entries of the given tables in the `gpkg_contents` table of a GeoPackage."""
+    return conn.execute(
+        text(
+            """SELECT table_name, data_type, identifier, srs_id
+            FROM gpkg_contents
+            WHERE table_name IN :table_names
+            ORDER BY table_name;"""
+        ).bindparams(bindparam("table_names", list(table_names), expanding=True))
+    ).fetchall()
 
 
 def create_wkt_points(N=50):

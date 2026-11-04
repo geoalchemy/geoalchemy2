@@ -1,5 +1,7 @@
 """Test alembic migrations of spatial columns."""
 
+import io
+
 import pytest
 import sqlalchemy as sa  # noqa (This import is only used in the migration scripts)
 from alembic import command
@@ -13,14 +15,17 @@ from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
+from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import text
 from sqlalchemy.dialects import mssql
 
 from geoalchemy2 import Geometry
 from geoalchemy2 import alembic_helpers
+from geoalchemy2.admin.dialects.geopackage import GeoPackageDialect
 
 from . import check_indexes
+from . import get_gpkg_contents
 from . import test_only_with_dialects
 
 
@@ -433,6 +438,64 @@ class TestMSSQLAlterColumnRewrite:
             )
         finally:
             table.drop(bind=conn, checkfirst=True)
+
+
+@test_only_with_dialects("geopackage")
+class TestGeoPackageContents:
+    @pytest.fixture
+    def op(self, conn):
+        # The 'gpkg_metadata_reference_column_name_update' trigger created by SpatiaLite can not be
+        # parsed by recent SQLite versions, which breaks 'ALTER TABLE ... RENAME TO ...' statements
+        # unless the legacy mode is enabled
+        conn.execute(text("PRAGMA legacy_alter_table = ON;"))
+
+        Table("a_table", MetaData(), Column("id", Integer, primary_key=True)).create(conn)
+        assert get_gpkg_contents(conn, "a_table") == [("a_table", "attributes", "a_table", None)]
+
+        return Operations(MigrationContext.configure(conn))
+
+    def test_rename_table(self, conn, op):
+        op.rename_table("a_table", "new_table")
+
+        assert get_gpkg_contents(conn, "a_table", "new_table") == [
+            ("new_table", "attributes", "new_table", None)
+        ]
+
+    def test_batch_alter_table(self, conn, op):
+        with op.batch_alter_table("a_table", recreate="always") as batch_op:
+            batch_op.add_column(Column("name", String))
+
+        assert conn.execute(text("PRAGMA main.table_info(a_table)")).fetchall() == [
+            (0, "id", "INTEGER", 1, None, 1),
+            (1, "name", "VARCHAR", 0, None, 0),
+        ]
+        assert get_gpkg_contents(conn, "a_table", "_alembic_tmp_a_table") == [
+            ("a_table", "attributes", "a_table", None)
+        ]
+
+    def test_offline_mode(self):
+        """Check that the SQL script can be generated (e.g. using 'alembic upgrade --sql')."""
+        buffer = io.StringIO()
+        op = Operations(
+            MigrationContext.configure(
+                dialect=GeoPackageDialect(),
+                opts={"as_sql": True, "output_buffer": buffer, "literal_binds": True},
+            )
+        )
+
+        op.create_table("a_table", Column("id", Integer, primary_key=True))
+        op.rename_table("a_table", "new_table")
+        op.drop_table("new_table")
+
+        sql_script = " ".join(buffer.getvalue().split())
+        assert (
+            "INSERT INTO gpkg_contents VALUES ( 'a_table', 'attributes', 'a_table'," in sql_script
+        )
+        assert "UPDATE gpkg_contents SET table_name = 'new_table'," in sql_script
+        assert (
+            "DELETE FROM gpkg_contents WHERE LOWER(table_name) = LOWER('new_table')" in sql_script
+        )
+        assert ";;" not in sql_script
 
 
 @pytest.fixture

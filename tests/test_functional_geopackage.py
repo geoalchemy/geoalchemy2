@@ -1,9 +1,11 @@
 import os
 
 import pytest
+from sqlalchemy import BigInteger
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
+from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import create_engine
 from sqlalchemy import text
@@ -12,6 +14,7 @@ from sqlalchemy.event import listen
 from geoalchemy2 import Geometry
 from geoalchemy2 import load_spatialite_gpkg
 
+from . import get_gpkg_contents
 from .schema_fixtures import TransformedGeometry
 
 
@@ -166,6 +169,81 @@ class TestAdmin:
         assert not conn.execute(check_srid_query).fetchall()
         t.create(conn)
         assert conn.execute(check_srid_query).fetchall()
+
+
+class TestGpkgContents:
+    def test_create_drop_tables(self, conn):
+        metadata = MetaData()
+        Table(
+            "attributes_table",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("name", String),
+        )
+        Table(
+            "features_table",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry("POINT", srid=4326)),
+        )
+
+        metadata.create_all(conn)
+        assert get_gpkg_contents(conn, "attributes_table", "features_table") == [
+            ("attributes_table", "attributes", "attributes_table", None),
+            ("features_table", "features", "features_table", 4326),
+        ]
+        assert conn.execute(text("SELECT CheckGeoPackageMetaData();")).scalar()
+
+        metadata.drop_all(conn)
+        assert get_gpkg_contents(conn, "attributes_table", "features_table") == []
+
+    @pytest.mark.parametrize(
+        "table_name,columns,kwargs",
+        [
+            pytest.param("a_table", [Column("id", Integer)], {}, id="no_primary_key"),
+            pytest.param(
+                "alembic_version",
+                [Column("version_num", String(32), primary_key=True)],
+                {},
+                id="string_primary_key",
+            ),
+            pytest.param(
+                "a_table",
+                [Column("id", BigInteger, primary_key=True)],
+                {},
+                id="bigint_primary_key",
+            ),
+            pytest.param(
+                "a_table",
+                [
+                    Column("id_1", Integer, primary_key=True),
+                    Column("id_2", Integer, primary_key=True),
+                ],
+                {},
+                id="composite_primary_key",
+            ),
+            pytest.param(
+                "a_table",
+                [Column("id", Integer, primary_key=True)],
+                {"sqlite_with_rowid": False},
+                id="without_rowid",
+            ),
+            pytest.param(
+                "a_table",
+                [Column("id", Integer, primary_key=True)],
+                {"prefixes": ["TEMPORARY"]},
+                id="temporary_table",
+            ),
+        ],
+    )
+    def test_non_attributes_tables_are_not_registered(self, conn, table_name, columns, kwargs):
+        t = Table(table_name, MetaData(), *columns, **kwargs)
+
+        t.create(conn)
+        assert get_gpkg_contents(conn, table_name) == []
+
+        t.drop(conn)
+        assert get_gpkg_contents(conn, table_name) == []
 
 
 class TestIndex:

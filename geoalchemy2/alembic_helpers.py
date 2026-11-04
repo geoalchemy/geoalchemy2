@@ -21,7 +21,9 @@ from alembic.operations import Operations
 from alembic.operations import ops
 from sqlalchemy import Column
 from sqlalchemy import MetaData
+from sqlalchemy import String
 from sqlalchemy import Table
+from sqlalchemy import bindparam
 from sqlalchemy import text
 from sqlalchemy.dialects.mssql.base import MSDialect
 from sqlalchemy.dialects.mysql.base import MySQLDialect
@@ -38,6 +40,7 @@ from geoalchemy2 import Raster
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _get_gis_cols
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
+from geoalchemy2.admin.dialects.geopackage import _has_gpkg_contents
 
 writer = rewriter.Rewriter()
 """Rewriter object for Alembic."""
@@ -70,6 +73,32 @@ class GeoPackageImpl(SQLiteImpl):
     """Class to copy the Alembic implementation from SQLite to GeoPackage."""
 
     __dialect__ = "geopackage"
+
+    def rename_table(self, old_table_name, new_table_name, schema=None):
+        """Rename a table and update its entry in the `gpkg_contents` table if it is registered.
+
+        .. Note::
+            Only the attributes tables (i.e. non-spatial tables) are updated.
+        """
+        super().rename_table(old_table_name, new_table_name, schema=schema)
+        if self.as_sql or _has_gpkg_contents(self.connection):
+            self._exec(
+                text(
+                    """UPDATE gpkg_contents
+                    SET
+                        table_name = :new_table_name,
+                        identifier = CASE
+                            WHEN LOWER(identifier) = LOWER(:old_table_name) THEN :new_table_name
+                            ELSE identifier
+                        END
+                    WHERE LOWER(table_name) = LOWER(:old_table_name)
+                        AND data_type = 'attributes'"""
+                ).bindparams(
+                    # The types are needed to render the literal values in offline mode
+                    bindparam("old_table_name", old_table_name, type_=String),
+                    bindparam("new_table_name", new_table_name, type_=String),
+                )
+            )
 
 
 def _monkey_patch_get_indexes_for_sqlite():

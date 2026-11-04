@@ -5,9 +5,14 @@ See GeoPackage specifications here: http://www.geopackage.org/spec/
 
 import re
 
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import bindparam
+from sqlalchemy import inspect
 from sqlalchemy import text
 from sqlalchemy.dialects import registry
 from sqlalchemy.dialects.sqlite.pysqlite import SQLiteDialect_pysqlite
+from sqlalchemy.engine.mock import MockConnection
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
@@ -133,6 +138,59 @@ def _setup_dummy_type(table, gis_cols):
     table.columns = table.info["_saved_columns"]
 
 
+def _add_to_gpkg_contents(bind, table_name, data_type, srid):
+    """Register a table in the `gpkg_contents` table."""
+    bind.execute(
+        text(
+            """INSERT INTO gpkg_contents
+            VALUES (
+                :table_name,
+                :data_type,
+                :table_name,
+                "",
+                strftime('%Y-%m-%dT%H:%M:%fZ', CURRENT_TIMESTAMP),
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                :srid
+            )"""
+        ).bindparams(
+            # The types are needed to render the literal values in offline mode
+            bindparam("table_name", table_name, type_=String),
+            bindparam("data_type", data_type, type_=String),
+            bindparam("srid", srid, type_=Integer),
+        )
+    )
+
+
+def _has_gpkg_contents(bind):
+    """Check if the `gpkg_contents` table exists.
+
+    In offline mode (e.g. when using 'alembic upgrade --sql'), the table is assumed to exist.
+    """
+    return isinstance(bind, MockConnection) or inspect(bind).has_table("gpkg_contents")
+
+
+def _is_attributes_table(bind, table):
+    """Check if a non-spatial table should be registered as an attributes table.
+
+    According to the GeoPackage specifications, an attributes table must have a single primary key
+    column of type INTEGER that acts as a rowid alias. Temporary tables are not registered because
+    they are not stored in the GeoPackage file.
+    """
+    if any(prefix.upper() in ("TEMP", "TEMPORARY") for prefix in table._prefixes):
+        return False
+    if table.kwargs.get("sqlite_with_rowid", True) is False:
+        return False
+    pk_cols = list(table.primary_key.columns)
+    return (
+        len(pk_cols) == 1
+        and pk_cols[0].type.compile(dialect=bind.dialect).upper() == "INTEGER"
+        and _has_gpkg_contents(bind)
+    )
+
+
 def create_spatial_index(bind, table, col):
     """Create spatial index on the given column."""
     stmt = select(*_format_select_args(func.gpkgAddSpatialIndex(table.name, col.name)))
@@ -227,6 +285,10 @@ def before_create(table, bind, **kw):
 def after_create(table, bind, **kw):
     """Handle spatial indexes during the after_create event."""
     dialect = bind.dialect
+    is_spatial = any(_check_spatial_type(col.type, Geometry, dialect) for col in table.columns)
+
+    if not is_spatial and _is_attributes_table(bind, table):
+        _add_to_gpkg_contents(bind, table.name, "attributes", None)
 
     for col in table.columns:
         # Add the managed Geometry columns with gpkgAddGeometryColumn()
@@ -237,26 +299,7 @@ def after_create(table, bind, **kw):
             has_z = "Z" in dimension
             has_m = "M" in dimension
 
-            bind.execute(
-                text(
-                    """INSERT INTO gpkg_contents
-                    VALUES (
-                        :table_name,
-                        'features',
-                        :table_name,
-                        "",
-                        strftime('%Y-%m-%dT%H:%M:%fZ', CURRENT_TIMESTAMP),
-                        NULL,
-                        NULL,
-                        NULL,
-                        NULL,
-                        :srid
-                    );"""
-                ).bindparams(
-                    table_name=table.name,
-                    srid=col.type.srid,
-                )
-            )
+            _add_to_gpkg_contents(bind, table.name, "features", col.type.srid)
             bind.execute(
                 text(
                     """INSERT INTO gpkg_geometry_columns
@@ -291,6 +334,14 @@ def after_create(table, bind, **kw):
 def before_drop(table, bind, **kw):
     """Handle spatial indexes during the before_drop event."""
     dialect, gis_cols, regular_cols = setup_create_drop(table, bind)
+
+    if not gis_cols and _has_gpkg_contents(bind):
+        bind.execute(
+            text(
+                """DELETE FROM gpkg_contents
+                WHERE LOWER(table_name) = LOWER(:table_name)"""
+            ).bindparams(bindparam("table_name", table.name, type_=String))
+        )
 
     for col in gis_cols:
         # Disable spatial indexes if present
