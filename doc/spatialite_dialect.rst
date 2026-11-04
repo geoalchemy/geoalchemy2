@@ -130,6 +130,7 @@ database. GeoAlchemy 2 should be able to handle the following features in a tran
 user:
 
 * create/drop spatial tables,
+* register non-spatial tables as ``attributes`` tables in the ``gpkg_contents`` table,
 * automatically create/drop spatial indexes if required,
 * reflect spatial tables,
 * use spatial functions on inserted geometries.
@@ -138,6 +139,17 @@ user:
 
     If you want to use the :class:`~geoalchemy2.functions.ST_Transform` function you should call the
     :func:`geoalchemy2.admin.dialects.geopackage.create_spatial_ref_sys_view` first.
+
+.. Note::
+
+    According to the GeoPackage specifications, an ``attributes`` table must have a single primary
+    key column of type ``INTEGER``. The non-spatial tables that do not meet this requirement (e.g.
+    the ``alembic_version`` table created by Alembic) are not registered in the ``gpkg_contents``
+    table. Temporary tables are not registered either.
+
+    Note that, by default, GDAL (and thus QGIS) no longer lists the tables that are not registered
+    in the ``gpkg_contents`` table as soon as one table is registered as an ``attributes`` table
+    (see the ``LIST_ALL_TABLES`` option of the GDAL GeoPackage driver).
 
 Further Reference
 -----------------
