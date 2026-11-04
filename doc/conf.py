@@ -94,7 +94,7 @@ exclude_patterns = ["_build"]
 pygments_style = "sphinx"
 
 # A list of ignored prefixes for module index sorting.
-# modindex_common_prefix = []
+modindex_common_prefix = ["geoalchemy2."]
 
 # -- Options for Autodoc ---------------------------------------------------
 autodoc_default_options = {"exclude-members": "inherit_cache"}
