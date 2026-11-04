@@ -72,6 +72,32 @@ the name of the table denoted by ``__tablename__``, and three columns ``id``,
 The ``geom`` column is a :class:`geoalchemy2.types.Geometry` column whose
 ``geometry_type`` is ``POLYGON``.
 
+.. note::
+
+    **SQLAlchemy 2.0 Declarative Mapping Style**
+
+    If you are using SQLAlchemy 2.0 or newer, you can also use the class-based
+    ``DeclarativeBase`` superclass with type annotations (:class:`~geoalchemy2.elements.WKBElement`
+    or other GeoAlchemy 2 element types) and ``mapped_column()``::
+
+        from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+        from geoalchemy2 import Geometry, WKBElement
+
+
+        class Base(DeclarativeBase):
+            pass
+
+
+        class Lake(Base):
+            __tablename__ = "lake"
+
+            id: Mapped[int] = mapped_column(primary_key=True)
+            name: Mapped[str]
+            geom: Mapped[WKBElement] = mapped_column(Geometry("POLYGON"))
+
+    See the :ref:`sphx_glr_gallery_test_orm_mapped_v2.py` example in the gallery for a complete example.
+
+
 Create the Table in the Database
 --------------------------------
 
