@@ -83,10 +83,11 @@ Tutorials
 
 GeoAlchemy 2 works with both SQLAlchemy's *Object Relational Mapping* (ORM) and
 *SQL Expression Language*. This documentation provides a tutorial for each
-system. If you're new to GeoAlchemy 2 start with this.
+system. If you're new to GeoAlchemy 2 start with the :ref:`orm_tutorial` page. If you are already familiar with SQLAlchemy's ORM, you may want to start with the :ref:`core_tutorial` page.
 
 .. toctree::
    :caption: Tutorials & Guides
+   :hidden:
    :maxdepth: 1
 
    orm_tutorial
@@ -110,11 +111,9 @@ The GeoAlchemy 2 package is compatible with the migration tool
 provides more details on this topic.
 
 
-Reference Documentation
------------------------
-
 .. toctree::
    :caption: API Reference
+   :hidden:
    :maxdepth: 1
 
    admin
@@ -127,11 +126,9 @@ Reference Documentation
    alembic_helpers
 
 
-Migration & Changes
--------------------
-
 .. toctree::
    :caption: Migration & Changes
+   :hidden:
    :maxdepth: 1
 
    migrate
@@ -179,4 +176,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
