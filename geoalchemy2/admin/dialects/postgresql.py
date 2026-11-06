@@ -16,6 +16,7 @@ from geoalchemy2 import _wkb_wkt
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _format_select_args
+from geoalchemy2.admin.dialects.common import _is_generated_spatial_index
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
@@ -71,19 +72,23 @@ def check_management(column):
     return getattr(column.type, "use_typmod", None) is False
 
 
-def create_spatial_index(bind, table, col):
+def create_spatial_index(bind, table, col, index_name=None):
     """Create spatial index on the given column."""
     postgresql_ops = {col.name: "gist_geometry_ops_nd"} if col.type.use_N_D_index else {}
     col_func = func.ST_ConvexHull(col) if _check_spatial_type(col.type, Raster) else col
+    name = index_name or _spatial_idx_name(table.name, col.name)
     idx = Index(
-        _spatial_idx_name(table.name, col.name),
+        name,
         col_func,
         postgresql_using="gist",
         postgresql_ops=postgresql_ops,
         _column_flag=True,
+        info={"geoalchemy2_spatial_index": True},
     )
     if bind is not None:
         idx.create(bind=bind)
+    table.indexes.discard(idx)
+    table.info.setdefault("_generated_spatial_indexes", {})[col.name] = idx
     return idx
 
 
@@ -148,6 +153,7 @@ def before_create(table, bind, **kw):
     # created during the table.create() step since the associated columns do not exist
     # at this time.
     table.info["_after_create_indexes"] = []
+    generated = table.info.setdefault("_generated_spatial_indexes", {})
     current_indexes = set(table.indexes)
     for idx in current_indexes:
         for col in table.info["_saved_columns"]:
@@ -155,10 +161,12 @@ def before_create(table, bind, **kw):
                 _check_spatial_type(col.type, (Geometry, Raster), dialect) and check_management(col)
             ) and col in idx.columns.values():
                 table.indexes.remove(idx)
-                if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
+                if not _is_generated_spatial_index(idx) or not getattr(
                     col.type, "spatial_index", False
                 ):
                     table.info["_after_create_indexes"].append(idx)
+                else:
+                    generated[col.name] = idx
 
 
 def after_create(table, bind, **kw):
@@ -188,7 +196,13 @@ def after_create(table, bind, **kw):
             and not [i for i in table.indexes if col in i.columns.values()]
             and check_management(col)
         ):
-            create_spatial_index(bind, table, col)
+            gen_idx = table.info.get("_generated_spatial_indexes", {}).get(col.name)
+            create_spatial_index(
+                bind,
+                table,
+                col,
+                index_name=gen_idx.name if gen_idx is not None else None,
+            )
 
     for idx in table.info.pop("_after_create_indexes"):
         table.indexes.add(idx)

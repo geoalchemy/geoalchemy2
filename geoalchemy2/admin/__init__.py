@@ -83,6 +83,7 @@ def setup_ddl_event_listeners():
         kwargs = {
             "postgresql_using": "gist",
             "_column_flag": True,
+            "info": {"geoalchemy2_spatial_index": True},
         }
         col = column
         if _check_spatial_type(column.type, (Geometry, Geography)):
@@ -91,13 +92,19 @@ def setup_ddl_event_listeners():
         elif _check_spatial_type(column.type, Raster):
             col = func.ST_ConvexHull(column)
 
-        table.append_constraint(
-            Index(
-                _spatial_idx_name(table.name, column.name),
-                col,
-                **kwargs,
-            )
+        name = (
+            None
+            if getattr(column.type, "follow_naming_convention", False)
+            else _spatial_idx_name(table.name, column.name)
         )
+        idx = Index(
+            name,
+            col,
+            **kwargs,
+        )
+        table.append_constraint(idx)
+        if idx.name is None:
+            idx.name = _spatial_idx_name(table.name, column.name)
 
     @event.listens_for(Table, "column_reflect")
     def column_reflect(inspector, table, column_info):

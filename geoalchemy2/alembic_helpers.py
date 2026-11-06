@@ -37,6 +37,7 @@ from geoalchemy2 import Geometry
 from geoalchemy2 import Raster
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _get_gis_cols
+from geoalchemy2.admin.dialects.common import _is_generated_spatial_index
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 
 writer = rewriter.Rewriter()
@@ -131,7 +132,10 @@ def _monkey_patch_get_indexes_for_sqlite():
                         "name": idx_name,
                         "column_names": [idx_col],
                         "unique": 0,
-                        "dialect_options": {"_column_flag": True},
+                        "dialect_options": {
+                            "_column_flag": True,
+                            "info": {"geoalchemy2_spatial_index": True},
+                        },
                     }
                 )
                 reflected_names.add(idx_name)
@@ -155,6 +159,7 @@ def _monkey_patch_get_indexes_for_mysql():
 
         # Get spatial indexes
         has_index_query = f"""SELECT DISTINCT
+                INDEX_NAME,
                 COLUMN_NAME
             FROM INFORMATION_SCHEMA.STATISTICS
             WHERE TABLE_NAME = '{table_name}' AND INDEX_TYPE = 'SPATIAL'"""
@@ -165,19 +170,26 @@ def _monkey_patch_get_indexes_for_mysql():
         if spatial_indexes:
             reflected_names = {i["name"] for i in indexes}
             for idx in spatial_indexes:
-                idx_col = idx[0]
-                idx_name = _spatial_idx_name(table_name, idx_col)
-                if idx_name in reflected_names:
-                    continue
-                indexes.append(
-                    {
-                        "name": idx_name,
-                        "column_names": [idx_col],
-                        "unique": 0,
-                        "dialect_options": {"_column_flag": True},
-                    }
-                )
-                reflected_names.add(idx_name)
+                raw_idx_name = idx[0]
+                idx_col = idx[1]
+                # Only synthesize idx_t_c when INDEX_NAME == COLUMN_NAME
+                # (MySQL's default unnamed index)
+                if raw_idx_name == idx_col:
+                    idx_name = _spatial_idx_name(table_name, idx_col)
+                    if idx_name in reflected_names:
+                        continue
+                    indexes.append(
+                        {
+                            "name": idx_name,
+                            "column_names": [idx_col],
+                            "unique": 0,
+                            "dialect_options": {
+                                "_column_flag": True,
+                                "info": {"geoalchemy2_spatial_index": True},
+                            },
+                        }
+                    )
+                    reflected_names.add(idx_name)
 
         return indexes
 
@@ -634,9 +646,39 @@ def alter_geo_column(context, revision, op):
     else:
         rewritten_ops = []
         if col_type_is_spatial and getattr(col_type, "spatial_index", False):
+            idx_name = None
+            if getattr(col_type, "follow_naming_convention", False):
+                target_md = context.opts.get("target_metadata")
+                target_mds = (
+                    target_md
+                    if isinstance(target_md, (list, tuple, set))
+                    else [target_md]
+                    if target_md is not None
+                    else []
+                )
+                table_key = f"{op.schema}.{op.table_name}" if op.schema else op.table_name
+                for md in target_mds:
+                    model_table = md.tables.get(table_key)
+                    if model_table is not None:
+                        gen_indexes = model_table.info.get("_generated_spatial_indexes", {})
+                        if recreated_column_name in gen_indexes:
+                            idx_name = gen_indexes[recreated_column_name].name
+                            break
+                        for model_idx in model_table.indexes:
+                            cols = [c.name for c in model_idx.columns]
+                            if recreated_column_name in cols and _is_generated_spatial_index(
+                                model_idx
+                            ):
+                                idx_name = model_idx.name
+                                break
+                    if idx_name is not None:
+                        break
+            if idx_name is None:
+                idx_name = _spatial_idx_name(op.table_name, recreated_column_name)
+
             spatial_indexes.append(
                 {
-                    "name": _spatial_idx_name(op.table_name, recreated_column_name),
+                    "name": idx_name,
                     "dialect_options": {},
                 }
             )
@@ -1053,4 +1095,67 @@ def drop_geo_index(context, revision, op):
                 **op.kw,
             )
 
+    return op
+
+
+def _filter_sqlite_spatial_index_ops(sub_ops, default_table_name=None):
+    drop_ops = [op for op in sub_ops if isinstance(op, ops.DropIndexOp)]
+    create_ops = [op for op in sub_ops if isinstance(op, ops.CreateIndexOp)]
+
+    ops_to_remove = set()
+    for d_op in drop_ops:
+        for c_op in create_ops:
+            if d_op in ops_to_remove or c_op in ops_to_remove:
+                continue
+            table_name = (
+                default_table_name
+                or getattr(d_op, "table_name", None)
+                or getattr(c_op, "table_name", None)
+            )
+            if (
+                getattr(d_op, "table_name", None)
+                and getattr(c_op, "table_name", None)
+                and d_op.table_name != c_op.table_name
+            ):
+                continue
+            d_idx = d_op.to_index()
+            c_idx = c_op.to_index()
+            d_cols = list(d_idx.columns)
+            c_cols = list(c_idx.columns)
+            if len(d_cols) == 1 and len(c_cols) == 1 and d_cols[0].name == c_cols[0].name:
+                col_name = d_cols[0].name
+                expected_spat_name = _spatial_idx_name(table_name, col_name) if table_name else None
+                match = False
+                if expected_spat_name is not None and (
+                    (
+                        d_op.index_name == expected_spat_name
+                        and getattr(c_cols[0].type, "follow_naming_convention", False) is True
+                    )
+                    or (
+                        c_op.index_name == expected_spat_name
+                        and getattr(d_cols[0].type, "follow_naming_convention", False) is True
+                    )
+                ):
+                    match = True
+
+                if match:
+                    ops_to_remove.add(d_op)
+                    ops_to_remove.add(c_op)
+
+    if ops_to_remove:
+        return [op for op in sub_ops if op not in ops_to_remove]
+    return sub_ops
+
+
+@writer.rewrites(ops.ModifyTableOps)
+def filter_sqlite_spatial_index_diff_modify_table(context, revision, op):
+    """Remove false diff for SQLite/GeoPackage spatial indexes in ModifyTableOps."""
+    dialect_name = getattr(context.bind, "dialect", None)
+    name = dialect_name.name if dialect_name is not None else None
+    if name not in ("sqlite", "geopackage"):
+        return op
+    new_ops = _filter_sqlite_spatial_index_ops(op.ops, default_table_name=op.table_name)
+    if not new_ops:
+        return []
+    op.ops = new_ops
     return op

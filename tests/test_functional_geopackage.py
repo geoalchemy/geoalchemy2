@@ -202,6 +202,35 @@ class TestIndex:
             == 1
         )
 
+    def test_spatial_index_follow_naming_convention(self, conn, base, metadata):
+        class ConvLake(base):
+            __tablename__ = "conv_lake"
+            id = Column(Integer, primary_key=True)
+            geom = Column(
+                Geometry(
+                    geometry_type="LINESTRING",
+                    srid=4326,
+                    spatial_index=True,
+                    follow_naming_convention=True,
+                )
+            )
+
+        metadata.naming_convention = {"ix": "ix_%(table_name)s_%(column_0_N_name)s"}
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+        assert (
+            conn.execute(
+                text(
+                    """SELECT COUNT(*) FROM gpkg_extensions
+                WHERE table_name = 'conv_lake'
+                    AND column_name = 'geom'
+                    AND extension_name = 'gpkg_rtree_index';"""
+                )
+            ).scalar()
+            == 1
+        )
+        metadata.drop_all(conn, checkfirst=True)
+
 
 class TestMiscellaneous:
     def test_load_spatialite_gpkg(self, tmpdir, _engine_echo, check_spatialite):

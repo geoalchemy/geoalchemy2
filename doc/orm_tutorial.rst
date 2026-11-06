@@ -118,6 +118,14 @@ If we wanted to drop the table we'd use::
 
     >>> Lake.__table__.drop(engine)
 
+.. note::
+
+    **Spatial Indexes**
+
+    By default, GeoAlchemy 2 automatically creates a spatial index on spatial columns
+    (named ``idx_<tablename>_<columnname>``). To configure naming conventions, custom
+    indexes, or dialect options, see the :ref:`spatial_indexes` guide.
+
 
 Create an Instance of the Mapped Class
 --------------------------------------

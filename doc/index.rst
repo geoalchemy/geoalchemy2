@@ -92,6 +92,7 @@ system. If you're new to GeoAlchemy 2 start with the :ref:`orm_tutorial` page. I
 
    orm_tutorial
    core_tutorial
+   spatial_indexes
    dialect_specific_features
    gallery/index
    alembic

@@ -28,6 +28,7 @@ from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import InternalError
 from sqlalchemy.exc import NoSuchModuleError
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import type_coerce
@@ -286,6 +287,214 @@ class TestIndex:
         for idx, expected_idx in zip(indices, expected_indices, strict=False):
             assert idx[0] == expected_idx[0]
             assert idx[1] == re.sub("\n *", " ", expected_idx[1])
+
+    def test_spatial_index_follow_naming_convention(self, conn):
+        metadata = MetaData(
+            schema="gis",
+            naming_convention={"ix": "ix_%(table_name)s_%(column_0_N_name)s"},
+        )
+        table = Table(
+            "convention_test",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(
+                    geometry_type="POINT",
+                    spatial_index=True,
+                    follow_naming_convention=True,
+                ),
+            ),
+            Column(
+                "rast",
+                Raster(
+                    spatial_index=True,
+                    follow_naming_convention=True,
+                ),
+            ),
+        )
+        table.drop(conn, checkfirst=True)
+        table.create(conn)
+        try:
+            index_query = text(
+                """SELECT indexname
+                FROM pg_indexes
+                WHERE schemaname = 'gis' AND tablename = 'convention_test'
+                ORDER BY indexname;"""
+            )
+            indexes = [row[0] for row in conn.execute(index_query).fetchall()]
+            assert "ix_convention_test_geom" in indexes
+            assert "ix_convention_test_rast" in indexes
+            assert len(indexes) == 3  # pkey + geom + rast
+        finally:
+            table.drop(conn, checkfirst=True)
+
+    def test_spatial_index_follow_naming_convention_managed_path(self, conn):
+        metadata = MetaData(
+            schema="gis",
+            naming_convention={"ix": "ix_%(table_name)s_%(column_0_N_name)s"},
+        )
+        table = Table(
+            "managed_convention_test",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(
+                    geometry_type="POINT",
+                    spatial_index=True,
+                    use_typmod=False,
+                    follow_naming_convention=True,
+                ),
+            ),
+        )
+        table.drop(conn, checkfirst=True)
+        table.create(conn)
+        try:
+            index_query = text(
+                """SELECT indexname
+                FROM pg_indexes
+                WHERE schemaname = 'gis' AND tablename = 'managed_convention_test'
+                ORDER BY indexname;"""
+            )
+            indexes = [row[0] for row in conn.execute(index_query).fetchall()]
+            assert "ix_managed_convention_test_geom" in indexes
+            assert len(indexes) == 2  # pkey + geom
+        finally:
+            table.drop(conn, checkfirst=True)
+
+    def test_spatial_index_user_index_with_postgresql_where(self, conn):
+        metadata = MetaData(schema="gis")
+        table = Table(
+            "user_idx_where_test",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry(geometry_type="POINT", spatial_index=False)),
+        )
+        Index(
+            "custom_where_idx",
+            table.c.geom,
+            postgresql_using="gist",
+            postgresql_where=table.c.id > 10,
+        )
+        table.drop(conn, checkfirst=True)
+        table.create(conn)
+        try:
+            index_query = text(
+                """SELECT indexname, indexdef
+                FROM pg_indexes
+                WHERE schemaname = 'gis' AND tablename = 'user_idx_where_test'
+                AND indexname = 'custom_where_idx';"""
+            )
+            row = conn.execute(index_query).fetchone()
+            assert row is not None
+            assert "WHERE (id > 10)" in row[1]
+        finally:
+            table.drop(conn, checkfirst=True)
+
+    def test_spatial_index_managed_user_index_named_idx_t_c_reports_collision(self, conn):
+        metadata = MetaData(schema="gis")
+        table = Table(
+            "managed_collision_test",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry(geometry_type="POINT", spatial_index=True, use_typmod=False)),
+        )
+        Index(
+            "idx_managed_collision_test_geom",
+            table.c.geom,
+            postgresql_using="gist",
+            postgresql_where=table.c.id > 10,
+        )
+        table.drop(conn, checkfirst=True)
+        trans = conn.begin_nested()
+        try:
+            with pytest.raises(
+                ProgrammingError, match='relation "idx_managed_collision_test_geom" already exists'
+            ):
+                table.create(conn)
+        finally:
+            trans.rollback()
+            table.drop(conn, checkfirst=True)
+
+    def test_spatial_index_user_index_named_idx_t_c_gives_two_indexes(self, conn):
+        metadata = MetaData(schema="gis")
+        table = Table(
+            "two_idx_test",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry(geometry_type="POINT", spatial_index=True)),
+        )
+        Index("idx_gis_two_idx_test_geom", table.c.geom, postgresql_using="gist")
+        table.drop(conn, checkfirst=True)
+        table.create(conn)
+        try:
+            index_query = text(
+                """SELECT indexname
+                FROM pg_indexes
+                WHERE schemaname = 'gis' AND tablename = 'two_idx_test'
+                ORDER BY indexname;"""
+            )
+            indexes = [row[0] for row in conn.execute(index_query).fetchall()]
+            assert "idx_two_idx_test_geom" in indexes
+            assert "idx_gis_two_idx_test_geom" in indexes
+        finally:
+            table.drop(conn, checkfirst=True)
+
+    def test_spatial_index_column_index_true_is_user_index(self, conn):
+        metadata = MetaData(schema="gis")
+        table = Table(
+            "col_idx_true_test",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry(geometry_type="POINT", spatial_index=True), index=True),
+        )
+        table.drop(conn, checkfirst=True)
+        table.create(conn)
+        try:
+            index_query = text(
+                """SELECT indexname, indexdef
+                FROM pg_indexes
+                WHERE schemaname = 'gis' AND tablename = 'col_idx_true_test'
+                ORDER BY indexname;"""
+            )
+            indexes = conn.execute(index_query).fetchall()
+            names = [row[0] for row in indexes]
+            assert "idx_col_idx_true_test_geom" in names  # Spatial GiST index
+            assert "ix_gis_col_idx_true_test_geom" in names  # User btree index
+        finally:
+            table.drop(conn, checkfirst=True)
+
+    def test_spatial_index_long_table_name(self, conn):
+        metadata = MetaData(
+            schema="gis",
+            naming_convention={"ix": "ix_%(table_name)s_%(column_0_N_name)s"},
+        )
+        long_name = "lake_with_a_long_name_that_tests_index_truncation_rules_in_pg"
+        table = Table(
+            long_name,
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(
+                    geometry_type="POINT",
+                    spatial_index=True,
+                    follow_naming_convention=True,
+                ),
+            ),
+        )
+        table.drop(conn, checkfirst=True)
+        table.create(conn)
+        try:
+            index_query = text(
+                f"""SELECT count(*)
+                FROM pg_indexes
+                WHERE schemaname = 'gis' AND tablename = '{long_name}';"""
+            )
+            assert conn.execute(index_query).scalar() == 2  # pkey + geom
+        finally:
+            table.drop(conn, checkfirst=True)
 
 
 class TestInsertionCore:

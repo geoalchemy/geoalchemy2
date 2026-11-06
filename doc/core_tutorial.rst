@@ -82,6 +82,14 @@ In that case every ``Table`` that's referenced to by ``metadata`` would be
 created in the database. The ``metadata`` object includes one ``Table`` here,
 our now well-known ``lake_table`` object.
 
+.. note::
+
+    **Spatial Indexes**
+
+    By default, GeoAlchemy 2 automatically creates a spatial index on spatial columns
+    (named ``idx_<tablename>_<columnname>``). To configure naming conventions, custom
+    indexes, or dialect options, see the :ref:`spatial_indexes` guide.
+
 Reflecting tables
 -----------------
 
