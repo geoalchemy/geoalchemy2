@@ -263,6 +263,8 @@ thus the ``env.py`` file should look like the following:
             # ...
 
 
+.. _naming_conventions_for_spatial_indexes:
+
 Naming Conventions for Spatial Indexes
 --------------------------------------
 
