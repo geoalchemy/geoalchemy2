@@ -15,7 +15,7 @@ from sqlalchemy.sql import select
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
 from geoalchemy2.admin.dialects.common import _format_select_args
-from geoalchemy2.admin.dialects.common import _spatial_idx_name
+from geoalchemy2.admin.dialects.common import _is_generated_spatial_index
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.admin.dialects.sqlite import _SQLITE_FUNCTIONS
 from geoalchemy2.admin.dialects.sqlite import _compile_GeomFromWKB_SQLite
@@ -195,15 +195,18 @@ def before_create(table, bind, **kw):
     # created during the table.create() step since the associated columns do not exist
     # at this time.
     table.info["_after_create_indexes"] = []
+    generated = table.info.setdefault("_generated_spatial_indexes", {})
     current_indexes = set(table.indexes)
     for idx in current_indexes:
         for col in table.info["_saved_columns"]:
             if _check_spatial_type(col.type, Geometry, dialect) and col in idx.columns.values():
                 table.indexes.remove(idx)
-                if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
+                if not _is_generated_spatial_index(idx) or not getattr(
                     col.type, "spatial_index", False
                 ):
                     table.info["_after_create_indexes"].append(idx)
+                else:
+                    generated[col.name] = idx
 
     if len(gis_cols) > 1:
         raise ValueError("Only one geometry column is allowed for a table stored in a GeoPackage.")

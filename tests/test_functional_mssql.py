@@ -140,6 +140,88 @@ class TestAdmin:
 
         metadata.drop_all(conn, checkfirst=True)
 
+    def test_spatial_index_follow_naming_convention(self, conn):
+        metadata = MetaData(naming_convention={"ix": "ix_%(table_name)s_%(column_0_N_name)s"})
+        Table(
+            "auto_indexed_conv_lake",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(geometry_type="LINESTRING", srid=4326, follow_naming_convention=True),
+            ),
+        )
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+
+        indexes = conn.execute(
+            text(
+                """SELECT i.name, c.name
+                FROM sys.indexes AS i
+                JOIN sys.index_columns AS ic
+                    ON i.object_id = ic.object_id
+                    AND i.index_id = ic.index_id
+                JOIN sys.columns AS c
+                    ON ic.object_id = c.object_id
+                    AND ic.column_id = c.column_id
+                WHERE
+                    i.object_id = OBJECT_ID('auto_indexed_conv_lake')
+                    AND i.type_desc = 'SPATIAL'
+                ORDER BY i.name"""
+            )
+        ).fetchall()
+        assert indexes == [("ix_auto_indexed_conv_lake_geom", "geom")]
+
+        reflected = Table("auto_indexed_conv_lake", MetaData(), autoload_with=conn)
+        assert reflected.c.geom.type.spatial_index is True
+        reflected_indexes = inspect(conn).get_indexes("auto_indexed_conv_lake")
+        assert any(idx["name"] == "ix_auto_indexed_conv_lake_geom" for idx in reflected_indexes)
+
+        metadata.drop_all(conn, checkfirst=True)
+
+    def test_alter_geo_column_recreates_with_convention_name(self, conn):
+        from alembic.migration import MigrationContext
+        from alembic.operations import ops
+
+        from geoalchemy2 import alembic_helpers
+
+        metadata = MetaData(naming_convention={"ix": "ix_%(table_name)s_%(column_0_N_name)s"})
+        Table(
+            "alter_lake",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(
+                    geometry_type="LINESTRING",
+                    srid=4326,
+                    spatial_index=True,
+                    follow_naming_convention=True,
+                ),
+            ),
+        )
+
+        empty_meta = MetaData()
+        ctx = MigrationContext.configure(
+            conn,
+            opts={"target_metadata": [empty_meta, metadata]},
+        )
+        op = ops.AlterColumnOp(
+            "alter_lake",
+            "geom",
+            modify_type=Geometry(
+                geometry_type="LINESTRING",
+                srid=4326,
+                spatial_index=True,
+                follow_naming_convention=True,
+            ),
+            existing_type=Integer(),
+        )
+        rewritten = alembic_helpers.alter_geo_column(ctx, None, op)
+        index_ops = [o for o in rewritten if isinstance(o, alembic_helpers.CreateGeospatialIndexOp)]
+        assert len(index_ops) == 1
+        assert index_ops[0].index_name == "ix_alter_lake_geom"
+
 
 @test_only_with_dialects("mssql")
 class TestInsertionCore:

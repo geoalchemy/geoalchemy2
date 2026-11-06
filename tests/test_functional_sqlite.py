@@ -205,6 +205,54 @@ class TestIndex:
         assert indexes_after_drop == []
         assert [table for table in tables_after_drop if "table_with_indexes" in table.name] == []
 
+    @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
+    def test_spatial_index_follow_naming_convention(self, conn):
+        metadata = MetaData(naming_convention={"ix": "ix_%(table_name)s_%(column_0_N_name)s"})
+        table = Table(
+            "conv_lake",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(geometry_type="LINESTRING", srid=4326, follow_naming_convention=True),
+            ),
+        )
+        table.drop(conn, checkfirst=True)
+        table.create(conn)
+        try:
+            # SpatiaLite R-tree virtual table is created under hardcoded name
+            assert self.check_spatial_idx(conn, "idx_conv_lake_geom")
+            # No standard SQLite btree index is created
+            btree_indexes = conn.execute(
+                text(
+                    "SELECT name FROM sqlite_master "
+                    "WHERE type = 'index' AND tbl_name = 'conv_lake';"
+                )
+            ).fetchall()
+            assert not any("ix_conv_lake_geom" in i[0] for i in btree_indexes)
+        finally:
+            table.drop(conn, checkfirst=True)
+            assert not self.check_spatial_idx(conn, "idx_conv_lake_geom")
+
+    @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
+    def test_recreate_reflected_table_with_spatial_index(self, conn, use_alembic_monkeypatch):
+        table = Table(
+            "recreate_lake",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=True)),
+        )
+        table.drop(conn, checkfirst=True)
+        table.create(conn)
+        try:
+            reflected_md = MetaData()
+            reflected_table = Table("recreate_lake", reflected_md, autoload_with=conn)
+            reflected_table.drop(conn)
+            reflected_table.create(conn)
+            assert self.check_spatial_idx(conn, "idx_recreate_lake_geom")
+        finally:
+            table.drop(conn, checkfirst=True)
+
 
 class TestMiscellaneous:
     @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")

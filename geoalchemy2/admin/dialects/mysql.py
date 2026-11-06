@@ -23,7 +23,7 @@ from geoalchemy2 import _wkb_wkt
 from geoalchemy2 import functions
 from geoalchemy2._wkb_wkt import is_known_srid
 from geoalchemy2.admin.dialects.common import _check_spatial_type
-from geoalchemy2.admin.dialects.common import _spatial_idx_name
+from geoalchemy2.admin.dialects.common import _is_generated_spatial_index
 from geoalchemy2.admin.dialects.common import compile_bin_literal
 from geoalchemy2.admin.dialects.common import setup_create_drop
 from geoalchemy2.admin.dialects.common import unwrap_wkb_constructor_clauses
@@ -122,15 +122,18 @@ def before_create(table, bind, **kw):
     # created during the table.create() step since the associated columns do not exist
     # at this time.
     table.info["_after_create_indexes"] = []
+    generated = table.info.setdefault("_generated_spatial_indexes", {})
     current_indexes = set(table.indexes)
     for idx in current_indexes:
         for col in table.info["_saved_columns"]:
             if (_check_spatial_type(col.type, Geometry, dialect)) and col in idx.columns.values():
                 table.indexes.remove(idx)
-                if idx.name != _spatial_idx_name(table.name, col.name) or not getattr(
+                if not _is_generated_spatial_index(idx) or not getattr(
                     col.type, "spatial_index", False
                 ):
                     table.info["_after_create_indexes"].append(idx)
+                else:
+                    generated[col.name] = idx
 
     table.columns = table.info.pop("_saved_columns")
 
@@ -150,11 +153,19 @@ def after_create(table, bind, **kw):
             and col.computed is None
             and not [i for i in table.indexes if col in i.columns.values()]
         ):
-            sql = f"ALTER TABLE {table.name} ADD SPATIAL INDEX({col.name});"
+            gen_idx = table.info.get("_generated_spatial_indexes", {}).get(col.name)
+            if getattr(col.type, "follow_naming_convention", False) and gen_idx is not None:
+                preparer = dialect.identifier_preparer
+                table_str = preparer.format_table(table)
+                index_str = preparer.format_index(gen_idx)
+                col_str = preparer.quote(col.name)
+                sql = f"ALTER TABLE {table_str} ADD SPATIAL INDEX {index_str}({col_str});"
+            else:
+                sql = f"ALTER TABLE {table.name} ADD SPATIAL INDEX({col.name});"
             q = text(sql)
             bind.execute(q)
 
-    for idx in table.info.pop("_after_create_indexes"):
+    for idx in table.info.pop("_after_create_indexes", []):
         table.indexes.add(idx)
 
 

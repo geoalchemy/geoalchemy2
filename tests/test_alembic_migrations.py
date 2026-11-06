@@ -66,6 +66,289 @@ class TestAutogenerate:
 
         assert diff == []
 
+    def test_no_diff_with_naming_convention(
+        self,
+        conn,
+        setup_tables,
+        use_alembic_monkeypatch,
+        dialect_name,
+    ):
+        """Check that autogeneration produces no diff with follow_naming_convention."""
+        if dialect_name in ["sqlite", "geopackage"]:
+            pytest.skip(
+                "SQLite/GeoPackage compare_metadata reports R-tree pair; tested via rewriter"
+            )
+
+        naming_convention = {"ix": "ix_%(table_name)s_%(column_0_N_name)s"}
+        db_metadata = MetaData(naming_convention=naming_convention)
+
+        Table(
+            "convention_lake",
+            db_metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(
+                    geometry_type="LINESTRING",
+                    srid=4326,
+                    spatial_index=True,
+                    follow_naming_convention=True,
+                    nullable=dialect_name not in ["mysql", "mariadb"],
+                ),
+            ),
+            schema="gis" if dialect_name == "postgresql" else None,
+        )
+        db_metadata.drop_all(conn, checkfirst=True)
+        db_metadata.create_all(conn)
+
+        # Fresh model metadata representing the target schema without having run create_all()
+        target_metadata = MetaData(naming_convention=naming_convention)
+        Table(
+            "convention_lake",
+            target_metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(
+                    geometry_type="LINESTRING",
+                    srid=4326,
+                    spatial_index=True,
+                    follow_naming_convention=True,
+                    nullable=dialect_name not in ["mysql", "mariadb"],
+                ),
+            ),
+            schema="gis" if dialect_name == "postgresql" else None,
+        )
+
+        try:
+            mc = MigrationContext.configure(
+                conn,
+                opts={
+                    "include_name": lambda name, type_, parent_names: (
+                        type_ != "table" or name in ["convention_lake"]
+                    ),
+                    "process_revision_directives": alembic_helpers.writer,
+                },
+            )
+            diff = compare_metadata(mc, target_metadata)
+            assert diff == []
+        finally:
+            db_metadata.drop_all(conn, checkfirst=True)
+
+    @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
+    def test_sqlite_rewriter_drops_false_spatial_index_diff(
+        self,
+        conn,
+        setup_tables,
+        use_alembic_monkeypatch,
+    ):
+        from alembic.autogenerate import produce_migrations
+
+        naming_convention = {"ix": "ix_%(table_name)s_%(column_0_N_name)s"}
+        db_metadata = MetaData(naming_convention=naming_convention)
+
+        Table(
+            "conv_lake",
+            db_metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(
+                    geometry_type="LINESTRING",
+                    srid=4326,
+                    spatial_index=True,
+                    follow_naming_convention=True,
+                ),
+            ),
+        )
+        db_metadata.drop_all(conn, checkfirst=True)
+        db_metadata.create_all(conn)
+
+        target_metadata = MetaData(naming_convention=naming_convention)
+        Table(
+            "conv_lake",
+            target_metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(
+                    geometry_type="LINESTRING",
+                    srid=4326,
+                    spatial_index=True,
+                    follow_naming_convention=True,
+                ),
+            ),
+        )
+
+        try:
+            mc = MigrationContext.configure(
+                conn,
+                opts={
+                    "include_name": lambda name, type_, parent_names: (
+                        type_ != "table" or name in ["conv_lake"]
+                    ),
+                    "process_revision_directives": alembic_helpers.writer,
+                },
+            )
+            # compare_metadata still reports the drop/create pair (documented limitation)
+            diff = compare_metadata(mc, target_metadata)
+            assert len(diff) == 2
+            diff_ops = {d[0] for d in diff}
+            assert "remove_index" in diff_ops
+            assert "add_index" in diff_ops
+
+            # produce_migrations followed by writer removes the false diff
+            migration_script = produce_migrations(mc, target_metadata)
+            assert not migration_script.upgrade_ops.is_empty()
+
+            # Apply writer
+            alembic_helpers.writer(mc, None, [migration_script])
+
+            # Both upgrade and downgrade are now empty!
+            assert migration_script.upgrade_ops.is_empty()
+            assert migration_script.downgrade_ops.is_empty()
+        finally:
+            db_metadata.drop_all(conn, checkfirst=True)
+
+    @test_only_with_dialects("sqlite-spatialite3", "sqlite-spatialite4")
+    def test_sqlite_rewriter_preserves_real_changes(
+        self,
+        conn,
+        setup_tables,
+        use_alembic_monkeypatch,
+    ):
+        from alembic.autogenerate import produce_migrations
+
+        naming_convention = {"ix": "ix_%(table_name)s_%(column_0_N_name)s"}
+        db_metadata = MetaData(naming_convention=naming_convention)
+
+        Table(
+            "conv_lake_change",
+            db_metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(
+                    geometry_type="LINESTRING",
+                    srid=4326,
+                    spatial_index=True,
+                    follow_naming_convention=True,
+                ),
+            ),
+        )
+        db_metadata.drop_all(conn, checkfirst=True)
+        db_metadata.create_all(conn)
+
+        try:
+            # Model metadata has extra_val column
+            target_metadata = MetaData(naming_convention=naming_convention)
+            Table(
+                "conv_lake_change",
+                target_metadata,
+                Column("id", Integer, primary_key=True),
+                Column(
+                    "geom",
+                    Geometry(
+                        geometry_type="LINESTRING",
+                        srid=4326,
+                        spatial_index=True,
+                        follow_naming_convention=True,
+                    ),
+                ),
+                Column("extra_val", Integer),
+            )
+
+            mc = MigrationContext.configure(
+                conn,
+                opts={
+                    "include_name": lambda name, type_, parent_names: (
+                        type_ != "table" or name in ["conv_lake_change"]
+                    ),
+                    "process_revision_directives": alembic_helpers.writer,
+                },
+            )
+            migration_script = produce_migrations(mc, target_metadata)
+            alembic_helpers.writer(mc, None, [migration_script])
+
+            # The index false diff was removed, but the extra_val column addition is kept!
+            assert not migration_script.upgrade_ops.is_empty()
+            upgrade_ops = migration_script.upgrade_ops.ops
+
+            def find_add_column(ops_list):
+                for op in ops_list:
+                    if isinstance(op, ops.AddColumnOp) and op.column.name == "extra_val":
+                        return True
+                    if hasattr(op, "ops") and find_add_column(op.ops):
+                        return True
+                return False
+
+            assert find_add_column(upgrade_ops)
+        finally:
+            db_metadata.drop_all(conn, checkfirst=True)
+
+    @test_only_with_dialects("postgresql")
+    def test_postgresql_flag_switched_on_proposes_rebuild(
+        self,
+        conn,
+        setup_tables,
+        use_alembic_monkeypatch,
+    ):
+        """When switching follow_naming_convention on existing DB, Alembic proposes rebuild."""
+        metadata_old = MetaData()
+        Table(
+            "lake_rebuild",
+            metadata_old,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(
+                    geometry_type="LINESTRING",
+                    srid=4326,
+                    spatial_index=True,
+                    follow_naming_convention=False,
+                ),
+            ),
+            schema="gis",
+        )
+        metadata_old.drop_all(conn, checkfirst=True)
+        metadata_old.create_all(conn)
+
+        try:
+            # DB has idx_lake_rebuild_geom
+            metadata_new = MetaData(
+                naming_convention={"ix": "ix_%(table_name)s_%(column_0_N_name)s"}
+            )
+            Table(
+                "lake_rebuild",
+                metadata_new,
+                Column("id", Integer, primary_key=True),
+                Column(
+                    "geom",
+                    Geometry(
+                        geometry_type="LINESTRING",
+                        srid=4326,
+                        spatial_index=True,
+                        follow_naming_convention=True,
+                    ),
+                ),
+                schema="gis",
+            )
+            mc = MigrationContext.configure(
+                conn,
+                opts={
+                    "include_name": lambda name, type_, parent_names: (
+                        type_ != "table" or name in ["lake_rebuild"]
+                    ),
+                    "process_revision_directives": alembic_helpers.writer,
+                },
+            )
+            diff = compare_metadata(mc, metadata_new)
+            diff_ops = {d[0] for d in diff}
+            assert "remove_index" in diff_ops
+            assert "add_index" in diff_ops
+        finally:
+            metadata_old.drop_all(conn, checkfirst=True)
+
     def test_diff(self, conn, Lake, setup_tables, use_alembic_monkeypatch):
         """Check that the autogeneration detects spatial types properly."""
         metadata = MetaData()

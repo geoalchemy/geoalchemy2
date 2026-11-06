@@ -11,6 +11,7 @@ from sqlalchemy import __version__ as SA_VERSION
 from sqlalchemy import and_
 from sqlalchemy import bindparam
 from sqlalchemy import create_engine
+from sqlalchemy import inspect
 from sqlalchemy import text
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import OperationalError
@@ -41,6 +42,101 @@ class TestAdmin:
     ):
         metadata.drop_all(conn, checkfirst=True)
         metadata.create_all(conn)
+        metadata.drop_all(conn, checkfirst=True)
+
+    def test_spatial_index_follow_naming_convention(self, conn, use_alembic_monkeypatch):
+        metadata = MetaData(naming_convention={"ix": "ix_%(table_name)s_%(column_0_N_name)s"})
+        Table(
+            "convention_lake",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(geometry_type="LINESTRING", srid=4326, follow_naming_convention=True),
+                nullable=False,
+            ),
+        )
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+
+        indexes = conn.execute(
+            text(
+                """SELECT INDEX_NAME, COLUMN_NAME, INDEX_TYPE
+                FROM INFORMATION_SCHEMA.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'convention_lake'
+                  AND INDEX_TYPE = 'SPATIAL';"""
+            )
+        ).fetchall()
+        assert indexes == [("ix_convention_lake_geom", "geom", "SPATIAL")]
+
+        # Reflection checks: reflected under real name, NOT synthesized
+        reflected = Table("convention_lake", MetaData(), autoload_with=conn)
+        assert reflected.c.geom.type.spatial_index is True
+        reflected_indexes = inspect(conn).get_indexes("convention_lake")
+        assert any(idx["name"] == "ix_convention_lake_geom" for idx in reflected_indexes)
+        assert not any(idx["name"] == "idx_convention_lake_geom" for idx in reflected_indexes)
+
+        metadata.drop_all(conn, checkfirst=True)
+
+    def test_spatial_index_follow_naming_convention_no_ix_key(self, conn):
+        metadata = MetaData(naming_convention={"fk": "fk_%(table_name)s_%(column_0_N_name)s"})
+        Table(
+            "no_ix_lake",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(geometry_type="LINESTRING", srid=4326, follow_naming_convention=True),
+                nullable=False,
+            ),
+        )
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+
+        indexes = conn.execute(
+            text(
+                """SELECT INDEX_NAME, COLUMN_NAME, INDEX_TYPE
+                FROM INFORMATION_SCHEMA.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'no_ix_lake'
+                  AND INDEX_TYPE = 'SPATIAL';"""
+            )
+        ).fetchall()
+        assert indexes == [("idx_no_ix_lake_geom", "geom", "SPATIAL")]
+
+        metadata.drop_all(conn, checkfirst=True)
+
+    def test_spatial_index_flag_off_mysql_unnamed(self, conn, use_alembic_monkeypatch):
+        metadata = MetaData(naming_convention={"ix": "ix_%(table_name)s_%(column_0_N_name)s"})
+        Table(
+            "flag_off_lake",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(
+                "geom",
+                Geometry(geometry_type="LINESTRING", srid=4326, follow_naming_convention=False),
+                nullable=False,
+            ),
+        )
+        metadata.drop_all(conn, checkfirst=True)
+        metadata.create_all(conn)
+
+        indexes = conn.execute(
+            text(
+                """SELECT INDEX_NAME, COLUMN_NAME, INDEX_TYPE
+                FROM INFORMATION_SCHEMA.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'flag_off_lake'
+                  AND INDEX_TYPE = 'SPATIAL';"""
+            )
+        ).fetchall()
+        assert indexes == [("geom", "geom", "SPATIAL")]
+
+        # Reflection checks: synthesized idx_t_c is present for Alembic compatibility
+        reflected_indexes = inspect(conn).get_indexes("flag_off_lake")
+        assert any(idx["name"] == "idx_flag_off_lake_geom" for idx in reflected_indexes)
+
         metadata.drop_all(conn, checkfirst=True)
 
 

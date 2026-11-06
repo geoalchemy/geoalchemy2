@@ -24,6 +24,7 @@ from sqlalchemy.types import UnicodeText
 from geoalchemy2 import _wkb_wkt
 from geoalchemy2 import functions
 from geoalchemy2.admin.dialects.common import _check_spatial_type
+from geoalchemy2.admin.dialects.common import _is_generated_spatial_index
 from geoalchemy2.admin.dialects.common import _spatial_idx_name
 from geoalchemy2.elements import WKBElement
 from geoalchemy2.elements import WKTElement
@@ -497,10 +498,10 @@ def reflect_geometry_column(inspector, table, column_info):
 def _is_mssql_generated_spatial_index(idx, table, col):
     columns = list(idx.columns.values())
     return (
-        getattr(idx, "_column_flag", False)
+        _is_generated_spatial_index(idx)
+        and getattr(idx, "_column_flag", False)
         and len(columns) == 1
         and columns[0] is col
-        and idx.name == _spatial_idx_name(table.name, col.name)
         and getattr(col.type, "spatial_index", False)
     )
 
@@ -518,6 +519,7 @@ def before_create(table, bind, **kw):
         )
 
     table.info["_after_create_indexes"] = []
+    generated = table.info.setdefault("_generated_spatial_indexes", {})
     current_indexes = set(table.indexes)
 
     for idx in current_indexes:
@@ -529,6 +531,8 @@ def before_create(table, bind, **kw):
                 table.indexes.remove(idx)
                 if not _is_mssql_generated_spatial_index(idx, table, col):
                     table.info["_after_create_indexes"].append(idx)
+                else:
+                    generated[col.name] = idx
                 break
 
 
@@ -541,7 +545,7 @@ def after_create(table, bind, **kw):
         for col in columns:
             if not _check_spatial_type(col.type, (Geometry, Geography), dialect):
                 continue
-            if len(columns) == 1 or idx.name == _spatial_idx_name(table.name, col.name):
+            if len(columns) == 1:
                 delayed_spatial_index_cols.add(col.name)
 
     for col in table.columns:
@@ -553,7 +557,15 @@ def after_create(table, bind, **kw):
             and getattr(col.type, "spatial_index", False)
             and col.name not in delayed_spatial_index_cols
         ):
-            create_spatial_index(bind, table.name, col.name, col.type, schema=table.schema)
+            gen_idx = table.info.get("_generated_spatial_indexes", {}).get(col.name)
+            create_spatial_index(
+                bind,
+                table.name,
+                col.name,
+                col.type,
+                schema=table.schema,
+                index_name=gen_idx.name if gen_idx is not None else None,
+            )
 
     for idx in after_create_indexes:
         table.indexes.add(idx)

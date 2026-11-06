@@ -719,7 +719,46 @@ class TestMSSQLCompilation:
 
         assert idx in table.indexes
         assert created_indexes == [(idx, bind, {})]
-        assert spatial_indexes == []
+        # Multi-column user index must not suppress the generated spatial index (D2/D9)
+        assert len(spatial_indexes) == 1
+        assert spatial_indexes[0][0][1] == "lake"
+        assert spatial_indexes[0][0][2] == "geom"
+
+    def test_mssql_after_create_retains_generated_spatial_index_for_multiple_creates(
+        self,
+        monkeypatch,
+    ):
+        table = Table(
+            "lake",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("geom", Geometry(geometry_type="POINT", srid=4326)),
+        )
+        bind = type(
+            "Bind",
+            (),
+            {"dialect": self.dialect, "exec_driver_sql": lambda *a, **k: None},
+        )()
+        spatial_indexes = []
+        monkeypatch.setattr(mssql_admin, "create_spatial_constraints", lambda *args, **kw: None)
+        monkeypatch.setattr(
+            mssql_admin,
+            "create_spatial_index",
+            lambda *args, **kw: spatial_indexes.append((args, kw)),
+        )
+
+        mssql_admin.before_create(table, bind)
+        mssql_admin.after_create(table, bind)
+
+        # The generated index is kept in table.info, NOT table.indexes
+        assert len([i for i in table.indexes if table.c.geom in i.columns.values()]) == 0
+        assert "geom" in table.info.get("_generated_spatial_indexes", {})
+
+        # A second create cycle still uses the preserved index
+        mssql_admin.before_create(table, bind)
+        mssql_admin.after_create(table, bind)
+        assert len([i for i in table.indexes if table.c.geom in i.columns.values()]) == 0
+        assert len(spatial_indexes) == 2
 
     def test_mssql_after_create_uses_spatial_ddl_for_custom_single_spatial_index(
         self,
